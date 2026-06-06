@@ -5,16 +5,20 @@ description: GET /api/bgm/search —— 公开搜索 Bangumi 番剧 ID，支持�
 
 `/api/bgm/search` 是**公开**搜索端点，无需鉴权。用于把"用户输入的番剧名"映射成稳定的 Bangumi.tv subject id（`bgmId`），后续就能喂给 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或 [`/api/releases/publish`](/docs/open-api/releases-publish)。
 
+<Callout type="info">
+  生产实现由主站 Web runtime 直接查询 AniBT 的 Typesense 番剧索引，不再通过 Convex HTTP action 透传 Bangumi 上游。结果覆盖站内已索引番剧；未收录作品需要先完成站内番剧同步。
+</Callout>
+
 ## 请求
 
 ```txt title="URL"
-GET https://site.anibt.net/api/bgm/search?q=<keyword>&limit=<n>
+GET https://anibt.net/api/bgm/search?q=<keyword>&limit=<n>
 ```
 
 支持中文、英文、日文、罗马音任意关键词。
 
 ```bash title="curl 示例"
-curl -s -G 'https://site.anibt.net/api/bgm/search' \
+curl -s -G 'https://anibt.net/api/bgm/search' \
   --data-urlencode 'q=葬送的芙莉莲' -d 'limit=3'
 ```
 
@@ -28,7 +32,7 @@ curl -s -G 'https://site.anibt.net/api/bgm/search' \
       required: true,
     },
     'limit': {
-      description: '返回条数，默认 5，上限 20。',
+      description: '返回条数，默认 5，上限 25。',
       type: 'integer',
       default: '5',
     },
@@ -45,7 +49,7 @@ curl -s -G 'https://site.anibt.net/api/bgm/search' \
       "bgmId": 400602,
       "name": "葬送のフリーレン",
       "nameCn": "葬送的芙莉莲",
-      "date": "2023-09-29",
+      "date": null,
       "image": "https://...",
       "rating": 8.5,
       "totalEpisodes": 28,
@@ -72,8 +76,8 @@ curl -s -G 'https://site.anibt.net/api/bgm/search' \
       type: 'string',
     },
     'date': {
-      description: '首播日期（YYYY-MM-DD）。',
-      type: 'string',
+      description: '首播日期。当前 Web 索引可能返回 null。',
+      type: 'string | null',
     },
     'image': {
       description: '封面图 URL。',
@@ -97,7 +101,7 @@ curl -s -G 'https://site.anibt.net/api/bgm/search' \
 ## 实战：搜索 → 拼 RSS
 
 ```bash title="一行打出 bgmId 给 RSS 用"
-BGM=$(curl -s -G 'https://site.anibt.net/api/bgm/search' \
+BGM=$(curl -s -G 'https://anibt.net/api/bgm/search' \
   --data-urlencode 'q=葬送的芙莉莲' -d 'limit=1' \
   | jq -r '.data[0].bgmId')
 
@@ -107,9 +111,9 @@ echo "https://anibt.net/rss/anime.xml?bgmId=$BGM&resolution=1080p&language=CHS"
 ## 注意事项
 
 <Callout type="info">
-  搜索结果按 Bangumi 内部相关度排序，**不**保证第一条就是最热门版本。如果番名容易撞车（例如有多季 / 同名作品），建议把 `limit` 设大一点，再人工挑选。
+  搜索结果按文本相关度、热度与更新时间排序，**不**保证第一条就是最热门版本。如果番名容易撞车（例如有多季 / 同名作品），建议把 `limit` 设大一点，再人工挑选。
 </Callout>
 
 <Callout type="warn">
-  这是**外部数据透传**接口，结果质量直接受 Bangumi 上游影响。生产代码里建议把 `bgmId` 缓存到本地，不要每次都查。
+  生产代码里建议把解析出的 `bgmId` 缓存到本地，不要每次发布或拉 RSS 前都查。
 </Callout>

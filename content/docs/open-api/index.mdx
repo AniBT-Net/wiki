@@ -9,6 +9,10 @@ AniBT 把公开数据通过两类端点暴露给第三方：用于订阅的 **RS
   qBittorrent / Sonarr / FlexGet / Tiny Tiny RSS 等标准 RSS 客户端**无需任何额外配置**，缓存与条件请求在响应头里自动生效。
 </Callout>
 
+<Callout type="warn">
+  公开 API 的生产 base URL 是 `https://anibt.net`。旧 `https://site.anibt.net` 只作为 Convex site origin 保留：已迁移的 GET/PUT 端点会 `308` 到主站，发布写入端点返回 `410 ENDPOINT_GONE`；`https://cloud.anibt.net` 是 Convex 后端传输域，不是 Open API。
+</Callout>
+
 ## 我想做……（速查）
 
 <Cards>
@@ -85,7 +89,7 @@ AniBT 把公开数据通过两类端点暴露给第三方：用于订阅的 **RS
         │ ① 启动时 / 每天 1 次：拉取字幕组目录
         ▼
 ┌────────────────────────────────────────────────────────────┐
-│  GET https://site.anibt.net/api/subtitle-groups              │
+│  GET https://anibt.net/api/subtitle-groups                  │
 │  返回 [{slug, name, totalReleases, totalAnimes, ...}]        │
 │  → 把"展示名"或"用户输入"映射到稳定 slug                      │
 └────────────────────────────────────────────────────────────┘
@@ -119,11 +123,11 @@ AniBT 把公开数据通过两类端点暴露给第三方：用于订阅的 **RS
       type: '约定',
     },
     '过滤下推': {
-      description: '能在 URL 里下推的过滤都在后端用索引扫描 + 受限的内存过扫描完成，避免下游解析整个 RSS。',
+      description: '能在 URL 里下推的过滤由 Web runtime 下推到 Typesense filter；少量展示字段在 Web 做受限后过滤，避免下游解析整个 RSS。',
       type: '设计',
     },
     'HTTP 缓存优先': {
-      description: '同一查询在 5 分钟内（/rss/anime.xml）只命中一次后端；同一客户端反复轮询走 304，几乎零开销。',
+      description: '同一查询在默认 120 秒 RSS 缓存窗口内只命中一次 origin；同一客户端反复轮询走 304，几乎零开销。',
       type: '设计',
     },
   }}

@@ -22,13 +22,13 @@ description: 一行 curl 调试 + RSS 接入常见问题解答。
   </Tab>
   <Tab value="查全部 slug">
     ```bash title="全部字幕组"
-    curl -s https://site.anibt.net/api/subtitle-groups \
+    curl -s https://anibt.net/api/subtitle-groups \
       | jq '.data[] | {name, slug, totalReleases}'
     ```
   </Tab>
   <Tab value="查目标字幕组">
     ```bash title="按名字过滤"
-    curl -s https://site.anibt.net/api/subtitle-groups \
+    curl -s https://anibt.net/api/subtitle-groups \
       | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕组|拨雪寻春")) | {name, slug}'
     ```
   </Tab>
@@ -53,7 +53,7 @@ description: 一行 curl 调试 + RSS 接入常见问题解答。
     路径与查询参数视为公开契约，**不会做不兼容变更**；新增参数只会扩展。`slug` 一旦发布也尽量保持稳定。
   </Accordion>
   <Accordion title="为什么我配置了极严格的过滤后返回数量很少？">
-    `/rss/anime.xml` 的候选扫描上限是 4000 条，过滤极严格时（例如某番剧某组只有几集 1080p 简中外挂）后端可能在 4000 条候选里筛不到很多。这是设计上的安全阀，详见 [限流与上限](/docs/open-api/limits)。
+    `/rss/anime.xml` 现在由 Web runtime + Typesense 生成，分辨率、语言、格式、字幕方式等 Tag 会尽量下推到 Typesense filter。极严格过滤时返回少通常说明真实匹配少；如果后过滤窗口不足以保证结果完整，服务端会返回 `503`，不会回退 Convex 扫库。详见 [限流与上限](/docs/open-api/limits)。
   </Accordion>
   <Accordion title="新发的种子多久能在 RSS 里看到？">
     取决于你客户端的轮询间隔与 CDN 缓存窗口的叠加。典型 5–30 分钟，详见 [限流与上限](/docs/open-api/limits)。需要实时通知请用 webhook / Telegram bot。

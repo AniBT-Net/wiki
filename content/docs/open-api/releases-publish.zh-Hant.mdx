@@ -12,7 +12,7 @@ description: POST /api/releases/publish —— 字幕組用 API Key 釋出種子
 ## URL
 
 ```http title="HTTP"
-POST https://site.anibt.net/api/releases/publish
+POST https://anibt.net/api/releases/publish
 Authorization: Bearer <YOUR_API_KEY>
 ```
 
@@ -23,7 +23,7 @@ Authorization: Bearer <YOUR_API_KEY>
     上傳種子檔案，後端**自動從種子裡提取**磁力連結、infoHash、檔案大小等後設資料。
 
     ```bash title="上傳種子"
-    curl -X POST 'https://site.anibt.net/api/releases/publish' \
+    curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -F 'bgmId=400602' \
       -F 'title=[字幕組] 葬送的芙莉蓮 - 01 [1080p].mkv' \
@@ -41,7 +41,7 @@ Authorization: Bearer <YOUR_API_KEY>
     直接給磁力連結（**仍然需要先有種子**，因為後端只接受能解析的合法 magnet）。
 
     ```bash title="JSON 請求"
-    curl -X POST 'https://site.anibt.net/api/releases/publish' \
+    curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -H 'Content-Type: application/json' \
       --data @- <<'JSON'
@@ -140,7 +140,7 @@ Authorization: Bearer <YOUR_API_KEY>
 釋出前想先看看渲染效果（標題解析、Markdown 備註、磁力是否正確），把 `preview=true` 即可：
 
 ```bash title="預覽，不公開"
-curl -X POST 'https://site.anibt.net/api/releases/publish' \
+curl -X POST 'https://anibt.net/api/releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -F 'bgmId=400602' \
   -F 'title=[字幕組] 葬送的芙莉蓮 - 01 [1080p].mkv' \

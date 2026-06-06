@@ -12,7 +12,7 @@ description: GET /api/subtitle-groups —— 公开字幕组列表，第三方�
 ## 请求
 
 ```http title="HTTP"
-GET https://site.anibt.net/api/subtitle-groups
+GET https://anibt.net/api/subtitle-groups
 Accept: application/json
 ```
 
@@ -97,16 +97,16 @@ Accept: application/json
 ETag 形如 `W/"sg{count}-{maxCreatedAt}-{releaseSum}-{urlHash}"`。再次请求带 `If-None-Match` 即拿 304。
 
 ```bash title="验证 304"
-H=$(curl -sI "https://site.anibt.net/api/subtitle-groups")
+H=$(curl -sI "https://anibt.net/api/subtitle-groups")
 ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
-curl -sI -H "If-None-Match: $ETAG" "https://site.anibt.net/api/subtitle-groups" | head -1
+curl -sI -H "If-None-Match: $ETAG" "https://anibt.net/api/subtitle-groups" | head -1
 # → HTTP/2 304
 ```
 
 ## 实战：用 jq 挑出目标字幕组
 
 ```bash title="挑 4 个组"
-curl -s https://site.anibt.net/api/subtitle-groups \
+curl -s https://anibt.net/api/subtitle-groups \
   | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕组|拨雪寻春")) | {name, slug}'
 ```
 

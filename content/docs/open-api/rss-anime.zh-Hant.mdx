@@ -52,7 +52,7 @@ GET https://anibt.net/rss/anime.xml?<query>
       type: 'string',
     },
     'limit': {
-      description: '1..1000，預設 100。',
+      description: '1..200，預設 100。',
       type: 'integer',
       default: '100',
     },
@@ -106,17 +106,17 @@ GET https://anibt.net/rss/anime.xml?<query>
   }}
 />
 
-## 後端選擇最優索引
+## 後端執行方式
 
-後端根據傳入引數自動選索引：
+`/rss/anime.xml` 在主站 Web runtime 生成，不再回源 Convex RSS query。Web 層使用 Typesense 的 `rss_resolvers` collection 解析 `bgmId` / `groupSlug`，再查詢 Typesense `releases` collection：
 
-| 提供                    | 使用索引                |
-| ----------------------- | ----------------------- |
-| `bgmId` + `groupSlug`   | `groupId_animeId`       |
-| 僅 `bgmId`              | `animeId`               |
-| 僅 `groupSlug`          | `groupId_publishedAt`   |
+| 提供                    | 執行方式                         |
+| ----------------------- | -------------------------------- |
+| `bgmId` + `groupSlug`   | Typesense filter 精確約束番劇與字幕組 |
+| 僅 `bgmId`              | Typesense filter 約束番劇          |
+| 僅 `groupSlug`          | Typesense filter 約束字幕組        |
 
-隨後在記憶體裡按 Tag 過濾（**最多掃描 4000 條候選**），按 `publishedAt` 倒序截斷 `limit`。SSR 層疊加 **300 秒快取**（按規範化後的 query 串當 key），同一查詢在快取視窗內只命中一次後端。
+解析度、語言、格式、字幕方式等 Tag 盡量下推到 Typesense filter；`episode` / `episodeKey` 等展示欄位只在 Web runtime 做小視窗後過濾。Redis SSR cache 預設 **120 秒 TTL + 60 秒 stale-while-revalidate**，Cloudflare Worker 在釋出事件後會主動清理 Redis RSS cache 並 purge CDN，因此公開 RSS 的新鮮度上限目標是 5 分鐘內，正常路徑通常更快。
 
 ## Mikan 相容
 

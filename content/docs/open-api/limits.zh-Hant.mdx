@@ -7,34 +7,35 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
 
 | 端點                    | `limit` 預設 | `limit` 上限 | 後端候選掃描上限 | 速率限制（預設）   |
 | ----------------------- | ------------ | ------------ | ---------------- | ------------------ |
-| `/rss/anime.xml`        | **100**      | **1000**     | **4000** 條候選  | 120 次 / 60 秒 / IP |
+| `/rss/anime.xml`        | **100**      | **200**      | Typesense filter | 120 次 / 60 秒 / IP |
 | `/rss/group/<slug>.xml` | 100          | **200**      | —                | 120 次 / 60 秒 / IP |
 | `/rss/magnets.xml`      | 100          | **200**      | —                | 120 次 / 60 秒 / IP |
-| `/api/subtitle-groups`  | —            | 全量返回     | —                | 同上 60 秒視窗      |
+| `/api/bgm/search`       | 5            | **25**       | Typesense search | 60 次 / 60 秒 / IP  |
+| `/api/subtitle-groups`  | —            | 全量返回     | —                | 60 次 / 60 秒 / IP  |
 | `/api/seasons/anime`    | —            | —            | —                | 30 次 / 60 秒 / IP  |
 | `/api/anime/groups`     | —            | —            | —                | 30 次 / 60 秒 / IP  |
 
 <Callout type="info">
-  **`limit` 越界處理**：超過上限會被自動**截斷到上限**，不會報錯。例如 `?limit=5000` 給 `/rss/anime.xml` 實際返回 1000 條。
+  **`limit` 越界處理**：超過上限會被自動**截斷到上限**，不會報錯。例如 `?limit=5000` 給 `/rss/anime.xml` 實際返回 200 條。
 </Callout>
 
-### `MAX_OVERSCAN`（僅 `/rss/anime.xml`）
+### 過濾模型（`/rss/anime.xml`）
 
-當你疊加 Tag 過濾（resolution / language / subtitle / format / episode / episodeKey）時，後端先按索引拉候選，再在記憶體裡篩 Tag。**候選池上限是 4000 條**，避免單次請求掃庫失控。
+`/rss/anime.xml` 由主站 Web runtime 查詢 Typesense release index。`bgmId`、`groupSlug`、`resolution`、`language`、`subtitle`、`format` 等過濾會盡量下推到 Typesense；`episode` / `episodeKey` 這類展示欄位可能在 Web runtime 做小窗口後過濾。不會回源 Convex 掃庫。
 
-絕大多數番劇 + 字幕組組合的實際資料量都遠小於這個值；如果你過濾極其嚴格（例如某番劇某組只有 3 集 1080p 簡中外掛），後端拉到 4000 條後就停止，再做 Tag 篩選並返回 `limit` 條。**實操影響**：極冷門組合可能"看起來少"——這是設計上的安全閥。
+極冷門組合如果疊加過多過濾，可能返回少於 `limit` 條；這是索引窗口和效能保護的結果。需要更多歷史資料時，優先放寬過濾或按字幕組短鏈輪詢。
 
 ## 提高上限
 
 <Tabs items={['客戶端層面', '服務端層面（自部署）', '觸發 429']}>
   <Tab value="客戶端層面">
-    1. **拉滿 `limit`**：把 URL 的 `?limit=` 改成端點上限（1000 / 200）。一次請求拿更多，等於把 N 次輪詢合成 1 次。
+    1. **拉滿 `limit`**：把 URL 的 `?limit=` 改成端點上限（200）。一次請求拿更多，等於把 N 次輪詢合成 1 次。
     2. **用 304 替代輪詢**：每次請求帶 `If-None-Match`。服務端確認資料沒變就返回 304 空 body，**不計入很多客戶端的"流量統計"**，但仍會消耗 1 次速率配額。
     3. **拉長間隔**：預設建議 ≥ 5 分鐘。番劇釋出頻率本身按"集數"計算，每分鐘掃一次沒有意義。
     4. **合併併發**：不要對同一 URL 併發發多個請求，快取層會讓後續請求拿到一樣的結果，但白白消耗速率額度。
   </Tab>
   <Tab value="服務端層面（自部署）">
-    透過 Convex / 部署平臺的**環境變數**調整（重啟後生效）：
+    透過 Web runtime / 部署平臺的**環境變數**調整（重啟後生效）：
 
     ```bash title="env"
     # 把每 IP 60 秒 120 次提高到 60 秒 600 次
@@ -50,13 +51,13 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
     ```
 
     <Callout type="warn">
-      `/rss/anime.xml` 的 `MAX_LIMIT=1000` 和 `MAX_OVERSCAN=4000` 是原始碼常量（`convex/rssFeed.ts`），**不透過環境變數調整**。如果你的私有部署需要更高，直接改原始碼後 `npx convex deploy`。
+      `/rss/anime.xml` 的 `limit` 上限是 Web 路由原始碼常量（`src/routes/rss/anime[.]xml.ts`），**不透過環境變數調整**。如果私有部署需要更高，改原始碼後重新構建並部署 Web runtime。
     </Callout>
 
     提高之後需要觀察：
 
-    - **單次響應 XML 大小**：1000 條約 0.8–2 MB，注意頻寬。
-    - **Convex query 時長**：候選 4000 條 + 記憶體 Tag 過濾通常 < 200ms；繼續上調 `MAX_OVERSCAN` 接近函式 1 秒上限時會有失敗風險。
+    - **單次響應 XML 大小**：200 條通常已足夠 RSS reader 使用，繼續提高要注意頻寬。
+    - **Typesense 查詢 P95 與 Web SSR cache hit/miss**：公開 RSS 不應出現 Convex RSS query 或掃庫 fallback 流量。
     - **客戶端解析時長**：很多 RSS reader 預設只保留最近 N 條，請同步調整。
   </Tab>
   <Tab value="觸發 429">
@@ -74,7 +75,7 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
 ```txt
 使用者 ──► 瀏覽器 / RSS 客戶端快取 (max-age)
         ──► Cloudflare CDN (s-maxage + SWR)
-            ──► origin (Convex / TanStack SSR) ──► 資料庫
+            ──► origin (TanStack Start Web + Redis) ──► Typesense
 ```
 
 - CDN 內未過期 → **0 origin 請求**
@@ -159,20 +160,20 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
 以"字幕組釋出一個新種子"到"訂閱者的 RSS 客戶端彈出通知"為例，逐段算一遍最壞情況：
 
 ```txt title="延遲拆解"
-T=0       字幕組提交 release 到 AniBT 後臺
-          (Convex mutation 寫入 releases / animeReleases / files 表)
+T=0       字幕組提交 release 到 AniBT Web API
+          (Web 解析請求體 / 種子，Convex mutation 寫入 releases / files 表)
 T=0       資料庫立即可讀（Convex 強一致）
-          /rss/anime.xml 此刻請求會拿到新資料，但 CDN 還快取著舊版本
+          Web 寫側事件會觸發外部 Worker 清 Redis RSS cache + purge CDN
 
-T≤300s    CDN 快取（s-maxage=300）視窗內：
+T≤120s    事件 purge 缺失時的兜底 CDN / Web Redis 短快取視窗內：
           客戶端請求被 CDN 攔截，仍拿舊版本
           → 這一段是使用者感知延遲的主要來源
 
-T=300s    CDN 快取進入 SWR 期：
+T=120s    CDN 快取進入 SWR 期：
           下一個使用者請求觸發 CDN 非同步回源
           原 origin 拿到新資料 → CDN 快取更新
 
-T=300~600s 客戶端的下次輪詢週期（取決於客戶端）：
+T=120~300s 客戶端的下次輪詢週期（取決於客戶端）：
           - 若客戶端輪詢間隔 = 5min → 最快下一次拿到新版本
           - 若間隔 = 15min → 平均再等 7.5 min
           - 若間隔 = 1h → 平均再等 30 min

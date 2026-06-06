@@ -12,7 +12,7 @@ description: POST /api/other-releases/publish —— 字幕組用 API Key 釋出
 ## URL
 
 ```http title="HTTP"
-POST https://site.anibt.net/api/other-releases/publish
+POST https://anibt.net/api/other-releases/publish
 Authorization: Bearer <YOUR_API_KEY>
 ```
 
@@ -25,7 +25,7 @@ Authorization: Bearer <YOUR_API_KEY>
     上傳 `.torrent` 檔案，後端會自動提取磁力連結、標題、檔案大小和 tracker。`category` 與 `title` 仍建議顯式傳入。
 
     ```bash title="上傳其他類種子"
-    curl -X POST 'https://site.anibt.net/api/other-releases/publish' \
+    curl -X POST 'https://anibt.net/api/other-releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -F 'category=manga' \
       -F 'title=Example Manga Vol.01' \
@@ -40,7 +40,7 @@ Authorization: Bearer <YOUR_API_KEY>
     直接提交磁力連結，適合已有磁力但沒有上傳種子檔案的自動化流程。
 
     ```bash title="JSON 請求"
-    curl -X POST 'https://site.anibt.net/api/other-releases/publish' \
+    curl -X POST 'https://anibt.net/api/other-releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -H 'Content-Type: application/json' \
       --data @- <<'JSON'

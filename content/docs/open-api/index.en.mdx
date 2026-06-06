@@ -9,6 +9,10 @@ AniBT exposes public data through two kinds of endpoints: **RSS** for subscripti
   Standard RSS clients like qBittorrent, Sonarr, FlexGet, and Tiny Tiny RSS work **without any extra configuration** — caching and conditional requests are emitted in the response headers automatically.
 </Callout>
 
+<Callout type="warn">
+  The production base URL for public APIs is `https://anibt.net`. The old `https://site.anibt.net` Convex site origin is legacy only: migrated GET/PUT endpoints return `308` to the main site, publish write endpoints return `410 ENDPOINT_GONE`, and `https://cloud.anibt.net` is the Convex backend transport domain, not Open API.
+</Callout>
+
 ## I want to… (cheat sheet)
 
 <Cards>
@@ -85,7 +89,7 @@ The system is layered by responsibility so third parties can pick the right endp
         │ ① At startup / once a day: fetch the group catalogue
         ▼
 ┌────────────────────────────────────────────────────────────┐
-│  GET https://site.anibt.net/api/subtitle-groups              │
+│  GET https://anibt.net/api/subtitle-groups                  │
 │  Returns [{slug, name, totalReleases, totalAnimes, ...}]     │
 │  → Map "display name" or "user input" to a stable slug       │
 └────────────────────────────────────────────────────────────┘
@@ -119,11 +123,11 @@ The system is layered by responsibility so third parties can pick the right endp
       type: 'convention',
     },
     'Filter pushdown': {
-      description: 'Anything pushable through query string is filtered server-side using indexed scans plus a bounded in-memory pass — no need to parse the whole feed downstream.',
+      description: 'Anything pushable through query string is pushed from the Web runtime into Typesense filters; a few display fields use a bounded Web post-filter, so downstream clients do not parse the whole feed.',
       type: 'design',
     },
     'HTTP cache first': {
-      description: 'A given query hits the backend at most once per 5-minute window (/rss/anime.xml). Repeated polls are served as 304 with negligible cost.',
+      description: 'A given query hits origin at most once per default 120-second RSS cache window. Repeated polls are served as 304 with negligible cost.',
       type: 'design',
     },
   }}

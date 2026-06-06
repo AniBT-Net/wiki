@@ -12,7 +12,7 @@ description: POST /api/other-releases/publish — publish manga, music, RAW, and
 ## URL
 
 ```http title="HTTP"
-POST https://site.anibt.net/api/other-releases/publish
+POST https://anibt.net/api/other-releases/publish
 Authorization: Bearer <YOUR_API_KEY>
 ```
 
@@ -25,7 +25,7 @@ Authorization: Bearer <YOUR_API_KEY>
     Upload a `.torrent` file. The backend extracts the magnet, title, file size, and trackers automatically. Sending `category` and `title` explicitly is still recommended.
 
     ```bash title="Upload an other release torrent"
-    curl -X POST 'https://site.anibt.net/api/other-releases/publish' \
+    curl -X POST 'https://anibt.net/api/other-releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -F 'category=manga' \
       -F 'title=Example Manga Vol.01' \
@@ -40,7 +40,7 @@ Authorization: Bearer <YOUR_API_KEY>
     Send a magnet directly when your automation already has one and does not upload a torrent file.
 
     ```bash title="JSON body"
-    curl -X POST 'https://site.anibt.net/api/other-releases/publish' \
+    curl -X POST 'https://anibt.net/api/other-releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -H 'Content-Type: application/json' \
       --data @- <<'JSON'

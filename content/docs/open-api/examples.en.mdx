@@ -88,9 +88,9 @@ https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BA
 ## 8. High throughput (max out a single request)
 
 ```txt
-https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=1000
+https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=200
 ```
 
 <Callout type="info">
-  `/rss/anime.xml` allows `limit` up to **1000**; `/rss/group/<slug>.xml` and `/rss/magnets.xml` cap at **200**. Excess values are silently truncated. See [Rate limits & caps](/docs/open-api/limits).
+  `/rss/anime.xml`, `/rss/group/<slug>.xml`, and `/rss/magnets.xml` all cap `limit` at **200**. Excess values are silently truncated. See [Rate limits & caps](/docs/open-api/limits).
 </Callout>

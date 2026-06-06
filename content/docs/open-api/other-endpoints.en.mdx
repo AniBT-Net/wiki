@@ -49,10 +49,10 @@ Used by external trackers, dashboards, and editor helpers. **Returns the current
 ### Request
 
 ```txt title="Several call shapes"
-GET https://site.anibt.net/api/seasons/anime
-GET https://site.anibt.net/api/seasons/anime?season=2026春
-GET https://site.anibt.net/api/seasons/anime?season=2026-SPRING   # ISO form also accepted
-GET https://site.anibt.net/api/seasons/anime?bgmId=543360         # exact-match a single show
+GET https://anibt.net/api/seasons/anime
+GET https://anibt.net/api/seasons/anime?season=2026春
+GET https://anibt.net/api/seasons/anime?season=2026-SPRING   # ISO form also accepted
+GET https://anibt.net/api/seasons/anime?bgmId=543360         # exact-match a single show
 ```
 
 ### Query
@@ -161,12 +161,12 @@ GET https://site.anibt.net/api/seasons/anime?bgmId=543360         # exact-match 
 | Conditional req.  | `If-None-Match` (ETag like `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`), `If-Modified-Since` |
 
 ```bash title="Pull and 304"
-curl 'https://site.anibt.net/api/seasons/anime'
-curl 'https://site.anibt.net/api/seasons/anime?season=2026春'
-curl 'https://site.anibt.net/api/seasons/anime?bgmId=543360'
+curl 'https://anibt.net/api/seasons/anime'
+curl 'https://anibt.net/api/seasons/anime?season=2026春'
+curl 'https://anibt.net/api/seasons/anime?bgmId=543360'
 
-ETAG=$(curl -sSI 'https://site.anibt.net/api/seasons/anime' | grep -i ^etag: | awk '{print $2}' | tr -d '\r')
-curl -i 'https://site.anibt.net/api/seasons/anime' -H "If-None-Match: $ETAG"
+ETAG=$(curl -sSI 'https://anibt.net/api/seasons/anime' | grep -i ^etag: | awk '{print $2}' | tr -d '\r')
+curl -i 'https://anibt.net/api/seasons/anime' -H "If-None-Match: $ETAG"
 # → HTTP/2 304
 ```
 
@@ -179,7 +179,7 @@ Designed to feed `groupSlug` into `/rss/anime.xml`, and equally useful for build
 ### Request
 
 ```txt
-GET https://site.anibt.net/api/anime/groups?bgmId=543360
+GET https://anibt.net/api/anime/groups?bgmId=543360
 ```
 
 <TypeTable
@@ -243,7 +243,7 @@ GET https://site.anibt.net/api/anime/groups?bgmId=543360
 
 ```bash title="Two-step pipeline"
 # Step 1: given a bgmId, fetch the group list
-curl -s 'https://site.anibt.net/api/anime/groups?bgmId=543360' \
+curl -s 'https://anibt.net/api/anime/groups?bgmId=543360' \
   | jq -r '.data.groups[].slug'
 # kitauji-sub
 # kirara-fantasia

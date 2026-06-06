@@ -9,6 +9,10 @@ AniBT 把公開資料透過兩類端點暴露給第三方：用於訂閱的 **RS
   qBittorrent / Sonarr / FlexGet / Tiny Tiny RSS 等標準 RSS 客戶端**無需任何額外配置**，快取與條件請求在響應頭裡自動生效。
 </Callout>
 
+<Callout type="warn">
+  公開 API 的生產 base URL 是 `https://anibt.net`。舊 `https://site.anibt.net` 只作為 Convex site origin 保留：已遷移的 GET/PUT 端點會 `308` 到主站，釋出寫入端點返回 `410 ENDPOINT_GONE`；`https://cloud.anibt.net` 是 Convex 後端傳輸域，不是 Open API。
+</Callout>
+
 ## 我想做……（速查）
 
 <Cards>
@@ -85,7 +89,7 @@ AniBT 把公開資料透過兩類端點暴露給第三方：用於訂閱的 **RS
         │ ① 啟動時 / 每天 1 次：拉取字幕組目錄
         ▼
 ┌────────────────────────────────────────────────────────────┐
-│  GET https://site.anibt.net/api/subtitle-groups              │
+│  GET https://anibt.net/api/subtitle-groups                  │
 │  返回 [{slug, name, totalReleases, totalAnimes, ...}]        │
 │  → 把"展示名"或"使用者輸入"對映到穩定 slug                      │
 └────────────────────────────────────────────────────────────┘
@@ -119,11 +123,11 @@ AniBT 把公開資料透過兩類端點暴露給第三方：用於訂閱的 **RS
       type: '約定',
     },
     '過濾下推': {
-      description: '能在 URL 裡下推的過濾都在後端用索引掃描 + 受限的記憶體過掃描完成，避免下游解析整個 RSS。',
+      description: '能在 URL 裡下推的過濾由 Web runtime 下推到 Typesense filter；少量展示欄位在 Web 做受限後過濾，避免下游解析整個 RSS。',
       type: '設計',
     },
     'HTTP 快取優先': {
-      description: '同一查詢在 5 分鐘內（/rss/anime.xml）只命中一次後端；同一客戶端反覆輪詢走 304，幾乎零開銷。',
+      description: '同一查詢在預設 120 秒 RSS 快取視窗內只命中一次 origin；同一客戶端反覆輪詢走 304，幾乎零開銷。',
       type: '設計',
     },
   }}
