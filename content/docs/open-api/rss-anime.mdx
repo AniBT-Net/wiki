@@ -118,9 +118,9 @@ GET https://anibt.net/rss/anime.xml?<query>
 
 分辨率、语言、格式、字幕方式等 Tag 尽量下推到 Typesense filter；`episode` / `episodeKey` 等展示字段只在 Web runtime 做小窗口后过滤。Redis SSR cache 默认 **120 秒 TTL + 60 秒 stale-while-revalidate**，Cloudflare Worker 在发布事件后会主动清理 Redis RSS cache 并 purge CDN，因此公开 RSS 的新鲜度上限目标是 5 分钟内，正常路径通常更快。
 
-## Mikan 兼容
+## Mikan 参数兼容
 
-旧的 Mikan 链接可以直接换主机，参数原样工作：
+Mikan 风格参数可以直接换主机，参数原样工作：
 
 <Tabs items={['原始 Mikan 链接', '直接换主机', '推荐写法']}>
   <Tab value="原始 Mikan 链接">

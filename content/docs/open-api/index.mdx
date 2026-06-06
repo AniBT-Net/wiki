@@ -10,7 +10,7 @@ AniBT 把公开数据通过两类端点暴露给第三方：用于订阅的 **RS
 </Callout>
 
 <Callout type="warn">
-  公开 API 的生产 base URL 是 `https://anibt.net`。旧 `https://site.anibt.net` 只作为 Convex site origin 保留：已迁移的 GET/PUT 端点会 `308` 到主站，发布写入端点返回 `410 ENDPOINT_GONE`；`https://cloud.anibt.net` 是 Convex 后端传输域，不是 Open API。
+  公开 API 的生产 base URL 是 `https://anibt.net`。第三方集成请只使用本文档列出的主站路径。
 </Callout>
 
 ## 我想做……（速查）

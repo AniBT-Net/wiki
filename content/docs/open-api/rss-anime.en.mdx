@@ -118,9 +118,9 @@ Returns **RSS 2.0 + BEP 36**. Each `<item>` contains:
 
 Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Redis SSR cache defaults to **120 seconds TTL + 60 seconds stale-while-revalidate**; on publish events, the Cloudflare Worker clears the Redis RSS cache and purges CDN. The public RSS freshness target is therefore within 5 minutes, and the normal event path is usually faster.
 
-## Mikan compatibility
+## Mikan parameter compatibility
 
-Old Mikan links can switch host and keep working as-is:
+Mikan-style parameters can switch host and keep working as-is:
 
 <Tabs items={['Original Mikan link', 'Switch host only', 'Recommended']}>
   <Tab value="Original Mikan link">
