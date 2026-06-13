@@ -68,13 +68,16 @@ Authorization: Bearer <YOUR_API_KEY>
 
 <TypeTable
   type={{
+    'animeId': {
+      description: '站內番劇 ID。一般不需要手填；更常用 bgmId。若 animeId 與 bgmId 同時傳入，優先按 animeId 查找。',
+      type: 'string',
+    },
     'bgmId': {
-      description: 'Bangumi 番劇 ID。可透過 /api/bgm/search 查詢。',
+      description: 'Bangumi 番劇 ID。可透過 /api/bgm/search 查詢。未傳時服務端會嘗試按種子標題自動匹配，失敗則進入待匹配狀態。',
       type: 'number',
-      required: true,
     },
     'title': {
-      description: '資原始檔名，例如 [字幕組] 番名 - 01 [1080p].mkv。',
+      description: '資源檔名，例如 [字幕組] 番名 - 01 [1080p].mkv。JSON 請求必填；multipart 未傳時會嘗試使用種子內部名稱。',
       type: 'string',
       required: true,
     },
@@ -84,7 +87,11 @@ Authorization: Bearer <YOUR_API_KEY>
       required: true,
     },
     'magnetBase64': {
-      description: '可選。原始 magnet 連結或 Base64 編碼。不提供時從種子檔案自動提取。',
+      description: '原始 magnet 連結或 Base64 編碼後的 magnet。JSON 請求必填；multipart 不傳時會從種子檔案自動提取。',
+      type: 'string',
+    },
+    'torrentStorageId': {
+      description: '已存在於本站公共儲存的種子檔案 key。通常只供內部自動化使用；普通 API 客戶端請上傳 torrent。',
       type: 'string',
     },
     'episodeKey': {
@@ -115,8 +122,16 @@ Authorization: Bearer <YOUR_API_KEY>
       description: '檔案大小（位元組）。可從種子檔案自動提取。',
       type: 'number',
     },
+    'publishedAt': {
+      description: '釋出時間戳（毫秒）。不傳時使用服務端目前時間。',
+      type: 'number',
+    },
     'notes': {
-      description: '釋出備註，支援 Markdown。',
+      description: '釋出備註，支援 Markdown，最多 50000 字元。',
+      type: 'string',
+    },
+    'descriptionMarkdown': {
+      description: 'notes 的相容別名。content / description / intro 也會被相容為說明文字。',
       type: 'string',
     },
     'trackers': {
@@ -129,7 +144,7 @@ Authorization: Bearer <YOUR_API_KEY>
       default: 'false',
     },
     'nyaaCategory': {
-      description: 'Nyaa 分類代碼，例如 1_3。啟用 Nyaa 代發時必填。',
+      description: 'Nyaa 分類代碼，啟用 Nyaa 代發時必填。必須從下方 Nyaa 分類表選擇，例如中文動畫字幕通常填 1_3。',
       type: 'string',
     },
     'nyaaComplete': {
@@ -146,6 +161,10 @@ Authorization: Bearer <YOUR_API_KEY>
       description: '覆蓋提交到 Nyaa 的 Markdown 說明；不傳時使用本站 notes。',
       type: 'string',
     },
+    'nyaaInformation': {
+      description: '覆蓋提交到 Nyaa 的 information 欄位，最多 500 字元；通常填寫官網、字幕組頁面或相關說明連結。',
+      type: 'string',
+    },
     'preview': {
       description: '設為 true 時僅生成臨時預覽連結（10 分鐘後過期），不會實際釋出到 RSS、搜尋和前端頁面。',
       type: 'boolean',
@@ -157,6 +176,47 @@ Authorization: Bearer <YOUR_API_KEY>
 <Callout type="info">
   `torrent` 種子檔案**必填**（multipart）。`magnetBase64` 可選——不提供時後端會從種子檔案解析出磁力連結。
 </Callout>
+
+## 引數值速查
+
+### 請求格式差異
+
+| 場景 | 應該怎麼傳 |
+| ---- | ---------- |
+| 上傳 `.torrent` | 使用 `multipart/form-data`，欄位名為 `torrent`，例如 `-F 'torrent=@release.torrent'`。 |
+| 只傳磁力連結 | 使用 JSON，傳 `magnetBase64`。這個欄位既接受原始 `magnet:?xt=...`，也接受 Base64 編碼後的 magnet。 |
+| 多語言 | JSON 用陣列：`"language":["CHS","JP"]`；multipart 可以重複欄位：`-F 'language=CHS' -F 'language=JP'`，也可以傳 JSON 陣列字串。 |
+| tracker 列表 | JSON 用陣列；multipart 用換行分隔。站點會與預設 tracker 合併去重。 |
+| 布林值 | JSON 用 `true/false`；multipart 可用 `true/false`、`1/0`、`yes/no`、`on/off`。 |
+
+### 番劇與集數
+
+| 欄位 | 可填值 | 說明 |
+| ---- | ------ | ---- |
+| `bgmId` | Bangumi subject id，例如 `400602` | 推薦填寫。可先呼叫 [`/api/bgm/search`](/docs/open-api/bgm-search) 搜尋番劇。 |
+| `animeId` | 站內 `anime_...` / Convex doc id 字串 | 進階用法。一般不要手填，除非你的系統已經保存了站內番劇 ID。 |
+| `episode` | 非負整數，例如 `1`、`12` | 用於排序。自訂 `episodeKey`（如 `SP`、`BATCH`）時請傳 `episode=0`。 |
+| `episodeKey` | `01`、`1-12`、`13.5`、`SP`、`OVA`、`MOVIE`、`BATCH` | 用於顯示和去重。純數字會規範化為數字字串，例如 `01` 最終按 `1` 去重。 |
+| `version` | `v1`、`v2`、`v2_fix` | 不傳時預設 `v1`。修正版建議用 `v2`。 |
+
+未傳 `bgmId` / `animeId` 時，服務端會嘗試按標題和種子內部檔名自動匹配番劇；無法高置信匹配時，資源會進入待匹配狀態，之後由字幕組或管理員補匹配。
+
+### 解析度、語言、字幕、格式
+
+| 欄位 | 可填值 | 含義 |
+| ---- | ------ | ---- |
+| `resolution` | `4K` / `2160p` / `1080p` / `720p` / `480p` / `360p` | 必須完全按這些代碼填寫。常見 4K 可填 `2160p` 或 `4K`。 |
+| `language` | `CHS` | 簡體中文。 |
+| `language` | `CHT` | 繁體中文。 |
+| `language` | `JP` | 日語。 |
+| `language` | `EN` | 英語；例如「英文字幕」就填 `EN`。 |
+| `subtitle` | `EXTERNAL` | 外掛字幕，字幕檔案獨立於影片檔案。 |
+| `subtitle` | `INTERNAL` | 內封軟字幕，字幕封裝在 MKV/MP4 內，可開關。 |
+| `subtitle` | `EMBEDDED` | 內嵌/硬字幕，字幕已壓進畫面，無法關閉。 |
+| `subtitle` | `NONE` | 無字幕；設定後語言會按空列表處理。 |
+| `format` | `MKV` / `MP4` / `AVI` / `WEBM` | 影片容器格式，不是編碼格式。 |
+
+如果不顯式傳這些欄位，服務端會先從 `title` 推斷，再從種子內部主檔名推斷。仍然無法識別時，預設值為 `resolution=1080p`、`format=MKV`、`subtitle=INTERNAL`、`language=["CHS"]`、`version=v1`；如果最終 `format=MP4`，預設字幕類型會更傾向 `EMBEDDED`。
 
 ## Nyaa 代發
 
@@ -186,6 +246,39 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 ```
 
 也可以使用結構化欄位 `sitePublish.nyaa.enabled` / `sitePublish.nyaa.category` / `sitePublish.nyaa.description`。生產代發仍應使用 multipart，因為本站需要校驗實際 torrent bytes 中的 Nyaa tracker。
+
+### Nyaa 代發欄位和分類
+
+| 表單欄位 | JSON 結構化欄位 | 必填 | 說明 |
+| -------- | --------------- | ---- | ---- |
+| `nyaa` | `sitePublish.nyaa.enabled` | 否 | 設為 `true` 表示請求 Nyaa 代發。只傳 `nyaaCategory` 等 Nyaa 欄位時，服務端也會視為啟用。 |
+| `nyaaCategory` | `sitePublish.nyaa.category` | 啟用代發時必填 | Nyaa 分類代碼，必須從下表選擇。普通中文動畫字幕常用 `1_3`。 |
+| `nyaaComplete` | `sitePublish.nyaa.complete` | 否 | 對應 Nyaa 的 Complete 標記；合集、全卷、全季等完整資源可設為 `true`。預設 `false`。 |
+| `nyaaRemake` | `sitePublish.nyaa.remake` | 否 | 對應 Nyaa 的 Remake 標記；重傳、修復版、重製版按需要設為 `true`。預設 `false`。 |
+| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 說明，最多 20000 字元。不傳時繼承本站 `notes`。 |
+| `nyaaInformation` | `sitePublish.nyaa.information` | 否 | Nyaa information 欄位，最多 500 字元，通常填寫官網、字幕組頁面、專案頁或相關說明連結。 |
+
+Nyaa 分類代碼必須原樣填寫：
+
+| 代碼 | Nyaa 分類 | 什麼時候用 |
+| ---- | --------- | ---------- |
+| `1_1` | Anime - AMV | 動畫音樂影片、剪輯、MAD/AMV。 |
+| `1_2` | Anime - English-translated | 英文翻譯動畫字幕。 |
+| `1_3` | Anime - Non-English-translated | 非英文翻譯動畫字幕。中文簡體、繁體、雙語中文字幕通常選這個。 |
+| `1_4` | Anime - Raw | 動畫 RAW，無翻譯字幕。 |
+| `2_1` | Audio - Lossless | 無損音訊，例如 FLAC、WAV。 |
+| `2_2` | Audio - Lossy | 有損音訊，例如 MP3、AAC、Opus。 |
+| `3_1` | Literature - English-translated | 英文翻譯漫畫、輕小說、書籍。 |
+| `3_2` | Literature - Non-English-translated | 非英文翻譯漫畫、輕小說、書籍。中文漫畫/小說通常選這個。 |
+| `3_3` | Literature - Raw | 未翻譯漫畫、輕小說、書籍原文。 |
+| `4_1` | Live Action - English-translated | 英文翻譯真人影視。 |
+| `4_2` | Live Action - Idol/Promotional Video | 偶像、宣傳影片、PV 類真人資源。 |
+| `4_3` | Live Action - Non-English-translated | 非英文翻譯真人影視。 |
+| `4_4` | Live Action - Raw | 真人影視 RAW。 |
+| `5_1` | Pictures - Graphics | CG、畫集、插畫、掃描圖等圖像資源。 |
+| `5_2` | Pictures - Photos | 照片寫真類資源。 |
+| `6_1` | Software - Applications | 應用軟體。 |
+| `6_2` | Software - Games | 遊戲。 |
 
 ## 預覽模式
 

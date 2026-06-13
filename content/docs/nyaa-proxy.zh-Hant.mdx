@@ -42,6 +42,8 @@ Nyaa 代發用於讓已開通白名單的字幕組，在本站釋出資源時同
   代發不會替你修改種子。請在製種階段就加入 `http://nyaa.tracker.wf:7777/announce`，否則本站會在提交前拒絕發佈到 Nyaa。
 </Callout>
 
+Nyaa 分類代碼必須按 Nyaa 官方代碼填寫。完整分類表、欄位別名和 API 引數含義見 [釋出資源 API 的 Nyaa 代發欄位](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類)。
+
 ## 釋出方式
 
 <Tabs items={['網頁釋出', 'API 釋出']}>
@@ -87,7 +89,7 @@ Nyaa 代發用於讓已開通白名單的字幕組，在本站釋出資源時同
       -F 'nyaaDescription=可選：覆蓋提交到 Nyaa 的 Markdown 說明'
     ```
 
-    `nyaaDescription` 不傳時，Nyaa 說明會繼承本站釋出說明 `notes`。
+    `nyaaDescription` 不傳時，Nyaa 說明會繼承本站釋出說明 `notes`。`nyaaCategory` 的完整可選值見 [釋出資源 API](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類)。
   </Tab>
 </Tabs>
 

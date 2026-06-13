@@ -64,7 +64,7 @@ Authorization: Bearer <YOUR_API_KEY>
 <TypeTable
   type={{
     'category': {
-      description: '資源分類：manga / music / raw / stage。',
+      description: '資源分類：manga / music / raw / stage。必須原樣填寫這些英文代碼。',
       type: 'enum',
       required: true,
     },
@@ -78,7 +78,7 @@ Authorization: Bearer <YOUR_API_KEY>
       type: 'file',
     },
     'magnetLink': {
-      description: '原始 magnet 連結。可與 torrent 同傳；tracker 會合併去重。',
+      description: '原始 magnet 連結。可與 torrent 同傳；tracker 會合併去重。欄位別名 magnet 也會被相容。',
       type: 'string',
     },
     'magnetBase64': {
@@ -94,11 +94,11 @@ Authorization: Bearer <YOUR_API_KEY>
       type: 'number',
     },
     'trackers': {
-      description: '附加 tracker 列表；JSON 用陣列，表單用換行分隔。',
+      description: '附加 tracker 列表；JSON 用陣列，表單用換行分隔；會與 magnet/torrent 中已有 tracker 合併去重。',
       type: 'string[]',
     },
     'notes': {
-      description: '釋出頁說明，支援 Markdown。',
+      description: '釋出頁說明，支援 Markdown，最多 50000 字元。',
       type: 'string',
     },
     'descriptionMarkdown': {
@@ -119,6 +119,34 @@ Authorization: Bearer <YOUR_API_KEY>
 <Callout type="info">
   `category` 和 `title` 必填；`torrent`、`torrentStorageId`、`magnetLink`、`magnetBase64` 至少提供一個。
 </Callout>
+
+## 引數值速查
+
+### 分類代碼
+
+`category` 不是中文名，必須填寫英文代碼：
+
+| 代碼 | 頁面分類 | RSS 路徑 | 什麼時候用 |
+| ---- | -------- | -------- | ---------- |
+| `manga` | 漫畫 | `/rss/other/manga.xml` | 漫畫、輕小說、書籍、畫冊等非番劇文字/圖像閱讀資源。 |
+| `music` | 音樂 | `/rss/other/music.xml` | OST、角色歌、專輯、單曲、演唱會音源、廣播劇音訊。 |
+| `raw` | RAW | `/rss/other/raw.xml` | 不綁定 Bangumi 番劇條目的 RAW 資源、合集、雜項影片源。 |
+| `stage` | 舞台劇 | `/rss/other/stage.xml` | 舞台劇、音樂劇、Live action 舞台相關資源。 |
+
+### 種子、磁力和說明欄位
+
+| 欄位 | 怎麼填 | 說明 |
+| ---- | ------ | ---- |
+| `torrent` | multipart 檔案欄位，`-F 'torrent=@release.torrent'` | 推薦方式。上傳後會寫入本站公共儲存，並從種子提取 magnet、檔案大小和 tracker。 |
+| `magnetLink` | 原始 `magnet:?xt=urn:btih:...` | JSON 或 multipart 都可傳。表單欄位 `magnet` 是相容別名。 |
+| `magnetBase64` | 原始 magnet 或 Base64 編碼後的 magnet | 與 `magnetLink` 二選一即可；存在 `torrent` 時通常不用手填。 |
+| `torrentStorageId` | 已上傳的公共 torrent key | 內部自動化場景使用。普通客戶端不要手工構造。 |
+| `fileSize` | 位元組數，例如 `734003200` | 上傳 torrent 時可自動提取；magnet 帶 `xl=` 時也可推斷。 |
+| `trackers` | JSON 陣列或 multipart 換行文字 | 追加 tracker。不要把多個 URL 寫成一個逗號字串，除非是 `customTags`。 |
+| `notes` | Markdown 文字 | 釋出頁和 RSS 描述使用。 |
+| `descriptionMarkdown` | Markdown 文字 | `notes` 的相容別名。`content`、`description`、`intro` 也會被相容為說明文字。 |
+| `customTags` | JSON 陣列或 multipart 逗號分隔 | 最多 20 個，每個最長 80 字元。例：`FLAC,BK,自購`。 |
+| `tags` | 同 `customTags` | `customTags` 的相容別名。 |
 
 ## 返回
 

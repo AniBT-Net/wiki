@@ -64,7 +64,7 @@ Authorization: Bearer <YOUR_API_KEY>
 <TypeTable
   type={{
     'category': {
-      description: 'Release category: manga / music / raw / stage.',
+      description: 'Release category: manga / music / raw / stage. Send these English codes exactly.',
       type: 'enum',
       required: true,
     },
@@ -78,7 +78,7 @@ Authorization: Bearer <YOUR_API_KEY>
       type: 'file',
     },
     'magnetLink': {
-      description: 'Raw magnet link. It can be sent together with torrent; trackers are merged and deduplicated.',
+      description: 'Raw magnet link. It can be sent together with torrent; trackers are merged and deduplicated. Field alias magnet is also accepted.',
       type: 'string',
     },
     'magnetBase64': {
@@ -94,11 +94,11 @@ Authorization: Bearer <YOUR_API_KEY>
       type: 'number',
     },
     'trackers': {
-      description: 'Extra tracker list. Use an array in JSON or newline-separated text in forms.',
+      description: 'Extra tracker list. Use an array in JSON or newline-separated text in forms. Merged and de-duplicated with trackers already in the magnet/torrent.',
       type: 'string[]',
     },
     'notes': {
-      description: 'Detail page description. Markdown is supported.',
+      description: 'Detail page description. Markdown is supported, up to 50000 characters.',
       type: 'string',
     },
     'descriptionMarkdown': {
@@ -119,6 +119,34 @@ Authorization: Bearer <YOUR_API_KEY>
 <Callout type="info">
   `category` and `title` are required. At least one of `torrent`, `torrentStorageId`, `magnetLink`, or `magnetBase64` must be provided.
 </Callout>
+
+## Value Reference
+
+### Category Codes
+
+`category` is not a display label. Send the English code exactly:
+
+| Code | Page category | RSS path | Use when |
+| ---- | ------------- | -------- | -------- |
+| `manga` | Manga | `/rss/other/manga.xml` | Manga, light novels, books, artbooks, and other reading/image resources not tied to an anime entry. |
+| `music` | Music | `/rss/other/music.xml` | OSTs, character songs, albums, singles, concert audio, drama CDs. |
+| `raw` | RAW | `/rss/other/raw.xml` | RAW resources, batches, or miscellaneous video sources not bound to a Bangumi anime entry. |
+| `stage` | Stage | `/rss/other/stage.xml` | Stage plays, musicals, and live-action stage-related resources. |
+
+### Torrent, Magnet, Notes, Tags
+
+| Field | How to fill it | Meaning |
+| ----- | -------------- | ------- |
+| `torrent` | multipart file field, `-F 'torrent=@release.torrent'` | Recommended. The server stores the torrent and extracts magnet, file size, and trackers. |
+| `magnetLink` | Raw `magnet:?xt=urn:btih:...` | Accepted in JSON or multipart. Form field `magnet` is a compatibility alias. |
+| `magnetBase64` | Raw magnet or Base64-encoded magnet | Alternative to `magnetLink`; usually unnecessary when `torrent` is uploaded. |
+| `torrentStorageId` | Existing public torrent key | Internal automation use. Normal clients should not construct this manually. |
+| `fileSize` | Byte count, e.g. `734003200` | Auto-extracted from torrent uploads; can also be inferred from magnet `xl=`. |
+| `trackers` | JSON array or multipart newline-separated text | Additional trackers. Do not send multiple URLs as a comma string; commas are for `customTags`. |
+| `notes` | Markdown text | Used on the release page and RSS description. |
+| `descriptionMarkdown` | Markdown text | Compatibility alias for `notes`. `content`, `description`, and `intro` are also accepted as note aliases. |
+| `customTags` | JSON array or multipart comma-separated text | Up to 20 tags, each up to 80 characters. Example: `FLAC,BK,self-purchased`. |
+| `tags` | Same as `customTags` | Compatibility alias for `customTags`. |
 
 ## Response
 

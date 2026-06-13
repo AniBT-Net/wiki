@@ -42,6 +42,8 @@ The platform Nyaa account is maintained by admins in the backend. Groups only ne
   Proxy publishing does not modify your torrent. Add `http://nyaa.tracker.wf:7777/announce` when creating the torrent, otherwise AniBT rejects the Nyaa submission before it is queued.
 </Callout>
 
+Nyaa categories must be sent with the official Nyaa category codes. See [Nyaa proxy fields in Publish a release](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories) for the full category table, field aliases, and API parameter meanings.
+
 ## Publish methods
 
 <Tabs items={['Web publish', 'API publish']}>
@@ -87,7 +89,7 @@ The platform Nyaa account is maintained by admins in the backend. Groups only ne
       -F 'nyaaDescription=Optional Markdown description for Nyaa'
     ```
 
-    When `nyaaDescription` is omitted, the Nyaa description inherits AniBT `notes`.
+    When `nyaaDescription` is omitted, the Nyaa description inherits AniBT `notes`. See [Publish a release](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories) for all accepted `nyaaCategory` values.
   </Tab>
 </Tabs>
 

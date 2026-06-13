@@ -68,13 +68,16 @@ Authorization: Bearer <YOUR_API_KEY>
 
 <TypeTable
   type={{
+    'animeId': {
+      description: 'AniBT internal anime id. Usually you do not need to pass it; bgmId is preferred. If both animeId and bgmId are present, animeId is resolved first.',
+      type: 'string',
+    },
     'bgmId': {
-      description: 'Bangumi subject id. Look it up via /api/bgm/search.',
+      description: 'Bangumi subject id. Look it up via /api/bgm/search. If omitted, the server tries to auto-match by torrent title; low-confidence matches become pending releases.',
       type: 'number',
-      required: true,
     },
     'title': {
-      description: 'Filename of the release, e.g. [Group] Show - 01 [1080p].mkv.',
+      description: 'Release filename, e.g. [Group] Show - 01 [1080p].mkv. Required for JSON; multipart can fall back to the torrent internal name.',
       type: 'string',
       required: true,
     },
@@ -84,7 +87,11 @@ Authorization: Bearer <YOUR_API_KEY>
       required: true,
     },
     'magnetBase64': {
-      description: 'Optional. Raw magnet URL or its Base64 encoding. Auto-extracted from the torrent if omitted.',
+      description: 'Raw magnet URL or its Base64 encoding. Required for JSON; auto-extracted from the torrent for multipart if omitted.',
+      type: 'string',
+    },
+    'torrentStorageId': {
+      description: 'Existing public torrent object key in AniBT storage. Intended for internal automation; normal clients should upload torrent.',
       type: 'string',
     },
     'episodeKey': {
@@ -115,8 +122,16 @@ Authorization: Bearer <YOUR_API_KEY>
       description: 'File size in bytes; auto-extracted from the torrent.',
       type: 'number',
     },
+    'publishedAt': {
+      description: 'Publish timestamp in milliseconds. Defaults to the server current time.',
+      type: 'number',
+    },
     'notes': {
-      description: 'Release notes — Markdown is supported.',
+      description: 'Release notes. Markdown is supported, up to 50000 characters.',
+      type: 'string',
+    },
+    'descriptionMarkdown': {
+      description: 'Compatibility alias for notes. content / description / intro are also accepted as note aliases.',
       type: 'string',
     },
     'trackers': {
@@ -129,7 +144,7 @@ Authorization: Bearer <YOUR_API_KEY>
       default: 'false',
     },
     'nyaaCategory': {
-      description: 'Nyaa category code, for example 1_3. Required when Nyaa proxy publishing is enabled.',
+      description: 'Nyaa category code. Required when Nyaa proxy publishing is enabled. Pick from the Nyaa category table below; Chinese anime subtitles usually use 1_3.',
       type: 'string',
     },
     'nyaaComplete': {
@@ -146,6 +161,10 @@ Authorization: Bearer <YOUR_API_KEY>
       description: 'Markdown description sent to Nyaa. When omitted, AniBT release notes are used.',
       type: 'string',
     },
+    'nyaaInformation': {
+      description: 'Override Nyaa information field, up to 500 characters. Usually a project page, group page, official site, or related link.',
+      type: 'string',
+    },
     'preview': {
       description: 'When true, only a temporary preview URL is generated (expires in 10 minutes); the release is NOT published to RSS / search / public pages.',
       type: 'boolean',
@@ -157,6 +176,47 @@ Authorization: Bearer <YOUR_API_KEY>
 <Callout type="info">
   `torrent` is **required** in multipart requests. `magnetBase64` is optional — when omitted, the backend extracts it from the torrent.
 </Callout>
+
+## Value Reference
+
+### Request Shape Differences
+
+| Scenario | How to send it |
+| -------- | -------------- |
+| Upload a `.torrent` | Use `multipart/form-data` with field name `torrent`, e.g. `-F 'torrent=@release.torrent'`. |
+| Magnet-only publish | Use JSON and pass `magnetBase64`. This field accepts either raw `magnet:?xt=...` or Base64-encoded magnet text. |
+| Multiple languages | JSON uses an array: `"language":["CHS","JP"]`; multipart may repeat the field: `-F 'language=CHS' -F 'language=JP'`, or send a JSON array string. |
+| Tracker list | JSON uses an array; multipart uses newline-separated text. The site merges and de-duplicates with defaults. |
+| Booleans | JSON uses `true/false`; multipart accepts `true/false`, `1/0`, `yes/no`, and `on/off`. |
+
+### Anime and Episode Fields
+
+| Field | Accepted values | Meaning |
+| ----- | --------------- | ------- |
+| `bgmId` | Bangumi subject id, e.g. `400602` | Recommended. Use [`/api/bgm/search`](/docs/open-api/bgm-search) to find it. |
+| `animeId` | AniBT internal `anime_...` / Convex document id string | Advanced usage. Do not fill this manually unless your system already stores AniBT anime ids. |
+| `episode` | Non-negative integer, e.g. `1`, `12` | Used for ordering. For custom `episodeKey` values such as `SP` or `BATCH`, pass `episode=0`. |
+| `episodeKey` | `01`, `1-12`, `13.5`, `SP`, `OVA`, `MOVIE`, `BATCH` | Used for display and de-duplication. Pure numeric values are normalized for de-duplication. |
+| `version` | `v1`, `v2`, `v2_fix` | Defaults to `v1`. Use `v2` for corrected re-releases. |
+
+If neither `bgmId` nor `animeId` is provided, the server attempts to match the anime from the title and torrent internal name. Low-confidence or failed matches are created as pending releases for later manual matching.
+
+### Resolution, Language, Subtitles, Format
+
+| Field | Value | Meaning |
+| ----- | ----- | ------- |
+| `resolution` | `4K` / `2160p` / `1080p` / `720p` / `480p` / `360p` | Values are case-sensitive. Common 4K releases may use either `2160p` or `4K`. |
+| `language` | `CHS` | Simplified Chinese. |
+| `language` | `CHT` | Traditional Chinese. |
+| `language` | `JP` | Japanese. |
+| `language` | `EN` | English; use this for English subtitles. |
+| `subtitle` | `EXTERNAL` | External subtitle files. |
+| `subtitle` | `INTERNAL` | Soft subtitles muxed in the container and toggleable. |
+| `subtitle` | `EMBEDDED` | Hard subtitles burned into the video. |
+| `subtitle` | `NONE` | No subtitles; language is stored as an empty list. |
+| `format` | `MKV` / `MP4` / `AVI` / `WEBM` | Container format, not codec. |
+
+When omitted, these fields are inferred from `title` first, then the torrent internal filename. Fallback defaults are `resolution=1080p`, `format=MKV`, `subtitle=INTERNAL`, `language=["CHS"]`, and `version=v1`; if the final format is `MP4`, the default subtitle type leans toward `EMBEDDED`.
 
 ## Nyaa proxy publishing
 
@@ -186,6 +246,39 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 ```
 
 Structured fields such as `sitePublish.nyaa.enabled`, `sitePublish.nyaa.category`, and `sitePublish.nyaa.description` are also accepted. Production Nyaa proxy publishing should still use multipart because AniBT validates the actual torrent bytes for the required tracker.
+
+### Nyaa Proxy Fields and Categories
+
+| Form field | JSON structured field | Required | Meaning |
+| ---------- | --------------------- | -------- | ------- |
+| `nyaa` | `sitePublish.nyaa.enabled` | No | Set to `true` to request Nyaa proxy publishing. Passing other Nyaa fields such as `nyaaCategory` also implies enabled. |
+| `nyaaCategory` | `sitePublish.nyaa.category` | Required when enabled | Nyaa category code. Pick one from the table below. Normal Chinese anime subtitles usually use `1_3`. |
+| `nyaaComplete` | `sitePublish.nyaa.complete` | No | Nyaa Complete flag. Use `true` for complete batches, full seasons, or full volumes. Defaults to `false`. |
+| `nyaaRemake` | `sitePublish.nyaa.remake` | No | Nyaa Remake flag. Use for re-uploads, fixes, or remakes when appropriate. Defaults to `false`. |
+| `nyaaDescription` | `sitePublish.nyaa.description` | No | Markdown description sent to Nyaa, up to 20000 characters. Falls back to AniBT `notes`. |
+| `nyaaInformation` | `sitePublish.nyaa.information` | No | Nyaa information field, up to 500 characters. Usually an official site, project page, group page, or related link. |
+
+Nyaa category codes must be sent exactly as shown:
+
+| Code | Nyaa category | Use when |
+| ---- | ------------- | -------- |
+| `1_1` | Anime - AMV | Anime music videos, edits, MAD/AMV. |
+| `1_2` | Anime - English-translated | Anime with English translation. |
+| `1_3` | Anime - Non-English-translated | Anime translated to languages other than English. Chinese subtitles usually use this. |
+| `1_4` | Anime - Raw | Anime RAW, no translation subtitles. |
+| `2_1` | Audio - Lossless | Lossless audio such as FLAC or WAV. |
+| `2_2` | Audio - Lossy | Lossy audio such as MP3, AAC, or Opus. |
+| `3_1` | Literature - English-translated | English-translated manga, light novels, books. |
+| `3_2` | Literature - Non-English-translated | Non-English-translated manga, light novels, books. Chinese literature releases usually use this. |
+| `3_3` | Literature - Raw | Untranslated manga, light novels, books. |
+| `4_1` | Live Action - English-translated | English-translated live action. |
+| `4_2` | Live Action - Idol/Promotional Video | Idol, promotional video, or PV live action content. |
+| `4_3` | Live Action - Non-English-translated | Non-English-translated live action. |
+| `4_4` | Live Action - Raw | Live action RAW. |
+| `5_1` | Pictures - Graphics | CG, artbooks, illustrations, scans, graphics. |
+| `5_2` | Pictures - Photos | Photo sets or photography. |
+| `6_1` | Software - Applications | Applications. |
+| `6_2` | Software - Games | Games. |
 
 ## Preview mode
 

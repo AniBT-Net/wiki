@@ -42,6 +42,8 @@ Nyaa 代发用于让已开通白名单的字幕组，在本站发布资源时同
   代发不会替你修改种子。请在制种阶段就加入 `http://nyaa.tracker.wf:7777/announce`，否则本站会在提交前拒绝发布到 Nyaa。
 </Callout>
 
+Nyaa 分类代码必须按 Nyaa 官方代码填写。完整分类表、字段别名和 API 参数含义见 [发布资源 API 的 Nyaa 代发字段](/docs/open-api/releases-publish#nyaa-代发字段和分类)。
+
 ## 发布方式
 
 <Tabs items={['网页发布', 'API 发布']}>
@@ -87,7 +89,7 @@ Nyaa 代发用于让已开通白名单的字幕组，在本站发布资源时同
       -F 'nyaaDescription=可选：覆盖提交到 Nyaa 的 Markdown 说明'
     ```
 
-    `nyaaDescription` 不传时，Nyaa 说明会继承本站发布说明 `notes`。
+    `nyaaDescription` 不传时，Nyaa 说明会继承本站发布说明 `notes`。`nyaaCategory` 的完整可选值见 [发布资源 API](/docs/open-api/releases-publish#nyaa-代发字段和分类)。
   </Tab>
 </Tabs>
 
