@@ -123,6 +123,29 @@ Authorization: Bearer <YOUR_API_KEY>
       description: 'Optional list of tracker URLs (one per line). Merged + de-duplicated with site defaults.',
       type: 'string[]',
     },
+    'nyaa': {
+      description: 'Set true to request Nyaa proxy publishing. Only allowlisted groups can use it, and torrent upload via multipart is required.',
+      type: 'boolean',
+      default: 'false',
+    },
+    'nyaaCategory': {
+      description: 'Nyaa category code, for example 1_3. Required when Nyaa proxy publishing is enabled.',
+      type: 'string',
+    },
+    'nyaaComplete': {
+      description: 'Whether to set Nyaa complete.',
+      type: 'boolean',
+      default: 'false',
+    },
+    'nyaaRemake': {
+      description: 'Whether to set Nyaa remake.',
+      type: 'boolean',
+      default: 'false',
+    },
+    'nyaaDescription': {
+      description: 'Markdown description sent to Nyaa. When omitted, AniBT release notes are used.',
+      type: 'string',
+    },
     'preview': {
       description: 'When true, only a temporary preview URL is generated (expires in 10 minutes); the release is NOT published to RSS / search / public pages.',
       type: 'boolean',
@@ -134,6 +157,35 @@ Authorization: Bearer <YOUR_API_KEY>
 <Callout type="info">
   `torrent` is **required** in multipart requests. `magnetBase64` is optional — when omitted, the backend extracts it from the torrent.
 </Callout>
+
+## Nyaa proxy publishing
+
+<Callout type="warn">
+  Nyaa proxy publishing is only available to allowlisted groups. Groups publishing supersampled or upscaled releases cannot apply for allowlist access. See the [Nyaa proxy guide](/en/docs/nyaa-proxy).
+</Callout>
+
+Nyaa proxy publishing must use `multipart/form-data` with a `.torrent` upload. The torrent's `announce` or `announce-list` must include:
+
+```txt title="Nyaa tracker"
+http://nyaa.tracker.wf:7777/announce
+```
+
+Create API keys at `/groups/<slug>/api-keys`. The in-app API reference is available at `/groups/<slug>/publish?tab=api`.
+
+```bash title="Publish to AniBT and request Nyaa proxy publishing"
+curl -X POST 'https://anibt.net/api/releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -F 'torrent=@release.torrent' \
+  -F 'title=[Group] Show Title - 01 [1080p][CHS]' \
+  -F 'bgmId=12345' \
+  -F 'nyaa=true' \
+  -F 'nyaaCategory=1_3' \
+  -F 'nyaaComplete=false' \
+  -F 'nyaaRemake=false' \
+  -F 'nyaaDescription=Optional Markdown description for Nyaa'
+```
+
+Structured fields such as `sitePublish.nyaa.enabled`, `sitePublish.nyaa.category`, and `sitePublish.nyaa.description` are also accepted. Production Nyaa proxy publishing should still use multipart because AniBT validates the actual torrent bytes for the required tracker.
 
 ## Preview mode
 

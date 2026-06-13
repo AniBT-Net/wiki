@@ -123,6 +123,29 @@ Authorization: Bearer <YOUR_API_KEY>
       description: '可選 tracker 地址列表，每行一個；將與站點預設 tracker 合併去重。',
       type: 'string[]',
     },
+    'nyaa': {
+      description: '設為 true 時請求 Nyaa 代發；僅對白名單字幕組開放，且必須使用 multipart 上傳 torrent。',
+      type: 'boolean',
+      default: 'false',
+    },
+    'nyaaCategory': {
+      description: 'Nyaa 分類代碼，例如 1_3。啟用 Nyaa 代發時必填。',
+      type: 'string',
+    },
+    'nyaaComplete': {
+      description: '是否設定 Nyaa complete 標記。',
+      type: 'boolean',
+      default: 'false',
+    },
+    'nyaaRemake': {
+      description: '是否設定 Nyaa remake 標記。',
+      type: 'boolean',
+      default: 'false',
+    },
+    'nyaaDescription': {
+      description: '覆蓋提交到 Nyaa 的 Markdown 說明；不傳時使用本站 notes。',
+      type: 'string',
+    },
     'preview': {
       description: '設為 true 時僅生成臨時預覽連結（10 分鐘後過期），不會實際釋出到 RSS、搜尋和前端頁面。',
       type: 'boolean',
@@ -134,6 +157,35 @@ Authorization: Bearer <YOUR_API_KEY>
 <Callout type="info">
   `torrent` 種子檔案**必填**（multipart）。`magnetBase64` 可選——不提供時後端會從種子檔案解析出磁力連結。
 </Callout>
+
+## Nyaa 代發
+
+<Callout type="warn">
+  Nyaa 代發僅對白名單字幕組開放。發佈超分資源者無法申請白名單；申請規則見 [Nyaa 代發說明](/zh-Hant/docs/nyaa-proxy)。
+</Callout>
+
+Nyaa 代發必須使用 `multipart/form-data` 上傳 `.torrent` 檔案，並且種子的 `announce` 或 `announce-list` 必須包含：
+
+```txt title="Nyaa tracker"
+http://nyaa.tracker.wf:7777/announce
+```
+
+API Key 在 `/groups/<slug>/api-keys` 建立；站內引數說明頁在 `/groups/<slug>/publish?tab=api`。
+
+```bash title="釋出到 AniBT 並請求 Nyaa 代發"
+curl -X POST 'https://anibt.net/api/releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -F 'torrent=@release.torrent' \
+  -F 'title=[字幕組] 作品名 - 01 [1080p][CHS]' \
+  -F 'bgmId=12345' \
+  -F 'nyaa=true' \
+  -F 'nyaaCategory=1_3' \
+  -F 'nyaaComplete=false' \
+  -F 'nyaaRemake=false' \
+  -F 'nyaaDescription=可選：覆蓋提交到 Nyaa 的 Markdown 說明'
+```
+
+也可以使用結構化欄位 `sitePublish.nyaa.enabled` / `sitePublish.nyaa.category` / `sitePublish.nyaa.description`。生產代發仍應使用 multipart，因為本站需要校驗實際 torrent bytes 中的 Nyaa tracker。
 
 ## 預覽模式
 

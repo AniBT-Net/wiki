@@ -1,0 +1,116 @@
+---
+title: Nyaa 代发
+description: 由 AniBT 后台代为提交资源到 Nyaa 的白名单功能。
+---
+
+Nyaa 代发用于让已开通白名单的字幕组，在本站发布资源时同步提交到 Nyaa。
+
+<Callout type="warn">
+  <strong className="text-red-600 dark:text-red-400">发布超分资源者无法申请白名单。</strong>
+
+  本站或者其他BT站，需累计发布次数 10 次及以上；若您发布次数未满 10 次却想发布至 Nyaa，视情况也可以申请白名单，但发布内容将经过人工审核。
+
+  （*必须提交资源为本人自制的相关图片以及 BT 发布记录图片）
+</Callout>
+
+## 使用前提
+
+<TypeTable
+  type={{
+    '字幕组白名单': {
+      description: '需要管理员在后台将字幕组加入 Nyaa 代发白名单。未加入白名单时，发布页面不会展示代发开关，API 请求也会被拒绝。',
+      type: 'required',
+    },
+    'Nyaa tracker': {
+      description: '提交的 .torrent 必须在 announce 或 announce-list 中包含 http://nyaa.tracker.wf:7777/announce。',
+      type: 'required',
+    },
+    'Nyaa 分类': {
+      description: '每次代发都必须选择 Nyaa 分类，例如 1_3 = Anime - Non-English-translated。',
+      type: 'required',
+    },
+    'Nyaa 说明': {
+      description: '默认继承本站发布说明（notes）；也可以在网页发布或 API 请求中单独覆盖。',
+      type: 'markdown',
+    },
+  }}
+/>
+
+<Callout type="warn">
+  代发不会替你修改种子。请在制种阶段就加入 `http://nyaa.tracker.wf:7777/announce`，否则本站会在提交前拒绝发布到 Nyaa。
+</Callout>
+
+## 发布方式
+
+<Tabs items={['网页发布', 'API 发布']}>
+  <Tab value="网页发布">
+    <Steps>
+      <Step>
+        ### 制作带 Nyaa tracker 的种子
+
+        在种子的 tracker 列表中加入：
+
+        ```txt title="Nyaa tracker"
+        http://nyaa.tracker.wf:7777/announce
+        ```
+      </Step>
+
+      <Step>
+        ### 打开字幕组发布页
+
+        进入 `/groups/<slug>/publish`。如果字幕组已加入白名单，页面会显示 **Nyaa 发布** 区块。
+      </Step>
+
+      <Step>
+        ### 开启代发并选择分类
+
+        打开代发开关，选择 Nyaa 分类。说明可以继承本站 notes，也可以单独填写 Markdown。
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="API 发布">
+    API 发布页位于 `/groups/<slug>/publish?tab=api`，API Key 在 `/groups/<slug>/api-keys` 创建。
+
+    ```bash title="Nyaa 代发 multipart 请求"
+    curl -X POST 'https://anibt.net/api/releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -F 'torrent=@release.torrent' \
+      -F 'title=[字幕组] 作品名 - 01 [1080p][CHS]' \
+      -F 'bgmId=12345' \
+      -F 'nyaa=true' \
+      -F 'nyaaCategory=1_3' \
+      -F 'nyaaComplete=false' \
+      -F 'nyaaRemake=false' \
+      -F 'nyaaDescription=可选：覆盖提交到 Nyaa 的 Markdown 说明'
+    ```
+
+    `nyaaDescription` 不传时，Nyaa 说明会继承本站发布说明 `notes`。
+  </Tab>
+</Tabs>
+
+## 与 Nyaa 同步的区别
+
+<TypeTable
+  type={{
+    'Nyaa 同步': {
+      description: '字幕组在站点同步设置中保存自己的 Nyaa session Cookie，发布后使用该账号同步到 Nyaa。Cookie 会过期，需要字幕组自行维护。',
+      type: '自备账号',
+    },
+    'Nyaa 代发': {
+      description: '字幕组申请白名单后，在发布时请求 AniBT 代为提交到 Nyaa。字幕组不需要维护 Nyaa Cookie，但必须遵守白名单和 tracker 要求。',
+      type: '白名单',
+    },
+  }}
+/>
+
+## 常见失败原因
+
+| 错误 | 处理 |
+| --- | --- |
+| 未加入白名单 | 联系管理员申请白名单，并按本页要求提交发布记录证明。 |
+| 缺少 Nyaa tracker | 重新制作种子，加入 `http://nyaa.tracker.wf:7777/announce`。 |
+| 未选择 Nyaa 分类 | 在发布页或 API 参数中传入 `nyaaCategory`。 |
+| 提交的是 JSON 而不是 torrent 文件 | Nyaa 代发需要服务端校验实际 torrent bytes，请使用 multipart 上传 `.torrent`。 |
+
+更多接口字段见 [发布资源 API](/docs/open-api/releases-publish)，自备账号同步见 [Nyaa 同步](/docs/site-sync/nyaa)。

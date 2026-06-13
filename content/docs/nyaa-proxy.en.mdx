@@ -1,0 +1,116 @@
+---
+title: Nyaa proxy publishing
+description: Allowlisted subtitle groups can ask AniBT to submit releases to Nyaa after publishing on the site.
+---
+
+Nyaa proxy publishing lets an allowlisted subtitle group submit a release to Nyaa while publishing it on AniBT.
+
+<Callout type="warn">
+  <strong className="text-red-600 dark:text-red-400">Groups publishing supersampled or upscaled releases cannot apply for the allowlist.</strong>
+
+  You should have at least 10 cumulative releases on AniBT or other BT sites. If you have fewer than 10 releases but still want to publish to Nyaa, you may apply case by case, but the submitted release will go through manual review.
+
+  (*You must provide related images proving the release is self-made, plus screenshots of your BT publishing record.)
+</Callout>
+
+## Requirements
+
+<TypeTable
+  type={{
+    'Group allowlist': {
+      description: 'An admin must add the subtitle group to the Nyaa proxy allowlist. Without allowlist access, the publish page will not show the proxy switch and API requests are rejected.',
+      type: 'required',
+    },
+    'Nyaa tracker': {
+      description: 'The uploaded .torrent must include http://nyaa.tracker.wf:7777/announce in announce or announce-list.',
+      type: 'required',
+    },
+    'Nyaa category': {
+      description: 'Every proxy publish must include a Nyaa category, for example 1_3 = Anime - Non-English-translated.',
+      type: 'required',
+    },
+    'Nyaa description': {
+      description: 'By default, the Nyaa description inherits AniBT release notes. You can override it from the web form or API request.',
+      type: 'Markdown',
+    },
+  }}
+/>
+
+<Callout type="warn">
+  Proxy publishing does not modify your torrent. Add `http://nyaa.tracker.wf:7777/announce` when creating the torrent, otherwise AniBT rejects the Nyaa submission before it is queued.
+</Callout>
+
+## Publish methods
+
+<Tabs items={['Web publish', 'API publish']}>
+  <Tab value="Web publish">
+    <Steps>
+      <Step>
+        ### Create a torrent with the Nyaa tracker
+
+        Add this tracker to the torrent:
+
+        ```txt title="Nyaa tracker"
+        http://nyaa.tracker.wf:7777/announce
+        ```
+      </Step>
+
+      <Step>
+        ### Open the group publish page
+
+        Go to `/groups/<slug>/publish`. If the group is allowlisted, the page shows the **Nyaa Publish** section.
+      </Step>
+
+      <Step>
+        ### Enable proxy publishing and choose a category
+
+        Turn on proxy publishing and select a Nyaa category. The description can inherit site notes or use custom Markdown.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="API publish">
+    The API publish page is `/groups/<slug>/publish?tab=api`. Create API keys at `/groups/<slug>/api-keys`.
+
+    ```bash title="Nyaa proxy multipart request"
+    curl -X POST 'https://anibt.net/api/releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -F 'torrent=@release.torrent' \
+      -F 'title=[Group] Show Title - 01 [1080p][CHS]' \
+      -F 'bgmId=12345' \
+      -F 'nyaa=true' \
+      -F 'nyaaCategory=1_3' \
+      -F 'nyaaComplete=false' \
+      -F 'nyaaRemake=false' \
+      -F 'nyaaDescription=Optional Markdown description for Nyaa'
+    ```
+
+    When `nyaaDescription` is omitted, the Nyaa description inherits AniBT `notes`.
+  </Tab>
+</Tabs>
+
+## Difference from Nyaa Sync
+
+<TypeTable
+  type={{
+    'Nyaa Sync': {
+      description: 'The group saves its own Nyaa session Cookie in site sync settings. After publishing, AniBT syncs using that account. Cookies expire and must be maintained by the group.',
+      type: 'own account',
+    },
+    'Nyaa proxy publishing': {
+      description: 'After allowlist approval, the group asks AniBT to submit to Nyaa during publishing. The group does not maintain a Nyaa Cookie, but must follow allowlist and tracker requirements.',
+      type: 'allowlist',
+    },
+  }}
+/>
+
+## Common failures
+
+| Error | Fix |
+| --- | --- |
+| Group is not allowlisted | Contact an admin and apply with publishing-record evidence. |
+| Missing Nyaa tracker | Recreate the torrent with `http://nyaa.tracker.wf:7777/announce`. |
+| Nyaa category is missing | Pass `nyaaCategory` in the web form or API request. |
+| JSON request instead of torrent upload | Nyaa proxy publishing requires server-side validation of actual torrent bytes. Use multipart and upload the `.torrent`. |
+
+For all API fields, see [Publish a release](/en/docs/open-api/releases-publish). For own-account sync, see [Nyaa Sync](/en/docs/site-sync/nyaa).
