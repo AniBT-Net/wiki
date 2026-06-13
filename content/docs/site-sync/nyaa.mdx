@@ -1,52 +1,42 @@
 ---
 title: Nyaa 同步
-description: 在 AniBT 中填写 Nyaa 同步所需 session Cookie。
+description: 在 AniBT 中填写 Nyaa 同步所需账号密码。
 ---
 
-Nyaa 通过浏览器 Cookie 鉴权，从 DevTools 中复制 `session` 字段即可。
+Nyaa 同步使用 Nyaa 官方 `/api/upload` 接口。字幕组在 AniBT 中保存自己的 Nyaa 用户名和密码后，发布资源时由后台 worker 使用该账号同步到 Nyaa。
 
 <Callout type="warn">
-  Nyaa Cookie 有效期**仅一个月**，需要定期更新。粘贴前请手动加上前缀 `session=`。
+  凭据会加密保存，但仍应使用专门用于发布的 Nyaa 账号，不要共用个人主账号密码。
 </Callout>
 
 <Callout type="info">
-  如果不想维护 Nyaa Cookie，可以申请 [Nyaa 代发白名单](/docs/nyaa-proxy)。代发与同步是两个功能：同步使用字幕组自己的 Cookie，代发需要管理员开通白名单。
+  也可以申请 [Nyaa 代发白名单](/docs/nyaa-proxy)。代发与同步是两个功能：同步使用字幕组自己的 Nyaa 账号，代发需要管理员开通白名单。
 </Callout>
 
 ## 操作步骤
 
 <Steps>
   <Step>
-    ### 打开 DevTools
+    ### 准备 Nyaa 账号
 
-    在 Nyaa 已登录状态下按 <kbd>F12</kbd> 打开 **DevTools**，切换到顶栏的 **Application（应用）**。
+    确认该账号可以在 Nyaa 正常发布资源。建议使用字幕组发布专用账号。
   </Step>
 
   <Step>
-    ### 定位 session Cookie
+    ### 打开同步设置
 
-    在侧栏 **Storage（存储）** → **Cookie** 下展开 `https://nyaa.si`，从名称列中点击 **session**，下方会显示 Cookie Value。
+    在 AniBT 进入字幕组后台的同步设置页，找到 **Nyaa 同步**。
   </Step>
 
   <Step>
-    ### 复制 Cookie 值
+    ### 填写用户名和密码
 
-    复制 Cookie Value 这一长串内容：
-
-    ```txt title="DevTools 中复制到的内容"
-    eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
-    ```
-
-    ![Nyaa session Cookie](/images/site-sync/nyaa-session-cookie.webp)
+    输入 Nyaa 用户名和密码。保存后页面只会显示脱敏账号后缀，不会展示明文密码。
   </Step>
 
   <Step>
-    ### 加上 `session=` 前缀后填入
+    ### 测试账号
 
-    在 AniBT 中粘贴时**手动补上前缀**：
-
-    ```txt title="最终填入 AniBT 的内容"
-    session=eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
-    ```
+    点击 **测试账号**。测试会由后台 worker 调用 Nyaa API 做认证探测，不会上传真实资源。
   </Step>
 </Steps>

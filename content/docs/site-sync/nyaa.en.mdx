@@ -1,52 +1,42 @@
 ---
 title: Nyaa Sync
-description: Fill in the session Cookie required by AniBT's Nyaa sync.
+description: Fill in the account credential required by AniBT's Nyaa sync.
 ---
 
-Nyaa authenticates by browser cookie. Copy the `session` value from DevTools.
+Nyaa Sync uses Nyaa's official `/api/upload` endpoint. After a subtitle group stores its own Nyaa username and password in AniBT, the background worker uses that account to sync releases to Nyaa.
 
 <Callout type="warn">
-  Nyaa cookies expire after **one month** and must be refreshed periodically. Manually prepend `session=` before saving.
+  Credentials are encrypted at rest, but you should still use a dedicated Nyaa publishing account instead of a personal main account.
 </Callout>
 
 <Callout type="info">
-  If you do not want to maintain a Nyaa Cookie, apply for the [Nyaa proxy allowlist](/en/docs/nyaa-proxy). Sync and proxy publishing are separate features: sync uses your group's own Cookie; proxy publishing requires admin allowlist approval.
+  You can also apply for the [Nyaa proxy allowlist](/en/docs/nyaa-proxy). Sync and proxy publishing are separate features: sync uses your group's own Nyaa account; proxy publishing requires admin allowlist approval.
 </Callout>
 
 ## Steps
 
 <Steps>
   <Step>
-    ### Open DevTools
+    ### Prepare a Nyaa account
 
-    Logged in to Nyaa, press <kbd>F12</kbd> to open **DevTools**, then switch to the **Application** tab.
+    Confirm that the account can publish on Nyaa. A dedicated group publishing account is recommended.
   </Step>
 
   <Step>
-    ### Locate the session cookie
+    ### Open sync settings
 
-    In the sidebar, expand **Storage** → **Cookie** → `https://nyaa.si`. Click **session** in the name list — its value appears below.
+    In AniBT, open the group settings page and find **Nyaa Sync**.
   </Step>
 
   <Step>
-    ### Copy the cookie value
+    ### Enter username and password
 
-    Copy the long value:
-
-    ```txt title="Value copied from DevTools"
-    eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
-    ```
-
-    ![Nyaa session Cookie](/images/site-sync/nyaa-session-cookie.webp)
+    Enter the Nyaa username and password. After saving, the page only shows a masked account suffix and never displays the plaintext password.
   </Step>
 
   <Step>
-    ### Add the `session=` prefix and save
+    ### Test the account
 
-    When pasting into AniBT, **manually prepend** `session=`:
-
-    ```txt title="Final value saved in AniBT"
-    session=eyJfcGVybWFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxKFCv50xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxNTQ4OTl9.axxxxg.jC7nBl0pLs08BP-gXnktlEbIxKc
-    ```
+    Click **Test account**. The background worker performs a Nyaa API authentication probe and does not upload a real release.
   </Step>
 </Steps>

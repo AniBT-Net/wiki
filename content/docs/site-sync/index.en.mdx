@@ -39,7 +39,7 @@ Site sync pushes a release you publish on AniBT to the external sites you have c
   <Card title="DMHY Sync" href="/docs/site-sync/dmhy" description="Enter your username, password, and subtitle group name." />
   <Card title="ACGNX Sync" href="/docs/site-sync/acgnx" description="Copy the UID and API Token." />
   <Card title="ACG.rip Sync" href="/docs/site-sync/acgrip" description="Copy the API Token from the dashboard." />
-  <Card title="Nyaa Sync" href="/docs/site-sync/nyaa" description="Copy the session Cookie and add the required prefix." />
+  <Card title="Nyaa Sync" href="/docs/site-sync/nyaa" description="Enter the Nyaa username and password." />
 </Cards>
 
 ## Credential Cheat Sheet
@@ -67,8 +67,8 @@ Site sync pushes a release you publish on AniBT to the external sites you have c
       type: 'API Token',
     },
     'Nyaa': {
-      description: 'Requires the session Cookie; add the `session=` prefix manually when pasting it into AniBT.',
-      type: 'Cookie',
+      description: 'Requires a Nyaa username and password; releases are uploaded through Nyaa API.',
+      type: 'username + password',
     },
   }}
 />

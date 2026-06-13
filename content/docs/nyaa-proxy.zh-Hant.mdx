@@ -5,6 +5,8 @@ description: 由 AniBT 後臺代為提交資源到 Nyaa 的白名單功能。
 
 Nyaa 代發用於讓已開通白名單的字幕組，在本站釋出資源時同步提交到 Nyaa。
 
+平台 Nyaa 帳號由管理員在後臺維護，字幕組只需要通過白名單並在釋出時提交符合要求的種子和引數。
+
 <Callout type="warn">
   <strong className="text-red-600 dark:text-red-400">發佈超分資源者無法申請白名單。</strong>
 
@@ -94,11 +96,11 @@ Nyaa 代發用於讓已開通白名單的字幕組，在本站釋出資源時同
 <TypeTable
   type={{
     'Nyaa 同步': {
-      description: '字幕組在站點同步設定中保存自己的 Nyaa session Cookie，釋出後使用該帳號同步到 Nyaa。Cookie 會過期，需要字幕組自行維護。',
+      description: '字幕組在站點同步設定中保存自己的 Nyaa 使用者名稱和密碼，釋出後使用該帳號透過 Nyaa API 同步。',
       type: '自備帳號',
     },
     'Nyaa 代發': {
-      description: '字幕組申請白名單後，在釋出時請求 AniBT 代為提交到 Nyaa。字幕組不需要維護 Nyaa Cookie，但必須遵守白名單和 tracker 要求。',
+      description: '字幕組申請白名單後，在釋出時請求 AniBT 代為提交到 Nyaa。字幕組不需要維護平台 Nyaa 憑據，但必須遵守白名單和 tracker 要求。',
       type: '白名單',
     },
   }}

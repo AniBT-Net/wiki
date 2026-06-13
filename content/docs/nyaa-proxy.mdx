@@ -5,6 +5,8 @@ description: 由 AniBT 后台代为提交资源到 Nyaa 的白名单功能。
 
 Nyaa 代发用于让已开通白名单的字幕组，在本站发布资源时同步提交到 Nyaa。
 
+平台 Nyaa 账号由管理员在后台维护，字幕组只需要通过白名单并在发布时提交符合要求的种子和参数。
+
 <Callout type="warn">
   <strong className="text-red-600 dark:text-red-400">发布超分资源者无法申请白名单。</strong>
 
@@ -94,11 +96,11 @@ Nyaa 代发用于让已开通白名单的字幕组，在本站发布资源时同
 <TypeTable
   type={{
     'Nyaa 同步': {
-      description: '字幕组在站点同步设置中保存自己的 Nyaa session Cookie，发布后使用该账号同步到 Nyaa。Cookie 会过期，需要字幕组自行维护。',
+      description: '字幕组在站点同步设置中保存自己的 Nyaa 用户名和密码，发布后使用该账号通过 Nyaa API 同步。',
       type: '自备账号',
     },
     'Nyaa 代发': {
-      description: '字幕组申请白名单后，在发布时请求 AniBT 代为提交到 Nyaa。字幕组不需要维护 Nyaa Cookie，但必须遵守白名单和 tracker 要求。',
+      description: '字幕组申请白名单后，在发布时请求 AniBT 代为提交到 Nyaa。字幕组不需要维护平台 Nyaa 凭据，但必须遵守白名单和 tracker 要求。',
       type: '白名单',
     },
   }}

@@ -5,6 +5,8 @@ description: Allowlisted subtitle groups can ask AniBT to submit releases to Nya
 
 Nyaa proxy publishing lets an allowlisted subtitle group submit a release to Nyaa while publishing it on AniBT.
 
+The platform Nyaa account is maintained by admins in the backend. Groups only need allowlist approval and must provide a compliant torrent plus publish parameters.
+
 <Callout type="warn">
   <strong className="text-red-600 dark:text-red-400">Groups publishing supersampled or upscaled releases cannot apply for the allowlist.</strong>
 
@@ -94,11 +96,11 @@ Nyaa proxy publishing lets an allowlisted subtitle group submit a release to Nya
 <TypeTable
   type={{
     'Nyaa Sync': {
-      description: 'The group saves its own Nyaa session Cookie in site sync settings. After publishing, AniBT syncs using that account. Cookies expire and must be maintained by the group.',
+      description: 'The group saves its own Nyaa username and password in site sync settings. After publishing, AniBT syncs through Nyaa API using that account.',
       type: 'own account',
     },
     'Nyaa proxy publishing': {
-      description: 'After allowlist approval, the group asks AniBT to submit to Nyaa during publishing. The group does not maintain a Nyaa Cookie, but must follow allowlist and tracker requirements.',
+      description: 'After allowlist approval, the group asks AniBT to submit to Nyaa during publishing. The group does not maintain the platform Nyaa credential, but must follow allowlist and tracker requirements.',
       type: 'allowlist',
     },
   }}

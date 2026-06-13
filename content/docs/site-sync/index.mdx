@@ -39,7 +39,7 @@ description: 把 AniBT 发布同步到萌番组、Mikan、动漫花园、末日�
   <Card title="动漫花园同步" href="/docs/site-sync/dmhy" description="填写账号、密码和字幕组名称。" />
   <Card title="末日站同步" href="/docs/site-sync/acgnx" description="复制 UID 与 API Token。" />
   <Card title="ACG.rip 同步" href="/docs/site-sync/acgrip" description="复制仪表盘中的 API Token。" />
-  <Card title="Nyaa 同步" href="/docs/site-sync/nyaa" description="复制 session Cookie 并补上前缀。" />
+  <Card title="Nyaa 同步" href="/docs/site-sync/nyaa" description="填写 Nyaa 用户名和密码。" />
 </Cards>
 
 ## 凭据速查
@@ -67,8 +67,8 @@ description: 把 AniBT 发布同步到萌番组、Mikan、动漫花园、末日�
       type: 'API Token',
     },
     'Nyaa': {
-      description: '需要 session Cookie；粘贴到 AniBT 时要手动补上 `session=` 前缀。',
-      type: 'Cookie',
+      description: '需要 Nyaa 用户名和密码；发布时通过 Nyaa API 上传。',
+      type: '账号密码',
     },
   }}
 />
