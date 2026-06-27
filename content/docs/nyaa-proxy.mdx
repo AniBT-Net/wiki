@@ -90,6 +90,23 @@ Nyaa 分类代码必须按 Nyaa 官方代码填写。完整分类表、字段别
     ```
 
     `nyaaDescription` 不传时，Nyaa 说明会继承本站发布说明 `notes`。`nyaaCategory` 的完整可选值见 [发布资源 API](/docs/open-api/releases-publish#nyaa-代发字段和分类)。
+
+    其他类资源使用同一组参数，只是端点和基础字段不同：
+
+    ```bash title="其他类资源 Nyaa 代发"
+    curl -X POST 'https://anibt.net/api/other-releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -F 'category=manga' \
+      -F 'title=Example Manga Vol.01' \
+      -F 'torrent=@release.torrent' \
+      -F 'nyaa=true' \
+      -F 'nyaaCategory=3_2' \
+      -F 'nyaaComplete=false' \
+      -F 'nyaaRemake=false' \
+      -F 'nyaaDescription=可选：覆盖提交到 Nyaa 的 Markdown 说明'
+    ```
+
+    其他类资源的完整参数见 [发布其他类资源 API](/docs/open-api/other-releases-publish#nyaa-代发)。
   </Tab>
 </Tabs>
 
@@ -117,4 +134,4 @@ Nyaa 分类代码必须按 Nyaa 官方代码填写。完整分类表、字段别
 | 未选择 Nyaa 分类 | 在发布页或 API 参数中传入 `nyaaCategory`。 |
 | 提交的是 JSON 而不是 torrent 文件 | Nyaa 代发需要服务端校验实际 torrent bytes，请使用 multipart 上传 `.torrent`。 |
 
-更多接口字段见 [发布资源 API](/docs/open-api/releases-publish)，自备账号同步见 [Nyaa 同步](/docs/site-sync/nyaa)。
+更多接口字段见 [发布资源 API](/docs/open-api/releases-publish) 和 [发布其他类资源 API](/docs/open-api/other-releases-publish)，自备账号同步见 [Nyaa 同步](/docs/site-sync/nyaa)。

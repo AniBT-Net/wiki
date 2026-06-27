@@ -22,7 +22,7 @@ Authorization: Bearer <YOUR_API_KEY>
 
 <Tabs items={['multipart/form-data（推荐）', 'application/json']}>
   <Tab value="multipart/form-data（推荐）">
-    上传 `.torrent` 文件，后端会自动提取磁力链接、标题、文件大小和 tracker。`category` 与 `title` 仍建议显式传入。
+    上传 `.torrent` 文件，后端会自动提取磁力链接、标题、文件大小和 tracker。`category` 与 `title` 仍建议显式传入。需要 Nyaa 代发时也必须使用这种格式。
 
     ```bash title="上传其他类种子"
     curl -X POST 'https://anibt.net/api/other-releases/publish' \
@@ -31,6 +31,11 @@ Authorization: Bearer <YOUR_API_KEY>
       -F 'title=Example Manga Vol.01' \
       -F 'customTags=电子版,中文' \
       -F 'notes=发布说明支持 Markdown。' \
+      -F 'nyaa=true' \
+      -F 'nyaaCategory=3_2' \
+      -F 'nyaaComplete=false' \
+      -F 'nyaaRemake=false' \
+      -F 'nyaaDescription=可选：覆盖提交到 Nyaa 的 Markdown 说明' \
       -F 'torrent=@/path/to/release.torrent'
     ```
 
@@ -58,6 +63,49 @@ Authorization: Bearer <YOUR_API_KEY>
     `magnetBase64` 也可使用；它既接受原始 magnet，也接受 Base64 编码后的 magnet。
   </Tab>
 </Tabs>
+
+## Nyaa 代发
+
+其他类发布 API 使用和 [`/api/releases/publish`](/docs/open-api/releases-publish#nyaa-代发字段和分类) 相同的 Nyaa 代发参数。启用后，发布记录会先写入 AniBT，再由后台 `release_sync` 队列提交到 Nyaa。
+
+<Callout type="warn">
+  Nyaa 代发仅对白名单字幕组开放，并且必须使用 `multipart/form-data` 上传 `.torrent` 文件。种子的 `announce` 或 `announce-list` 必须包含 `http://nyaa.tracker.wf:7777/announce`，否则请求会被拒绝。
+</Callout>
+
+常用分类示例：
+
+| 内容 | 建议 `nyaaCategory` | Nyaa 分类 |
+| ---- | ------------------ | --------- |
+| 漫画 / 轻小说翻译 | `3_2` | Literature - Non-English-translated |
+| 无损音乐 / BK | `2_1` | Audio - Lossless |
+| RAW 或实拍视频 | `4_4` | Live Action - Raw |
+| 如果内容本质仍是动画 RAW | `1_4` | Anime - Raw |
+
+```bash title="其他类资源 + Nyaa 代发"
+curl -X POST 'https://anibt.net/api/other-releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -F 'category=manga' \
+  -F 'title=Example Manga Vol.01' \
+  -F 'notes=发布说明支持 Markdown。' \
+  -F 'torrent=@/path/to/release.torrent' \
+  -F 'nyaa=true' \
+  -F 'nyaaCategory=3_2' \
+  -F 'nyaaComplete=false' \
+  -F 'nyaaRemake=false' \
+  -F 'nyaaDescription=可选：覆盖提交到 Nyaa 的 Markdown 说明' \
+  -F 'nyaaInformation=https://anibt.net/group/example'
+```
+
+字段别名和结构化 JSON 形态与番剧发布一致：
+
+| 表单别名 | 结构化字段 | 必填 | 含义 |
+| -------- | ---------- | ---- | ---- |
+| `nyaa` / `publishToNyaa` | `sitePublish.nyaa.enabled` | 否 | 设为 `true` 表示请求 Nyaa 代发。只传 `nyaaCategory` 等 Nyaa 字段时，服务端也会视为启用。 |
+| `nyaaCategory` | `sitePublish.nyaa.category` | 启用代发时必填 | Nyaa 分类代码，必须使用 Nyaa 官方代码。完整代码表见 [发布资源 API](/docs/open-api/releases-publish#nyaa-代发字段和分类)。 |
+| `nyaaComplete` | `sitePublish.nyaa.complete` | 否 | 对应 Nyaa 的 Complete 标记；合集、全卷、全季等完整资源可设为 `true`。默认 `false`。 |
+| `nyaaRemake` | `sitePublish.nyaa.remake` | 否 | 对应 Nyaa 的 Remake 标记；重传、修复版、重制版按需要设为 `true`。默认 `false`。 |
+| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 说明，最多 20000 字符。不传时继承本站 `notes`。 |
+| `nyaaInformation` | `sitePublish.nyaa.information` | 否 | Nyaa information 字段，最多 500 字符，通常填写官网、字幕组页面、项目页或相关说明链接。 |
 
 ## 参数
 

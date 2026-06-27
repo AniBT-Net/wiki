@@ -22,7 +22,7 @@ Authorization: Bearer <YOUR_API_KEY>
 
 <Tabs items={['multipart/form-data (recommended)', 'application/json']}>
   <Tab value="multipart/form-data (recommended)">
-    Upload a `.torrent` file. The backend extracts the magnet, title, file size, and trackers automatically. Sending `category` and `title` explicitly is still recommended.
+    Upload a `.torrent` file. The backend extracts the magnet, title, file size, and trackers automatically. Sending `category` and `title` explicitly is still recommended. Nyaa proxy publishing also requires this request shape.
 
     ```bash title="Upload an other release torrent"
     curl -X POST 'https://anibt.net/api/other-releases/publish' \
@@ -31,6 +31,11 @@ Authorization: Bearer <YOUR_API_KEY>
       -F 'title=Example Manga Vol.01' \
       -F 'customTags=digital,english' \
       -F 'notes=Release notes support Markdown.' \
+      -F 'nyaa=true' \
+      -F 'nyaaCategory=3_2' \
+      -F 'nyaaComplete=false' \
+      -F 'nyaaRemake=false' \
+      -F 'nyaaDescription=Optional Markdown description for Nyaa' \
       -F 'torrent=@/path/to/release.torrent'
     ```
 
@@ -58,6 +63,49 @@ Authorization: Bearer <YOUR_API_KEY>
     `magnetBase64` is also accepted; it can contain either the raw magnet or a Base64-encoded magnet.
   </Tab>
 </Tabs>
+
+## Nyaa proxy publishing
+
+The other release publish API accepts the same Nyaa proxy parameters as [`/api/releases/publish`](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories). When enabled, the release is written to AniBT first, then a background `release_sync` job submits it to Nyaa.
+
+<Callout type="warn">
+  Nyaa proxy publishing is only available to allowlisted groups and must use `multipart/form-data` with a `.torrent` upload. The torrent's `announce` or `announce-list` must include `http://nyaa.tracker.wf:7777/announce`, otherwise the request is rejected.
+</Callout>
+
+Common category examples:
+
+| Content | Suggested `nyaaCategory` | Nyaa category |
+| ------- | ------------------------ | ------------- |
+| Translated manga / light novels | `3_2` | Literature - Non-English-translated |
+| Lossless music / BK | `2_1` | Audio - Lossless |
+| RAW or live-action video | `4_4` | Live Action - Raw |
+| Content that is still anime RAW | `1_4` | Anime - Raw |
+
+```bash title="Other release + Nyaa proxy publishing"
+curl -X POST 'https://anibt.net/api/other-releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -F 'category=manga' \
+  -F 'title=Example Manga Vol.01' \
+  -F 'notes=Release notes support Markdown.' \
+  -F 'torrent=@/path/to/release.torrent' \
+  -F 'nyaa=true' \
+  -F 'nyaaCategory=3_2' \
+  -F 'nyaaComplete=false' \
+  -F 'nyaaRemake=false' \
+  -F 'nyaaDescription=Optional Markdown description for Nyaa' \
+  -F 'nyaaInformation=https://anibt.net/group/example'
+```
+
+Aliases and structured JSON fields match anime publishing:
+
+| Form alias | Structured field | Required | Meaning |
+| ---------- | ---------------- | -------- | ------- |
+| `nyaa` / `publishToNyaa` | `sitePublish.nyaa.enabled` | No | Set to `true` to request Nyaa proxy publishing. Passing other Nyaa fields such as `nyaaCategory` also implies enabled. |
+| `nyaaCategory` | `sitePublish.nyaa.category` | Required when enabled | Nyaa category code. Use official Nyaa codes. See [Publish a release](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories) for the full table. |
+| `nyaaComplete` | `sitePublish.nyaa.complete` | No | Nyaa Complete flag. Use `true` for complete batches, full volumes, or full seasons. Defaults to `false`. |
+| `nyaaRemake` | `sitePublish.nyaa.remake` | No | Nyaa Remake flag. Use for re-uploads, fixes, or remakes when appropriate. Defaults to `false`. |
+| `nyaaDescription` | `sitePublish.nyaa.description` | No | Markdown description sent to Nyaa, up to 20000 characters. Falls back to AniBT `notes`. |
+| `nyaaInformation` | `sitePublish.nyaa.information` | No | Nyaa information field, up to 500 characters. Usually an official site, group page, project page, or related link. |
 
 ## Parameters
 
