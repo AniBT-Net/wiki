@@ -9,6 +9,25 @@ description: AniBT Wiki 与站点功能更新记录。
   日期按北京时间（UTC+8）记录。较新的更新会放在更靠前的位置。
 </Callout>
 
+## 2026 年 6 月 30 日
+
+<TypeTable
+  type={{
+    '公开 JSON API 缓存': {
+      description: '更新 /api/seasons/anime、/api/anime/groups、/api/subtitle-groups、搜索与 lookup 端点的 Cache-Control、SWR、stale-if-error 和 ETag 说明，明确浏览器端默认重新验证、CDN 端共享缓存。',
+      type: '文档',
+    },
+    '季度番剧排播状态': {
+      description: '为 /api/seasons/anime 文档补充 scheduleStatus 与 scheduleSummary，说明 missing_source 表示 Bangumi/BGMWiki/Typesense 源字段缺失，不等同于本站缓存未更新。',
+      type: '文档',
+    },
+    '公开 API 限流表': {
+      description: '补全 /api/animes/search、/api/animes/torrent-match、/api/anime/lookup、/api/mikan/group-lookup 的默认 limit、缓存和限流说明。',
+      type: '文档',
+    },
+  }}
+/>
+
 ## 2026 年 6 月 27 日
 
 <TypeTable

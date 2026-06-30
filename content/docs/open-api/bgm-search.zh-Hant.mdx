@@ -108,6 +108,14 @@ BGM=$(curl -s -G 'https://anibt.net/api/bgm/search' \
 echo "https://anibt.net/rss/anime.xml?bgmId=$BGM&resolution=1080p&language=CHS"
 ```
 
+## 快取與限流
+
+| 專案            | 值                                                                 |
+| --------------- | ------------------------------------------------------------------ |
+| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=300, stale-if-error=300` |
+| ETag            | 支援 `If-None-Match`；未變更返回 `304 Not Modified`                 |
+| 速率限制        | 60 次 / 60 秒 / IP，詳見 [限流與上限](/docs/open-api/limits)         |
+
 ## 注意事項
 
 <Callout type="info">

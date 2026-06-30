@@ -123,7 +123,7 @@ curl -s https://anibt.net/api/subtitle-groups \
 
 | 專案         | 值                                                        |
 | ------------ | --------------------------------------------------------- |
-| `Cache-Control` | `public, max-age=300, s-maxage=300, stale-while-revalidate=86400` |
+| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400` |
 | 速率限制     | 與 RSS 端點共用 60 秒視窗，詳見 [限流與上限](/docs/open-api/limits) |
 | 條件請求     | 支援 `If-None-Match`、`If-Modified-Since`                  |
 

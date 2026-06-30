@@ -81,6 +81,11 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # exact-match a sin
     "currentSeason": "2026春",
     "requestedSeason": "2026春",
     "availableSeasons": ["2024春", "2024夏", "...", "2026秋"],
+    "scheduleSummary": {
+      "scheduled": 97,
+      "weekdayOnly": 0,
+      "missingSource": 9
+    },
     "byWeekday": [
       {
         "weekday": 1,
@@ -102,11 +107,12 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # exact-match a sin
             "rating": 73,
             "airingAt": 1764259200,
             "weekday": 1,
-            "weekdayLabel": "周一"
+            "weekdayLabel": "周一",
+            "scheduleStatus": "scheduled"
           }
         ]
       },
-      { "weekday": null, "weekdayLabel": "未排播", "animes": [ /* movies / OVAs */ ] }
+      { "weekday": null, "weekdayLabel": "未排播", "animes": [ /* source is missing weekday data */ ] }
     ],
     "total": 106
   }
@@ -125,12 +131,20 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # exact-match a sin
       description: 'Anime list grouped by weekday. Order: Mon(1) → Tue(2) → … → Sun(0) → unscheduled(null); empty groups are omitted. Within a group, sorted by airingAt asc, unknown last.',
       type: 'array',
     },
+    'scheduleSummary': {
+      description: 'Schedule-source summary: scheduled = weekday + airingAt; weekdayOnly = weekday known but exact time missing; missingSource = Bangumi/BGMWiki/Typesense source fields are missing.',
+      type: 'object',
+    },
+    'scheduleStatus': {
+      description: 'Per-show schedule status: scheduled / weekday_only / missing_source. missing_source means source data is absent, not that AniBT failed to refresh its cache.',
+      type: 'enum',
+    },
     'availableSeasons': {
       description: 'Auto-detected seasons within the current ±N range that contain at least one show. Sorted ascending; current season is always included. Render directly into a dropdown.',
       type: 'string[]',
     },
     'weekday': {
-      description: '0 = Sunday … 6 = Saturday, Asia/Shanghai. null means no broadcast schedule (movies / OVAs / completed).',
+      description: '0 = Sunday … 6 = Saturday, Asia/Shanghai. null means the current index has no weekday source; combine with scheduleStatus.',
       type: 'number | null',
     },
     'format': {
@@ -157,7 +171,7 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # exact-match a sin
 | Item              | Value                                                                                |
 | ----------------- | ------------------------------------------------------------------------------------ |
 | Rate limit        | **30 requests / 60 s / IP** (shared with `/api/anime/groups`)                         |
-| `Cache-Control`   | `max-age=600, s-maxage=600, stale-while-revalidate=86400` (**10 min fresh + 24 h SWR**) |
+| `Cache-Control`   | `public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400` (**browser revalidates + CDN 10 min fresh + 24 h SWR/SIE**) |
 | Conditional req.  | `If-None-Match` (ETag like `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`), `If-Modified-Since` |
 
 ```bash title="Pull and 304"
@@ -259,7 +273,7 @@ curl 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub,kirara-
 | Item              | Value                                                                              |
 | ----------------- | ---------------------------------------------------------------------------------- |
 | Rate limit        | **30 requests / 60 s / IP** (shared with `/api/seasons/anime`)                      |
-| `Cache-Control`   | `max-age=300, s-maxage=300, stale-while-revalidate=3600` (**5 min fresh + 1 h SWR**) |
+| `Cache-Control`   | `public, max-age=0, s-maxage=300, stale-while-revalidate=3600, stale-if-error=3600` (**browser revalidates + CDN 5 min fresh + 1 h SWR/SIE**) |
 | Conditional req.  | `If-None-Match` (`W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`), `If-Modified-Since`  |
 
 <Callout type="info">

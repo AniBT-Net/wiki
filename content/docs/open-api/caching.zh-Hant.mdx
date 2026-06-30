@@ -11,18 +11,22 @@ AniBT 所有公開端點（RSS + `/api/*`）都返回三層快取指令，並支
 
 ## 響應頭
 
-```txt title="所有端點統一返回"
-Cache-Control:    public, max-age=<N>, s-maxage=<N>, stale-while-revalidate=<M>
-CDN-Cache-Control: public, max-age=<N>, stale-while-revalidate=<M>
+```txt title="公開端點通用形態"
+Cache-Control:    public, max-age=0, s-maxage=<N>, stale-while-revalidate=<M>, stale-if-error=<M>
+CDN-Cache-Control: max-age=<N>, stale-while-revalidate=<M>, stale-if-error=<M>
 ETag:             W/"..."
-Last-Modified:    <RFC 1123 date>
+Last-Modified:    <RFC 1123 date>   # 僅當該端點有穩定更新時間
 Vary:             Accept-Encoding
 ```
 
 <TypeTable
   type={{
-    'max-age / s-maxage': {
-      description: '瀏覽器 / CDN 在該視窗內完全不回源，直接吐快取。',
+    'max-age=0': {
+      description: '公開 JSON API 預設要求瀏覽器 / 指令碼每次重新驗證，避免客戶端長期拿本地舊資料；命中 ETag 時返回 304，body 為 0。',
+      type: 'directive',
+    },
+    's-maxage=N': {
+      description: 'CDN / 共享快取的 fresh 視窗。視窗內不回源，直接吐快取。',
       type: 'directive',
     },
     'stale-while-revalidate=M': {
@@ -38,15 +42,19 @@ Vary:             Accept-Encoding
 
 ## 各端點 TTL 一覽
 
-| 端點                            | `max-age` (瀏覽器) | `s-maxage` (CDN) | `stale-while-revalidate` |
-| ------------------------------- | ------------------ | ---------------- | ------------------------ |
-| `/rss/anime.xml`                | 300s               | 300s             | 86400s                   |
-| `/rss/group/<slug>.xml`         | 120s               | 300s             | 86400s                   |
-| `/rss/magnets.xml`（簡單）      | 120s               | 120s             | 600s                     |
-| `/rss/magnets.xml`（複雜查詢）  | 60s                | 60s              | 600s                     |
-| `/api/subtitle-groups`          | 300s               | 300s             | 86400s                   |
-| `/api/seasons/anime`            | 600s               | 600s             | 86400s                   |
-| `/api/anime/groups`             | 300s               | 300s             | 3600s                    |
+| 端點                             | 客戶端快取      | `s-maxage` (CDN) | `stale-while-revalidate` |
+| -------------------------------- | --------------- | ---------------- | ------------------------ |
+| `/rss/anime.xml`                 | 重新驗證 + ETag | 120s             | 60s                      |
+| `/rss/group/<slug>.xml`          | 重新驗證 + ETag | 120s             | 60s                      |
+| `/rss/magnets.xml`               | 重新驗證 + ETag | 120s             | 60s                      |
+| `/api/subtitle-groups`           | 重新驗證 + ETag | 300s             | 86400s                   |
+| `/api/seasons/anime`             | 重新驗證 + ETag | 600s             | 86400s                   |
+| `/api/anime/groups`              | 重新驗證 + ETag | 300s             | 3600s                    |
+| `/api/bgm/search`                | 重新驗證 + ETag | 300s             | 300s                     |
+| `/api/animes/search`             | 重新驗證 + ETag | 90s              | 3600s                    |
+| `/api/animes/torrent-match`      | 重新驗證 + ETag | 60s              | 300s                     |
+| `/api/anime/lookup`              | 重新驗證 + ETag | 300s             | 300s                     |
+| `/api/mikan/group-lookup`        | 重新驗證 + ETag | 600s             | 3600s                    |
 
 ## ETag 計算公式
 
@@ -56,6 +64,11 @@ Vary:             Accept-Encoding
 | `/api/subtitle-groups`                            | `W/"sg{count}-{maxCreatedAt}-{sumTotalReleases}-{urlHash}"`       |
 | `/api/seasons/anime`                              | `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`    |
 | `/api/anime/groups`                               | `W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`                       |
+| `/api/bgm/search`                                 | `W/"bgm-web-{queryHash}-{count}-{lastMs}"`                        |
+| `/api/animes/search`                              | `W/"anime-search-web-{bodyHash}"`                                 |
+| `/api/animes/torrent-match`                       | `W/"anime-torrent-match-web-{bodyHash}"`                          |
+| `/api/anime/lookup`                               | `W/"anime-lookup-web-{bodyHash}"`                                 |
+| `/api/mikan/group-lookup`                         | `W/"mikan-group-lookup-web-{bodyHash}"`                           |
 
 公式確定性：同一查詢在資料未變時 ETag 完全相同，多副本部署也能命中。
 
@@ -76,36 +89,37 @@ curl -sI -H "If-None-Match: $ETAG" \
 
 ### 角色
 
-- **U**：你的 RSS 客戶端（NetNewsWire / Inoreader / 自建指令碼）
+- **U**：你的 HTTP/RSS 客戶端（瀏覽器 / NetNewsWire / Inoreader / 自建指令碼）
 - **CDN**：Cloudflare 邊緣節點
 - **O**：origin（AniBT 伺服器）
 
-### 端點示例：`/rss/anime.xml`（`max-age=300, s-maxage=300, swr=86400`）
+### 端點示例：`/api/seasons/anime`（`max-age=0, s-maxage=600, swr=86400`）
 
 ```txt title="時間軸"
 T=0s    U 第一次請求
         CDN 沒快取 → 回源 O，O 拿到資料庫快照 → 返回 200 + ETag=A + body
-        CDN 把響應快取 300 秒（fresh 期），再延伸 86400 秒（stale 期）
+        CDN 把響應快取 600 秒（fresh 期），再延伸 86400 秒（stale 期）
         U 拿到 200 + body + ETag=A
-        U 本地快取 300 秒
+        U 本地記錄 ETag，但因 max-age=0，下次會重新驗證
 
 T=60s   U 又來（輪詢太勤）
-        U 自己的瀏覽器 / 客戶端快取還在 max-age 內 → 根本不發請求
-        (origin 0 命中，CDN 0 命中)
+        U 帶上 If-None-Match: A 發請求
+        CDN 仍在 s-maxage=600 fresh 期，可直接用邊緣快取響應 304
+        (origin 0 命中)
 
-T=400s  U 來（第二次實際請求）
-        U 本地 max-age=300 已過期 → 帶上 If-None-Match: A 發請求
-        CDN s-maxage=300 也已過期，但還在 swr=86400 內
+T=700s  U 來
+        U 帶上 If-None-Match: A 發請求
+        CDN s-maxage=600 已過期，但還在 swr=86400 內
         CDN 決策：立即把快取裡的舊版本（含 ETag=A）返回給 U；
                  同時非同步發 1 個請求到 O 重新整理
         U 收到響應：伺服器看 If-None-Match: A == 當前 ETag → 304 Not Modified
         (使用者感知：0 延遲拿到 304，知道資料沒變 → 不用解析 XML)
 
         與此同時 CDN 非同步回源：
-          - 資料真沒變 → O 直接返回 304 → CDN 把 fresh 期再續 300s
+          - 資料真沒變 → O 直接返回 304 → CDN 把 fresh 期再續 600s
           - 資料有更新 → O 返回 200 + ETag=B + 新 body → CDN 替換快取
 
-T=700s  U 來（第三次）
+T=900s  U 來（下一次）
         U 帶 If-None-Match: A
         CDN 已有新快取（ETag=B 或仍是 A）
         CDN 把 ETag=B 的 body 返回 → 但 U 的 If-None-Match 不匹配 → 200 + 新 body
@@ -118,11 +132,11 @@ T=700s  U 來（第三次）
   **不是**"使用者會被強制忍受 24 小時舊資料"——而是"如果 origin 當前不可用 / 回源慢，CDN **最多** 用 24 小時內的舊版本兜底，避免給使用者報錯"。
 </Callout>
 
-只要 origin 健康，**你永遠拿到不超過 `s-maxage`（5 分鐘）舊的資料**：
+只要 origin 健康，**你永遠拿到不超過 `s-maxage`（這裡是 10 分鐘）舊的資料**：
 
-- T=400s：CDN 立即吐 5–10 分鐘前的版本（你大機率收到 304，無感）
-- T=400s 後幾百毫秒：CDN 已經非同步刷成最新版本
-- T=700s 你下一次來：直接拿最新
+- T=700s：CDN 立即吐 10 分鐘前的版本（你大機率收到 304，無感）
+- T=700s 後幾百毫秒：CDN 已經非同步刷成最新版本
+- T=900s 你下一次來：直接拿最新
 
 ## `cf-cache-status` 含義
 
@@ -138,25 +152,25 @@ T=700s  U 來（第三次）
 
 ```bash title="一次完整驗證"
 # Step 1: 第一次請求，拿 ETag + 看快取頭
-curl -sSI 'https://anibt.net/rss/anime.xml?bgmId=543360' \
+curl -sSI 'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|etag|cache-control|cf-cache-status)'
 # HTTP/2 200
-# cache-control: public, max-age=300, s-maxage=300, stale-while-revalidate=86400
-# etag: W/"r12-1776624843260-9k2x4f"
+# cache-control: public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400
+# etag: W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"
 # cf-cache-status: MISS               ← 第一次穿透到 origin
 
-# Step 2: 立刻再來一次（仍在 max-age 內，但用 -H 強制觸發條件請求）
-ETAG='W/"r12-1776624843260-9k2x4f"'
+# Step 2: 立刻再來一次，帶條件請求
+ETAG='W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"'
 curl -sSI -H "If-None-Match: $ETAG" \
-  'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|cf-cache-status)'
 # HTTP/2 304                          ← 資料沒變
 # cf-cache-status: HIT                ← CDN 記憶體裡直接命中
 
-# Step 3: 等 6 分鐘後再來（s-maxage 已過期，進入 SWR 期）
-sleep 360
+# Step 3: 等 11 分鐘後再來（s-maxage 已過期，進入 SWR 期）
+sleep 660
 curl -sSI -H "If-None-Match: $ETAG" \
-  'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|cf-cache-status|age)'
 # HTTP/2 304
 # cf-cache-status: STALE              ← CDN 給舊版本，後臺已非同步重新整理

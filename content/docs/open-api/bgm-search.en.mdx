@@ -108,6 +108,14 @@ BGM=$(curl -s -G 'https://anibt.net/api/bgm/search' \
 echo "https://anibt.net/rss/anime.xml?bgmId=$BGM&resolution=1080p&language=CHS"
 ```
 
+## Caching & rate limiting
+
+| Item            | Value                                                              |
+| --------------- | ------------------------------------------------------------------ |
+| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=300, stale-if-error=300` |
+| ETag            | Supports `If-None-Match`; unchanged responses return `304 Not Modified` |
+| Rate limit      | 60 requests / 60 s / IP; see [Rate limits](/docs/open-api/limits) |
+
 ## Notes
 
 <Callout type="info">

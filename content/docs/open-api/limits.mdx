@@ -11,6 +11,10 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
 | `/rss/group/<slug>.xml` | 100          | **200**      | —                | 120 次 / 60 秒 / IP |
 | `/rss/magnets.xml`      | 100          | **200**      | —                | 120 次 / 60 秒 / IP |
 | `/api/bgm/search`       | 5            | **25**       | Typesense search | 60 次 / 60 秒 / IP  |
+| `/api/animes/search`    | 24           | **50**       | Typesense search | 120 次 / 60 秒 / IP |
+| `/api/animes/torrent-match` | 10       | **50**       | Typesense search | 180 次 / 60 秒 / IP |
+| `/api/anime/lookup`     | —            | —            | Convex lookup    | 60 次 / 60 秒 / IP  |
+| `/api/mikan/group-lookup` | —          | —            | Mikan upstream + Redis | 60 次 / 60 秒 / IP |
 | `/api/subtitle-groups`  | —            | 全量返回     | —                | 60 次 / 60 秒 / IP  |
 | `/api/seasons/anime`    | —            | —            | —                | 30 次 / 60 秒 / IP  |
 | `/api/anime/groups`     | —            | —            | —                | 30 次 / 60 秒 / IP  |

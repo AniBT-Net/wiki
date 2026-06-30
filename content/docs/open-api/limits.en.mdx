@@ -11,6 +11,10 @@ description: Per-endpoint limits, scan caps, rate limiting, RSS-client compatibi
 | `/rss/group/<slug>.xml`   | 100             | **200**     | —                 | 120 req / 60 s / IP   |
 | `/rss/magnets.xml`        | 100             | **200**     | —                 | 120 req / 60 s / IP   |
 | `/api/bgm/search`         | 5               | **25**      | Typesense search  | 60 req / 60 s / IP    |
+| `/api/animes/search`      | 24              | **50**      | Typesense search  | 120 req / 60 s / IP   |
+| `/api/animes/torrent-match` | 10            | **50**      | Typesense search  | 180 req / 60 s / IP   |
+| `/api/anime/lookup`       | —               | —           | Convex lookup     | 60 req / 60 s / IP    |
+| `/api/mikan/group-lookup` | —               | —           | Mikan upstream + Redis | 60 req / 60 s / IP |
 | `/api/subtitle-groups`    | —               | full list   | —                 | 60 req / 60 s / IP    |
 | `/api/seasons/anime`      | —               | —           | —                 | 30 req / 60 s / IP    |
 | `/api/anime/groups`       | —               | —           | —                 | 30 req / 60 s / IP    |

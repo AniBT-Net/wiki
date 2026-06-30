@@ -11,18 +11,22 @@ Every public AniBT endpoint (RSS + `/api/*`) returns three layers of caching dir
 
 ## Response headers
 
-```txt title="Returned by every endpoint"
-Cache-Control:    public, max-age=<N>, s-maxage=<N>, stale-while-revalidate=<M>
-CDN-Cache-Control: public, max-age=<N>, stale-while-revalidate=<M>
+```txt title="Common public endpoint shape"
+Cache-Control:    public, max-age=0, s-maxage=<N>, stale-while-revalidate=<M>, stale-if-error=<M>
+CDN-Cache-Control: max-age=<N>, stale-while-revalidate=<M>, stale-if-error=<M>
 ETag:             W/"..."
-Last-Modified:    <RFC 1123 date>
+Last-Modified:    <RFC 1123 date>   # only when the endpoint has a stable update timestamp
 Vary:             Accept-Encoding
 ```
 
 <TypeTable
   type={{
-    'max-age / s-maxage': {
-      description: 'Within this window the browser / CDN does not revalidate at all — it serves directly from cache.',
+    'max-age=0': {
+      description: 'Public JSON APIs ask browsers and scripts to revalidate every time so local clients do not hold stale data. ETag hits return 304 with no body.',
+      type: 'directive',
+    },
+    's-maxage=N': {
+      description: 'Fresh window for CDN / shared caches. Within this window they serve directly from cache.',
       type: 'directive',
     },
     'stale-while-revalidate=M': {
@@ -38,15 +42,19 @@ Vary:             Accept-Encoding
 
 ## TTLs per endpoint
 
-| Endpoint                          | `max-age` (browser) | `s-maxage` (CDN) | `stale-while-revalidate` |
-| --------------------------------- | ------------------- | ---------------- | ------------------------ |
-| `/rss/anime.xml`                  | 300s                | 300s             | 86400s                   |
-| `/rss/group/<slug>.xml`           | 120s                | 300s             | 86400s                   |
-| `/rss/magnets.xml` (simple)       | 120s                | 120s             | 600s                     |
-| `/rss/magnets.xml` (complex query) | 60s                 | 60s              | 600s                     |
-| `/api/subtitle-groups`            | 300s                | 300s             | 86400s                   |
-| `/api/seasons/anime`              | 600s                | 600s             | 86400s                   |
-| `/api/anime/groups`               | 300s                | 300s             | 3600s                    |
+| Endpoint                           | Client cache    | `s-maxage` (CDN) | `stale-while-revalidate` |
+| ---------------------------------- | --------------- | ---------------- | ------------------------ |
+| `/rss/anime.xml`                   | revalidate + ETag | 120s           | 60s                      |
+| `/rss/group/<slug>.xml`            | revalidate + ETag | 120s           | 60s                      |
+| `/rss/magnets.xml`                 | revalidate + ETag | 120s           | 60s                      |
+| `/api/subtitle-groups`             | revalidate + ETag | 300s           | 86400s                   |
+| `/api/seasons/anime`               | revalidate + ETag | 600s           | 86400s                   |
+| `/api/anime/groups`                | revalidate + ETag | 300s           | 3600s                    |
+| `/api/bgm/search`                  | revalidate + ETag | 300s           | 300s                     |
+| `/api/animes/search`               | revalidate + ETag | 90s            | 3600s                    |
+| `/api/animes/torrent-match`        | revalidate + ETag | 60s            | 300s                     |
+| `/api/anime/lookup`                | revalidate + ETag | 300s           | 300s                     |
+| `/api/mikan/group-lookup`          | revalidate + ETag | 600s           | 3600s                    |
 
 ## ETag formulas
 
@@ -56,6 +64,11 @@ Vary:             Accept-Encoding
 | `/api/subtitle-groups`                              | `W/"sg{count}-{maxCreatedAt}-{sumTotalReleases}-{urlHash}"`        |
 | `/api/seasons/anime`                                | `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`     |
 | `/api/anime/groups`                                 | `W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`                        |
+| `/api/bgm/search`                                   | `W/"bgm-web-{queryHash}-{count}-{lastMs}"`                         |
+| `/api/animes/search`                                | `W/"anime-search-web-{bodyHash}"`                                  |
+| `/api/animes/torrent-match`                         | `W/"anime-torrent-match-web-{bodyHash}"`                           |
+| `/api/anime/lookup`                                 | `W/"anime-lookup-web-{bodyHash}"`                                  |
+| `/api/mikan/group-lookup`                           | `W/"mikan-group-lookup-web-{bodyHash}"`                            |
 
 These are deterministic: the same query yields the same ETag while the data is unchanged, so multi-replica deployments still hit consistently.
 
@@ -76,35 +89,36 @@ People often ask, "Does `stale-while-revalidate=86400` (24 h) mean I might recei
 
 ### Cast
 
-- **U** — your RSS client (NetNewsWire, Inoreader, a custom script)
+- **U** — your HTTP/RSS client (browser, NetNewsWire, Inoreader, a custom script)
 - **CDN** — Cloudflare edge nodes
 - **O** — origin (AniBT server)
 
-### Endpoint: `/rss/anime.xml` (`max-age=300, s-maxage=300, swr=86400`)
+### Endpoint: `/api/seasons/anime` (`max-age=0, s-maxage=600, swr=86400`)
 
 ```txt title="Timeline"
 T=0s    U sends the first request.
         CDN cache empty → goes to O. O snapshots the DB → returns 200 + ETag=A + body.
-        CDN caches the response for 300s (fresh) + 86400s (stale).
-        U receives 200 + body + ETag=A; caches locally for 300s.
+        CDN caches the response for 600s (fresh) + 86400s (stale).
+        U receives 200 + body + ETag=A. Because max-age=0, it will revalidate next time.
 
 T=60s   U polls again (too eagerly).
-        U is still inside its own max-age → does not even send a request.
-        (origin: 0 hits, CDN: 0 hits)
+        U sends If-None-Match: A.
+        CDN is still inside s-maxage=600 and can answer from edge cache with 304.
+        (origin: 0 hits)
 
-T=400s  U polls (second real request).
-        U's max-age=300 has expired → sends If-None-Match: A.
-        CDN's s-maxage=300 has also expired, but is still inside swr=86400.
+T=700s  U polls.
+        U sends If-None-Match: A.
+        CDN's s-maxage=600 has expired, but is still inside swr=86400.
         CDN decision: immediately serve the cached version (with ETag=A) to U,
                       and asynchronously refresh from O in the background.
         U gets a response: server sees If-None-Match: A == current ETag → 304 Not Modified.
         (User experience: zero-latency 304 — no XML to parse.)
 
         Meanwhile, the CDN refresh:
-          - Data unchanged → O returns 304 → CDN extends fresh window by 300s.
+          - Data unchanged → O returns 304 → CDN extends fresh window by 600s.
           - Data changed   → O returns 200 + ETag=B + new body → CDN replaces the cache.
 
-T=700s  U polls again.
+T=900s  U polls again.
         U sends If-None-Match: A.
         CDN now has ETag=B (or still A if nothing changed).
         For ETag=B, the body is returned to U with a 200 since A no longer matches.
@@ -117,11 +131,11 @@ T=700s  U polls again.
   **Not** "users will be forced to read 24-hour-old data" — but rather "if origin is unavailable or slow, the CDN can serve up to 24-hour-old content as a fallback rather than erroring out."
 </Callout>
 
-While origin is healthy you **never receive data older than `s-maxage` (5 minutes)**:
+While origin is healthy you **never receive data older than `s-maxage` (10 minutes in this example)**:
 
-- T=400s: CDN immediately serves the 5–10 minute-old version (you usually get a 304 — invisible).
+- T=700s: CDN immediately serves the 10 minute-old version (you usually get a 304 — invisible).
 - A few hundred ms later: CDN has already refreshed asynchronously to the latest version.
-- T=700s on the next poll: you get the latest.
+- T=900s on the next poll: you get the latest.
 
 ## `cf-cache-status` reference
 
@@ -137,25 +151,25 @@ While origin is healthy you **never receive data older than `s-maxage` (5 minute
 
 ```bash title="One full verification"
 # Step 1: first request, capture ETag and cache headers
-curl -sSI 'https://anibt.net/rss/anime.xml?bgmId=543360' \
+curl -sSI 'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|etag|cache-control|cf-cache-status)'
 # HTTP/2 200
-# cache-control: public, max-age=300, s-maxage=300, stale-while-revalidate=86400
-# etag: W/"r12-1776624843260-9k2x4f"
+# cache-control: public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400
+# etag: W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"
 # cf-cache-status: MISS               ← first request fell through to origin
 
-# Step 2: immediately repeat (still inside max-age, but force a conditional req with -H)
-ETAG='W/"r12-1776624843260-9k2x4f"'
+# Step 2: immediately repeat with a conditional request
+ETAG='W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"'
 curl -sSI -H "If-None-Match: $ETAG" \
-  'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|cf-cache-status)'
 # HTTP/2 304                          ← unchanged
 # cf-cache-status: HIT                ← served from CDN memory
 
-# Step 3: wait 6 minutes (s-maxage expired, now in SWR)
-sleep 360
+# Step 3: wait 11 minutes (s-maxage expired, now in SWR)
+sleep 660
 curl -sSI -H "If-None-Match: $ETAG" \
-  'https://anibt.net/rss/anime.xml?bgmId=543360' \
+  'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|cf-cache-status|age)'
 # HTTP/2 304
 # cf-cache-status: STALE              ← stale served, refresh kicked off in background
