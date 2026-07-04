@@ -13,6 +13,10 @@ description: AniBT Wiki 與站點功能更新紀錄。
 
 <TypeTable
   type={{
+    '公開搜尋翻頁保護': {
+      description: '/magnets 頁碼和 /api/animes/search cursor 現在最多翻到 Typesense 第 100 頁；非法搜尋 cursor 返回 400，超大頁碼會規範化到第 100 頁，避免深分頁拖慢公開搜尋。',
+      type: '變更',
+    },
     '季度番劇資源可用性': {
       description: '/api/seasons/anime 的單個番劇條目新增 rssReleaseCount 與 hasRelease，用於判斷該番劇是否已有站內釋出資源；首頁週播卡片同步使用該狀態顯示「暫無種子」。',
       type: '新增',

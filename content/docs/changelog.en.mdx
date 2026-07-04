@@ -13,6 +13,10 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 <TypeTable
   type={{
+    'Public search page guard': {
+      description: '/magnets page numbers and /api/animes/search cursors now paginate at most 100 Typesense pages. Invalid search cursors return 400, while oversized page numbers normalize to page 100 to avoid slow deep pagination.',
+      type: 'Changed',
+    },
     'Seasonal release availability': {
       description: '/api/seasons/anime anime items now include rssReleaseCount and hasRelease so clients can tell whether a show already has AniBT releases. The home weekly cards use the same state to show "No torrents yet".',
       type: 'Added',

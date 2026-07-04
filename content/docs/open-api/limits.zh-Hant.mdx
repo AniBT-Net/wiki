@@ -23,6 +23,14 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
   **`limit` 越界處理**：超過上限會被自動**截斷到上限**，不會報錯。例如 `?limit=5000` 給 `/rss/anime.xml` 實際返回 200 條。
 </Callout>
 
+### 公開搜尋翻頁深度
+
+公開搜尋和磁力列表使用 Typesense 頁碼分頁，服務端最多讀取 **100 頁**：
+
+- `/magnets?page=<n>` 會把頁碼規範化到 `1–100`；例如 `?page=10000` 會重定向到 `?page=100`。
+- `/api/animes/search` 的 `cursor` 只接受 `ts_page:<頁碼>`。非法前綴會返回 `400 VALIDATION_ERROR`；超大頁碼會被規範化到第 100 頁並返回空頁或最後一頁結果。
+- `limit` 與頁碼上限是兩個獨立保護：`limit` 控制單頁大小，`cursor` / `page` 控制最多翻到第幾頁。
+
 ### 過濾模型（`/rss/anime.xml`）
 
 `/rss/anime.xml` 由主站 Web runtime 查詢 Typesense release index。`bgmId`、`groupSlug`、`resolution`、`language`、`subtitle`、`format` 等過濾會盡量下推到 Typesense；`episode` / `episodeKey` 這類展示欄位可能在 Web runtime 做小窗口後過濾。不會回源 Convex 掃庫。
