@@ -13,6 +13,14 @@ description: AniBT Wiki 与站点功能更新记录。
 
 <TypeTable
   type={{
+    '字幕组同步工作台': {
+      description: '/groups/<slug>/sync 改为按外部站点切换的工作台，左侧选择站点，中间配置凭据，右侧查看该站点日志，并提供开坑管理页入口。',
+      type: '变更',
+    },
+    '同步日志保留策略': {
+      description: '同步日志展示最近 40 条，支持按状态过滤，并按约 14 天保留自动清理；已删除资源的日志保留发布 ID，但禁用重试与重新同步。',
+      type: '变更',
+    },
     '公开搜索翻页保护': {
       description: '/magnets 页码和 /api/animes/search cursor 现在最多翻到 Typesense 第 100 页；非法搜索 cursor 返回 400，超大页码会规范化到第 100 页，避免深分页拖慢公开搜索。',
       type: '变更',

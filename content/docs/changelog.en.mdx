@@ -13,6 +13,14 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 <TypeTable
   type={{
+    'Group sync workbench': {
+      description: '/groups/<slug>/sync now uses a per-site workbench: target selector on the left, credential configuration in the middle, recent logs on the right, plus a link to claim management.',
+      type: 'Changed',
+    },
+    'Sync log retention': {
+      description: 'Sync logs show the latest 40 entries, support status filtering, and are automatically cleaned after about 14 days. Deleted-release logs keep the release ID but disable retry and resync actions.',
+      type: 'Changed',
+    },
     'Public search page guard': {
       description: '/magnets page numbers and /api/animes/search cursors now paginate at most 100 Typesense pages. Invalid search cursors return 400, while oversized page numbers normalize to page 100 to avoid slow deep pagination.',
       type: 'Changed',

@@ -31,6 +31,14 @@ Site sync pushes a release you publish on AniBT to the external sites you have c
   </Step>
 </Steps>
 
+## Dashboard Workbench
+
+The subtitle group dashboard at `/groups/<slug>/sync` is organized by external site: choose a target on the left, configure credentials in the middle, and review that site's recent sync logs on the right. Multiple sites are not expanded at the same time, so settings and logs stay separated.
+
+Sync logs show the latest 40 entries only and can be filtered by all, success, failed, or pending. Logs are retained for about 14 days for short-term troubleshooting; older entries are cleaned automatically and should not be treated as a long-term audit trail. If the release has been deleted, the log still shows the release ID and deleted state, but retry and resync actions are disabled.
+
+Claim status and cleanup live on the subtitle group's `/groups/<slug>/claims` page. The sync page is only for external-site configuration, connection tests, and release sync results.
+
 ## Choose a Guide
 
 <Cards>
