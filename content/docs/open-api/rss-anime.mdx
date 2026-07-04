@@ -71,7 +71,9 @@ GET https://anibt.net/rss/anime.xml?<query>
 
 ## 响应
 
-返回 **RSS 2.0 + BEP 36**，每个 `<item>` 包含：
+返回 **RSS 2.0 + BEP 36** 原生 XML。浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，会使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端继续按标准字段消费。
+
+每个 `<item>` 包含：
 
 <TypeTable
   type={{

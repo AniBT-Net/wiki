@@ -71,7 +71,9 @@ GET https://anibt.net/rss/anime.xml?<query>
 
 ## Response
 
-Returns **RSS 2.0 + BEP 36**. Each `<item>` contains:
+Returns native **RSS 2.0 + BEP 36** XML. Opening an RSS URL in a browser no longer loads AniBT custom XSL/CSS; the browser renders its default XML tree while RSS readers and BT clients keep consuming the standard fields.
+
+Each `<item>` contains:
 
 <TypeTable
   type={{

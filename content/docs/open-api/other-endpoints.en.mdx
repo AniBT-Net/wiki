@@ -5,6 +5,8 @@ description: Group short-link RSS, site-wide magnet RSS, seasonal anime JSON, an
 
 Beyond the main entry, AniBT provides four common endpoints: two RSS variants (short link + site-wide) and two JSON APIs (seasonal + per-show).
 
+The RSS endpoints on this page return native RSS 2.0 XML. Opening an RSS URL in a browser no longer loads AniBT custom XSL/CSS; the browser renders its default XML tree while RSS readers and BT clients keep consuming the standard fields.
+
 <Cards>
   <Card title="Group short link RSS" href="#group-short-link-rssgroupslugxml" description="GET /rss/group/<slug>.xml" />
   <Card title="Site-wide magnet RSS" href="#site-wide-magnets-rssmagnetsxml" description="GET /rss/magnets.xml" />

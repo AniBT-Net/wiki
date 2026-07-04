@@ -5,6 +5,8 @@ description: 字幕组短链 RSS、全站磁力 RSS、季度番剧 JSON、单番
 
 主入口之外，AniBT 还提供四个常用端点：两个 RSS（短链 + 全站）、两个 JSON（季度 + 单番剧）。
 
+本页的 RSS 端点都返回原生 RSS 2.0 XML。浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，会使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端继续按标准字段消费。
+
 <Cards>
   <Card title="字幕组短链 RSS" href="#字幕组短链-rssgroupslugxml" description="GET /rss/group/<slug>.xml" />
   <Card title="全站磁力 RSS" href="#全站磁力-rssmagnetsxml" description="GET /rss/magnets.xml" />

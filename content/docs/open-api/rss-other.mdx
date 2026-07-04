@@ -77,7 +77,9 @@ https://anibt.net/rss/other/stage.xml
 
 ## 响应
 
-返回标准 RSS 2.0。每个 `<item>` 包含：
+返回标准 RSS 2.0 原生 XML。浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，会使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端继续按标准字段消费。
+
+每个 `<item>` 包含：
 
 <TypeTable
   type={{

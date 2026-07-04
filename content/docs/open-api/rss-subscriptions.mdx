@@ -30,7 +30,9 @@ GET https://anibt.net/rss/subscriptions.xml
 
 ## 响应
 
-标准 RSS 2.0，结构与 [`/rss/anime.xml`](/docs/open-api/rss-anime) 完全一致：每条 `<item>` 是一次发布，附带磁力 `<enclosure>`、文件大小、字幕组、集数等。区别只在于"哪些条目能进来"由你的订阅配置决定。
+标准 RSS 2.0 原生 XML，结构与 [`/rss/anime.xml`](/docs/open-api/rss-anime) 完全一致：每条 `<item>` 是一次发布，附带磁力 `<enclosure>`、文件大小、字幕组、集数等。区别只在于"哪些条目能进来"由你的订阅配置决定。
+
+浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，会使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端继续按标准字段消费。
 
 ```xml title="片段"
 <rss version="2.0">

@@ -30,7 +30,9 @@ The exact token / auth header format is whatever the user dashboard hands out; t
 
 ## Response
 
-Standard RSS 2.0, identical in shape to [`/rss/anime.xml`](/docs/open-api/rss-anime): each `<item>` is a single release with magnet `<enclosure>`, file size, group, episode, etc. The only difference is **which** items get included — that is decided by your subscriptions.
+Native standard RSS 2.0 XML, identical in shape to [`/rss/anime.xml`](/docs/open-api/rss-anime): each `<item>` is a single release with magnet `<enclosure>`, file size, group, episode, etc. The only difference is **which** items get included — that is decided by your subscriptions.
+
+Opening an RSS URL in a browser no longer loads AniBT custom XSL/CSS; the browser renders its default XML tree while RSS readers and BT clients keep consuming the standard fields.
 
 ```xml title="Excerpt"
 <rss version="2.0">
