@@ -108,7 +108,9 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # 精確返回單�
             "airingAt": 1764259200,
             "weekday": 1,
             "weekdayLabel": "週一",
-            "scheduleStatus": "scheduled"
+            "scheduleStatus": "scheduled",
+            "rssReleaseCount": 11,
+            "hasRelease": true
           }
         ]
       },
@@ -139,6 +141,14 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # 精確返回單�
     'scheduleStatus': {
       description: '單個番劇的排播狀態：scheduled / weekday_only / missing_source。missing_source 表示源資料缺失，不等同於本站快取未更新。',
       type: 'enum',
+    },
+    'rssReleaseCount': {
+      description: '本站已釋出並匹配到該番劇的資源數量。釋出、刪除或待匹配資源補匹配後會更新；首頁週播卡片也使用該值判斷是否顯示「暫無種子」。',
+      type: 'number',
+    },
+    'hasRelease': {
+      description: '是否已有至少一個站內釋出資源。等價於 rssReleaseCount > 0，用於客戶端快速區分「已有種子」和「暫無種子」。',
+      type: 'boolean',
     },
     'availableSeasons': {
       description: '自動探測當前季 ±N 內至少有一部番劇的季度，按時間升序，一定包含當前季。可直接渲染下拉框。',

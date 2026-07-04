@@ -108,7 +108,9 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # exact-match a sin
             "airingAt": 1764259200,
             "weekday": 1,
             "weekdayLabel": "周一",
-            "scheduleStatus": "scheduled"
+            "scheduleStatus": "scheduled",
+            "rssReleaseCount": 11,
+            "hasRelease": true
           }
         ]
       },
@@ -138,6 +140,14 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # exact-match a sin
     'scheduleStatus': {
       description: 'Per-show schedule status: scheduled / weekday_only / missing_source. missing_source means source data is absent, not that AniBT failed to refresh its cache.',
       type: 'enum',
+    },
+    'rssReleaseCount': {
+      description: 'Number of AniBT releases published and matched to this anime. It updates after publish, delete, or pending-match changes; the home weekly cards use the same value to show the "No torrents yet" state.',
+      type: 'number',
+    },
+    'hasRelease': {
+      description: 'Whether this anime has at least one AniBT release. Equivalent to rssReleaseCount > 0, for clients that only need an availability flag.',
+      type: 'boolean',
     },
     'availableSeasons': {
       description: 'Auto-detected seasons within the current ±N range that contain at least one show. Sorted ascending; current season is always included. Render directly into a dropdown.',
