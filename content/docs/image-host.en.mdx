@@ -11,10 +11,11 @@ The subtitle group image host lives at `/groups/<slug>/image-host` under the **I
 
 ## Page structure
 
-The image-host page is split into **Upload** and **Image Management** workspaces, so the upload form, fresh results, and historical library do not compete in the same view.
+The image-host page uses a **single upload entry followed by image management**. There is no top mode switcher and no two-column upload panel. The upload area stays at the top of the page, while the historical library loads below it by time-based pages.
 
-- **Upload**: paste, drop, or choose images. After upload, copy formats appear directly in the upload result area for immediate use in forums, announcements, or release notes.
-- **Image Management**: browse images already uploaded by the subtitle group. Management cards keep preview, common copy actions, short-page opening, and deletion compact. Use the copy-format button to open the full BBCode, HTML, Markdown, and direct-link dialog without expanding the library layout.
+- **Upload**: click the upload area to choose images, drag images onto it, or paste clipboard images while the page is focused. Upload tasks are not shown as a separate queue; active and failed counts appear only as small status badges.
+- **Just uploaded**: after upload, copy formats appear directly in the page result area for immediate use in forums, announcements, or release notes. Multiple fresh uploads are shown as a compact horizontal thumbnail switcher.
+- **Image Management**: browse images already uploaded by the subtitle group. The library uses a dense small-thumbnail grid, lazy image loading, and paginated loading for large collections. Use the copy-format button to open the full BBCode, HTML, Markdown, and direct-link dialog without expanding the library layout.
 
 ## Upload methods
 
@@ -35,7 +36,7 @@ The image-host page is split into **Upload** and **Image Management** workspaces
 | SVG | Supported and preserved as `image/svg+xml`. |
 | Animated GIF / animated WebP / APNG | Supported and preserved in the original format; animation is not flattened or extracted as a still frame. |
 
-Image processing and object storage writes run in the TanStack Start Bun Web runtime. `Bun.Image` handles decoding, auto orientation, resizing, and WebP encoding for static images it can decode reliably. `Bun.S3Client` writes and deletes objects in the dedicated image-host bucket with the actual output `Content-Type`. Convex only stores authorization, metadata, list pagination, and delete state; it never processes image bytes.
+Image processing and object storage writes run in the TanStack Start Bun Web runtime. `Bun.Image` handles decoding, auto orientation, resizing, and WebP encoding for static images it can decode reliably. `Bun.S3Client` writes objects in the dedicated image-host bucket with the actual output `Content-Type`. On deletion, Convex authorizes the request, soft-deletes the metadata, and enqueues `media/r2_object_delete_batch`; the Bun background-worker then deletes the object asynchronously through native `Bun.S3Client`. Convex never processes image bytes or object-storage IO.
 
 ## Copy formats
 
@@ -52,7 +53,7 @@ After a successful upload, the Upload workspace generates:
 
 ## Management and deletion
 
-The Image Management workspace shows the group's historical uploads. Members can preview images, copy the direct link or Markdown, and open the public short page. To access every copy format, use the copy-format button to open the dialog.
+The Image Management area shows the group's historical uploads. Members can preview images, copy the direct link, open the direct image link, or delete images they are allowed to remove. To access every copy format, use the copy-format button to open the dialog.
 
 Delete permissions:
 
@@ -60,13 +61,13 @@ Delete permissions:
 - Subtitle group owners/admins can delete images in their group.
 - Site admins can delete images from any group.
 
-For deletion, the Web runtime first asks Convex for delete authorization and the object key, then deletes the object with Bun's native S3 API, and finally marks the Convex record as deleted.
+For deletion, the Web runtime first asks Convex for delete authorization and the object key, then calls Convex to mark the metadata as deleted and enqueue a media-worker delete job. The image disappears from lists and short-page lookup immediately; the direct object URL may remain reachable briefly until the background-worker completes the asynchronous delete.
 
 ## Admin recent review
 
-Site admins can review recent image-host uploads at `/admin/image-host`. The page lists uploads across subtitle groups by upload time, making it easier to spot sensitive, policy-breaking, or unsuitable public images.
+Site admins can review recent image-host uploads at `/admin/image-host`. The page lists uploads across subtitle groups by upload time and uses a dense small-thumbnail grid, making it easier to scan many recent images for sensitive, policy-breaking, or unsuitable public content.
 
-Admins can open the public short page or direct image link from the review page, and can delete image-host images from any subtitle group. This page is only for site admins, not regular users or regular subtitle group members.
+Admins can copy direct links, open direct image links, view every copy format, and delete image-host images from any subtitle group. This page is only for site admins, not regular users or regular subtitle group members.
 
 ## Deployment requirements
 
@@ -78,6 +79,6 @@ Use a dedicated object bucket and dedicated credentials for image hosting. Produ
 | `IMAGE_HOST_R2_ENDPOINT` | S3/R2 endpoint. Account-level endpoints are supported; endpoints ending in `/<bucket>` are validated and normalized. |
 | `IMAGE_HOST_R2_ACCESS_KEY_ID` | Access key for the image-host bucket. |
 | `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | Secret key for the image-host bucket. |
-| `IMAGE_HOST_PUBLIC_DOMAIN` | Public image domain. Bare domains are normalized to `https://`. |
+| `IMAGE_HOST_PUBLIC_DOMAIN` | Public image domain. Bare domains are normalized to `https://`. Required only by the Web runtime. |
 
-The production Docker image checks for `Bun.Image` and `Bun.S3Client` during build. If the runtime does not support both native APIs, the build fails.
+Both the Web runtime and the media background-worker need the same `IMAGE_HOST_R2_*` configuration; only the Web runtime needs `IMAGE_HOST_PUBLIC_DOMAIN`. The production Docker image checks for `Bun.Image` and `Bun.S3Client` during build. If the runtime does not support both native APIs, the build fails.
