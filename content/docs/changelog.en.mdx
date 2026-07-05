@@ -14,7 +14,7 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 <TypeTable
   type={{
     'Subtitle group image host': {
-      description: 'Added /groups/<slug>/image-host for choosing, dropping, or pasting image uploads. The server converts still images to WebP with Bun native image processing, returns BBCode/HTML/Markdown/direct-link formats, and provides group image management and deletion.',
+      description: 'Added /groups/<slug>/image-host for choosing, dropping, or pasting image uploads. The Bun native image pipeline converts static images to WebP when possible, preserves animated GIF/WebP/APNG, SVG, and reliably unconvertible images in their original format, returns BBCode/HTML/Markdown/direct-link formats, and provides group image management and deletion.',
       type: 'Added',
     },
     'Image host permissions and deployment': {

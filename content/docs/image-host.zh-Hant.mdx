@@ -1,6 +1,6 @@
 ---
 title: 字幕組圖床
-description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，服務端轉 WebP 後生成 BBCode、HTML、Markdown 和直連。
+description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，服務端按格式轉 WebP 或保留原格式後生成 BBCode、HTML、Markdown 和直連。
 ---
 
 字幕組圖床位於 `/groups/<slug>/image-host`，選單名稱是 **圖床**。它只對已加入該字幕組組織的成員開放；普通登入使用者和未加入該字幕組的使用者不能上傳、查看管理列表或刪除圖片。
@@ -19,16 +19,16 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 
 | 項目 | 當前規則 |
 | --- | --- |
-| 輸出格式 | 所有成功上傳的靜態圖片都會轉成 `image/webp`。 |
+| 輸出格式 | 靜態 JPEG/PNG/WebP/GIF/BMP/AVIF/HEIC/HEIF 會優先轉成 `image/webp`；無法可靠轉碼時保留原格式。 |
 | 預設大小上限 | 單張輸入預設 20 MiB，可由部署環境調整。 |
 | 預設像素上限 | 解碼後預設最多 50,000,000 像素。 |
 | 預設最長邊 | 輸出最長邊預設 3840px，按比例縮小，不放大。 |
 | 預設品質 | WebP quality 預設 88。 |
 | 服務端併發 | 轉碼預設 8 併發，硬上限 8。 |
-| SVG | 拒絕上傳。 |
-| 動畫 GIF / 動畫 WebP | 當前版本拒絕上傳，避免誤把動畫壓成靜態圖。 |
+| SVG | 支援上傳並保留 `image/svg+xml` 原格式。 |
+| 動畫 GIF / 動畫 WebP / APNG | 支援上傳並保留原格式，不抽幀、不壓成靜態圖。 |
 
-圖片轉碼和物件儲存寫入都在 TanStack Start 的 Bun Web runtime 內完成：`Bun.Image` 負責解碼、自動方向、縮放與 WebP 編碼；`Bun.S3Client` 負責寫入和刪除圖床專用物件桶。Convex 只保存授權、元資料、列表與刪除狀態，不處理圖片二進位。
+圖片轉碼和物件儲存寫入都在 TanStack Start 的 Bun Web runtime 內完成：`Bun.Image` 負責可解碼靜態圖的解碼、自動方向、縮放與 WebP 編碼；`Bun.S3Client` 負責按實際輸出 `Content-Type` 寫入和刪除圖床專用物件桶。Convex 只保存授權、元資料、列表與刪除狀態，不處理圖片二進位。
 
 ## 複製格式
 
@@ -41,7 +41,7 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 - HTML 連結：`<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img ...></a>`
 - HTML 直連：`<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img ...></a>`
 - Markdown：`![pasted-image.webp](https://i.anibt.net/image-host/...webp)`
-- 直接連結：`https://i.anibt.net/image-host/...webp`
+- 直接連結：`https://i.anibt.net/image-host/...webp`；保留原格式時副檔名會是 `.gif`、`.svg`、`.apng` 等對應格式。
 
 ## 管理與刪除
 

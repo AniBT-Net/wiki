@@ -14,7 +14,7 @@ description: AniBT Wiki 與站點功能更新紀錄。
 <TypeTable
   type={{
     '字幕組圖床': {
-      description: '新增 /groups/<slug>/image-host 圖床頁面，支援選擇、拖曳和貼上圖片上傳；服務端用 Bun 原生圖片流水線轉 WebP，生成 BBCode、HTML、Markdown 與直連，並提供組內圖片管理和刪除。',
+      description: '新增 /groups/<slug>/image-host 圖床頁面，支援選擇、拖曳和貼上圖片上傳；服務端用 Bun 原生圖片流水線優先把靜態圖轉 WebP，動畫 GIF/WebP/APNG、SVG 或無法可靠轉碼的圖片保留原格式，生成 BBCode、HTML、Markdown 與直連，並提供組內圖片管理和刪除。',
       type: '新增',
     },
     '圖床權限與部署': {

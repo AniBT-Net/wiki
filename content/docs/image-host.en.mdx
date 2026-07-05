@@ -1,6 +1,6 @@
 ---
 title: Subtitle group image host
-description: "The image-hosting tool in subtitle group admin pages: paste, drop, or choose images, then get BBCode, HTML, Markdown, and direct links after server-side WebP conversion."
+description: "The image-hosting tool in subtitle group admin pages: paste, drop, or choose images, then get BBCode, HTML, Markdown, and direct links after server-side WebP conversion or original-format preservation."
 ---
 
 The subtitle group image host lives at `/groups/<slug>/image-host` under the **Image Host** menu item. It is available only to members of that subtitle group's organization. Regular users and users outside the group cannot upload, view the management list, or delete images.
@@ -19,16 +19,16 @@ The subtitle group image host lives at `/groups/<slug>/image-host` under the **I
 
 | Item | Current rule |
 | --- | --- |
-| Output format | Every successful still-image upload is converted to `image/webp`. |
+| Output format | Static JPEG/PNG/WebP/GIF/BMP/AVIF/HEIC/HEIF uploads are converted to `image/webp` when possible; files that cannot be converted reliably keep their original format. |
 | Default input limit | 20 MiB per image, configurable at deploy time. |
 | Default pixel limit | 50,000,000 decoded pixels. |
 | Default longest edge | 3840px, downscaled proportionally and never upscaled. |
 | Default quality | WebP quality 88. |
 | Server concurrency | 8 transcodes by default, with a hard max of 8. |
-| SVG | Rejected. |
-| Animated GIF / animated WebP | Rejected in the current version to avoid silently flattening animation. |
+| SVG | Supported and preserved as `image/svg+xml`. |
+| Animated GIF / animated WebP / APNG | Supported and preserved in the original format; animation is not flattened or extracted as a still frame. |
 
-Image processing and object storage writes run in the TanStack Start Bun Web runtime. `Bun.Image` handles decoding, auto orientation, resizing, and WebP encoding. `Bun.S3Client` writes and deletes objects in the dedicated image-host bucket. Convex only stores authorization, metadata, list pagination, and delete state; it never processes image bytes.
+Image processing and object storage writes run in the TanStack Start Bun Web runtime. `Bun.Image` handles decoding, auto orientation, resizing, and WebP encoding for static images it can decode reliably. `Bun.S3Client` writes and deletes objects in the dedicated image-host bucket with the actual output `Content-Type`. Convex only stores authorization, metadata, list pagination, and delete state; it never processes image bytes.
 
 ## Copy formats
 
@@ -41,7 +41,7 @@ After a successful upload, the page generates:
 - HTML linked: `<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img ...></a>`
 - HTML direct linked: `<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img ...></a>`
 - Markdown: `![pasted-image.webp](https://i.anibt.net/image-host/...webp)`
-- Direct link: `https://i.anibt.net/image-host/...webp`
+- Direct link: `https://i.anibt.net/image-host/...webp`; preserved originals use matching extensions such as `.gif`, `.svg`, or `.apng`.
 
 ## Management and deletion
 
