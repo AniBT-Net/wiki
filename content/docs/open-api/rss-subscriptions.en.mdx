@@ -11,6 +11,8 @@ Unlike [`/rss/anime.xml`](/docs/open-api/rss-anime) and [`/rss/group/<slug>.xml`
   The subscriptions themselves are configured in the web UI: pick shows, pick groups, set quality / language filters. This endpoint just **exports the current state** as RSS.
 </Callout>
 
+When you subscribe from an anime detail page, the dialog previews matches against the recently loaded releases for that show. As you change groups, resolution, language, subtitle type, file format, or custom tags, you can see the expected matches before saving; the final items in `/rss/subscriptions.xml` still come from the saved server-side subscription and future releases.
+
 ## Request
 
 ```http title="HTTP"
