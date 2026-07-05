@@ -9,6 +9,13 @@ The subtitle group image host lives at `/groups/<slug>/image-host` under the **I
   The public short page `/i/<shortCode>` only displays an uploaded image. It does not expose upload or management actions.
 </Callout>
 
+## Page structure
+
+The image-host page is split into **Upload** and **Image Management** workspaces, so the upload form, fresh results, and historical library do not compete in the same view.
+
+- **Upload**: paste, drop, or choose images. After upload, copy formats appear directly in the upload result area for immediate use in forums, announcements, or release notes.
+- **Image Management**: browse images already uploaded by the subtitle group. Management cards keep preview, common copy actions, short-page opening, and deletion compact. Use the copy-format button to open the full BBCode, HTML, Markdown, and direct-link dialog without expanding the library layout.
+
 ## Upload methods
 
 - Choose images from the file picker, drag images into the drop zone, or paste images from the clipboard while the page is focused.
@@ -32,7 +39,7 @@ Image processing and object storage writes run in the TanStack Start Bun Web run
 
 ## Copy formats
 
-After a successful upload, the page generates:
+After a successful upload, the Upload workspace generates:
 
 - BBCode: `[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]`
 - BBCode linked: `[url=https://anibt.net/i/Ab3CdE1][img]...[/img][/url]`
@@ -45,7 +52,7 @@ After a successful upload, the page generates:
 
 ## Management and deletion
 
-The right side of the page is the group's image library. Members can preview images, copy the direct link or Markdown, open the public short page, and expand the full copy-format grid.
+The Image Management workspace shows the group's historical uploads. Members can preview images, copy the direct link or Markdown, and open the public short page. To access every copy format, use the copy-format button to open the dialog.
 
 Delete permissions:
 
@@ -54,6 +61,12 @@ Delete permissions:
 - Site admins can delete images from any group.
 
 For deletion, the Web runtime first asks Convex for delete authorization and the object key, then deletes the object with Bun's native S3 API, and finally marks the Convex record as deleted.
+
+## Admin recent review
+
+Site admins can review recent image-host uploads at `/admin/image-host`. The page lists uploads across subtitle groups by upload time, making it easier to spot sensitive, policy-breaking, or unsuitable public images.
+
+Admins can open the public short page or direct image link from the review page, and can delete image-host images from any subtitle group. This page is only for site admins, not regular users or regular subtitle group members.
 
 ## Deployment requirements
 

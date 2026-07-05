@@ -14,11 +14,15 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 <TypeTable
   type={{
     'Subtitle group image host': {
-      description: 'Added /groups/<slug>/image-host for choosing, dropping, or pasting image uploads. The Bun native image pipeline converts static images to WebP when possible, preserves animated GIF/WebP/APNG, SVG, and reliably unconvertible images in their original format, returns BBCode/HTML/Markdown/direct-link formats, and provides group image management and deletion.',
+      description: 'Added /groups/<slug>/image-host with separate Upload and Image Management workspaces. It supports choosing, dropping, and pasting image uploads, then returns BBCode, HTML, Markdown, and direct-link formats after upload.',
+      type: 'Added',
+    },
+    'Image host copy and moderation': {
+      description: 'Management cards now stay compact while the full copy-format set opens in a dialog. Site admins also have /admin/image-host for reviewing recent uploads across subtitle groups and deleting sensitive or policy-breaking images.',
       type: 'Added',
     },
     'Image host permissions and deployment': {
-      description: 'Image hosting is limited to subtitle group members and checks membership before reading the body. Delete permissions are limited to the uploader, group owner/admin, or site admin. Docs now cover the dedicated object bucket, Bun.Image/Bun.S3Client runtime gate, and required environment variables.',
+      description: 'Image hosting is limited to subtitle group members and checks membership before reading the body. Delete permissions are limited to the uploader, group owner/admin, or site admin. The Bun native image pipeline converts static images to WebP when possible, preserves animated GIF/WebP/APNG, SVG, and reliably unconvertible images in their original format. Docs now cover the dedicated object bucket, Bun.Image/Bun.S3Client runtime gate, and required environment variables.',
       type: 'Docs',
     },
   }}
