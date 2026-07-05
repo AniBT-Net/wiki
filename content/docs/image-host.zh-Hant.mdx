@@ -1,0 +1,70 @@
+---
+title: 字幕組圖床
+description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，服務端轉 WebP 後生成 BBCode、HTML、Markdown 和直連。
+---
+
+字幕組圖床位於 `/groups/<slug>/image-host`，選單名稱是 **圖床**。它只對已加入該字幕組組織的成員開放；普通登入使用者和未加入該字幕組的使用者不能上傳、查看管理列表或刪除圖片。
+
+<Callout type="info">
+  公開短連 `/i/<shortCode>` 只展示已經上傳的圖片，不提供上傳或管理能力。
+</Callout>
+
+## 上傳方式
+
+- 支援點選選擇圖片、拖曳圖片到上傳區、在頁面中直接貼上剪貼簿圖片。
+- 請求體是原始圖片二進位，瀏覽器不會用 multipart/FormData 包裝。
+- 服務端會在讀取圖片內容前先完成登入與字幕組成員授權，避免非成員消耗轉碼資源。
+
+## 圖片處理規則
+
+| 項目 | 當前規則 |
+| --- | --- |
+| 輸出格式 | 所有成功上傳的靜態圖片都會轉成 `image/webp`。 |
+| 預設大小上限 | 單張輸入預設 20 MiB，可由部署環境調整。 |
+| 預設像素上限 | 解碼後預設最多 50,000,000 像素。 |
+| 預設最長邊 | 輸出最長邊預設 3840px，按比例縮小，不放大。 |
+| 預設品質 | WebP quality 預設 88。 |
+| 服務端併發 | 轉碼預設 8 併發，硬上限 8。 |
+| SVG | 拒絕上傳。 |
+| 動畫 GIF / 動畫 WebP | 當前版本拒絕上傳，避免誤把動畫壓成靜態圖。 |
+
+圖片轉碼和物件儲存寫入都在 TanStack Start 的 Bun Web runtime 內完成：`Bun.Image` 負責解碼、自動方向、縮放與 WebP 編碼；`Bun.S3Client` 負責寫入和刪除圖床專用物件桶。Convex 只保存授權、元資料、列表與刪除狀態，不處理圖片二進位。
+
+## 複製格式
+
+上傳成功後頁面會生成以下格式：
+
+- BBCode：`[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]`
+- BBCode 連結：`[url=https://anibt.net/i/Ab3CdE1][img]...[/img][/url]`
+- BBCode 直連：`[url=https://i.anibt.net/image-host/...webp][img]...[/img][/url]`
+- HTML：`<img src="..." alt="pasted-image.webp" title="pasted-image.webp">`
+- HTML 連結：`<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img ...></a>`
+- HTML 直連：`<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img ...></a>`
+- Markdown：`![pasted-image.webp](https://i.anibt.net/image-host/...webp)`
+- 直接連結：`https://i.anibt.net/image-host/...webp`
+
+## 管理與刪除
+
+圖床頁面右側是該字幕組的圖片庫。成員可以預覽圖片、複製直連或 Markdown、開啟公開短連頁、展開全部複製格式。
+
+刪除權限：
+
+- 上傳者可以刪除自己上傳的圖片。
+- 字幕組 owner/admin 可以刪除該組圖片。
+- 站點管理員可以刪除任意字幕組圖床圖片。
+
+刪除時 Web runtime 會先向 Convex 請求刪除授權和物件 key，再用 Bun 原生 S3 刪除物件，最後回寫 Convex 標記為已刪除。
+
+## 部署要求
+
+圖床必須使用獨立物件桶和專用存取金鑰。生產環境需要配置：
+
+| 環境變數 | 說明 |
+| --- | --- |
+| `IMAGE_HOST_R2_BUCKET` | 圖床專用桶名。 |
+| `IMAGE_HOST_R2_ENDPOINT` | S3/R2 endpoint；可填帳號級 endpoint，帶 `/<bucket>` 路徑時會校驗並歸一化。 |
+| `IMAGE_HOST_R2_ACCESS_KEY_ID` | 圖床桶 access key。 |
+| `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | 圖床桶 secret key。 |
+| `IMAGE_HOST_PUBLIC_DOMAIN` | 公開圖片域名；裸域名會自動補 `https://`。 |
+
+生產 Docker 映像會在構建階段檢查 `Bun.Image` 和 `Bun.S3Client`。如果執行時不支援這兩個原生 API，構建會失敗。

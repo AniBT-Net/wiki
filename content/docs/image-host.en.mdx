@@ -1,0 +1,70 @@
+---
+title: Subtitle group image host
+description: "The image-hosting tool in subtitle group admin pages: paste, drop, or choose images, then get BBCode, HTML, Markdown, and direct links after server-side WebP conversion."
+---
+
+The subtitle group image host lives at `/groups/<slug>/image-host` under the **Image Host** menu item. It is available only to members of that subtitle group's organization. Regular users and users outside the group cannot upload, view the management list, or delete images.
+
+<Callout type="info">
+  The public short page `/i/<shortCode>` only displays an uploaded image. It does not expose upload or management actions.
+</Callout>
+
+## Upload methods
+
+- Choose images from the file picker, drag images into the drop zone, or paste images from the clipboard while the page is focused.
+- The upload request body is the raw image bytes; the browser does not wrap it in multipart/FormData.
+- The server checks login and subtitle group membership before reading and transcoding the body, so non-members cannot consume image-processing capacity.
+
+## Processing rules
+
+| Item | Current rule |
+| --- | --- |
+| Output format | Every successful still-image upload is converted to `image/webp`. |
+| Default input limit | 20 MiB per image, configurable at deploy time. |
+| Default pixel limit | 50,000,000 decoded pixels. |
+| Default longest edge | 3840px, downscaled proportionally and never upscaled. |
+| Default quality | WebP quality 88. |
+| Server concurrency | 8 transcodes by default, with a hard max of 8. |
+| SVG | Rejected. |
+| Animated GIF / animated WebP | Rejected in the current version to avoid silently flattening animation. |
+
+Image processing and object storage writes run in the TanStack Start Bun Web runtime. `Bun.Image` handles decoding, auto orientation, resizing, and WebP encoding. `Bun.S3Client` writes and deletes objects in the dedicated image-host bucket. Convex only stores authorization, metadata, list pagination, and delete state; it never processes image bytes.
+
+## Copy formats
+
+After a successful upload, the page generates:
+
+- BBCode: `[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]`
+- BBCode linked: `[url=https://anibt.net/i/Ab3CdE1][img]...[/img][/url]`
+- BBCode direct linked: `[url=https://i.anibt.net/image-host/...webp][img]...[/img][/url]`
+- HTML: `<img src="..." alt="pasted-image.webp" title="pasted-image.webp">`
+- HTML linked: `<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img ...></a>`
+- HTML direct linked: `<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img ...></a>`
+- Markdown: `![pasted-image.webp](https://i.anibt.net/image-host/...webp)`
+- Direct link: `https://i.anibt.net/image-host/...webp`
+
+## Management and deletion
+
+The right side of the page is the group's image library. Members can preview images, copy the direct link or Markdown, open the public short page, and expand the full copy-format grid.
+
+Delete permissions:
+
+- Uploaders can delete their own images.
+- Subtitle group owners/admins can delete images in their group.
+- Site admins can delete images from any group.
+
+For deletion, the Web runtime first asks Convex for delete authorization and the object key, then deletes the object with Bun's native S3 API, and finally marks the Convex record as deleted.
+
+## Deployment requirements
+
+Use a dedicated object bucket and dedicated credentials for image hosting. Production must define:
+
+| Environment variable | Purpose |
+| --- | --- |
+| `IMAGE_HOST_R2_BUCKET` | Dedicated image-host bucket name. |
+| `IMAGE_HOST_R2_ENDPOINT` | S3/R2 endpoint. Account-level endpoints are supported; endpoints ending in `/<bucket>` are validated and normalized. |
+| `IMAGE_HOST_R2_ACCESS_KEY_ID` | Access key for the image-host bucket. |
+| `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | Secret key for the image-host bucket. |
+| `IMAGE_HOST_PUBLIC_DOMAIN` | Public image domain. Bare domains are normalized to `https://`. |
+
+The production Docker image checks for `Bun.Image` and `Bun.S3Client` during build. If the runtime does not support both native APIs, the build fails.

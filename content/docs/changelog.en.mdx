@@ -9,6 +9,21 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 5, 2026
+
+<TypeTable
+  type={{
+    'Subtitle group image host': {
+      description: 'Added /groups/<slug>/image-host for choosing, dropping, or pasting image uploads. The server converts still images to WebP with Bun native image processing, returns BBCode/HTML/Markdown/direct-link formats, and provides group image management and deletion.',
+      type: 'Added',
+    },
+    'Image host permissions and deployment': {
+      description: 'Image hosting is limited to subtitle group members and checks membership before reading the body. Delete permissions are limited to the uploader, group owner/admin, or site admin. Docs now cover the dedicated object bucket, Bun.Image/Bun.S3Client runtime gate, and required environment variables.',
+      type: 'Docs',
+    },
+  }}
+/>
+
 ## July 4, 2026
 
 <TypeTable
