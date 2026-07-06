@@ -103,7 +103,7 @@ Authorization: Bearer <YOUR_API_KEY>
       type: 'enum',
     },
     'language': {
-      description: 'CHS / CHT / JP / EN, repeatable, up to 4 values.',
+      description: 'CHS / CHT / JP / EN / KO / ES / PT / FR / DE / IT / RU / AR / HI / ID / MS / TH / VI / TL / TR / PL / UK, repeatable, no item limit.',
       type: 'enum[]',
     },
     'subtitle': {
@@ -210,6 +210,23 @@ If neither `bgmId` nor `animeId` is provided, the server attempts to match the a
 | `language` | `CHT` | Traditional Chinese. |
 | `language` | `JP` | Japanese. |
 | `language` | `EN` | English; use this for English subtitles. |
+| `language` | `KO` | Korean. |
+| `language` | `ES` | Spanish. |
+| `language` | `PT` | Portuguese. |
+| `language` | `FR` | French. |
+| `language` | `DE` | German. |
+| `language` | `IT` | Italian. |
+| `language` | `RU` | Russian. |
+| `language` | `AR` | Arabic. |
+| `language` | `HI` | Hindi. |
+| `language` | `ID` | Indonesian. |
+| `language` | `MS` | Malay. |
+| `language` | `TH` | Thai. |
+| `language` | `VI` | Vietnamese. |
+| `language` | `TL` | Filipino / Tagalog. |
+| `language` | `TR` | Turkish. |
+| `language` | `PL` | Polish. |
+| `language` | `UK` | Ukrainian. |
 | `subtitle` | `EXTERNAL` | External subtitle files. |
 | `subtitle` | `INTERNAL` | Soft subtitles muxed in the container and toggleable. |
 | `subtitle` | `EMBEDDED` | Hard subtitles burned into the video. |
@@ -217,6 +234,10 @@ If neither `bgmId` nor `animeId` is provided, the server attempts to match the a
 | `format` | `MKV` / `MP4` / `AVI` / `WEBM` | Container format, not codec. |
 
 When omitted, these fields are inferred from `title` first, then the torrent internal filename. Fallback defaults are `resolution=1080p`, `format=MKV`, `subtitle=INTERNAL`, `language=["CHS"]`, and `version=v1`; if the final format is `MP4`, the default subtitle type leans toward `EMBEDDED`.
+
+<Callout type="info">
+  The number of languages in the world depends on counting criteria; [Ethnologue 2025](https://www.ethnologue.com/insights/how-many-languages/) lists about 7,159 living languages, and ISO 639 maintains standardized language codes. AniBT does not try to model every language. It supports a practical set of common subtitle languages first; new language codes should prefer ISO 639-1, while `CHS` / `CHT` remain AniBT compatibility codes for simplified and traditional Chinese.
+</Callout>
 
 ## Nyaa proxy publishing
 

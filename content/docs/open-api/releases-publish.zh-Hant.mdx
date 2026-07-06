@@ -103,7 +103,7 @@ Authorization: Bearer <YOUR_API_KEY>
       type: 'enum',
     },
     'language': {
-      description: 'CHS / CHT / JP / EN，可重複，最多 4 項。',
+      description: 'CHS / CHT / JP / EN / KO / ES / PT / FR / DE / IT / RU / AR / HI / ID / MS / TH / VI / TL / TR / PL / UK，可重複，不限制數量。',
       type: 'enum[]',
     },
     'subtitle': {
@@ -210,6 +210,23 @@ Authorization: Bearer <YOUR_API_KEY>
 | `language` | `CHT` | 繁體中文。 |
 | `language` | `JP` | 日語。 |
 | `language` | `EN` | 英語；例如「英文字幕」就填 `EN`。 |
+| `language` | `KO` | 韓語。 |
+| `language` | `ES` | 西班牙語。 |
+| `language` | `PT` | 葡萄牙語。 |
+| `language` | `FR` | 法語。 |
+| `language` | `DE` | 德語。 |
+| `language` | `IT` | 義大利語。 |
+| `language` | `RU` | 俄語。 |
+| `language` | `AR` | 阿拉伯語。 |
+| `language` | `HI` | 印地語。 |
+| `language` | `ID` | 印尼語。 |
+| `language` | `MS` | 馬來語。 |
+| `language` | `TH` | 泰語。 |
+| `language` | `VI` | 越南語。 |
+| `language` | `TL` | 菲律賓語 / 他加祿語。 |
+| `language` | `TR` | 土耳其語。 |
+| `language` | `PL` | 波蘭語。 |
+| `language` | `UK` | 烏克蘭語。 |
 | `subtitle` | `EXTERNAL` | 外掛字幕，字幕檔案獨立於影片檔案。 |
 | `subtitle` | `INTERNAL` | 內封軟字幕，字幕封裝在 MKV/MP4 內，可開關。 |
 | `subtitle` | `EMBEDDED` | 內嵌/硬字幕，字幕已壓進畫面，無法關閉。 |
@@ -217,6 +234,10 @@ Authorization: Bearer <YOUR_API_KEY>
 | `format` | `MKV` / `MP4` / `AVI` / `WEBM` | 影片容器格式，不是編碼格式。 |
 
 如果不顯式傳這些欄位，服務端會先從 `title` 推斷，再從種子內部主檔名推斷。仍然無法識別時，預設值為 `resolution=1080p`、`format=MKV`、`subtitle=INTERNAL`、`language=["CHS"]`、`version=v1`；如果最終 `format=MP4`，預設字幕類型會更傾向 `EMBEDDED`。
+
+<Callout type="info">
+  現實世界語言數量取決於統計口徑；[Ethnologue 2025](https://www.ethnologue.com/insights/how-many-languages/) 統計約 7,159 種現存語言，ISO 639 也維護標準語言代碼。AniBT 不追全量語言清單，而是先支援字幕發布中常見的大語種；新增語言代碼優先沿用 ISO 639-1，兩岸中文繼續保留站內相容代碼 `CHS` / `CHT`。
+</Callout>
 
 ## Nyaa 代發
 
