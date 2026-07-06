@@ -260,7 +260,7 @@ GET https://anibt.net/api/anime/groups?bgmId=543360
 - `items`: up to 30 latest releases for that group on that show, sorted by `publishedAt` desc. You can render a "show × group" resource panel directly without pulling RSS.
   - `magnet` may be `null` if only a torrent file exists.
   - `episodeKey` is a stable episode key (e.g. `01`, `SP01`) suitable for sorting / aggregation.
-  - `language`: `("CHS" | "CHT" | "JP" | "EN")[]`.
+  - `language`: `("CHS" | "CHT" | "JP" | "EN" | "KO" | "ES" | "PT" | "FR" | "DE" | "IT" | "RU" | "AR" | "HI" | "ID" | "MS" | "TH" | "VI" | "TL" | "TR" | "PL" | "UK")[]`.
   - `subtitle`: `"EMBEDDED" | "EXTERNAL" | "BUILT_IN" | "NONE"`.
 - `slug` matches [the catalogue](/docs/open-api/subtitle-groups) exactly and can be fed to `/rss/anime.xml?groupSlug=...`.
 - An unlisted or hidden id returns `404 ANIME_NOT_FOUND`.
