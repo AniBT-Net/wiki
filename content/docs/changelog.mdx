@@ -17,6 +17,10 @@ description: AniBT Wiki 与站点功能更新记录。
       description: '番剧资源发布 API、预览发布、站内发布默认值和 RSS language 过滤扩展为 CHS、CHT、JP、EN、KO、ES、PT、FR、DE、IT、RU、AR、HI、ID、MS、TH、VI、TL、TR、PL、UK；language 数组不再限制最多 4 项，适合多语字幕包。',
       type: '变更',
     },
+    '番剧后台元数据清理': {
+      description: '番剧 banner 与分集元数据同步已停止；番剧详情快照、Typesense 番剧文档和公开分集查询不再输出这些元数据。后台番剧管理页移除 banner/分集编辑与同步入口，改为稳定行高的列表视图；维护入口提供旧 animeEpisodes、animeSourceEpisodes、banner 字段和 animeSyncMeta 旧字段的分批清理。',
+      type: '变更',
+    },
   }}
 />
 

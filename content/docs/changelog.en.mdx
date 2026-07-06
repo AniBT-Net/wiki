@@ -17,6 +17,10 @@ This page records AniBT Wiki changes and feature updates that are directly cover
       description: 'The anime release publish API, preview publish flow, group publish defaults, and RSS language filters now support CHS, CHT, JP, EN, KO, ES, PT, FR, DE, IT, RU, AR, HI, ID, MS, TH, VI, TL, TR, PL, and UK. The language array no longer has a 4-item limit, so multi-language subtitle packs can list every supported language.',
       type: 'Changed',
     },
+    'Anime admin metadata cleanup': {
+      description: 'Anime banner and episode metadata sync has been stopped. Anime detail snapshots, Typesense anime documents, and public episode metadata queries no longer expose those metadata rows. The admin anime page removes banner / episode edit and sync controls, uses a stable row-based list, and adds a maintenance path for batching cleanup of old animeEpisodes, animeSourceEpisodes, banner fields, and legacy animeSyncMeta fields.',
+      type: 'Changed',
+    },
   }}
 />
 
