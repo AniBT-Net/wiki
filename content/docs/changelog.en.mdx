@@ -21,6 +21,10 @@ This page records AniBT Wiki changes and feature updates that are directly cover
       description: 'Anime banner and episode metadata sync has been stopped. Anime detail snapshots, Typesense anime documents, and public episode metadata queries no longer expose those metadata rows. The admin anime page removes banner / episode edit and sync controls, uses a stable row-based list, and adds a maintenance path for batching cleanup of old animeEpisodes, animeSourceEpisodes, banner fields, and legacy animeSyncMeta fields.',
       type: 'Changed',
     },
+    'Seasonal anime title query': {
+      description: '/api/seasons/anime now accepts query (short alias: q) to search by Chinese, Traditional Chinese, romaji, English, and Japanese anime titles. Without season it searches all public anime; with season it is scoped to that season. It cannot be combined with bgmId.',
+      type: 'Added',
+    },
   }}
 />
 

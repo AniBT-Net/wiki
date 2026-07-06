@@ -55,6 +55,8 @@ GET https://anibt.net/api/seasons/anime
 GET https://anibt.net/api/seasons/anime?season=2026春
 GET https://anibt.net/api/seasons/anime?season=2026-SPRING   # 也接受英文形式
 GET https://anibt.net/api/seasons/anime?bgmId=543360         # 精確返回單個番劇
+GET https://anibt.net/api/seasons/anime?query=夏日口袋        # 按番劇標題搜尋
+GET https://anibt.net/api/seasons/anime?season=2026夏&query=Summer%20Pockets
 ```
 
 ### Query
@@ -69,6 +71,10 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # 精確返回單�
     'bgmId': {
       description: '精確查詢單個番劇（按 BGM subject id）。優先順序高於 season：傳入後忽略 season 過濾，僅返回該番劇；未匹配返回 total: 0 且 byWeekday: []。requestedSeason 自動回填為該番劇所屬季度。',
       type: 'integer',
+    },
+    'query': {
+      description: '按番劇標題搜尋（也支援短別名 q），匹配中文、繁中、羅馬字、英文、日文標題和 allTitles。最長 120 字元，最多返回 50 個匹配番劇；不傳 season 時在全部公開番劇中搜尋，傳 season 時僅搜尋該季度；不能和 bgmId 同時使用。',
+      type: 'string',
     },
   }}
 />
@@ -191,6 +197,7 @@ GET https://anibt.net/api/seasons/anime?bgmId=543360         # 精確返回單�
 curl 'https://anibt.net/api/seasons/anime'
 curl 'https://anibt.net/api/seasons/anime?season=2026春'
 curl 'https://anibt.net/api/seasons/anime?bgmId=543360'
+curl 'https://anibt.net/api/seasons/anime?query=夏日口袋'
 
 ETAG=$(curl -sSI 'https://anibt.net/api/seasons/anime' | grep -i ^etag: | awk '{print $2}' | tr -d '\r')
 curl -i 'https://anibt.net/api/seasons/anime' -H "If-None-Match: $ETAG"

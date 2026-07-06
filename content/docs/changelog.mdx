@@ -21,6 +21,10 @@ description: AniBT Wiki 与站点功能更新记录。
       description: '番剧 banner 与分集元数据同步已停止；番剧详情快照、Typesense 番剧文档和公开分集查询不再输出这些元数据。后台番剧管理页移除 banner/分集编辑与同步入口，改为稳定行高的列表视图；维护入口提供旧 animeEpisodes、animeSourceEpisodes、banner 字段和 animeSyncMeta 旧字段的分批清理。',
       type: '变更',
     },
+    '季度番剧标题查询': {
+      description: '/api/seasons/anime 新增 query 参数（短别名 q），可按中文、繁中、罗马字、英文、日文标题搜索番剧；不传 season 时搜索全部公开番剧，传 season 时限定到该季度，不能和 bgmId 同时使用。',
+      type: '新增',
+    },
   }}
 />
 
