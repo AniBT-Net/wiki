@@ -76,6 +76,18 @@ Authorization: Bearer <YOUR_API_KEY>
       description: 'Bangumi subject id. Look it up via /api/bgm/search. If omitted, the server tries to auto-match by torrent title; low-confidence matches become pending releases.',
       type: 'number',
     },
+    'malId': {
+      description: 'MyAnimeList anime id. Resolved through the bangumi-data BGM mapping. If one MAL id maps to multiple BGM entries and the release cannot be resolved uniquely, it becomes pending.',
+      type: 'number',
+    },
+    'anidbId': {
+      description: 'AniDB anime id. Resolved through the bangumi-data BGM mapping. If one AniDB id maps to multiple BGM entries and the release cannot be resolved uniquely, it becomes pending.',
+      type: 'number',
+    },
+    'anilistId': {
+      description: 'AniList anime id. Resolved through the bangumi-data BGM mapping. If one AniList id maps to multiple BGM entries and the release cannot be resolved uniquely, it becomes pending.',
+      type: 'number',
+    },
     'title': {
       description: 'Release filename, e.g. [Group] Show - 01 [1080p].mkv. Required for JSON; multipart can fall back to the torrent internal name.',
       type: 'string',
@@ -194,12 +206,15 @@ Authorization: Bearer <YOUR_API_KEY>
 | Field | Accepted values | Meaning |
 | ----- | --------------- | ------- |
 | `bgmId` | Bangumi subject id, e.g. `400602` | Recommended. Use [`/api/bgm/search`](/docs/open-api/bgm-search) to find it. |
+| `malId` | MyAnimeList anime id, e.g. `52991` | Can be used instead of `bgmId`; AniBT resolves it through bangumi-data mappings. |
+| `anidbId` | AniDB anime id, e.g. `17617` | Can be used instead of `bgmId`; if one AniDB id maps to several BGM entries, the release becomes pending. |
+| `anilistId` | AniList anime id, e.g. `154587` | Can be used instead of `bgmId`; if one AniList id maps to several BGM entries, the release becomes pending. |
 | `animeId` | AniBT internal `anime_...` / Convex document id string | Advanced usage. Do not fill this manually unless your system already stores AniBT anime ids. |
 | `episode` | Non-negative integer, e.g. `1`, `12` | Used for ordering. For custom `episodeKey` values such as `SP` or `BATCH`, pass `episode=0`. |
 | `episodeKey` | `01`, `1-12`, `13.5`, `SP`, `OVA`, `MOVIE`, `BATCH` | Used for display and de-duplication. Pure numeric values are normalized for de-duplication. |
 | `version` | `v1`, `v2`, `v2_fix` | Defaults to `v1`. Use `v2` for corrected re-releases. |
 
-If neither `bgmId` nor `animeId` is provided, the server attempts to match the anime from the title and torrent internal name. Low-confidence or failed matches are created as pending releases for later manual matching.
+Anime resolution uses this priority: `animeId` / `bgmId`, then `malId` / `anidbId` / `anilistId`, then title and torrent internal-name auto matching. External ID mappings follow bangumi-data. If an external ID maps to multiple BGM entries, or multiple provided external IDs resolve to different anime, the release is created as pending for later manual matching.
 
 ### Resolution, Language, Subtitles, Format
 

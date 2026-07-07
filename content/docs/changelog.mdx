@@ -13,6 +13,10 @@ description: AniBT Wiki 与站点功能更新记录。
 
 <TypeTable
   type={{
+    '发布 API 外部番剧 ID': {
+      description: '番剧资源发布 API 支持 malId、anidbId、anilistId 作为 bgmId 的替代番剧识别字段；对应关系以 bangumi-data 为准。若外部 ID 对应多个 BGM 条目或多个外部 ID 解析冲突，资源会进入待匹配状态。',
+      type: '新增',
+    },
     '发布语言代码': {
       description: '番剧资源发布 API、预览发布、站内发布默认值和 RSS language 过滤扩展为 CHS、CHT、JP、EN、KO、ES、PT、FR、DE、IT、RU、AR、HI、ID、MS、TH、VI、TL、TR、PL、UK；language 数组不再限制最多 4 项，适合多语字幕包。',
       type: '变更',

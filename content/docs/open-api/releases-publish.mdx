@@ -76,6 +76,18 @@ Authorization: Bearer <YOUR_API_KEY>
       description: 'Bangumi 番剧 ID。可通过 /api/bgm/search 查询。未传时服务端会尝试按种子标题自动匹配，失败则进入待匹配状态。',
       type: 'number',
     },
+    'malId': {
+      description: 'MyAnimeList anime id。按 bangumi-data 与 BGM 的对应关系解析；若同一个 MAL ID 对应多个 BGM 条目且无法唯一确定，会进入待匹配状态。',
+      type: 'number',
+    },
+    'anidbId': {
+      description: 'AniDB anime id。按 bangumi-data 与 BGM 的对应关系解析；若同一个 AniDB ID 对应多个 BGM 条目且无法唯一确定，会进入待匹配状态。',
+      type: 'number',
+    },
+    'anilistId': {
+      description: 'AniList anime id。按 bangumi-data 与 BGM 的对应关系解析；若同一个 AniList ID 对应多个 BGM 条目且无法唯一确定，会进入待匹配状态。',
+      type: 'number',
+    },
     'title': {
       description: '资源文件名，例如 [字幕组] 番名 - 01 [1080p].mkv。JSON 请求必填；multipart 未传时会尝试使用种子内部名称。',
       type: 'string',
@@ -194,12 +206,15 @@ Authorization: Bearer <YOUR_API_KEY>
 | 字段 | 可填值 | 说明 |
 | ---- | ------ | ---- |
 | `bgmId` | Bangumi subject id，例如 `400602` | 推荐填写。可先调用 [`/api/bgm/search`](/docs/open-api/bgm-search) 搜索番剧。 |
+| `malId` | MyAnimeList anime id，例如 `52991` | 可替代 `bgmId`。本站按 bangumi-data 的 BGM 对应关系解析。 |
+| `anidbId` | AniDB anime id，例如 `17617` | 可替代 `bgmId`。同一个 AniDB ID 对应多个 BGM 条目时会进入待匹配状态。 |
+| `anilistId` | AniList anime id，例如 `154587` | 可替代 `bgmId`。同一个 AniList ID 对应多个 BGM 条目时会进入待匹配状态。 |
 | `animeId` | 站内 `anime_...` / Convex doc id 字符串 | 高级用法。一般不要手填，除非你的系统已经保存了站内番剧 ID。 |
 | `episode` | 非负整数，例如 `1`、`12` | 用于排序。自定义 `episodeKey`（如 `SP`、`BATCH`）时请传 `episode=0`。 |
 | `episodeKey` | `01`、`1-12`、`13.5`、`SP`、`OVA`、`MOVIE`、`BATCH` | 用于显示和去重。纯数字会规范化为数字字符串，例如 `01` 最终按 `1` 去重。 |
 | `version` | `v1`、`v2`、`v2_fix` | 不传时默认 `v1`。修正版建议用 `v2`。 |
 
-未传 `bgmId` / `animeId` 时，服务端会尝试按标题和种子内部文件名自动匹配番剧；无法高置信匹配时，资源会进入待匹配状态，之后由字幕组或管理员补匹配。
+番剧识别优先级为 `animeId` / `bgmId`，然后是 `malId` / `anidbId` / `anilistId`，最后才按标题和种子内部文件名自动匹配。外部 ID 的对应关系以 bangumi-data 为准；若外部 ID 对应多个 BGM 条目或多个外部 ID 解析结果互相冲突，资源会进入待匹配状态，之后由字幕组或管理员补匹配。
 
 ### 分辨率、语言、字幕、格式
 
