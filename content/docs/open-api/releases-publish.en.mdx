@@ -25,7 +25,8 @@ Authorization: Bearer <YOUR_API_KEY>
     ```bash title="Upload a torrent"
     curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
-      -F 'bgmId=400602' \
+      -F 'animeIdType=anilist' \
+      -F 'animeId=170942' \
       -F 'title=[Group] Frieren - 01 [1080p].mkv' \
       -F 'episodeKey=01' \
       -F 'resolution=1080p' \
@@ -46,7 +47,8 @@ Authorization: Bearer <YOUR_API_KEY>
       -H 'Content-Type: application/json' \
       --data @- <<'JSON'
     {
-      "bgmId": 400602,
+      "animeIdType": "mal",
+      "animeId": "52991",
       "title": "[Group] Frieren - 01 [1080p].mkv",
       "magnetBase64": "magnet:?xt=urn:btih:...",
       "episodeKey": "01",
@@ -68,24 +70,32 @@ Authorization: Bearer <YOUR_API_KEY>
 
 <TypeTable
   type={{
+    'animeIdType': {
+      description: 'Anime ID source. One of bgm, anilist, mal, anidb. Use it together with animeId. New integrations should prefer this pair.',
+      type: 'enum',
+    },
     'animeId': {
-      description: 'AniBT internal anime id. Usually you do not need to pass it; bgmId is preferred. If both animeId and bgmId are present, animeId is resolved first.',
+      description: 'Anime ID value. With animeIdType, it is resolved as the selected external source. Without animeIdType, it keeps the legacy AniBT internal anime id behavior.',
       type: 'string',
     },
+    'anime': {
+      description: 'Structured anime reference, e.g. {"source":"anidb","id":"17617"}. JSON requests can pass an object; multipart can pass a JSON string.',
+      type: 'object',
+    },
     'bgmId': {
-      description: 'Bangumi subject id. Look it up via /api/bgm/search. If omitted, the server tries to auto-match by torrent title; low-confidence matches become pending releases.',
+      description: 'Compatibility field: Bangumi subject id. Still supported; new integrations should use animeIdType=bgm + animeId.',
       type: 'number',
     },
     'malId': {
-      description: 'MyAnimeList anime id. Resolved through the bangumi-data BGM mapping. If one MAL id maps to multiple BGM entries and the release cannot be resolved uniquely, it becomes pending.',
+      description: 'Compatibility field: MyAnimeList anime id. Equivalent to animeIdType=mal + animeId.',
       type: 'number',
     },
     'anidbId': {
-      description: 'AniDB anime id. Resolved through the bangumi-data BGM mapping. If one AniDB id maps to multiple BGM entries and the release cannot be resolved uniquely, it becomes pending.',
+      description: 'Compatibility field: AniDB anime id. Equivalent to animeIdType=anidb + animeId.',
       type: 'number',
     },
     'anilistId': {
-      description: 'AniList anime id. Resolved through the bangumi-data BGM mapping. If one AniList id maps to multiple BGM entries and the release cannot be resolved uniquely, it becomes pending.',
+      description: 'Compatibility field: AniList anime id. Equivalent to animeIdType=anilist + animeId.',
       type: 'number',
     },
     'title': {
@@ -200,21 +210,24 @@ Authorization: Bearer <YOUR_API_KEY>
 | Multiple languages | JSON uses an array: `"language":["CHS","JP"]`; multipart may repeat the field: `-F 'language=CHS' -F 'language=JP'`, or send a JSON array string. |
 | Tracker list | JSON uses an array; multipart uses newline-separated text. The site merges and de-duplicates with defaults. |
 | Booleans | JSON uses `true/false`; multipart accepts `true/false`, `1/0`, `yes/no`, and `on/off`. |
+| Anime ID | Send one anime identifier. New integrations should use `animeIdType` + `animeId`; legacy `bgmId` / `malId` / `anidbId` / `anilistId` remain supported. |
 
 ### Anime and Episode Fields
 
 | Field | Accepted values | Meaning |
 | ----- | --------------- | ------- |
-| `bgmId` | Bangumi subject id, e.g. `400602` | Recommended. Use [`/api/bgm/search`](/docs/open-api/bgm-search) to find it. |
-| `malId` | MyAnimeList anime id, e.g. `52991` | Can be used instead of `bgmId`; AniBT resolves it through bangumi-data mappings. |
-| `anidbId` | AniDB anime id, e.g. `17617` | Can be used instead of `bgmId`; if one AniDB id maps to several BGM entries, the release becomes pending. |
-| `anilistId` | AniList anime id, e.g. `154587` | Can be used instead of `bgmId`; if one AniList id maps to several BGM entries, the release becomes pending. |
-| `animeId` | AniBT internal `anime_...` / Convex document id string | Advanced usage. Do not fill this manually unless your system already stores AniBT anime ids. |
+| `animeIdType` + `animeId` | `bgm` / `anilist` / `mal` / `anidb` + the site-specific ID | Recommended. Example: `animeIdType=anilist`, `animeId=170942`. |
+| `anime` | `{"source":"anidb","id":"17617"}` | Structured form for JSON clients. `source` must be `bgm`, `anilist`, `mal`, or `anidb`. |
+| `bgmId` | Bangumi subject id, e.g. `400602` | Legacy-compatible field. Use [`/api/bgm/search`](/docs/open-api/bgm-search) to find it. |
+| `malId` | MyAnimeList anime id, e.g. `52991` | Legacy-compatible field. AniBT resolves it through bangumi-data mappings. |
+| `anidbId` | AniDB anime id, e.g. `17617` | Legacy-compatible field. If one AniDB id maps to several BGM entries, the release becomes pending. |
+| `anilistId` | AniList anime id, e.g. `154587` | Legacy-compatible field. If one AniList id maps to several BGM entries, the release becomes pending. |
+| Bare `animeId` | AniBT internal `anime_...` / Convex document id string | Legacy advanced usage. It is resolved as an internal AniBT id only when `animeIdType` is omitted. |
 | `episode` | Non-negative integer, e.g. `1`, `12` | Used for ordering. For custom `episodeKey` values such as `SP` or `BATCH`, pass `episode=0`. |
 | `episodeKey` | `01`, `1-12`, `13.5`, `SP`, `OVA`, `MOVIE`, `BATCH` | Used for display and de-duplication. Pure numeric values are normalized for de-duplication. |
 | `version` | `v1`, `v2`, `v2_fix` | Defaults to `v1`. Use `v2` for corrected re-releases. |
 
-Anime resolution uses this priority: `animeId` / `bgmId`, then `malId` / `anidbId` / `anilistId`, then title and torrent internal-name auto matching. External ID mappings follow bangumi-data. If an external ID maps to multiple BGM entries, or multiple provided external IDs resolve to different anime, the release is created as pending for later manual matching.
+Send one anime identifier whenever possible. `animeIdType + animeId` or `anime` resolves by the selected source; bare `animeId` keeps the legacy internal AniBT id behavior; `bgmId`, `malId`, `anidbId`, and `anilistId` remain supported. External ID mappings follow bangumi-data. If an external ID maps to multiple BGM entries, multiple external IDs conflict, or no mapping is found yet, API-key publishing creates a pending release for later manual matching.
 
 ### Resolution, Language, Subtitles, Format
 
@@ -273,7 +286,8 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -F 'torrent=@release.torrent' \
   -F 'title=[Group] Show Title - 01 [1080p][CHS]' \
-  -F 'bgmId=12345' \
+  -F 'animeIdType=mal' \
+  -F 'animeId=58514' \
   -F 'nyaa=true' \
   -F 'nyaaCategory=1_3' \
   -F 'nyaaComplete=false' \
@@ -323,7 +337,8 @@ To verify how a release will render (title parsing, Markdown notes, magnet corre
 ```bash title="Preview only — not published"
 curl -X POST 'https://anibt.net/api/releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  -F 'bgmId=400602' \
+  -F 'animeIdType=bgm' \
+  -F 'animeId=400602' \
   -F 'title=[Group] Frieren - 01 [1080p].mkv' \
   -F 'preview=true' \
   -F 'torrent=@/path/to/release.torrent'
@@ -358,11 +373,11 @@ The returned preview URL **expires in 10 minutes** and **does not** show up in R
 
 | HTTP | Cause                                                  | Fix                                                            |
 | ---- | ------------------------------------------------------ | -------------------------------------------------------------- |
-| 400  | Missing `title` / `bgmId`, or torrent could not be parsed | Check required fields; ensure a valid .torrent file              |
+| 400  | Missing `title` / anime identifier, or torrent could not be parsed | Check required fields; ensure a valid .torrent file              |
 | 401  | `Authorization` missing or malformed                    | The `Bearer ` prefix (with a space) is mandatory                |
 | 403  | API key invalid / revoked / does not belong to the group | Generate a new key                                              |
 | 409  | A release with the same infoHash already exists         | To replace, re-publish with `version=v2`                        |
 | 413  | Torrent / form too large                                | Trim the tracker list inside the torrent and retry              |
 | 429  | Write quota exhausted                                   | Back off using `Retry-After` from the response                  |
 
-Next: subscribe to [`/rss/anime.xml`](/docs/open-api/rss-anime) right after to verify; find a `bgmId` via [Bangumi search](/docs/open-api/bgm-search); inspect your group via [`/api/subtitle-groups/me`](/docs/open-api/me).
+Next: subscribe to [`/rss/anime.xml`](/docs/open-api/rss-anime) right after to verify; find a Bangumi ID via [Bangumi search](/docs/open-api/bgm-search), or pass the AniList / MyAnimeList / AniDB ID directly; inspect your group via [`/api/subtitle-groups/me`](/docs/open-api/me).

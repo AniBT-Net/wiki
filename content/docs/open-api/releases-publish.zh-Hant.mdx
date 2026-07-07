@@ -25,7 +25,8 @@ Authorization: Bearer <YOUR_API_KEY>
     ```bash title="上傳種子"
     curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
-      -F 'bgmId=400602' \
+      -F 'animeIdType=anilist' \
+      -F 'animeId=170942' \
       -F 'title=[字幕組] 葬送的芙莉蓮 - 01 [1080p].mkv' \
       -F 'episodeKey=01' \
       -F 'resolution=1080p' \
@@ -46,7 +47,8 @@ Authorization: Bearer <YOUR_API_KEY>
       -H 'Content-Type: application/json' \
       --data @- <<'JSON'
     {
-      "bgmId": 400602,
+      "animeIdType": "mal",
+      "animeId": "52991",
       "title": "[字幕組] 葬送的芙莉蓮 - 01 [1080p].mkv",
       "magnetBase64": "magnet:?xt=urn:btih:...",
       "episodeKey": "01",
@@ -68,24 +70,32 @@ Authorization: Bearer <YOUR_API_KEY>
 
 <TypeTable
   type={{
+    'animeIdType': {
+      description: '番劇 ID 來源。可選 bgm、anilist、mal、anidb；與 animeId 一起使用。新接入建議統一使用這組欄位。',
+      type: 'enum',
+    },
     'animeId': {
-      description: '站內番劇 ID。一般不需要手填；更常用 bgmId。若 animeId 與 bgmId 同時傳入，優先按 animeId 查找。',
+      description: '番劇 ID 值。若同時傳 animeIdType，會按所選來源解析；若不傳 animeIdType，則保持舊行為，按站內番劇 ID 查找。',
       type: 'string',
     },
+    'anime': {
+      description: '結構化番劇引用，例如 {"source":"anidb","id":"17617"}。JSON 請求可直接傳物件；multipart 可傳 JSON 字串。',
+      type: 'object',
+    },
     'bgmId': {
-      description: 'Bangumi 番劇 ID。可透過 /api/bgm/search 查詢。未傳時服務端會嘗試按種子標題自動匹配，失敗則進入待匹配狀態。',
+      description: '相容欄位：Bangumi 番劇 ID。仍然支援；新接入建議改用 animeIdType=bgm + animeId。',
       type: 'number',
     },
     'malId': {
-      description: 'MyAnimeList anime id。按 bangumi-data 與 BGM 的對應關係解析；若同一個 MAL ID 對應多個 BGM 條目且無法唯一確定，會進入待匹配狀態。',
+      description: '相容欄位：MyAnimeList anime id。等價於 animeIdType=mal + animeId。',
       type: 'number',
     },
     'anidbId': {
-      description: 'AniDB anime id。按 bangumi-data 與 BGM 的對應關係解析；若同一個 AniDB ID 對應多個 BGM 條目且無法唯一確定，會進入待匹配狀態。',
+      description: '相容欄位：AniDB anime id。等價於 animeIdType=anidb + animeId。',
       type: 'number',
     },
     'anilistId': {
-      description: 'AniList anime id。按 bangumi-data 與 BGM 的對應關係解析；若同一個 AniList ID 對應多個 BGM 條目且無法唯一確定，會進入待匹配狀態。',
+      description: '相容欄位：AniList anime id。等價於 animeIdType=anilist + animeId。',
       type: 'number',
     },
     'title': {
@@ -200,21 +210,24 @@ Authorization: Bearer <YOUR_API_KEY>
 | 多語言 | JSON 用陣列：`"language":["CHS","JP"]`；multipart 可以重複欄位：`-F 'language=CHS' -F 'language=JP'`，也可以傳 JSON 陣列字串。 |
 | tracker 列表 | JSON 用陣列；multipart 用換行分隔。站點會與預設 tracker 合併去重。 |
 | 布林值 | JSON 用 `true/false`；multipart 可用 `true/false`、`1/0`、`yes/no`、`on/off`。 |
+| 番劇 ID | 建議只傳一種番劇標識。新接入用 `animeIdType` + `animeId`；舊欄位 `bgmId` / `malId` / `anidbId` / `anilistId` 繼續相容。 |
 
 ### 番劇與集數
 
 | 欄位 | 可填值 | 說明 |
 | ---- | ------ | ---- |
-| `bgmId` | Bangumi subject id，例如 `400602` | 推薦填寫。可先呼叫 [`/api/bgm/search`](/docs/open-api/bgm-search) 搜尋番劇。 |
-| `malId` | MyAnimeList anime id，例如 `52991` | 可替代 `bgmId`。本站按 bangumi-data 的 BGM 對應關係解析。 |
-| `anidbId` | AniDB anime id，例如 `17617` | 可替代 `bgmId`。同一個 AniDB ID 對應多個 BGM 條目時會進入待匹配狀態。 |
-| `anilistId` | AniList anime id，例如 `154587` | 可替代 `bgmId`。同一個 AniList ID 對應多個 BGM 條目時會進入待匹配狀態。 |
-| `animeId` | 站內 `anime_...` / Convex doc id 字串 | 進階用法。一般不要手填，除非你的系統已經保存了站內番劇 ID。 |
+| `animeIdType` + `animeId` | `bgm` / `anilist` / `mal` / `anidb` + 對應站點 ID | 推薦寫法。例：`animeIdType=anilist`、`animeId=170942`。 |
+| `anime` | `{"source":"anidb","id":"17617"}` | 結構化寫法，適合 JSON 客戶端；`source` 同樣只能是 `bgm` / `anilist` / `mal` / `anidb`。 |
+| `bgmId` | Bangumi subject id，例如 `400602` | 相容舊欄位。可先呼叫 [`/api/bgm/search`](/docs/open-api/bgm-search) 搜尋番劇。 |
+| `malId` | MyAnimeList anime id，例如 `52991` | 相容舊欄位。本站按 bangumi-data 的 BGM 對應關係解析。 |
+| `anidbId` | AniDB anime id，例如 `17617` | 相容舊欄位。同一個 AniDB ID 對應多個 BGM 條目時會進入待匹配狀態。 |
+| `anilistId` | AniList anime id，例如 `154587` | 相容舊欄位。同一個 AniList ID 對應多個 BGM 條目時會進入待匹配狀態。 |
+| 單獨 `animeId` | 站內 `anime_...` / Convex doc id 字串 | 舊進階用法。只有不傳 `animeIdType` 時才按站內 ID 解析。 |
 | `episode` | 非負整數，例如 `1`、`12` | 用於排序。自訂 `episodeKey`（如 `SP`、`BATCH`）時請傳 `episode=0`。 |
 | `episodeKey` | `01`、`1-12`、`13.5`、`SP`、`OVA`、`MOVIE`、`BATCH` | 用於顯示和去重。純數字會規範化為數字字串，例如 `01` 最終按 `1` 去重。 |
 | `version` | `v1`、`v2`、`v2_fix` | 不傳時預設 `v1`。修正版建議用 `v2`。 |
 
-番劇識別優先級為 `animeId` / `bgmId`，然後是 `malId` / `anidbId` / `anilistId`，最後才按標題和種子內部檔名自動匹配。外部 ID 的對應關係以 bangumi-data 為準；若外部 ID 對應多個 BGM 條目或多個外部 ID 解析結果互相衝突，資源會進入待匹配狀態，之後由字幕組或管理員補匹配。
+番劇識別建議只傳一種 ID。`animeIdType + animeId` 或 `anime` 會按指定來源解析；單獨 `animeId` 保持舊站內 ID 語義；`bgmId`、`malId`、`anidbId`、`anilistId` 繼續相容。外部 ID 的對應關係以 bangumi-data 為準；若外部 ID 對應多個 BGM 條目、多個外部 ID 解析結果互相衝突，或暫時找不到對應番劇，API Key 釋出會進入待匹配狀態，之後由字幕組或管理員補匹配。
 
 ### 解析度、語言、字幕、格式
 
@@ -273,7 +286,8 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -F 'torrent=@release.torrent' \
   -F 'title=[字幕組] 作品名 - 01 [1080p][CHS]' \
-  -F 'bgmId=12345' \
+  -F 'animeIdType=mal' \
+  -F 'animeId=58514' \
   -F 'nyaa=true' \
   -F 'nyaaCategory=1_3' \
   -F 'nyaaComplete=false' \
@@ -323,7 +337,8 @@ Nyaa 分類代碼必須原樣填寫：
 ```bash title="預覽，不公開"
 curl -X POST 'https://anibt.net/api/releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  -F 'bgmId=400602' \
+  -F 'animeIdType=bgm' \
+  -F 'animeId=400602' \
   -F 'title=[字幕組] 葬送的芙莉蓮 - 01 [1080p].mkv' \
   -F 'preview=true' \
   -F 'torrent=@/path/to/release.torrent'
@@ -358,11 +373,11 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 
 | HTTP | 原因                                              | 處理                                                          |
 | ---- | ------------------------------------------------- | ------------------------------------------------------------- |
-| 400  | `title` / `bgmId` 缺失，或 `torrent` 解析失敗       | 檢查必填項；確認上傳的是合法 .torrent 檔案                       |
+| 400  | `title` / 番劇標識缺失，或 `torrent` 解析失敗       | 檢查必填項；確認上傳的是合法 .torrent 檔案                       |
 | 401  | `Authorization` 頭缺失或格式錯誤                    | `Bearer ` 字首必填，注意空格                                    |
 | 403  | API Key 無效 / 已撤銷 / 不屬於該字幕組              | 重新生成 Key                                                  |
 | 409  | 同一 infoHash 已經發布過                           | 想替換請用 `version=v2` 重發                                   |
 | 413  | 種子檔案 / 表單超過大小限制                         | 壓縮種子（裁剪 tracker 列表）                                   |
 | 429  | 寫入配額耗盡                                       | 按響應頭 `Retry-After` 退避                                    |
 
-下一步：發完直接訂閱 [`/rss/anime.xml`](/docs/open-api/rss-anime) 驗證；找 bgmId 用 [Bangumi 搜尋](/docs/open-api/bgm-search)；想看自己字幕組的統計走 [`/api/subtitle-groups/me`](/docs/open-api/me)。
+下一步：發完直接訂閱 [`/rss/anime.xml`](/docs/open-api/rss-anime) 驗證；找 Bangumi ID 用 [Bangumi 搜尋](/docs/open-api/bgm-search)，AniList / MyAnimeList / AniDB 可直接填對應站點 ID；想看自己字幕組的統計走 [`/api/subtitle-groups/me`](/docs/open-api/me)。

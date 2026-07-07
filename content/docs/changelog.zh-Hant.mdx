@@ -9,6 +9,21 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 7 日
+
+<TypeTable
+  type={{
+    '釋出 API 統一番劇 ID': {
+      description: '番劇資源釋出 API 新增 animeIdType + animeId 統一寫法，animeIdType 支援 bgm、anilist、mal、anidb；也支援 JSON 結構化 anime: { source, id }。舊欄位 bgmId、malId、anidbId、anilistId 和單獨 animeId 保持相容。',
+      type: '新增',
+    },
+    '字幕組 API 示例': {
+      description: '字幕組 API 釋出頁、Nyaa 代發說明和 Open API 文件改用統一番劇 ID 示例，並明確外部 ID 對應關係以 bangumi-data 為準，未匹配或衝突時進入待匹配狀態。',
+      type: '文件',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 6 日
 
 <TypeTable
