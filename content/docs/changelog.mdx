@@ -14,11 +14,11 @@ description: AniBT Wiki 与站点功能更新记录。
 <TypeTable
   type={{
     '发布 API 统一番剧 ID': {
-      description: '番剧资源发布 API 新增 animeIdType + animeId 统一写法，animeIdType 支持 bgm、anilist、mal、anidb；也支持 JSON 结构化 anime: { source, id }。旧字段 bgmId、malId、anidbId、anilistId 和单独 animeId 保持兼容。',
+      description: '番剧资源发布 API 新增 animeIdType + animeId 统一写法，animeIdType 支持 bgm、anilist、mal、anidb；也支持 JSON 结构化 anime: { source, id }。历史 bgmId 字段保持兼容。',
       type: '新增',
     },
     '字幕组 API 示例': {
-      description: '字幕组 API 发布页、Nyaa 代发说明和 Open API 文档改用统一番剧 ID 示例，并明确外部 ID 对应关系以 bangumi-data 为准，未匹配或冲突时进入待匹配状态。',
+      description: '字幕组 API 发布页、Nyaa 代发说明和 Open API 文档改用统一番剧 ID 示例，并补充 preview=true smoke test；外部 ID 对应关系以 bangumi-data 为准，未匹配或冲突时进入待匹配状态。',
       type: '文档',
     },
   }}
@@ -29,7 +29,7 @@ description: AniBT Wiki 与站点功能更新记录。
 <TypeTable
   type={{
     '发布 API 外部番剧 ID': {
-      description: '番剧资源发布 API 支持 malId、anidbId、anilistId 作为 bgmId 的替代番剧识别字段；对应关系以 bangumi-data 为准。若外部 ID 对应多个 BGM 条目或多个外部 ID 解析冲突，资源会进入待匹配状态。',
+      description: '番剧资源发布 API 开始支持用外部番剧 ID 识别资源；当前公开写法统一为 animeIdType + animeId，对应关系以 bangumi-data 为准。若外部 ID 对应多个 BGM 条目或多个外部 ID 解析冲突，资源会进入待匹配状态。',
       type: '新增',
     },
     '发布语言代码': {

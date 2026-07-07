@@ -75,7 +75,7 @@ Authorization: Bearer <YOUR_API_KEY>
       type: 'enum',
     },
     'animeId': {
-      description: 'Anime ID value. With animeIdType, it is resolved as the selected external source. Without animeIdType, it keeps the legacy AniBT internal anime id behavior.',
+      description: 'Anime ID value. Use it with animeIdType, for example animeIdType=mal + animeId=52991.',
       type: 'string',
     },
     'anime': {
@@ -84,18 +84,6 @@ Authorization: Bearer <YOUR_API_KEY>
     },
     'bgmId': {
       description: 'Compatibility field: Bangumi subject id. Still supported; new integrations should use animeIdType=bgm + animeId.',
-      type: 'number',
-    },
-    'malId': {
-      description: 'Compatibility field: MyAnimeList anime id. Equivalent to animeIdType=mal + animeId.',
-      type: 'number',
-    },
-    'anidbId': {
-      description: 'Compatibility field: AniDB anime id. Equivalent to animeIdType=anidb + animeId.',
-      type: 'number',
-    },
-    'anilistId': {
-      description: 'Compatibility field: AniList anime id. Equivalent to animeIdType=anilist + animeId.',
       type: 'number',
     },
     'title': {
@@ -210,7 +198,7 @@ Authorization: Bearer <YOUR_API_KEY>
 | Multiple languages | JSON uses an array: `"language":["CHS","JP"]`; multipart may repeat the field: `-F 'language=CHS' -F 'language=JP'`, or send a JSON array string. |
 | Tracker list | JSON uses an array; multipart uses newline-separated text. The site merges and de-duplicates with defaults. |
 | Booleans | JSON uses `true/false`; multipart accepts `true/false`, `1/0`, `yes/no`, and `on/off`. |
-| Anime ID | Send one anime identifier. New integrations should use `animeIdType` + `animeId`; legacy `bgmId` / `malId` / `anidbId` / `anilistId` remain supported. |
+| Anime ID | Send one anime identifier. New integrations should use `animeIdType` + `animeId`; the historical Bangumi field `bgmId` remains supported. |
 
 ### Anime and Episode Fields
 
@@ -219,15 +207,11 @@ Authorization: Bearer <YOUR_API_KEY>
 | `animeIdType` + `animeId` | `bgm` / `anilist` / `mal` / `anidb` + the site-specific ID | Recommended. Example: `animeIdType=anilist`, `animeId=170942`. |
 | `anime` | `{"source":"anidb","id":"17617"}` | Structured form for JSON clients. `source` must be `bgm`, `anilist`, `mal`, or `anidb`. |
 | `bgmId` | Bangumi subject id, e.g. `400602` | Legacy-compatible field. Use [`/api/bgm/search`](/docs/open-api/bgm-search) to find it. |
-| `malId` | MyAnimeList anime id, e.g. `52991` | Legacy-compatible field. AniBT resolves it through bangumi-data mappings. |
-| `anidbId` | AniDB anime id, e.g. `17617` | Legacy-compatible field. If one AniDB id maps to several BGM entries, the release becomes pending. |
-| `anilistId` | AniList anime id, e.g. `154587` | Legacy-compatible field. If one AniList id maps to several BGM entries, the release becomes pending. |
-| Bare `animeId` | AniBT internal `anime_...` / Convex document id string | Legacy advanced usage. It is resolved as an internal AniBT id only when `animeIdType` is omitted. |
 | `episode` | Non-negative integer, e.g. `1`, `12` | Used for ordering. For custom `episodeKey` values such as `SP` or `BATCH`, pass `episode=0`. |
 | `episodeKey` | `01`, `1-12`, `13.5`, `SP`, `OVA`, `MOVIE`, `BATCH` | Used for display and de-duplication. Pure numeric values are normalized for de-duplication. |
 | `version` | `v1`, `v2`, `v2_fix` | Defaults to `v1`. Use `v2` for corrected re-releases. |
 
-Send one anime identifier whenever possible. `animeIdType + animeId` or `anime` resolves by the selected source; bare `animeId` keeps the legacy internal AniBT id behavior; `bgmId`, `malId`, `anidbId`, and `anilistId` remain supported. External ID mappings follow bangumi-data. If an external ID maps to multiple BGM entries, multiple external IDs conflict, or no mapping is found yet, API-key publishing creates a pending release for later manual matching.
+Send one anime identifier whenever possible. External site IDs should use `animeIdType + animeId` or `anime`; mappings follow bangumi-data. Historical scripts that send only `bgmId` still work. If an external ID maps to multiple BGM entries, multiple external IDs conflict, or no mapping is found yet, API-key publishing creates a pending release for later manual matching.
 
 ### Resolution, Language, Subtitles, Format
 
@@ -345,6 +329,41 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 ```
 
 The returned preview URL **expires in 10 minutes** and **does not** show up in RSS / search / public listings. Useful as the last manual gate in an automated pipeline.
+
+### Local smoke test
+
+This script uses JSON + magnet only and always sends `preview: true`. Use it in CI or locally to verify the key, anime ID, and basic fields.
+
+```js title="preview-smoke.mjs"
+const apiKey = process.env.ANIBT_API_KEY;
+if (!apiKey) throw new Error("Set ANIBT_API_KEY first");
+
+const body = {
+  preview: true,
+  animeIdType: "mal",
+  animeId: "52991",
+  title: "[Group] Preview Smoke - 01 [1080p][CHS].mkv",
+  magnetBase64: "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567",
+  episodeKey: "01",
+  resolution: "1080p",
+  language: ["CHS"],
+  subtitle: "EXTERNAL",
+  format: "MKV",
+  fileSize: 734003200,
+};
+
+const res = await fetch("https://anibt.net/api/releases/publish", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  },
+  body: JSON.stringify(body),
+});
+const data = await res.json();
+console.log(res.status, data.ok, data.previewUrl);
+if (!res.ok || !data.previewUrl) process.exit(1);
+```
 
 ## Authentication & key management
 

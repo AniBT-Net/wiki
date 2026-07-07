@@ -75,7 +75,7 @@ Authorization: Bearer <YOUR_API_KEY>
       type: 'enum',
     },
     'animeId': {
-      description: '番剧 ID 值。若同时传 animeIdType，则按所选来源解析；若不传 animeIdType，则保持旧行为，按站内番剧 ID 查找。',
+      description: '番剧 ID 值。与 animeIdType 一起使用，例如 animeIdType=mal + animeId=52991。',
       type: 'string',
     },
     'anime': {
@@ -84,18 +84,6 @@ Authorization: Bearer <YOUR_API_KEY>
     },
     'bgmId': {
       description: '兼容字段：Bangumi 番剧 ID。仍然支持；新接入建议改用 animeIdType=bgm + animeId。',
-      type: 'number',
-    },
-    'malId': {
-      description: '兼容字段：MyAnimeList anime id。等价于 animeIdType=mal + animeId。',
-      type: 'number',
-    },
-    'anidbId': {
-      description: '兼容字段：AniDB anime id。等价于 animeIdType=anidb + animeId。',
-      type: 'number',
-    },
-    'anilistId': {
-      description: '兼容字段：AniList anime id。等价于 animeIdType=anilist + animeId。',
       type: 'number',
     },
     'title': {
@@ -210,7 +198,7 @@ Authorization: Bearer <YOUR_API_KEY>
 | 多语言 | JSON 用数组：`"language":["CHS","JP"]`；multipart 可以重复字段：`-F 'language=CHS' -F 'language=JP'`，也可以传 JSON 数组字符串。 |
 | tracker 列表 | JSON 用数组；multipart 用换行分隔。站点会与默认 tracker 合并去重。 |
 | 布尔值 | JSON 用 `true/false`；multipart 可用 `true/false`、`1/0`、`yes/no`、`on/off`。 |
-| 番剧 ID | 推荐只传一种番剧标识。新接入用 `animeIdType` + `animeId`；旧字段 `bgmId` / `malId` / `anidbId` / `anilistId` 继续兼容。 |
+| 番剧 ID | 推荐只传一种番剧标识。新接入用 `animeIdType` + `animeId`；历史 Bangumi 写法 `bgmId` 继续兼容。 |
 
 ### 番剧与集数
 
@@ -219,15 +207,11 @@ Authorization: Bearer <YOUR_API_KEY>
 | `animeIdType` + `animeId` | `bgm` / `anilist` / `mal` / `anidb` + 对应站点 ID | 推荐写法。例：`animeIdType=anilist`、`animeId=170942`。 |
 | `anime` | `{"source":"anidb","id":"17617"}` | 结构化写法，适合 JSON 客户端；`source` 同样只能是 `bgm` / `anilist` / `mal` / `anidb`。 |
 | `bgmId` | Bangumi subject id，例如 `400602` | 兼容旧字段。可先调用 [`/api/bgm/search`](/docs/open-api/bgm-search) 搜索番剧。 |
-| `malId` | MyAnimeList anime id，例如 `52991` | 兼容旧字段。本站按 bangumi-data 的 BGM 对应关系解析。 |
-| `anidbId` | AniDB anime id，例如 `17617` | 兼容旧字段。同一个 AniDB ID 对应多个 BGM 条目时会进入待匹配状态。 |
-| `anilistId` | AniList anime id，例如 `154587` | 兼容旧字段。同一个 AniList ID 对应多个 BGM 条目时会进入待匹配状态。 |
-| 单独 `animeId` | 站内 `anime_...` / Convex doc id 字符串 | 旧高级用法。只有不传 `animeIdType` 时才按站内 ID 解析。 |
 | `episode` | 非负整数，例如 `1`、`12` | 用于排序。自定义 `episodeKey`（如 `SP`、`BATCH`）时请传 `episode=0`。 |
 | `episodeKey` | `01`、`1-12`、`13.5`、`SP`、`OVA`、`MOVIE`、`BATCH` | 用于显示和去重。纯数字会规范化为数字字符串，例如 `01` 最终按 `1` 去重。 |
 | `version` | `v1`、`v2`、`v2_fix` | 不传时默认 `v1`。修正版建议用 `v2`。 |
 
-番剧识别推荐只传一种 ID。`animeIdType + animeId` 或 `anime` 会按指定来源解析；单独 `animeId` 保持旧站内 ID 语义；`bgmId`、`malId`、`anidbId`、`anilistId` 继续兼容。外部 ID 的对应关系以 bangumi-data 为准；若外部 ID 对应多个 BGM 条目、多个外部 ID 解析结果互相冲突，或暂时找不到对应番剧，API Key 发布会进入待匹配状态，之后由字幕组或管理员补匹配。
+番剧识别推荐只传一种 ID。外部站点 ID 统一用 `animeIdType + animeId` 或 `anime`，对应关系以 bangumi-data 为准；历史脚本里只传 `bgmId` 仍然可用。若外部 ID 对应多个 BGM 条目、多个外部 ID 解析结果互相冲突，或暂时找不到对应番剧，API Key 发布会进入待匹配状态，之后由字幕组或管理员补匹配。
 
 ### 分辨率、语言、字幕、格式
 
@@ -345,6 +329,41 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 ```
 
 返回的预览 URL **10 分钟后过期**，**不会**进入 RSS / 搜索 / 前端列表。适合自动化流水线在正式发布前做最后一次人工确认。
+
+### 本地 smoke test
+
+下面的脚本只使用 JSON + magnet，并且固定传 `preview: true`；适合在 CI 或本地验证 Key、番剧 ID 和基础字段是否能通过。
+
+```js title="preview-smoke.mjs"
+const apiKey = process.env.ANIBT_API_KEY;
+if (!apiKey) throw new Error("Set ANIBT_API_KEY first");
+
+const body = {
+  preview: true,
+  animeIdType: "mal",
+  animeId: "52991",
+  title: "[Group] Preview Smoke - 01 [1080p][CHS].mkv",
+  magnetBase64: "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567",
+  episodeKey: "01",
+  resolution: "1080p",
+  language: ["CHS"],
+  subtitle: "EXTERNAL",
+  format: "MKV",
+  fileSize: 734003200,
+};
+
+const res = await fetch("https://anibt.net/api/releases/publish", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+  },
+  body: JSON.stringify(body),
+});
+const data = await res.json();
+console.log(res.status, data.ok, data.previewUrl);
+if (!res.ok || !data.previewUrl) process.exit(1);
+```
 
 ## 鉴权与 Key 管理
 
