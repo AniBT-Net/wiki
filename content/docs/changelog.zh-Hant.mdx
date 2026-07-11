@@ -9,6 +9,17 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 11 日
+
+<TypeTable
+  type={{
+    '釋出內容新鮮度': {
+      description: '資源釋出後的公開頁、RSS、JSON API、番劇/字幕組詳情快照與搜尋索引改為按完成階段更新：Typesense 寫入、R2 快照、Web Redis 失效與嚴格預熱未完成時不會提前通知 CDN。更新或刪除番劇時會同時清理舊/新 BGM 別名，並只刷新受影響年份對應的番劇 sitemap；失敗步驟會保留任務重試，避免使用者讀到新舊資料混合狀態。',
+      type: '變更',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 7 日
 
 <TypeTable

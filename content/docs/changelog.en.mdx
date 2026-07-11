@@ -9,6 +9,17 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 11, 2026
+
+<TypeTable
+  type={{
+    'Publication freshness': {
+      description: 'Public pages, RSS, JSON APIs, anime/group detail snapshots, and search indexes now advance by completed publication stage. CDN notification waits for the Typesense write, R2 snapshot, Web Redis invalidation, and strict warm to succeed. Anime updates and deletions invalidate both old and new BGM aliases and only the affected anime sitemap decade; failed stages remain retryable instead of exposing mixed old/new data.',
+      type: 'Changed',
+    },
+  }}
+/>
+
 ## July 7, 2026
 
 <TypeTable
