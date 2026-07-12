@@ -9,6 +9,21 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 12 日
+
+<TypeTable
+  type={{
+    '釋出與上傳錯誤契約': {
+      description: '番劇與其他類資源釋出 API 的 JSON 磁力和 multipart 種子上傳失敗統一返回 ok=false 的錯誤 envelope，包含機器碼 code、安全提示 message、可選業務 reason、retryable、retryAfterMs、requestId 和 i18n 後設資料；X-Request-ID 可用於關聯服務端日誌。',
+      type: '最佳化',
+    },
+    '可操作的釋出狀態碼': {
+      description: '計劃部署期間暫停釋出交接改為 503 Service Unavailable，並返回 Retry-After、reason=DEPLOYMENT_IN_PROGRESS；重複釋出版本保留 409，並返回 reason=RELEASE_VERSION_EXISTS；寫入限流返回 429、reason=RATE_LIMITED 和退避時間。',
+      type: '最佳化',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 11 日
 
 <TypeTable

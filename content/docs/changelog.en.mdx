@@ -9,6 +9,21 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 12, 2026
+
+<TypeTable
+  type={{
+    'Publish and upload error contract': {
+      description: 'JSON magnet and multipart torrent failures on the anime and other-release publish APIs now share an ok=false error envelope with machine code, a safe message, optional reason, retryable, retryAfterMs, requestId, and i18n metadata. X-Request-ID can be used to correlate server logs.',
+      type: 'Improved',
+    },
+    'Actionable publish status codes': {
+      description: 'A planned deployment handoff pause now returns 503 Service Unavailable with Retry-After and reason=DEPLOYMENT_IN_PROGRESS. Duplicate release versions retain 409 with reason=RELEASE_VERSION_EXISTS. Write throttling returns 429 with reason=RATE_LIMITED and an explicit backoff delay.',
+      type: 'Improved',
+    },
+  }}
+/>
+
 ## July 11, 2026
 
 <TypeTable

@@ -212,6 +212,31 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 
 `releaseId` 可拼成详情页：`https://anibt.net/other-release/<releaseId>`。发布后对应分类的 RSS 会出现新条目，见 [其他类 RSS](/docs/open-api/rss-other)。
 
+## 统一错误响应
+
+JSON 磁力发布和 multipart 种子上传使用同一种错误 envelope；字段语义与 [番剧资源发布 API](/docs/open-api/releases-publish#统一错误响应) 一致：
+
+```json title="错误响应"
+{
+  "ok": false,
+  "error": {
+    "code": "PUBLIC_SNAPSHOT_ENQUEUE_PAUSED",
+    "message": "System deployment in progress. Please retry shortly.",
+    "reason": "DEPLOYMENT_IN_PROGRESS",
+    "retryable": true,
+    "retryAfterMs": 15000,
+    "requestId": "req-example-123",
+    "i18n": {
+      "key": "error_deployment_in_progress"
+    }
+  }
+}
+```
+
+`code` 和 `message` 用于机器分支与安全回退提示；`reason` 给出更具体的业务原因；`retryable` / `retryAfterMs` 指示能否重试及等待时间；`requestId` 与响应头 `X-Request-ID` 相同；`i18n.key`（以及可选 `i18n.params`）用于本地化显示。`reason`、重试字段与 `i18n` 只在适用时返回。存在 `retryAfterMs` 时，响应头也会返回按秒向上取整的 `Retry-After`。
+
+部署期间暂停发布交接会返回 `503 Service Unavailable`，`code=PUBLIC_SNAPSHOT_ENQUEUE_PAUSED`、`reason=DEPLOYMENT_IN_PROGRESS`、`retryable=true`。写入限流会返回 `429 Too Many Requests`，`code=RATE_LIMIT_EXCEEDED`、`reason=RATE_LIMITED`、`retryable=true`。两者都应按 `Retry-After` / `retryAfterMs` 退避。
+
 ## 常见错误
 
 | HTTP | 原因                                             | 处理                                                   |
@@ -220,6 +245,7 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 | 401  | 未传 API Key                                      | 加上 `Authorization: Bearer <YOUR_API_KEY>`             |
 | 403  | API Key 无效、已撤销，或用户已不在字幕组            | 在字幕组后台重新生成 Key，确认成员权限                   |
 | 404  | `torrentStorageId` 指向的文件不存在                | 改用 multipart 上传，或确认文件 key 属于该字幕组          |
-| 429  | 写入频率过高                                      | 按响应头和错误信息退避                                  |
+| 429  | `reason=RATE_LIMITED`，写入频率过高                | 按 `Retry-After` / `retryAfterMs` 退避                  |
+| 503  | `reason=DEPLOYMENT_IN_PROGRESS`，系统正在部署       | 按 `Retry-After` / `retryAfterMs` 等待后重试            |
 
 下一步：订阅分类 RSS 用 [`/rss/other/<category>.xml`](/docs/open-api/rss-other)；番剧资源仍走 [`/api/releases/publish`](/docs/open-api/releases-publish)。

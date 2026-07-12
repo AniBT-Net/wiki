@@ -398,6 +398,43 @@ if (!res.ok || !data.previewUrl) process.exit(1);
   Never embed keys in client-side code, commit them to a repo, or paste them in issues. Inject through CI secrets only.
 </Callout>
 
+## Unified error response
+
+Whether the request uses a JSON magnet or a multipart torrent upload, authentication, parsing, upload, canonical-write, and handoff failures use the same JSON envelope:
+
+```json title="Error response"
+{
+  "ok": false,
+  "error": {
+    "code": "PUBLIC_SNAPSHOT_ENQUEUE_PAUSED",
+    "message": "System deployment in progress. Please retry shortly.",
+    "reason": "DEPLOYMENT_IN_PROGRESS",
+    "retryable": true,
+    "retryAfterMs": 15000,
+    "requestId": "req-example-123",
+    "i18n": {
+      "key": "error_deployment_in_progress"
+    }
+  }
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `code` | Stable machine error code for programmatic branching, such as `CONFLICT` or `RATE_LIMIT_EXCEEDED`. |
+| `message` | Safe human-readable message. Internal server errors do not expose credentials or upstream failure details. |
+| `reason` | More specific business reason than `code`, such as `RELEASE_VERSION_EXISTS` or `DEPLOYMENT_IN_PROGRESS`. Present only when applicable. |
+| `retryable` | Whether retrying under unchanged conditions is appropriate. Present only when the server can decide explicitly. |
+| `retryAfterMs` | Suggested delay in milliseconds. When present, the response also includes a `Retry-After` header rounded up to seconds. |
+| `requestId` | Correlation ID for this request. The `X-Request-ID` response header contains the same value; include it in support reports. |
+| `i18n` | Localization metadata containing a `key` and, when needed, `params`; clients can prefer it for localized UI messages. |
+
+When publish handoff is paused for a planned deployment, the endpoint returns `503 Service Unavailable` with `code=PUBLIC_SNAPSHOT_ENQUEUE_PAUSED`, `reason=DEPLOYMENT_IN_PROGRESS`, `retryable=true`, plus both `Retry-After` and `retryAfterMs`. This is not a generic `500`; wait for the specified delay before retrying.
+
+When the same release version already exists, the endpoint returns `409 Conflict` with `code=CONFLICT`, `reason=RELEASE_VERSION_EXISTS`, and `i18n.key=error_release_version_exists`. Do not retry the unchanged request indefinitely; use a new `version` only for a genuine revision.
+
+When the write limit is reached, the endpoint returns `429 Too Many Requests` with `code=RATE_LIMIT_EXCEEDED`, `reason=RATE_LIMITED`, `retryable=true`, and the backoff delay in `Retry-After` / `retryAfterMs`.
+
 ## Common errors
 
 | HTTP | Cause                                                  | Fix                                                            |
@@ -405,8 +442,9 @@ if (!res.ok || !data.previewUrl) process.exit(1);
 | 400  | Missing `title` / anime identifier, or torrent could not be parsed | Check required fields; ensure a valid .torrent file              |
 | 401  | `Authorization` missing or malformed                    | The `Bearer ` prefix (with a space) is mandatory                |
 | 403  | API key invalid / revoked / does not belong to the group | Generate a new key                                              |
-| 409  | A release with the same infoHash already exists         | To replace, re-publish with `version=v2`                        |
+| 409  | `reason=RELEASE_VERSION_EXISTS`; the same release version exists | Do not retry unchanged; use a new `version` only for a genuine revision |
 | 413  | Torrent / form too large                                | Trim the tracker list inside the torrent and retry              |
-| 429  | Write quota exhausted                                   | Back off using `Retry-After` from the response                  |
+| 429  | `reason=RATE_LIMITED`; write quota exhausted            | Back off using `Retry-After` / `retryAfterMs`                   |
+| 503  | `reason=DEPLOYMENT_IN_PROGRESS`; deployment in progress | Wait for `Retry-After` / `retryAfterMs`, then retry             |
 
 Next: subscribe to [`/rss/anime.xml`](/docs/open-api/rss-anime) right after to verify; find a Bangumi ID via [Bangumi search](/docs/open-api/bgm-search), or pass the AniList / MyAnimeList / AniDB ID directly; inspect your group via [`/api/subtitle-groups/me`](/docs/open-api/me).

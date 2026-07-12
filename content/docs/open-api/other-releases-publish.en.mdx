@@ -212,6 +212,31 @@ Aliases and structured JSON fields match anime publishing:
 
 Build the detail page from `releaseId`: `https://anibt.net/other-release/<releaseId>`. After publishing, the matching category RSS will include the item. See [Other release RSS](/docs/open-api/rss-other).
 
+## Unified error response
+
+JSON magnet publishing and multipart torrent uploads use the same error envelope. Field semantics match the [anime release publish API](/en/docs/open-api/releases-publish#unified-error-response):
+
+```json title="Error response"
+{
+  "ok": false,
+  "error": {
+    "code": "PUBLIC_SNAPSHOT_ENQUEUE_PAUSED",
+    "message": "System deployment in progress. Please retry shortly.",
+    "reason": "DEPLOYMENT_IN_PROGRESS",
+    "retryable": true,
+    "retryAfterMs": 15000,
+    "requestId": "req-example-123",
+    "i18n": {
+      "key": "error_deployment_in_progress"
+    }
+  }
+}
+```
+
+`code` and `message` support machine branching and a safe fallback message; `reason` provides a more specific business cause; `retryable` / `retryAfterMs` indicate whether and when to retry; `requestId` matches the `X-Request-ID` response header; and `i18n.key` (plus optional `i18n.params`) supports localized UI messages. `reason`, retry metadata, and `i18n` are present only when applicable. When `retryAfterMs` is present, the response also includes a `Retry-After` header rounded up to seconds.
+
+A deployment handoff pause returns `503 Service Unavailable` with `code=PUBLIC_SNAPSHOT_ENQUEUE_PAUSED`, `reason=DEPLOYMENT_IN_PROGRESS`, and `retryable=true`. A write rate limit returns `429 Too Many Requests` with `code=RATE_LIMIT_EXCEEDED`, `reason=RATE_LIMITED`, and `retryable=true`. Back off according to `Retry-After` / `retryAfterMs` in either case.
+
 ## Common errors
 
 | HTTP | Cause                                                   | Fix                                                           |
@@ -220,6 +245,7 @@ Build the detail page from `releaseId`: `https://anibt.net/other-release/<releas
 | 401  | API key missing                                          | Add `Authorization: Bearer <YOUR_API_KEY>`                    |
 | 403  | API key invalid / revoked, or the user is no longer in the group | Generate a new key and confirm group membership               |
 | 404  | `torrentStorageId` points to a missing file              | Upload with multipart, or verify the file key belongs to the group |
-| 429  | Write rate too high                                      | Back off according to the response headers and error message  |
+| 429  | `reason=RATE_LIMITED`; write rate too high               | Back off using `Retry-After` / `retryAfterMs`                  |
+| 503  | `reason=DEPLOYMENT_IN_PROGRESS`; deployment in progress  | Wait for `Retry-After` / `retryAfterMs`, then retry            |
 
 Next: subscribe to category RSS via [`/rss/other/<category>.xml`](/docs/open-api/rss-other). Anime releases still use [`/api/releases/publish`](/docs/open-api/releases-publish).

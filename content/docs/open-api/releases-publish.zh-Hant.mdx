@@ -398,6 +398,43 @@ if (!res.ok || !data.previewUrl) process.exit(1);
   Key 不要寫進客戶端程式碼、不要 commit 到倉庫、不要貼 issue。CI 必須用 secret 注入。
 </Callout>
 
+## 統一錯誤回應
+
+無論使用 JSON 磁力釋出還是 multipart 種子上傳，鑑權、請求解析、上傳、站內寫入或任務交接失敗時，介面都會返回同一種 JSON envelope：
+
+```json title="錯誤回應"
+{
+  "ok": false,
+  "error": {
+    "code": "PUBLIC_SNAPSHOT_ENQUEUE_PAUSED",
+    "message": "System deployment in progress. Please retry shortly.",
+    "reason": "DEPLOYMENT_IN_PROGRESS",
+    "retryable": true,
+    "retryAfterMs": 15000,
+    "requestId": "req-example-123",
+    "i18n": {
+      "key": "error_deployment_in_progress"
+    }
+  }
+}
+```
+
+| 欄位 | 含義 |
+| --- | --- |
+| `code` | 穩定的機器錯誤碼，用於程式分支，例如 `CONFLICT`、`RATE_LIMIT_EXCEEDED`。 |
+| `message` | 可直接顯示的安全錯誤說明；服務端內部錯誤不會把憑據或上游異常細節返回給客戶端。 |
+| `reason` | 比 `code` 更具體的業務原因，例如 `RELEASE_VERSION_EXISTS`、`DEPLOYMENT_IN_PROGRESS`。僅在適用時返回。 |
+| `retryable` | 是否適合在條件不變時重試。僅在服務端能夠明確判斷時返回。 |
+| `retryAfterMs` | 建議等待的毫秒數。存在時，回應標頭也會帶按秒向上取整的 `Retry-After`。 |
+| `requestId` | 本次請求的關聯 ID；回應標頭 `X-Request-ID` 返回相同值，回報問題時請一併提供。 |
+| `i18n` | 本地化後設資料，包含 `key`，必要時還會包含 `params`；客戶端可優先按它顯示本地化提示。 |
+
+計劃部署期間暫停釋出交接時，介面返回 `503 Service Unavailable`，`code=PUBLIC_SNAPSHOT_ENQUEUE_PAUSED`、`reason=DEPLOYMENT_IN_PROGRESS`、`retryable=true`，並同時返回 `Retry-After` 與 `retryAfterMs`。這不是普通的 `500`；呼叫方應等待指定時間後重試。
+
+同一釋出版本已經存在時，介面返回 `409 Conflict`，`code=CONFLICT`、`reason=RELEASE_VERSION_EXISTS`、`i18n.key=error_release_version_exists`。不要原樣無限重試；確認確實是新修訂後再使用新的 `version`。
+
+寫入限流時，介面返回 `429 Too Many Requests`，`code=RATE_LIMIT_EXCEEDED`、`reason=RATE_LIMITED`、`retryable=true`，並透過 `Retry-After` / `retryAfterMs` 告知退避時間。
+
 ## 常見錯誤
 
 | HTTP | 原因                                              | 處理                                                          |
@@ -405,8 +442,9 @@ if (!res.ok || !data.previewUrl) process.exit(1);
 | 400  | `title` / 番劇標識缺失，或 `torrent` 解析失敗       | 檢查必填項；確認上傳的是合法 .torrent 檔案                       |
 | 401  | `Authorization` 頭缺失或格式錯誤                    | `Bearer ` 字首必填，注意空格                                    |
 | 403  | API Key 無效 / 已撤銷 / 不屬於該字幕組              | 重新生成 Key                                                  |
-| 409  | 同一 infoHash 已經發布過                           | 想替換請用 `version=v2` 重發                                   |
+| 409  | `reason=RELEASE_VERSION_EXISTS`，同一釋出版本已存在  | 不要原樣重試；確認是新修訂後使用新的 `version`                    |
 | 413  | 種子檔案 / 表單超過大小限制                         | 壓縮種子（裁剪 tracker 列表）                                   |
-| 429  | 寫入配額耗盡                                       | 按響應頭 `Retry-After` 退避                                    |
+| 429  | `reason=RATE_LIMITED`，寫入配額耗盡                 | 按 `Retry-After` / `retryAfterMs` 退避                          |
+| 503  | `reason=DEPLOYMENT_IN_PROGRESS`，系統正在部署        | 按 `Retry-After` / `retryAfterMs` 等待後重試                    |
 
 下一步：發完直接訂閱 [`/rss/anime.xml`](/docs/open-api/rss-anime) 驗證；找 Bangumi ID 用 [Bangumi 搜尋](/docs/open-api/bgm-search)，AniList / MyAnimeList / AniDB 可直接填對應站點 ID；想看自己字幕組的統計走 [`/api/subtitle-groups/me`](/docs/open-api/me)。
