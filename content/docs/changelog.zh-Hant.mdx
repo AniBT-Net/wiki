@@ -13,9 +13,21 @@ description: AniBT Wiki 與站點功能更新紀錄。
 
 <TypeTable
   type={{
-    '釋出內容新鮮度': {
-      description: '資源釋出後的公開頁、RSS、JSON API、番劇/字幕組詳情快照與搜尋索引改為按完成階段更新：Typesense 寫入、R2 快照、Web Redis 失效與嚴格預熱未完成時不會提前通知 CDN。更新或刪除番劇時會同時清理舊/新 BGM 別名，並只刷新受影響年份對應的番劇 sitemap；失敗步驟會保留任務重試，避免使用者讀到新舊資料混合狀態。',
-      type: '變更',
+    '釋出成功與公開可見性': {
+      description: '文件明確：釋出 API 的 200 OK 表示站內寫入已接受並可靠交接後臺任務，不等同於該 release 已同步出現在 RSS、搜尋、公開頁面、CDN 或外站。呼叫方應使用返回的 releaseId 驗證目標正文；HTTP 200、generatedAt、ETag 或快取命中不能單獨作為內容已更新的證明。',
+      type: '文件',
+    },
+    '公開快照有序釋出': {
+      description: 'magnets、公開 RSS、番劇/字幕組/資源詳情等公開快照改為不可變 R2 generation + PostgreSQL publication head。Web 只讀取並嚴格預熱 head 指向的同一 generation，Redis publication order / generation fence 會拒絕舊請求回寫，所有必要變體完成後才傳送 page-ready。更新或刪除番劇時繼續處理舊/新 BGM alias 與受影響 sitemap。',
+      type: '最佳化',
+    },
+    'Edge 清快取可靠性': {
+      description: 'CDN 清理改為持久化 URL 佇列與凍結 run/batch；token + generation lease 防止舊執行器誤確認，失敗可續跑，損壞狀態進入 quarantine 而不靜默丟棄。processed marker 保留 14 天；completed run 保留 14 天、quarantined run 保留 30 天，並使用有界清理。',
+      type: '最佳化',
+    },
+    '新鮮度運維門禁': {
+      description: '新增 snapshot queue/claim delay、publication pending/latency、head/watermark integrity、generation maintenance/GC 與 Edge D1 durable flush 指標、告警和預檢。queue age 高而 Redis warm latency 低時按排程/backlog 排查，禁止透過延長 TTL 掩蓋傳播缺口。',
+      type: '運維',
     },
   }}
 />

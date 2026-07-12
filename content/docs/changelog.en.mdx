@@ -13,9 +13,21 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 <TypeTable
   type={{
-    'Publication freshness': {
-      description: 'Public pages, RSS, JSON APIs, anime/group detail snapshots, and search indexes now advance by completed publication stage. CDN notification waits for the Typesense write, R2 snapshot, Web Redis invalidation, and strict warm to succeed. Anime updates and deletions invalidate both old and new BGM aliases and only the affected anime sitemap decade; failed stages remain retryable instead of exposing mixed old/new data.',
-      type: 'Changed',
+    'Publish success and public visibility': {
+      description: 'The documentation now clarifies that a publish API 200 OK means the AniBT write was accepted and downstream work was handed off reliably; it is not a synchronous guarantee that the release is already present in RSS, search, public pages, every CDN location, or an external site. Callers should verify the returned releaseId in the target body; HTTP 200, generatedAt, ETag, or a cache hit alone is not proof of updated content.',
+      type: 'Docs',
+    },
+    'Ordered public snapshot publication': {
+      description: 'Public magnets, RSS, anime/group/release-detail snapshots, and related pages now use immutable R2 generations plus PostgreSQL publication heads. Web reads and strictly warms only the generation selected by the head; Redis publication-order / generation fences reject stale writeback, and page-ready is emitted only after every required variant completes. Anime updates and deletes continue to handle old/new BGM aliases and affected sitemaps.',
+      type: 'Improved',
+    },
+    'Reliable Edge invalidation': {
+      description: 'CDN invalidation now uses a durable URL queue and frozen runs/batches. Token + generation-fenced leases prevent stale executors from acknowledging work; failures resume, corrupt state is quarantined rather than silently discarded, and bounded retention keeps processed markers for 14 days, completed runs for 14 days, and quarantined runs for 30 days.',
+      type: 'Improved',
+    },
+    'Freshness operations gate': {
+      description: 'Added metrics, alerts, and preflight checks for snapshot queue/claim delay, publication pending/latency, head/watermark integrity, generation maintenance/GC, and Edge D1 durable flush. High queue age with low Redis warm latency is treated as scheduling/backlog; extending TTLs is not an accepted workaround for propagation gaps.',
+      type: 'Operations',
     },
   }}
 />

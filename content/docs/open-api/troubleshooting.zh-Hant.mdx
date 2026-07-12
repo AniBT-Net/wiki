@@ -56,7 +56,10 @@ description: 一行 curl 除錯 + RSS 接入常見問題解答。
     `/rss/anime.xml` 現在由 Web runtime + Typesense 生成，解析度、語言、格式、字幕方式等 Tag 會盡量下推到 Typesense filter。極嚴格過濾時返回少通常表示真實匹配少；如果後過濾視窗不足以保證結果完整，服務端會返回 `503`，不會回退 Convex 掃庫。詳見 [限流與上限](/docs/open-api/limits)。
   </Accordion>
   <Accordion title="新發的種子多久能在 RSS 裡看到？">
-    取決於你客戶端的輪詢間隔與 CDN 快取視窗的疊加。典型 5–30 分鐘，詳見 [限流與上限](/docs/open-api/limits)。需要實時通知請用 webhook / Telegram bot。
+    釋出介面的 `200 OK` 表示寫入已接受，不是同步可見性確認。站點側重新整理由 Typesense 完成、不可變快照釋出、Redis 嚴格預熱和 Edge CDN purge 事件驅動，不需要等滿 120 秒 TTL；運維上，publication pending 超過 15 秒就進入告警檢查。你在 RSS 閱讀器裡實際看到的時間還要加上客戶端自己的 5–10 分鐘輪詢間隔。詳見 [HTTP 快取與 304](/docs/open-api/caching)。
+  </Accordion>
+  <Accordion title="為什麼狀態碼、generatedAt 或 cf-cache-status 都正常，正文卻還是舊的？">
+    這些欄位只表示請求和某一層快取成功，不能證明觸發釋出的資源已經進入響應。請直接在詳情頁及對應 RSS / magnets 正文中檢查返回的 `releaseId`，並同時記錄 ETag / Last-Modified。運維側再對比 snapshot queue age、publication pending age 與 `snapshot_redis_warm.completed.latencyMs`：queue age 高但 warm latency 低，應該處理排程或 backlog，而不是加長 Redis TTL。不要等待下一次無關釋出「順便重新整理」。
   </Accordion>
 </Accordions>
 

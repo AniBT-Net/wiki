@@ -40,6 +40,26 @@ Vary:             Accept-Encoding
   }}
 />
 
+## Publish-driven freshness path
+
+The TTLs above are fallback policies for shared caches, not timers that every publish must wait out. When a release or public-data source changes, AniBT advances in this order:
+
+1. After the relevant write completes, the public-snapshot worker writes a new **immutable R2 generation** and advances the PostgreSQL publication head for each URL / alias in monotonic order. Older jobs cannot replace a newer head; removed aliases become tombstones.
+2. Web reads the **same generation** selected by that publication head through the R2 S3 origin, invalidates exact keys and cache families, and strictly warms every affected Redis locale / alias variant.
+3. Redis writes carry publication-order and generation fences. A slower request, lock waiter, or background revalidation that started before invalidation is rejected if it tries to write an older value back over the warm result.
+4. Page-ready is published only after every required Redis write succeeds. For these URLs, Edge preserves the strictly warmed origin value and performs the CDN purge. Its URL queue, frozen runs / batches, and token + generation-fenced lease make failed or restarted work resumable instead of relying on a later publish to repair it by chance.
+
+<Callout type="warn">
+  This path guarantees the **publication order and cache consistency of the selected snapshot generation**. It does not turn the publish API into a synchronous visibility API. `generatedAt` is only the snapshot build time; HTTP 200, a newer timestamp, or `cf-cache-status: HIT` is not a substitute for confirming that the response body contains the expected `releaseId`.
+</Callout>
+
+### Operator interpretation
+
+- A publish probe checks the expected `releaseId` / content together with ETag or Last-Modified and `cf-cache-status`; do not check only the status code or cache hit.
+- The current operating guardrails are `anibt_ops_public_snapshot_queue_age_seconds{quantile="0.95"}` ≤ 3 seconds and P99 ≤ 15 seconds. `anibt_ops_public_snapshot_pending_oldest_age_seconds` warns above 15 seconds and is critical above 60 seconds. These are operational guardrails, not a synchronous public-API SLA.
+- `anibt_ops_public_snapshot_watermark_lag`, head-integrity violations, Edge lease mismatches, quarantines, and invariant violations should remain zero. Edge URL pending age should remain ≤ 15 seconds.
+- High queue age with low `snapshot_redis_warm.completed.latencyMs` identifies scheduling / backlog, not slow Redis. Do not lengthen snapshot or Redis TTLs to hide a propagation gap.
+
 ## TTLs per endpoint
 
 | Endpoint                           | Client cache    | `s-maxage` (CDN) | `stale-while-revalidate` |

@@ -16,6 +16,16 @@ POST https://anibt.net/api/releases/publish
 Authorization: Bearer <YOUR_API_KEY>
 ```
 
+## `200 OK` 與公開可見性
+
+正式釋出返回 `200 OK` 和 `releaseId`，表示站內主記錄已寫入，後續索引、公開快照與快取任務已經可靠交接。它**不表示** RSS、搜尋、公開頁面和 CDN 在這個響應返回時已經包含該資源，也不表示 Nyaa 等外站代發已經完成。
+
+公開讀取鏈路會非同步推進：對應的 Typesense 寫入完成後生成受影響的不可變 R2 快照，Web 核對快照釋出頭、失效並嚴格預熱 Redis，隨後才發出 page-ready 事件讓 Edge 清理 CDN。任一步明確失敗都會保留可重試任務，並阻止該次 page-ready 提前完成。
+
+<Callout type="info">
+  目前成功響應不確認該 release 已在所有公開讀取模型可見。自動化釋出端應把 `200 OK` 當作**已接受**，再用返回的 `releaseId` 檢查詳情頁和目標 RSS / magnets 響應正文；只看到 HTTP 200、較新的 `generatedAt`、ETag 或 `cf-cache-status: HIT`，都不能單獨證明目標資源已出現。快取鏈路細節見 [HTTP 快取與 304](/docs/open-api/caching)。
+</Callout>
+
 ## 兩種請求格式
 
 <Tabs items={['multipart/form-data（推薦）', 'application/json']}>

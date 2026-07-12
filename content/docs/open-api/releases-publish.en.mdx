@@ -16,6 +16,16 @@ POST https://anibt.net/api/releases/publish
 Authorization: Bearer <YOUR_API_KEY>
 ```
 
+## `200 OK` and public visibility
+
+A production publish response with `200 OK` and a `releaseId` means the canonical AniBT record was written and the downstream index, public-snapshot, and cache work was handed off reliably. It does **not** mean that RSS, search, public pages, and every CDN location already contain the release when the response returns, nor that publishing to Nyaa or another external site has completed.
+
+The public read path advances asynchronously. After the corresponding Typesense write completes, affected immutable R2 snapshots are generated; Web verifies the snapshot publication heads, invalidates and strictly warms Redis, and only then emits page-ready events for Edge CDN purging. An explicitly failed stage stays retryable and prevents that page-ready operation from completing early.
+
+<Callout type="info">
+  The current success response does not confirm that this release is visible in every public read model. Automation should treat `200 OK` as **accepted**, then use the returned `releaseId` to inspect the release page and the relevant RSS / magnets response body. HTTP 200, a newer `generatedAt`, an ETag, or `cf-cache-status: HIT` alone does not prove that the expected release is present. See [HTTP caching & 304](/docs/open-api/caching) for the cache path.
+</Callout>
+
 ## Two request shapes
 
 <Tabs items={['multipart/form-data (recommended)', 'application/json']}>

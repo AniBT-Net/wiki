@@ -40,6 +40,26 @@ Vary:             Accept-Encoding
   }}
 />
 
+## 釋出驅動的新鮮度鏈路
+
+上表的 TTL 是共享快取的兜底策略，不是釋出後必須等待的重新整理計時器。資源或公開資料變化時，站點按下面的順序推進：
+
+1. 相關寫入完成後，public-snapshot worker 寫入一個新的**不可變 R2 generation**，並在 PostgreSQL 中按單調順序推進該 URL / alias 的 publication head。舊任務不能覆蓋更新的 head；被刪除的 alias 會進入 tombstone 狀態。
+2. Web 從 R2 S3 origin 讀取 publication head 指向的**同一個 generation**，失效精確鍵和快取族，並嚴格預熱全部受影響的 Redis locale / alias 變體。
+3. Redis 寫入帶 publication order 與 generation fence。失效前已經開始的慢請求、鎖等待或後臺 revalidate 如果更舊，會被拒絕回寫，不能把舊快照重新蓋到新值上。
+4. 只有所需 Redis 寫入全部成功後才釋出 page-ready。Edge 對這些 URL 保留剛預熱的 origin 值，只執行 CDN purge；URL 佇列、凍結 run / batch 和帶 token + generation 的 lease 讓失敗或重啟後的工作可以繼續重試，而不是靠下一次釋出碰巧補刷。
+
+<Callout type="warn">
+  這個鏈路保證的是**所選快照 generation 的釋出順序和快取一致性**。它不把釋出 API 變成同步可見性介面。`generatedAt` 只表示快照構建時間；HTTP 200、較新的時間戳或 `cf-cache-status: HIT` 都不能替代「響應正文裡確實包含預期 `releaseId`」這一檢查。
+</Callout>
+
+### 運維判定
+
+- 釋出探針同時檢查目標 `releaseId` / 內容、ETag 或 Last-Modified，以及 `cf-cache-status`；不要只檢查狀態碼或快取命中。
+- `anibt_ops_public_snapshot_queue_age_seconds{quantile="0.95"}` 的目前運維目標是 ≤ 3 秒，P99 ≤ 15 秒；`anibt_ops_public_snapshot_pending_oldest_age_seconds` 超過 15 秒告警、超過 60 秒嚴重告警。這些是站點運維 guardrail，不是公開 API 的同步 SLA。
+- `anibt_ops_public_snapshot_watermark_lag`、head integrity violation、Edge lease mismatch、quarantine 和 invariant violation 應保持 0；Edge URL pending age 應保持 ≤ 15 秒。
+- queue age 很高而 `snapshot_redis_warm.completed.latencyMs` 很低，表示瓶頸在排程 / backlog，不在 Redis。不要延長 snapshot 或 Redis TTL 來掩蓋傳播缺口。
+
 ## 各端點 TTL 一覽
 
 | 端點                             | 客戶端快取      | `s-maxage` (CDN) | `stale-while-revalidate` |
