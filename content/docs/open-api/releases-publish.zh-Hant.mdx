@@ -223,6 +223,11 @@ Authorization: Bearer <YOUR_API_KEY>
 
 番劇識別建議只傳一種 ID。外部站點 ID 統一用 `animeIdType + animeId` 或 `anime`，對應關係以 bangumi-data 為準；歷史腳本裡只傳 `bgmId` 仍然可用。若外部 ID 對應多個 BGM 條目、多個外部 ID 解析結果互相衝突，或暫時找不到對應番劇，API Key 釋出會進入待匹配狀態，之後由字幕組或管理員補匹配。
 
+如果自動化只有種子標題、還沒有穩定番劇 ID，可先呼叫
+[`/api/animes/torrent-match`](/docs/open-api/anime-torrent-match)。只有響應裡的
+`shouldAutoSelect=true` 才應自動採用 `bestMatch`；`false` 時必須顯示候選或保留
+人工確認。候選第一名、`confidence` 或高 `matchScore` 都不能取代這個授權欄位。
+
 ### 解析度、語言、字幕、格式
 
 | 欄位 | 可填值 | 含義 |

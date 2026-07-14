@@ -9,6 +9,25 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 14, 2026
+
+<TypeTable
+  type={{
+    'Torrent-title anime matching': {
+      description: '/api/animes/torrent-match now uses the dedicated anime_match_aliases index to globally disambiguate Chinese, Traditional Chinese, Japanese, romaji, English, multilingual title lists, and Season/Cour/Part/Sequence/Format evidence. The old allTitles text-score margin no longer authorizes binding. Long multilingual exact queries now use a request body instead of the Typesense GET query string, avoiding the 4,000-character limit.',
+      type: 'Improved',
+    },
+    'Explainable auto-binding contract': {
+      description: 'Responses add decisionReason, exactAnimeCount, vetoCategory, and bounded evidenceSummary. Clients may automatically use bestMatch only when shouldAutoSelect=true; shared titles, modifier conflicts, weak evidence, and exact overflow remain manual.',
+      type: 'Added',
+    },
+    'Safer matcher caching': {
+      description: 'The matcher cache moves to v2 with a 60-second shared TTL while disabling stale-while-revalidate, stale-if-error, and expired-value fallback so old results cannot keep authorizing bindings.',
+      type: 'Improved',
+    },
+  }}
+/>
+
 ## July 12, 2026
 
 <TypeTable

@@ -223,6 +223,12 @@ The public read path advances asynchronously. After the corresponding Typesense 
 
 Send one anime identifier whenever possible. External site IDs should use `animeIdType + animeId` or `anime`; mappings follow bangumi-data. Historical scripts that send only `bgmId` still work. If an external ID maps to multiple BGM entries, multiple external IDs conflict, or no mapping is found yet, API-key publishing creates a pending release for later manual matching.
 
+If automation has only a torrent title and no stable anime ID, call
+[`/api/animes/torrent-match`](/docs/open-api/anime-torrent-match) first. Automatically
+use `bestMatch` only when `shouldAutoSelect=true`; otherwise present the candidates or
+keep a manual confirmation step. First rank, `confidence`, and high `matchScore` do not
+replace that authorization field.
+
 ### Resolution, Language, Subtitles, Format
 
 | Field | Value | Meaning |

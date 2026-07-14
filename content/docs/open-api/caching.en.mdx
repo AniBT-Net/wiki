@@ -72,7 +72,7 @@ The TTLs above are fallback policies for shared caches, not timers that every pu
 | `/api/anime/groups`                | revalidate + ETag | 300s           | 3600s                    |
 | `/api/bgm/search`                  | revalidate + ETag | 300s           | 300s                     |
 | `/api/animes/search`               | revalidate + ETag | 90s            | 3600s                    |
-| `/api/animes/torrent-match`        | revalidate + ETag | 60s            | 300s                     |
+| `/api/animes/torrent-match`        | revalidate + ETag | 60s            | 0 (stale fallback disabled) |
 | `/api/anime/lookup`                | revalidate + ETag | 300s           | 300s                     |
 | `/api/mikan/group-lookup`          | revalidate + ETag | 600s           | 3600s                    |
 

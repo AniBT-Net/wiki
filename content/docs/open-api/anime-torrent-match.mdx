@@ -1,0 +1,176 @@
+---
+title: 种子标题匹配番剧
+description: GET /api/animes/torrent-match —— 用中 / 日 / 英 / 罗马字及季度信息，把种子标题匹配到站内番剧。
+---
+
+`/api/animes/torrent-match` 是公开、无需鉴权的番剧识别端点。它适合发布页、
+字幕组脚本或导入工具先把种子标题解析成站内番剧候选，再决定自动绑定或交给人工
+确认。
+
+<Callout type="info">
+  生产实现只读取 AniBT 已入库的 Bangumi Data、bgm.tv source snapshot、站内番剧主数据和 `animeAliases`。运行时不会抓取外站，也不会调用 OpenCC 或音译服务。
+</Callout>
+
+## 请求
+
+```txt title="URL"
+GET https://anibt.net/api/animes/torrent-match?query=<title>&seasonYear=<year>&limit=<n>
+```
+
+```bash title="多语言标题"
+curl -sS -G 'https://anibt.net/api/animes/torrent-match' \
+  --data-urlencode 'query=本好きの下剋上 / Ascendance of a Bookworm S04' \
+  --data 'limit=10'
+```
+
+## 查询参数
+
+<TypeTable
+  type={{
+    'query': {
+      description: '种子解析出的番剧标题。短别名 q 也可用。支持中文、繁中、日文、罗马字、英文、多语言标题列表和 Season / Cour / Part / Sequence / Format。空字符串返回空结果。',
+      type: 'string',
+      required: true,
+    },
+    'seasonYear': {
+      description: '可选首播年份提示。它只用于同等级候选排序，不能授权自动绑定。',
+      type: 'integer',
+    },
+    'limit': {
+      description: '返回候选数，默认 10，上限 50。',
+      type: 'integer',
+      default: '10',
+    },
+  }}
+/>
+
+## 匹配数据与安全边界
+
+- 站内主标题、Bangumi Data / bgm.tv 标题与可信站点线索可形成番剧级
+  Season / Cour / Part / Sequence / Format 共识。
+- 导入的 `animeAliases`（包括 TVDB / TMDB 等外部来源）仍参与召回、精确碰撞检测和
+  全局消歧，但不会单独生成番剧级修饰符共识，避免系列级别名把旧季度、特别篇或
+  新续作错误归为同一季。
+- 对 canonical 标题中的成对 `～副标题～` 只做有界、安全的结构化 stem 派生；
+  例如可识别“无职转生 3期”，但不会把普通电影或没有季度证据的副标题无条件折叠成
+  裸系列名。
+- 多语言标题列表会保留完整查询，并只按带空格的 ` / `、` ／ ` 安全分段；
+  `Fate/stay night` 这类标题内部斜杠不会被拆分。长多语言 exact 查询使用请求体发送，
+  不受 Typesense GET 查询串 4000 字符限制。
+
+## 已验证标题形状
+
+| 查询示例 | 生产结果 |
+| -------- | -------- |
+| `无职转生 3期` / `Mushoku Tensei S3` | BGM `501963`，`structured_unique`，自动绑定 |
+| `小书痴的下克上 领主的养女 第四季` | BGM `469104`，自动绑定 |
+| `转校生美少女竟是我曾经认为是男孩子的青梅竹马 / 転校先の清楚可憐な美少女が、昔男子と思って一緒に遊んだ幼馴染だった件 / てんびん` | BGM `456080`，`exact_unique`，自动绑定 |
+
+## 响应
+
+```jsonc title="200 OK"
+{
+  "matches": [
+    {
+      "anime": {
+        "_id": "...",
+        "bgmId": 501963,
+        "title": {
+          "chinese": "无职转生 第三季 ～到了异世界就拿出真本事～",
+          "native": "無職転生Ⅲ ～異世界行ったら本気だす～"
+        }
+      },
+      "matchScore": 95,
+      "typesense": {
+        "textMatch": 123456,
+        "highlights": null
+      },
+      "evidenceSummary": {
+        "source": "anime_title",
+        "kind": "derived_stem",
+        "rawAlias": "无职转生 第三季",
+        "strictKey": "无职转生 第三季",
+        "matchClass": "structured_exact",
+        "evidenceStrength": "exact_primary",
+        "seasonNumber": 3,
+        "retrievalProvenance": "exact_filter",
+        "matchedQueryVariant": "无职转生 3期"
+      }
+    }
+  ],
+  "confidence": "high",
+  "shouldAutoSelect": true,
+  "bestMatch": { "_id": "...", "bgmId": 501963, "title": { "chinese": "无职转生 第三季 ～到了异世界就拿出真本事～" } },
+  "bestMatchId": "...",
+  "backend": "typesense",
+  "decisionReason": "structured_unique",
+  "exactAnimeCount": 1,
+  "vetoCategory": null
+}
+```
+
+## 判定字段
+
+<TypeTable
+  type={{
+    'shouldAutoSelect': {
+      description: '只有 true 才表示服务端授权自动绑定。候选第一名或高 matchScore 本身不够。',
+      type: 'boolean',
+    },
+    'bestMatch / bestMatchId': {
+      description: '自动绑定被授权时的番剧；需要人工确认时为 null。',
+      type: 'object | null / string | null',
+    },
+    'confidence': {
+      description: 'high / medium / low / none。用于 UI 展示，不应替代 shouldAutoSelect。',
+      type: 'enum',
+    },
+    'decisionReason': {
+      description: '最终机器判定原因，见下表。',
+      type: 'enum',
+    },
+    'exactAnimeCount': {
+      description: '参与最终 exact / structured gate 的不同 animeId 数量。-1 表示 exact 命中超过安全检索上限，必须人工确认。',
+      type: 'integer',
+    },
+    'vetoCategory': {
+      description: '阻止自动绑定的机器可读类别；没有 veto 时为 null。',
+      type: 'string | null',
+    },
+    'evidenceSummary': {
+      description: '每个候选的有界命中摘要，包含来源、alias、匹配类别和结构化修饰符；不会返回完整 alias 集合。',
+      type: 'object',
+    },
+  }}
+/>
+
+| `decisionReason` | 含义 |
+| ---------------- | ---- |
+| `exact_unique` | 唯一且可授权的精确匹配。 |
+| `structured_unique` | Season / Cour / Part / Sequence / Format 与证据一致，且全局唯一。 |
+| `corroborated_weak_unique` | 两个独立来源族共同佐证唯一弱证据。 |
+| `ambiguous_exact` | 多个番剧共享精确标题或去季度 base，需要人工确认。 |
+| `modifier_conflict` | 查询与候选的季度、Part、Cour、Sequence 或 Format 冲突。 |
+| `variant_modifier_conflict` | 多语言标题片段之间给出了互相冲突的修饰符。 |
+| `exact_overflow` | exact 结果超过安全上限。 |
+| `low_evidence` | 有候选，但证据不足以授权自动绑定。 |
+| `candidate_unavailable` | 唯一 alias 候选未能从公开 `animes` 索引 hydrate。 |
+| `no_candidates` / `empty_query` | 没有候选 / 查询为空。 |
+
+<Callout type="warn">
+  Recall、Typesense 文本分数、`seasonYear` 和单一官网 slug 都不能单独授权自动绑定。调用方必须以 `shouldAutoSelect` 为准；false 时展示 `matches` 让用户确认。
+</Callout>
+
+## 缓存、限流和错误
+
+| 项目 | 值 |
+| ---- | -- |
+| `Cache-Control` | `public, max-age=0, s-maxage=60`；不启用 SWR / stale-if-error |
+| ETag | 支持 `If-None-Match`；未变化返回 `304 Not Modified` |
+| 速率限制 | 默认 180 次 / 60 秒 / IP |
+| `400` | 参数无效 |
+| `429` | `RATE_LIMIT_EXCEEDED`，按 `Retry-After` / `retryAfterMs` 退避 |
+| `503` | `SEARCH_UNAVAILABLE`；Typesense 不可用，不回退到 Convex |
+
+发布脚本可先调用本端点；只有 `shouldAutoSelect=true` 时才把匹配到的 ID 传给
+[`/api/releases/publish`](/docs/open-api/releases-publish)。其余情况应保留人工确认。

@@ -9,6 +9,25 @@ description: AniBT Wiki 与站点功能更新记录。
   日期按北京时间（UTC+8）记录。较新的更新会放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 14 日
+
+<TypeTable
+  type={{
+    '种子标题番剧匹配': {
+      description: '/api/animes/torrent-match 改用独立 anime_match_aliases 索引，综合中文、繁中、日文、罗马字、英文、多语言标题列表，以及 Season/Cour/Part/Sequence/Format 证据进行全局消歧；不再用旧 allTitles 文本分差授权自动绑定。长多语言 exact 查询改用请求体发送，不再受 Typesense GET 查询串 4000 字符限制。',
+      type: '优化',
+    },
+    '可解释的自动绑定契约': {
+      description: '匹配响应新增 decisionReason、exactAnimeCount、vetoCategory 和有界 evidenceSummary。调用方只有在 shouldAutoSelect=true 时才能自动采用 bestMatch；共享标题、结构冲突、弱证据或 exact overflow 会保留人工确认。',
+      type: '新增',
+    },
+    '匹配缓存安全': {
+      description: '种子匹配缓存升级到 v2，保留 60 秒共享缓存但禁用 stale-while-revalidate、stale-if-error 和过期值回退，避免旧结果继续授权自动绑定。',
+      type: '优化',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 12 日
 
 <TypeTable

@@ -72,7 +72,7 @@ Vary:             Accept-Encoding
 | `/api/anime/groups`              | 重新驗證 + ETag | 300s             | 3600s                    |
 | `/api/bgm/search`                | 重新驗證 + ETag | 300s             | 300s                     |
 | `/api/animes/search`             | 重新驗證 + ETag | 90s              | 3600s                    |
-| `/api/animes/torrent-match`      | 重新驗證 + ETag | 60s              | 300s                     |
+| `/api/animes/torrent-match`      | 重新驗證 + ETag | 60s              | 0（停用 stale fallback） |
 | `/api/anime/lookup`              | 重新驗證 + ETag | 300s             | 300s                     |
 | `/api/mikan/group-lookup`        | 重新驗證 + ETag | 600s             | 3600s                    |
 
