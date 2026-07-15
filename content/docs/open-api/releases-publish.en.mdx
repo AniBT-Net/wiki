@@ -223,11 +223,19 @@ The public read path advances asynchronously. After the corresponding Typesense 
 
 Send one anime identifier whenever possible. External site IDs should use `animeIdType + animeId` or `anime`; mappings follow bangumi-data. Historical scripts that send only `bgmId` still work. If an external ID maps to multiple BGM entries, multiple external IDs conflict, or no mapping is found yet, API-key publishing creates a pending release for later manual matching.
 
-If automation has only a torrent title and no stable anime ID, call
-[`/api/animes/torrent-match`](/docs/open-api/anime-torrent-match) first. Automatically
-use `bestMatch` only when `shouldAutoSelect=true`; otherwise present the candidates or
-keep a manual confirmation step. First rank, `confidence`, and high `matchScore` do not
-replace that authorization field.
+When no explicit anime ID is supplied, the publish endpoint runs the same v3 matcher as
+[`POST /api/animes/torrent-match`](/docs/open-api/anime-torrent-match) inside the Web
+server. Only `decision.kind="auto"` binds directly. `manual`, `none`, `unavailable`,
+`unsupported`, and `non_anime` remain pending or require caller handling. Automation may
+still call the matcher as a preflight, but first rank, `confidence`, `matchScore`, and fuzzy
+recall never replace `decision.kind="auto"`.
+
+The matcher preserves two inputs when they exist. For a real multipart `.torrent` upload,
+the publish field `title` becomes `rawTitle`, while the parsed torrent `info.name` becomes an
+independent `torrentName`. The Web upload flow likewise uses the edited release title plus the
+actual `info.name`. JSON / magnet-only requests contain no torrent bytes, so automatic matching
+primarily uses `title`; keep the full group, Chinese/Japanese/romaji/English, season, and episode
+structure instead of sending an aggressively cleaned short title.
 
 ### Resolution, Language, Subtitles, Format
 

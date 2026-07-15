@@ -223,10 +223,18 @@ Authorization: Bearer <YOUR_API_KEY>
 
 番劇識別建議只傳一種 ID。外部站點 ID 統一用 `animeIdType + animeId` 或 `anime`，對應關係以 bangumi-data 為準；歷史腳本裡只傳 `bgmId` 仍然可用。若外部 ID 對應多個 BGM 條目、多個外部 ID 解析結果互相衝突，或暫時找不到對應番劇，API Key 釋出會進入待匹配狀態，之後由字幕組或管理員補匹配。
 
-如果自動化只有種子標題、還沒有穩定番劇 ID，可先呼叫
-[`/api/animes/torrent-match`](/docs/open-api/anime-torrent-match)。只有響應裡的
-`shouldAutoSelect=true` 才應自動採用 `bestMatch`；`false` 時必須顯示候選或保留
-人工確認。候選第一名、`confidence` 或高 `matchScore` 都不能取代這個授權欄位。
+如果沒有明確番劇 ID，釋出介面會在 Web 服務端直接執行
+[`POST /api/animes/torrent-match`](/docs/open-api/anime-torrent-match) 的同一套 v3
+matcher。只有 `decision.kind="auto"` 才會直接綁定；`manual`、`none`、`unavailable`、
+`unsupported` 或 `non_anime` 會保留待匹配或交由呼叫方處理。自動化也可先呼叫匹配
+介面做預檢，但候選第一名、`confidence`、`matchScore` 或 fuzzy recall 都不能取代
+`decision.kind="auto"`。
+
+匹配輸入會在存在時保留兩份證據：multipart 上傳真實 `.torrent` 時，釋出欄位 `title`
+作為 `rawTitle`，服務端解析出的 torrent `info.name` 作為獨立 `torrentName`；Web 上傳頁
+同樣使用編輯後的釋出標題與實際 `info.name`。JSON / magnet-only 請求沒有 torrent bytes，
+因此自動匹配主要依賴 `title`，應盡量保留完整字幕組、中文/日文/羅馬字/英文、季度與
+集數結構，不要只傳過度清洗的短標題。
 
 ### 解析度、語言、字幕、格式
 

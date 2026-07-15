@@ -1,164 +1,169 @@
 ---
 title: 種子標題匹配番劇
-description: GET /api/animes/torrent-match —— 用中 / 日 / 英 / 羅馬字及季度資訊，把種子標題匹配到站內番劇。
+description: POST /api/animes/torrent-match —— 解析釋出標題與種子內部名稱，並用可解釋的多語證據匹配站內番劇。
 ---
 
-`/api/animes/torrent-match` 是公開、無需鑑權的番劇識別端點。釋出頁、字幕組腳本或匯入工具可先把種子標題解析成站內番劇候選，再決定自動綁定或交給人工確認。
+`/api/animes/torrent-match` 是公開、無需鑑權的番劇識別端點。Canonical 介面是
+`POST` v3：保留原始釋出標題與 torrent internal name，先生成結構化 AST，再執行
+獨立 exact / strict recall / fuzzy recall 分支，最後返回可機器處理的自動、人工、
+非番劇、unsupported 或不可用決定。
 
 <Callout type="info">
-  生產實作只讀取 AniBT 已入庫的 Bangumi Data、bgm.tv source snapshot、站內番劇主資料和 `animeAliases`。執行時不會抓取外站，也不會呼叫 OpenCC 或音譯服務。
+  生產執行時只讀取 AniBT 已入庫資料與內部 Typesense 索引，不抓取 Anime Garden、Nyaa、TMDB、TVDB 或其他外站，也不使用外站 `subjectId`。Anime Garden 只作離線測試語料。
 </Callout>
 
-## 請求
+## POST v3 請求
 
-```txt title="URL"
-GET https://anibt.net/api/animes/torrent-match?query=<title>&seasonYear=<year>&limit=<n>
+```http title="HTTP"
+POST https://anibt.net/api/animes/torrent-match
+Content-Type: application/json
 ```
 
-```bash title="多語標題"
-curl -sS -G 'https://anibt.net/api/animes/torrent-match' \
-  --data-urlencode 'query=本好きの下剋上 / Ascendance of a Bookworm S04' \
-  --data 'limit=10'
+```bash title="釋出標題 + torrent 內部名稱"
+curl -sS 'https://anibt.net/api/animes/torrent-match' \
+  -H 'Content-Type: application/json' \
+  --data @- <<'JSON'
+{
+  "rawTitle": "[LoliHouse] 孤獨搖滾！ / Bocchi the Rock! - 01 [WebRip 1080p HEVC-10bit AAC][簡繁內封字幕]",
+  "torrentName": "[LoliHouse] Bocchi the Rock! [01][1080p].mkv",
+  "publishedAt": 1664640000000,
+  "limit": 10
+}
+JSON
 ```
 
-## 查詢參數
+## 請求欄位
 
 <TypeTable
   type={{
-    'query': {
-      description: '種子解析出的番劇標題。短別名 q 也可用。支援中文、繁中、日文、羅馬字、英文、多語標題列表與 Season / Cour / Part / Sequence / Format。空字串返回空結果。',
+    'rawTitle': {
+      description: '釋出標題原文，必填，1–1000 字元。不要預先刪除中文、日文、羅馬字、英文、字幕組、季度或集數結構。',
       type: 'string',
       required: true,
     },
-    'seasonYear': {
-      description: '可選首播年份提示。只用於同等候選排序，不能授權自動綁定。',
+    'torrentName': {
+      description: '可選 torrent internal name，1–1000 字元。服務端會與 rawTitle 分開解析；兩個強標題指向不同番劇時禁止自動釋出。',
+      type: 'string',
+    },
+    'publishedAt': {
+      description: '可選釋出時間戳，單位毫秒。用於首播時間安全檢查；過早釋出可 veto，晚到的 BD / 重發不會因此被拒絕。',
       type: 'integer',
     },
+    'groupId': {
+      description: '可選 AniBT 字幕組 ID，最多 200 字元。站內釋出流程會自動使用已鑑權 API Key 對應的字幕組；一般公開呼叫通常省略。',
+      type: 'string',
+    },
     'limit': {
-      description: '返回候選數，預設 10，上限 50。',
+      description: '返回候選數，預設 10，上限 50。縮小 limit 不會放寬自動綁定門檻。',
       type: 'integer',
       default: '10',
     },
   }}
 />
 
-## 匹配資料與安全邊界
+公開路由固定 `diagnostics=false`；請求 `diagnostics=true` 返回 `403 FORBIDDEN`。診斷 AST
+只供受控測試與運維使用。
 
-- 站內主標題、Bangumi Data / bgm.tv 標題與可信站點線索可形成番劇級
-  Season / Cour / Part / Sequence / Format 共識。
-- 匯入的 `animeAliases`（包括 TVDB / TMDB 等外部來源）仍參與召回、精確碰撞檢測與
-  全域消歧，但不會單獨生成番劇級修飾符共識，避免系列級別名讓舊季度、特別篇或
-  新續作錯誤繼承同一季標記。
-- canonical 標題中的成對 `～副標題～` 只透過有界、安全的結構化 stem 規則派生；
-  例如可識別「無職轉生 3期」，但不會把普通電影或沒有季度證據的副標題無條件折疊成
-  裸系列名。
-- 多語標題列表會保留完整查詢，只按帶空格的 ` / `、` ／ ` 安全分段；
-  `Fate/stay night` 這類內部斜線不會被拆分。長多語 exact 查詢會透過請求體傳送，
-  不受 Typesense GET 查詢字串 4000 字元限制。
+<Callout type="warn">
+  不要把呼叫方自行構造的「自動匹配結果」傳給釋出 API。`/api/releases/publish` 會丟棄呼叫方偽造的內部結果，並在沒有明確番劇 ID 時直接執行同一套服務端 v3 matcher。
+</Callout>
 
-## 已驗證標題形狀
+## 匹配與自動授權邊界
 
-| 查詢示例 | 生產結果 |
-| -------- | -------- |
-| `無職轉生 3期` / `Mushoku Tensei S3` | BGM `501963`，`structured_unique`，自動綁定 |
-| `小書痴的下剋上 領主的養女 第四季` | BGM `469104`，自動綁定 |
-| `轉校生美少女竟是我曾經認為是男孩子的青梅竹馬 / 転校先の清楚可憐な美少女が、昔男子と思って一緒に遊んだ幼馴染だった件 / てんびん` | BGM `456080`，`exact_unique`，自動綁定 |
+- 釋出標題與 torrent name 分開解析；相同檢索只執行一次，但兩個輸入仍分別參與一致性判斷。
+- 中文、繁中、日文、羅馬字、英文、緊湊多語拼接、全形斜線、反斜線與 script boundary 都可形成 title hypothesis。
+- 自動授權來源只允許 BGM / bgm.tv、bangumi-data、本站人工全域 alias；弱站點線索與派生 stem 只能支援召回或消歧。
+- TMDB / TVDB、外部數字 ID、官網 slug、fuzzy、typo、prefix、infix、split/join 與文字分數都不能獨立授權自動釋出。
+- Season / Cour / Part / Sequence / Format、明確年份、開播窗口與已知 TV 集數會執行候選 veto。
+- 任一 exact / recall / 全域候選 overflow、search cutoff、lookup 二次複核失敗、hydrate 缺失、generation / projection 不一致，都會令 `candidateSetComplete=false` 並禁止 `auto`。
+- 獨立 PV / CM、MAD / AMV、遊戲影片、音樂包、公告、桌布或字型包可返回 `non_anime`；OVA / OAD / ONA / SP / MOVIE 仍屬動畫內容。
+- 多番劇、多季或 `S1+S2+OVA` 合集返回 `unsupported`，不會強行挑一個 subject。
 
-## 響應
+## v3 響應
 
 ```jsonc title="200 OK"
 {
-  "matches": [
+  "version": 3,
+  "content": { "kind": "anime_episode", "confidence": "medium", "reasonCodes": [] },
+  "decision": {
+    "kind": "auto",
+    "reason": "multi_branch_identity_unique",
+    "animeId": "anime_example",
+    "bgmId": 253046,
+    "confidence": "high",
+    "vetoes": []
+  },
+  "candidates": [
     {
-      "anime": { "_id": "...", "bgmId": 501963, "title": { "chinese": "無職轉生 第三季 ～到了異世界就拿出真本事～" } },
-      "matchScore": 95,
-      "typesense": { "textMatch": 123456, "highlights": null },
-      "evidenceSummary": {
-        "source": "anime_title",
-        "kind": "derived_stem",
-        "rawAlias": "無職轉生 第三季",
-        "strictKey": "無職轉生 第三季",
-        "matchClass": "structured_exact",
-        "evidenceStrength": "exact_primary",
-        "seasonNumber": 3,
-        "retrievalProvenance": "exact_filter",
-        "matchedQueryVariant": "無職轉生 3期"
-      }
+      "anime": { "_id": "anime_example", "bgmId": 253046, "title": { "chinese": "孤獨搖滾！" } },
+      "animeId": "anime_example",
+      "bgmId": 253046,
+      "matchScore": 100,
+      "textMatch": 0,
+      "matchedHypothesisIds": ["..."],
+      "matchedInputs": ["release_title", "torrent_name"],
+      "retrieval": ["exact"]
     }
   ],
-  "confidence": "high",
-  "shouldAutoSelect": true,
-  "bestMatch": { "_id": "...", "bgmId": 501963, "title": { "chinese": "無職轉生 第三季 ～到了異世界就拿出真本事～" } },
-  "bestMatchId": "...",
-  "backend": "typesense",
-  "decisionReason": "structured_unique",
-  "exactAnimeCount": 1,
-  "vetoCategory": null
+  "search": {
+    "branchCount": 2,
+    "exactOverflow": false,
+    "recallOverflow": false,
+    "candidateOverflow": false,
+    "searchCutoff": false,
+    "exactVerificationFailed": false,
+    "versionMismatch": false,
+    "generationMismatch": false,
+    "projectionMismatch": false,
+    "candidateSetComplete": true,
+    "strictRecallUsed": true,
+    "fuzzyRecallUsed": false,
+    "generation": "match_v3_20260716_0346"
+  },
+  "diagnostics": null
 }
 ```
 
-## 判定欄位
+## 決策種類
 
-<TypeTable
-  type={{
-    'shouldAutoSelect': {
-      description: '只有 true 才表示服務端授權自動綁定。候選第一名或高 matchScore 本身不夠。',
-      type: 'boolean',
-    },
-    'bestMatch / bestMatchId': {
-      description: '自動綁定被授權時的番劇；需要人工確認時為 null。',
-      type: 'object | null / string | null',
-    },
-    'confidence': {
-      description: 'high / medium / low / none。用於 UI 顯示，不應取代 shouldAutoSelect。',
-      type: 'enum',
-    },
-    'decisionReason': {
-      description: '最終機器判定原因。',
-      type: 'enum',
-    },
-    'exactAnimeCount': {
-      description: '參與最終 exact / structured gate 的不同 animeId 數量。-1 表示 exact 命中超過安全上限，必須人工確認。',
-      type: 'integer',
-    },
-    'vetoCategory': {
-      description: '阻止自動綁定的機器可讀類別；沒有 veto 時為 null。',
-      type: 'string | null',
-    },
-    'evidenceSummary': {
-      description: '每個候選的有界命中摘要，包含來源、alias、匹配類別與結構化修飾符；不返回完整 alias 集合。',
-      type: 'object',
-    },
-  }}
-/>
+| `decision.kind` | 呼叫方行為 |
+| --------------- | ---------- |
+| `auto` | 可以採用 `decision.animeId`；該 ID 也必須存在於 `candidates`。 |
+| `manual` | 顯示 `candidates` 供使用者確認，不得自動釋出到某個番劇。 |
+| `none` | 沒有候選，進入手動搜尋或待匹配。 |
+| `non_anime` | 高信心非番劇內容，不進入番劇釋出流程。 |
+| `unsupported` | 單番劇釋出契約無法安全表達，例如多標題或多季合集。 |
+| `unavailable` | 必要檢索或投影不可用；fail closed，稍後重試。 |
 
-| `decisionReason` | 含義 |
-| ---------------- | ---- |
-| `exact_unique` | 唯一且可授權的精確匹配。 |
-| `structured_unique` | Season / Cour / Part / Sequence / Format 與證據一致且全域唯一。 |
-| `corroborated_weak_unique` | 兩個獨立來源族共同佐證唯一弱證據。 |
-| `ambiguous_exact` | 多個番劇共享精確標題或去季度 base。 |
-| `modifier_conflict` | 查詢與候選修飾符衝突。 |
-| `variant_modifier_conflict` | 多語標題片段給出互相衝突的修飾符。 |
-| `exact_overflow` | exact 結果超過安全上限。 |
-| `low_evidence` | 有候選，但證據不足以授權自動綁定。 |
-| `candidate_unavailable` | 唯一 alias 候選無法從公開 `animes` 索引 hydrate。 |
-| `no_candidates` / `empty_query` | 沒有候選 / 查詢為空。 |
+常見 `decision.reason`：
+
+- `single_branch_identity_unique` / `multi_branch_identity_unique`：可信 identity 分支唯一且一致。
+- `projection_gap`：一個強語言分支缺少可信投影；有候選也保留人工確認。
+- `input_title_conflict` / `branch_conflict`：釋出標題、torrent name 或多語分支指向不同番劇。
+- `modifier_conflict` / `candidate_veto`：季度、Part、格式、年份、時間或集數衝突。
+- `search_incomplete`：候選集不完整，任何 overflow / cutoff / generation mismatch 都會走這裡。
+- `low_evidence` / `no_candidates` / `search_unavailable`：證據不足、無候選或檢索不可用。
 
 <Callout type="warn">
-  Recall、Typesense 文字分數、`seasonYear` 和單一官網 slug 都不能單獨授權自動綁定。呼叫方必須以 `shouldAutoSelect` 為準；false 時顯示 `matches` 讓使用者確認。
+  `candidates` 是有界證據列表，不是自動授權欄位。集數、季度與 veto 可能使最終
+  `decision.animeId` 不等於原始分數最高的 `candidates[0]`；呼叫方應在候選中找到與
+  `decision.animeId` 相同的項目。高 `matchScore`、Typesense `textMatch`、strict/fuzzy
+  recall 或單一標題命中都不能取代 `decision.kind="auto"`。
 </Callout>
 
-## 快取、限流與錯誤
+## 限流與錯誤
 
-| 項目 | 值 |
-| ---- | -- |
-| `Cache-Control` | `public, max-age=0, s-maxage=60`；不啟用 SWR / stale-if-error |
-| ETag | 支援 `If-None-Match`；未變更返回 `304 Not Modified` |
-| 速率限制 | 預設 180 次 / 60 秒 / IP |
-| `400` | 參數無效 |
-| `429` | `RATE_LIMIT_EXCEEDED`，按 `Retry-After` / `retryAfterMs` 退避 |
-| `503` | `SEARCH_UNAVAILABLE`；不回退到 Convex |
+| 項目 | POST v3 |
+| ---- | ------- |
+| 請求體 | JSON，最大 32 KiB；超出返回 `413 PAYLOAD_TOO_LARGE` |
+| Schema 錯誤 | `422 VALIDATION_ERROR` |
+| 非法 JSON | `400 INVALID_JSON` |
+| 速率限制 | 預設 180 次 / 60 秒 / IP；返回 `429 RATE_LIMIT_EXCEEDED` |
+| 快取 | `Cache-Control: no-store`，同時禁止 CDN / Cloudflare 快取 |
+| 方法 | 只允許 `POST, OPTIONS`；GET 返回 JSON `405 METHOD_NOT_ALLOWED`，`Allow: POST, OPTIONS` |
+| CORS | `POST, OPTIONS` |
 
-釋出腳本可先呼叫本端點；只有 `shouldAutoSelect=true` 時才把匹配到的 ID 傳給
-[`/api/releases/publish`](/docs/open-api/releases-publish)。其他情況應保留人工確認。
+釋出端不必先單獨呼叫本介面：未提供明確番劇 ID 時，
+[`/api/releases/publish`](/docs/open-api/releases-publish) 會在 Web 服務端直接執行同一
+matcher。只有 `auto` 會直接綁定；`manual / none / unavailable / unsupported / non_anime`
+都會保留待匹配或交由呼叫方處理。

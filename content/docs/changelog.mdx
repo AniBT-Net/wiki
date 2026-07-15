@@ -9,6 +9,29 @@ description: AniBT Wiki 与站点功能更新记录。
   日期按北京时间（UTC+8）记录。较新的更新会放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 16 日
+
+<TypeTable
+  type={{
+    '种子匹配 v3 正式切流': {
+      description: 'Canonical 接口 hard cut 为 POST /api/animes/torrent-match，GET 返回 JSON 405，不保留 v2 DTO、缓存或兼容层。服务端分别解析发布标题与 torrent internal name，生成多语言 AST，并让 exact、strict recall、fuzzy recall 独立检索；任何 overflow、cutoff、hydrate 或 generation/projection 不一致都会禁止自动绑定。',
+      type: '优化',
+    },
+    '非番剧与合集安全退出': {
+      description: '独立 PV/CM、MAD/AMV、游戏视频、音乐包、公告、壁纸与字体包可返回 non_anime；多番剧、多季和 S1+S2+OVA 合集返回 unsupported，不再强行匹配成一个番剧。',
+      type: '新增',
+    },
+    '发布流程统一 matcher': {
+      description: '发布页、批量发布、人工匹配和 API Key 发布统一使用服务端 v3 matcher。未传番剧 ID 时发布 API 直接执行同一决策；调用方伪造的内部自动匹配结果会被丢弃，只有 decision.kind=auto 才会直接绑定。',
+      type: '优化',
+    },
+    '干净匹配索引': {
+      description: '生产 matcher 已切到 match_v3_20260716_0346，共 8,621 个候选番剧和 223,742 条可信/支持别名，binding 为 0；活跃匹配集合的 TMDB/TVDB facet 为 0，旧污染集合已删除且不作为回滚目标。',
+      type: '数据',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 14 日
 
 <TypeTable
@@ -22,7 +45,7 @@ description: AniBT Wiki 与站点功能更新记录。
       type: '新增',
     },
     '匹配缓存安全': {
-      description: '种子匹配缓存升级到 v2，保留 60 秒共享缓存但禁用 stale-while-revalidate、stale-if-error 和过期值回退，避免旧结果继续授权自动绑定。',
+      description: '旧 GET 匹配接口曾使用 60 秒共享缓存并禁用 stale fallback；7 月 16 日 POST v3 hard cut 后，该 GET 接口、v2 DTO 与缓存均已删除，当前匹配响应固定 no-store。',
       type: '优化',
     },
   }}

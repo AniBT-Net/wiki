@@ -1,167 +1,163 @@
 ---
 title: Match a torrent title to anime
-description: GET /api/animes/torrent-match — match Chinese, Japanese, English, romaji, and season-aware torrent titles to AniBT anime.
+description: POST /api/animes/torrent-match — parse a release title and torrent internal name, then match them to AniBT anime with explainable multilingual evidence.
 ---
 
-`/api/animes/torrent-match` is a public, unauthenticated anime-identification endpoint. Publish UIs and subtitle-group automation can use it to turn a parsed torrent title into ranked AniBT anime candidates and decide whether automatic binding is authorized.
+`/api/animes/torrent-match` is a public, unauthenticated anime-identification endpoint. The canonical API is POST v3. It keeps the raw release title and torrent internal name, builds a structured AST, runs independent exact / strict-recall / fuzzy-recall branches, and returns a machine-readable automatic, manual, non-anime, unsupported, or unavailable decision.
 
 <Callout type="info">
-  Production reads only AniBT's imported Bangumi Data, bgm.tv source snapshots, anime master data, and `animeAliases`. It performs no runtime crawl and calls no OpenCC or transliteration service.
+  Production reads only data already stored by AniBT and its internal Typesense indexes. It does not crawl Anime Garden, Nyaa, TMDB, TVDB, or any other external site at request time, and it never trusts an external `subjectId`. Anime Garden is offline test corpus only.
 </Callout>
 
-## Request
+## POST v3 request
 
-```txt title="URL"
-GET https://anibt.net/api/animes/torrent-match?query=<title>&seasonYear=<year>&limit=<n>
+```http title="HTTP"
+POST https://anibt.net/api/animes/torrent-match
+Content-Type: application/json
 ```
 
-```bash title="Multilingual title"
-curl -sS -G 'https://anibt.net/api/animes/torrent-match' \
-  --data-urlencode 'query=本好きの下剋上 / Ascendance of a Bookworm S04' \
-  --data 'limit=10'
+```bash title="Release title + torrent internal name"
+curl -sS 'https://anibt.net/api/animes/torrent-match' \
+  -H 'Content-Type: application/json' \
+  --data @- <<'JSON'
+{
+  "rawTitle": "[LoliHouse] 孤独摇滚！ / Bocchi the Rock! - 01 [WebRip 1080p HEVC-10bit AAC][CHS&CHT]",
+  "torrentName": "[LoliHouse] Bocchi the Rock! [01][1080p].mkv",
+  "publishedAt": 1664640000000,
+  "limit": 10
+}
+JSON
 ```
 
-## Query parameters
+## Request fields
 
 <TypeTable
   type={{
-    'query': {
-      description: 'Anime title inferred from the torrent. q is accepted as a short alias. Supports Chinese, Traditional Chinese, Japanese, romaji, English, multilingual title lists, and Season / Cour / Part / Sequence / Format modifiers. An empty string returns an empty result.',
+    'rawTitle': {
+      description: 'Original release title, required, 1–1000 characters. Do not pre-strip Chinese, Japanese, romaji, English, group, season, or episode structure.',
       type: 'string',
       required: true,
     },
-    'seasonYear': {
-      description: 'Optional premiere-year hint. It only ranks otherwise equivalent candidates and never authorizes automatic binding.',
+    'torrentName': {
+      description: 'Optional torrent internal name, 1–1000 characters. It is parsed separately from rawTitle; conflicting strong identities block automatic publishing.',
+      type: 'string',
+    },
+    'publishedAt': {
+      description: 'Optional publication timestamp in milliseconds. It is used for premiere-window safety checks; suspiciously early releases may be vetoed, while late BD/re-release uploads are allowed.',
       type: 'integer',
     },
+    'groupId': {
+      description: 'Optional AniBT subtitle-group ID, maximum 200 characters. The authenticated publish flow supplies the API key group automatically; ordinary public calls normally omit it.',
+      type: 'string',
+    },
     'limit': {
-      description: 'Candidate count. Default 10, maximum 50.',
+      description: 'Candidate count, default 10, maximum 50. A smaller limit never relaxes the auto-binding gate.',
       type: 'integer',
       default: '10',
     },
   }}
 />
 
-## Matching data and safety boundaries
+The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORBIDDEN`. Detailed AST diagnostics are restricted to controlled tests and operations.
 
-- Primary titles, Bangumi Data / bgm.tv titles, and trusted site evidence may
-  establish anime-level Season / Cour / Part / Sequence / Format consensus.
-- Imported `animeAliases`, including TVDB / TMDB-derived aliases, still participate
-  in recall, exact-collision detection, and global disambiguation. They do not create
-  anime-level modifier consensus by themselves, preventing series-level aliases from
-  making older seasons, specials, or sequels inherit the wrong season marker.
-- Paired `～subtitle～` text in canonical titles is folded only through a bounded,
-  structured stem rule. This supports forms such as `无职转生 3期` without stripping
-  ordinary movie subtitles or unqualified titles down to a bare franchise name.
-- Multilingual title lists retain the full query and split only on whitespace-surrounded
-  ` / ` or ` ／ `. Intrinsic slashes such as `Fate/stay night` are preserved. Long exact
-  title lists are sent in a request body and are not constrained by Typesense's
-  4,000-character GET query-string limit.
+<Callout type="warn">
+  Never send a caller-forged “auto match result” to the publish API. `/api/releases/publish` discards caller-supplied internal assertions and runs the same server-side v3 matcher when no explicit anime ID is provided.
+</Callout>
 
-## Verified production title shapes
+## Matching and authorization boundaries
 
-| Query example | Production result |
-| ------------- | ----------------- |
-| `无职转生 3期` / `Mushoku Tensei S3` | BGM `501963`, `structured_unique`, automatic binding |
-| `小书痴的下克上 领主的养女 第四季` | BGM `469104`, automatic binding |
-| `转校生美少女竟是我曾经认为是男孩子的青梅竹马 / 転校先の清楚可憐な美少女が、昔男子と思って一緒に遊んだ幼馴染だった件 / てんびん` | BGM `456080`, `exact_unique`, automatic binding |
+- Release title and torrent name are parsed separately. Identical searches are executed once, but both inputs still participate in consensus.
+- Chinese, Traditional Chinese, Japanese, romaji, English, compact multilingual joins, fullwidth slashes, backslashes, and script boundaries can form title hypotheses.
+- Automatic authorization is restricted to BGM / bgm.tv, bangumi-data, and AniBT manual-global aliases. Site hints and derived stems are support evidence only.
+- TMDB / TVDB, external numeric IDs, site slugs, fuzzy matching, typos, prefix/infix, split/join behavior, and text score cannot authorize automatic publishing by themselves.
+- Season / Cour / Part / Sequence / Format, explicit year, premiere window, and known TV episode count are candidate vetoes.
+- Any exact / recall / global overflow, search cutoff, lookup re-verification failure, missing hydration, or generation/projection mismatch sets `candidateSetComplete=false` and forbids `auto`.
+- Standalone PV/CM, MAD/AMV, game video, music package, announcement, wallpaper, or font package may return `non_anime`. OVA/OAD/ONA/SP/MOVIE remain anime content.
+- Multi-anime, multi-season, and `S1+S2+OVA` bundles return `unsupported`; the matcher does not force one subject.
 
-## Response
+## v3 response
 
 ```jsonc title="200 OK"
 {
-  "matches": [
+  "version": 3,
+  "content": { "kind": "anime_episode", "confidence": "medium", "reasonCodes": [] },
+  "decision": {
+    "kind": "auto",
+    "reason": "multi_branch_identity_unique",
+    "animeId": "anime_example",
+    "bgmId": 253046,
+    "confidence": "high",
+    "vetoes": []
+  },
+  "candidates": [
     {
-      "anime": { "_id": "...", "bgmId": 501963, "title": { "chinese": "无职转生 第三季 ～到了异世界就拿出真本事～" } },
-      "matchScore": 95,
-      "typesense": { "textMatch": 123456, "highlights": null },
-      "evidenceSummary": {
-        "source": "anime_title",
-        "kind": "derived_stem",
-        "rawAlias": "无职转生 第三季",
-        "strictKey": "无职转生 第三季",
-        "matchClass": "structured_exact",
-        "evidenceStrength": "exact_primary",
-        "seasonNumber": 3,
-        "retrievalProvenance": "exact_filter",
-        "matchedQueryVariant": "无职转生 3期"
-      }
+      "anime": { "_id": "anime_example", "bgmId": 253046, "title": { "chinese": "孤独摇滚！" } },
+      "animeId": "anime_example",
+      "bgmId": 253046,
+      "matchScore": 100,
+      "textMatch": 0,
+      "matchedHypothesisIds": ["..."],
+      "matchedInputs": ["release_title", "torrent_name"],
+      "retrieval": ["exact"]
     }
   ],
-  "confidence": "high",
-  "shouldAutoSelect": true,
-  "bestMatch": { "_id": "...", "bgmId": 501963, "title": { "chinese": "无职转生 第三季 ～到了异世界就拿出真本事～" } },
-  "bestMatchId": "...",
-  "backend": "typesense",
-  "decisionReason": "structured_unique",
-  "exactAnimeCount": 1,
-  "vetoCategory": null
+  "search": {
+    "branchCount": 2,
+    "exactOverflow": false,
+    "recallOverflow": false,
+    "candidateOverflow": false,
+    "searchCutoff": false,
+    "exactVerificationFailed": false,
+    "versionMismatch": false,
+    "generationMismatch": false,
+    "projectionMismatch": false,
+    "candidateSetComplete": true,
+    "strictRecallUsed": true,
+    "fuzzyRecallUsed": false,
+    "generation": "match_v3_20260716_0346"
+  },
+  "diagnostics": null
 }
 ```
 
-## Decision fields
+## Decision kinds
 
-<TypeTable
-  type={{
-    'shouldAutoSelect': {
-      description: 'The only authorization signal for automatic binding. A first-ranked candidate or high matchScore is not enough.',
-      type: 'boolean',
-    },
-    'bestMatch / bestMatchId': {
-      description: 'Authorized anime when shouldAutoSelect is true; null when manual confirmation is required.',
-      type: 'object | null / string | null',
-    },
-    'confidence': {
-      description: 'high / medium / low / none. Intended for UI presentation; it does not replace shouldAutoSelect.',
-      type: 'enum',
-    },
-    'decisionReason': {
-      description: 'Machine-readable final decision reason.',
-      type: 'enum',
-    },
-    'exactAnimeCount': {
-      description: 'Distinct animeIds participating in the final exact / structured gate. -1 means exact retrieval exceeded the safe bound and requires manual review.',
-      type: 'integer',
-    },
-    'vetoCategory': {
-      description: 'Machine-readable auto-selection veto; null when there is no veto.',
-      type: 'string | null',
-    },
-    'evidenceSummary': {
-      description: 'Bounded per-candidate explanation: source, alias, match class, and structured modifiers. The endpoint never returns the complete alias set.',
-      type: 'object',
-    },
-  }}
-/>
+| `decision.kind` | Client behavior |
+| --------------- | --------------- |
+| `auto` | The client may use `decision.animeId`; that ID must also be present in `candidates`. |
+| `manual` | Present `candidates` for confirmation; do not auto-publish to one anime. |
+| `none` | No candidate; open manual search or keep the release pending. |
+| `non_anime` | High-confidence non-anime content; do not enter the anime publish flow. |
+| `unsupported` | The single-anime publish contract cannot safely represent this title. |
+| `unavailable` | Required search/projection is unavailable; fail closed and retry later. |
 
-| `decisionReason` | Meaning |
-| ---------------- | ------- |
-| `exact_unique` | One globally unique authorizing exact match. |
-| `structured_unique` | Season / Cour / Part / Sequence / Format agrees and is globally unique. |
-| `corroborated_weak_unique` | Two independent source families corroborate one weak candidate. |
-| `ambiguous_exact` | Multiple anime share the exact title or season-stripped base. |
-| `modifier_conflict` | Query and candidate modifiers conflict. |
-| `variant_modifier_conflict` | Multilingual title segments contain conflicting modifiers. |
-| `exact_overflow` | Exact retrieval exceeded the safe bound. |
-| `low_evidence` | Candidates exist, but evidence cannot authorize automatic binding. |
-| `candidate_unavailable` | The unique alias candidate could not be hydrated from the public `animes` index. |
-| `no_candidates` / `empty_query` | No candidate / empty query. |
+Common `decision.reason` values:
+
+- `single_branch_identity_unique` / `multi_branch_identity_unique`: trusted identity branches are unique and agree.
+- `projection_gap`: one strong language branch lacks a trusted projection, so the result stays manual.
+- `input_title_conflict` / `branch_conflict`: release title, torrent name, or multilingual branches disagree.
+- `modifier_conflict` / `candidate_veto`: season, part, format, year, time, or episode evidence conflicts.
+- `search_incomplete`: any overflow, cutoff, missing hydration, or generation mismatch.
+- `low_evidence` / `no_candidates` / `search_unavailable`: insufficient evidence, no candidates, or unavailable search.
 
 <Callout type="warn">
-  Recall, Typesense text score, `seasonYear`, and one official-site slug cannot authorize binding by themselves. Always follow `shouldAutoSelect`; when false, present `matches` for confirmation.
+  `candidates` is bounded evidence, not the authorization result. Episode, season, and veto
+  evidence can make the final `decision.animeId` differ from the raw highest-score
+  `candidates[0]`; clients should locate the candidate whose ID equals `decision.animeId`.
+  A high `matchScore`, Typesense `textMatch`, strict/fuzzy recall, or one title hit never
+  replaces `decision.kind="auto"`.
 </Callout>
 
-## Cache, rate limit, and errors
+## Rate limit and errors
 
-| Item | Value |
-| ---- | ----- |
-| `Cache-Control` | `public, max-age=0, s-maxage=60`; no SWR or stale-if-error |
-| ETag | Supports `If-None-Match`; unchanged responses return `304 Not Modified` |
-| Rate limit | Default 180 requests / 60 seconds / IP |
-| `400` | Invalid parameters |
-| `429` | `RATE_LIMIT_EXCEEDED`; back off using `Retry-After` / `retryAfterMs` |
-| `503` | `SEARCH_UNAVAILABLE`; no Convex fallback |
+| Item | POST v3 |
+| ---- | ------- |
+| Body | JSON, maximum 32 KiB; overflow returns `413 PAYLOAD_TOO_LARGE` |
+| Schema error | `422 VALIDATION_ERROR` |
+| Invalid JSON | `400 INVALID_JSON` |
+| Rate limit | Default 180 requests / 60 seconds / IP; `429 RATE_LIMIT_EXCEEDED` |
+| Cache | `Cache-Control: no-store`, including CDN and Cloudflare no-store headers |
+| Methods | Only `POST, OPTIONS`; GET returns JSON `405 METHOD_NOT_ALLOWED` with `Allow: POST, OPTIONS` |
+| CORS | `POST, OPTIONS` |
 
-Publish automation may call this endpoint first. Pass the matched ID to
-[`/api/releases/publish`](/docs/open-api/releases-publish) only when
-`shouldAutoSelect=true`; otherwise keep a manual confirmation step.
+Publishers do not have to call this endpoint first. When no explicit anime ID is supplied, [`/api/releases/publish`](/docs/open-api/releases-publish) runs the same matcher inside the Web server. Only `auto` binds directly; `manual / none / unavailable / unsupported / non_anime` remains pending or requires caller handling.

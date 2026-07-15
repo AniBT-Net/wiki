@@ -9,6 +9,29 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 16, 2026
+
+<TypeTable
+  type={{
+    'Torrent matcher v3 cutover': {
+      description: 'The canonical API is hard-cut to POST /api/animes/torrent-match. GET returns JSON 405, with no v2 DTO, cache, or compatibility layer. The server parses release title and torrent internal name independently, builds a multilingual AST, and separates exact, strict-recall, and fuzzy-recall retrieval. Any overflow, cutoff, missing hydration, or generation/projection mismatch blocks automatic binding.',
+      type: 'Improved',
+    },
+    'Safe non-anime and bundle exits': {
+      description: 'Standalone PV/CM, MAD/AMV, game videos, music packages, announcements, wallpapers, and font packages may return non_anime. Multi-anime, multi-season, and S1+S2+OVA bundles return unsupported instead of being forced onto one anime.',
+      type: 'Added',
+    },
+    'One matcher across publishing': {
+      description: 'Publish UI, bulk publishing, manual matching, and API-key publishing now share the server-side v3 matcher. When no anime ID is supplied, the publish API runs the same decision directly; caller-forged internal match assertions are discarded, and only decision.kind=auto binds immediately.',
+      type: 'Improved',
+    },
+    'Clean production match index': {
+      description: 'Production now uses match_v3_20260716_0346 with 8,621 anime candidates, 223,742 trusted/support aliases, and zero bindings. Active match collections have zero TMDB/TVDB facets; polluted and superseded collections were deleted and are not rollback targets.',
+      type: 'Data',
+    },
+  }}
+/>
+
 ## July 14, 2026
 
 <TypeTable
@@ -22,7 +45,7 @@ This page records AniBT Wiki changes and feature updates that are directly cover
       type: 'Added',
     },
     'Safer matcher caching': {
-      description: 'The matcher cache moves to v2 with a 60-second shared TTL while disabling stale-while-revalidate, stale-if-error, and expired-value fallback so old results cannot keep authorizing bindings.',
+      description: 'The retired GET matcher once used a 60-second shared cache with stale fallback disabled. The July 16 POST v3 hard cut removed that GET route, v2 DTO, and cache; current matcher responses are always no-store.',
       type: 'Improved',
     },
   }}

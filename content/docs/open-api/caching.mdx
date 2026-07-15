@@ -72,7 +72,7 @@ Vary:             Accept-Encoding
 | `/api/anime/groups`              | 重新验证 + ETag | 300s             | 3600s                    |
 | `/api/bgm/search`                | 重新验证 + ETag | 300s             | 300s                     |
 | `/api/animes/search`             | 重新验证 + ETag | 90s              | 3600s                    |
-| `/api/animes/torrent-match`      | 重新验证 + ETag | 60s              | 0（禁用 stale fallback） |
+| `POST /api/animes/torrent-match` | 不缓存          | 0                 | 0（原始发布标题）        |
 | `/api/anime/lookup`              | 重新验证 + ETag | 300s             | 300s                     |
 | `/api/mikan/group-lookup`        | 重新验证 + ETag | 600s             | 3600s                    |
 
@@ -86,7 +86,6 @@ Vary:             Accept-Encoding
 | `/api/anime/groups`                               | `W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`                       |
 | `/api/bgm/search`                                 | `W/"bgm-web-{queryHash}-{count}-{lastMs}"`                        |
 | `/api/animes/search`                              | `W/"anime-search-web-{bodyHash}"`                                 |
-| `/api/animes/torrent-match`                       | `W/"anime-torrent-match-web-{bodyHash}"`                          |
 | `/api/anime/lookup`                               | `W/"anime-lookup-web-{bodyHash}"`                                 |
 | `/api/mikan/group-lookup`                         | `W/"mikan-group-lookup-web-{bodyHash}"`                           |
 

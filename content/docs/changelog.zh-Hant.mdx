@@ -9,6 +9,29 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 16 日
+
+<TypeTable
+  type={{
+    '種子匹配 v3 正式切流': {
+      description: 'Canonical 介面 hard cut 為 POST /api/animes/torrent-match，GET 返回 JSON 405，不保留 v2 DTO、快取或相容層。服務端分別解析釋出標題與 torrent internal name，生成多語 AST，並讓 exact、strict recall、fuzzy recall 獨立檢索；任何 overflow、cutoff、hydrate 或 generation/projection 不一致都會禁止自動綁定。',
+      type: '最佳化',
+    },
+    '非番劇與合集安全退出': {
+      description: '獨立 PV/CM、MAD/AMV、遊戲影片、音樂包、公告、桌布與字型包可返回 non_anime；多番劇、多季和 S1+S2+OVA 合集返回 unsupported，不再強行匹配成一個番劇。',
+      type: '新增',
+    },
+    '釋出流程統一 matcher': {
+      description: '釋出頁、批次釋出、人工匹配與 API Key 釋出統一使用服務端 v3 matcher。未傳番劇 ID 時釋出 API 直接執行同一決策；呼叫方偽造的內部自動匹配結果會被丟棄，只有 decision.kind=auto 才會直接綁定。',
+      type: '最佳化',
+    },
+    '乾淨匹配索引': {
+      description: '生產 matcher 已切到 match_v3_20260716_0346，共 8,621 個候選番劇、223,742 條可信/支援別名，binding 為 0；活躍匹配集合的 TMDB/TVDB facet 為 0，舊污染集合已刪除且不作為回滾目標。',
+      type: '資料',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 14 日
 
 <TypeTable
@@ -22,7 +45,7 @@ description: AniBT Wiki 與站點功能更新紀錄。
       type: '新增',
     },
     '匹配快取安全': {
-      description: '種子匹配快取升級到 v2，保留 60 秒共享快取但停用 stale-while-revalidate、stale-if-error 和過期值回退，避免舊結果繼續授權自動綁定。',
+      description: '舊 GET 匹配介面曾使用 60 秒共享快取並停用 stale fallback；7 月 16 日 POST v3 hard cut 後，該 GET 介面、v2 DTO 與快取均已刪除，目前匹配響應固定 no-store。',
       type: '最佳化',
     },
   }}
