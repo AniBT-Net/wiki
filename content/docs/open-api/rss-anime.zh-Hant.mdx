@@ -101,12 +101,18 @@ GET https://anibt.net/rss/anime.xml?<query>
       description: 'BEP 36，磁力 URL，type="application/x-bittorrent"。已自動追加站點預設 tracker。',
       type: 'magnet',
     },
-    '<torrent xmlns="http://xmlns.ezrss.it/0.1/">': {
-      description: 'infoHash + 內嵌預設 tracker。',
+    '<torrent xmlns="…">': {
+      description: 'BEP 36：infoHash / magnet（含站點預設 tracker）。',
       type: 'element',
+    },
+    '<anibt:bgmId>': {
+      description: 'Bangumi subject id。`xmlns:anibt="https://anibt.net/xmlns/rss/1.0/"`；條目已綁定時輸出，未綁定則省略。標準閱讀器可忽略該命名空間。',
+      type: 'number',
     },
   }}
 />
+
+同一 `anibt:` 擴展欄位也會出現在 [`/rss/magnets.xml`](/docs/open-api/other-endpoints) 與 [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) 的 anime 條目中，便於跨端點統一解析。`/rss/other/*` 不輸出 `bgmId`。
 
 ## 後端執行方式
 

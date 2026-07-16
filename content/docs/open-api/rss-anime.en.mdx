@@ -101,12 +101,18 @@ Each `<item>` contains:
       description: 'BEP 36 magnet URL with type="application/x-bittorrent". Default trackers are appended automatically.',
       type: 'magnet',
     },
-    '<torrent xmlns="http://xmlns.ezrss.it/0.1/">': {
-      description: 'infoHash + embedded default trackers.',
+    '<torrent xmlns="…">': {
+      description: 'BEP 36: infoHash / magnet (site default trackers included).',
       type: 'element',
+    },
+    '<anibt:bgmId>': {
+      description: 'Bangumi subject id. Declared under xmlns:anibt="https://anibt.net/xmlns/rss/1.0/". Present when the release is bound; omitted when unknown. Standard readers ignore the namespace.',
+      type: 'number',
     },
   }}
 />
+
+The same `anibt:` fields are also emitted on [`/rss/magnets.xml`](/docs/open-api/other-endpoints) and [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) anime items for cross-endpoint parsing. `/rss/other/*` does **not** emit `bgmId`.
 
 ## Backend execution
 

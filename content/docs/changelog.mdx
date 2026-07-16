@@ -13,6 +13,10 @@ description: AniBT Wiki 与站点功能更新记录。
 
 <TypeTable
   type={{
+    'RSS 输出 anibt:bgmId': {
+      description: '`/rss/magnets.xml`、`/rss/anime.xml`、`/rss/group/<slug>.xml` 的 anime 条目在 `xmlns:anibt` 下增加 `<anibt:bgmId>`（Bangumi subject id；已绑定才输出）。`/rss/other/*` 不加。标准阅读器可忽略该命名空间。',
+      type: '新增',
+    },
     '种子匹配 v3 正式切流': {
       description: 'Canonical 接口 hard cut 为 POST /api/animes/torrent-match，GET 返回 JSON 405，不保留 v2 DTO、缓存或兼容层。服务端分别解析发布标题与 torrent internal name，生成多语言 AST，并让 exact、strict recall、fuzzy recall 独立检索；新增 Season N - EP、括号版本年份、混合脚本和跨季连续集数判断，任何 overflow、cutoff、hydrate 或 generation/projection 不一致都会禁止自动绑定。',
       type: '优化',

@@ -29,6 +29,8 @@ https://anibt.net/rss/group/kitauji-sub.xml
 https://anibt.net/rss/group/haruhana.xml
 ```
 
+Items use the same AniBT extension fields as [the main RSS entry](/docs/open-api/rss-anime), including `<anibt:bgmId>` when the release is bound.
+
 ## Site-wide magnets `/rss/magnets.xml`
 
 Good for "what's new across the whole site".
@@ -39,6 +41,8 @@ https://anibt.net/rss/magnets.xml?limit=200
 https://anibt.net/rss/magnets.xml?q=葬送的芙莉莲
 https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 ```
+
+Each anime `<item>` includes `xmlns:anibt` structured metadata; **`<anibt:bgmId>`** is the Bangumi subject id (emitted when bound). Field set matches `/rss/anime.xml` and `/rss/group/*.xml`. `/rss/other/*` does not emit `bgmId`.
 
 <Callout type="info">
   Simple queries cache for **120s**; complex queries (with `q` and multiple filters) cache for **60s**. Both layer on `stale-while-revalidate=600s`, so the CDN serves stale content immediately and refreshes asynchronously. See [HTTP caching & 304](/docs/open-api/caching).

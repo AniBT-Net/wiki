@@ -29,6 +29,8 @@ https://anibt.net/rss/group/kitauji-sub.xml
 https://anibt.net/rss/group/haruhana.xml
 ```
 
+條目與 [RSS 主入口](/docs/open-api/rss-anime) 一樣會輸出 AniBT 擴展欄位（含 `<anibt:bgmId>`，有綁定才出現）。
+
 ## 全站磁力 `/rss/magnets.xml`
 
 適合"看看全站最近發了什麼"。
@@ -39,6 +41,8 @@ https://anibt.net/rss/magnets.xml?limit=200
 https://anibt.net/rss/magnets.xml?q=葬送的芙莉蓮
 https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 ```
+
+每個 anime `<item>` 含 `xmlns:anibt` 結構化元資料，其中 **`<anibt:bgmId>`** 為 Bangumi subject id（已綁定則輸出）。與 `/rss/anime.xml`、`/rss/group/*.xml` 欄位一致；`/rss/other/*` 無此欄位。
 
 <Callout type="info">
   簡單查詢快取 **120 秒**；帶 `q` + 多 filter 的複雜查詢快取 **60 秒**。兩者都疊加 `stale-while-revalidate=600s`，CDN 在視窗過期後仍立即吐舊版給使用者、後臺非同步重新整理。詳見 [HTTP 快取與 304](/docs/open-api/caching)。
