@@ -76,9 +76,16 @@ JSON
 - 自動授權來源只允許 BGM / bgm.tv、bangumi-data、本站人工全域 alias，以及目前已鑑權字幕組內唯一 active scoped binding；弱站點線索與派生 stem 只能支援召回或消歧。
 - TMDB / TVDB、外部數字 ID、官網 slug、fuzzy、typo、prefix、infix、split/join 與文字分數都不能獨立授權自動釋出。
 - Season / Cour / Part / Sequence / Format、明確年份、開播窗口與已知 TV 集數會執行候選 veto。明確 Season 使用季內集數；沒有 Season 時，只有作品族、時間 cohort 與累計集數窗口都唯一，才會用 `EP25` 等絕對集數安全提升續作。
+- 類似 `[Title][24][1080p]` 的 bracket 結構會把 `[24]` 識別為集數；`[Title][1080p][24][AAC]` 中的 `[24]` 仍按幀率後設資料處理，避免全域誤解數字標題或 FPS。
+- `2024年版`、`(2024)` 等明確版本年份，只有在目標候選自身首播年精確等於 2024 時，才能參與自動結構淘汰；上傳年份或模糊年份不能取代該證據。
+- 當上季官方總集數包含一個 SP、字幕組連續編號只計算正片時，matcher 可在 family 完整、後季排名第一、雙方 recall-only、釋出時間明顯支持後季且目標唯一的前提下，把跨季窗口安全前移一集。單集 `24` 與精確整季範圍 `24-46` 使用同一修正窗口；真正多季合集仍為 `unsupported`。
 - 任一 exact / recall / 全域候選 overflow、search cutoff、lookup 二次複核失敗、hydrate 缺失、generation / projection 不一致，都會令 `candidateSetComplete=false` 並禁止 `auto`。
 - 獨立 PV / CM、MAD / AMV、遊戲影片、演唱會、真人劇、音樂專輯、舞台/朗讀劇、公告、桌布或字型包可返回 `non_anime`；OVA / OAD / ONA / SP / MOVIE 仍屬動畫內容。
 - 多番劇、多季或 `S1+S2+OVA` 合集返回 `unsupported`，不會強行挑一個 subject。
+
+<Callout type="info">
+  目前生產 generation 為 `match_v3_20260716_2112`：8,621 個候選番劇、223,778 條別名、24 個 scoped bindings。固定離線語料中，2024–2026 番劇自動匹配為 9,091 / 9,781（92.9455%）；排除後續單獨處理合集的 VCB 後為 8,744 / 9,339（93.6289%）。這是自動決策覆蓋率，不是外部真值準確率。
+</Callout>
 
 ## v3 響應
 
@@ -119,7 +126,7 @@ JSON
     "candidateSetComplete": true,
     "strictRecallUsed": true,
     "fuzzyRecallUsed": false,
-    "generation": "match_v3_20260716_1310"
+    "generation": "match_v3_20260716_2112"
   },
   "diagnostics": null
 }

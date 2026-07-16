@@ -237,6 +237,13 @@ actual `info.name`. JSON / magnet-only requests contain no torrent bytes, so aut
 primarily uses `title`; keep the full group, Chinese/Japanese/romaji/English, season, and episode
 structure instead of sending an aggressively cleaned short title.
 
+Context distinguishes bare numeric brackets: `24` is an episode in `[Title][24][1080p]`, but remains
+frame-rate metadata in `[Title][1080p][24][AAC]`. An explicit `2024 edition` / `(2024)` must match the
+candidate's premiere year exactly. If an upstream previous-season total includes one special while a
+group numbers regular episodes continuously, a single boundary episode and an exact whole-season
+range may shift back by one only when complete family, publication-time, and unique-target evidence
+all agree; this does not relax true multi-season bundle handling.
+
 Explicit anime IDs also provide group-scoped project confirmations. The server recomputes a project
 fingerprint from `title` and torrent `info.name`; the first explicit confirmation is `pending`, and a
 second distinct episode that confirms the same anime activates the binding. Web manual matching can

@@ -17,6 +17,10 @@ description: AniBT Wiki 与站点功能更新记录。
       description: 'Canonical 接口 hard cut 为 POST /api/animes/torrent-match，GET 返回 JSON 405，不保留 v2 DTO、缓存或兼容层。服务端分别解析发布标题与 torrent internal name，生成多语言 AST，并让 exact、strict recall、fuzzy recall 独立检索；新增 Season N - EP、括号版本年份、混合脚本和跨季连续集数判断，任何 overflow、cutoff、hydrate 或 generation/projection 不一致都会禁止自动绑定。',
       type: '优化',
     },
+    '集数边界与版本年收口': {
+      description: '新增 bracket 裸数字上下文判断：[Title][24][1080p] 的 24 作为集数，[Title][1080p][24][AAC] 的 24 保持帧率；2024年版 / (2024) 必须精确命中候选首播年。上季官方计数多含一个 SP 时，单集边界和精确整季范围只在 family 完整、后季排名第一、发布时间与唯一目标共同成立时前移一集。',
+      type: '优化',
+    },
     '非番剧与合集安全退出': {
       description: '独立 PV/CM、MAD/AMV、游戏视频、演唱会、真人剧、音乐专辑、舞台/朗读剧、公告、壁纸与字体包可返回 non_anime；单番剧单季合集仍可匹配，多番剧、真正多季和 S1+S2+OVA 合集返回 unsupported。',
       type: '新增',
@@ -30,7 +34,7 @@ description: AniBT Wiki 与站点功能更新记录。
       type: '新增',
     },
     '干净匹配索引': {
-      description: '生产 matcher 已切到 match_v3_20260716_1310，共 8,621 个候选番剧和 223,777 条可信/支持别名，初始 binding 为 0；34,083 条固定语料中，2024–2026 番剧自动匹配为 8,890 / 9,781（90.8905%）。TMDB/TVDB 不参与匹配，旧污染集合已删除且不作为回滚目标。',
+      description: '生产 matcher 已切到 match_v3_20260716_2112，共 8,621 个候选番剧、223,778 条别名和 24 个 scoped bindings；34,083 条固定语料中，2024–2026 番剧自动匹配为 9,091 / 9,781（92.9455%），排除后续单独处理合集的 VCB 后为 8,744 / 9,339（93.6289%）。TMDB/TVDB 不参与匹配。',
       type: '数据',
     },
   }}

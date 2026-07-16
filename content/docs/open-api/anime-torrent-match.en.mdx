@@ -71,9 +71,16 @@ The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORB
 - Automatic authorization is restricted to BGM / bgm.tv, bangumi-data, AniBT manual-global aliases, and one active scoped binding inside the authenticated subtitle group. Site hints and derived stems are support evidence only.
 - TMDB / TVDB, external numeric IDs, site slugs, fuzzy matching, typos, prefix/infix, split/join behavior, and text score cannot authorize automatic publishing by themselves.
 - Season / Cour / Part / Sequence / Format, explicit year, premiere window, and known TV episode count are candidate vetoes. Explicit seasons use per-season episode numbers. Without a season marker, an absolute number such as `EP25` may promote a sequel only when the work family, time cohort, and cumulative episode window are all unique.
+- In a bracket envelope such as `[Title][24][1080p]`, `[24]` is treated as an episode. In `[Title][1080p][24][AAC]`, the same token remains frame-rate metadata, so numeric titles and FPS are not globally reinterpreted.
+- An explicit version year such as `2024 edition` or `(2024)` may participate in automatic structural elimination only when the selected candidate itself premiered in 2024. Upload year or a fuzzy year cohort is not a substitute.
+- If an upstream season total includes one special while a release group continuously numbers regular episodes only, the matcher may shift the family window back by one episode only when family completion is safe, the later season ranks first, both adjacent candidates are recall-only, publication time clearly supports the later season, and the target is unique. A single `24` and the exact whole-season range `24-46` share the repaired window; true multi-season bundles remain `unsupported`.
 - Any exact / recall / global overflow, search cutoff, lookup re-verification failure, missing hydration, or generation/projection mismatch sets `candidateSetComplete=false` and forbids `auto`.
 - Standalone PV/CM, MAD/AMV, game video, concert, live-action title, music album, stage/reading production, announcement, wallpaper, or font package may return `non_anime`. OVA/OAD/ONA/SP/MOVIE remain anime content.
 - Multi-anime, multi-season, and `S1+S2+OVA` bundles return `unsupported`; the matcher does not force one subject.
+
+<Callout type="info">
+  The active production generation is `match_v3_20260716_2112`: 8,621 anime candidates, 223,778 aliases, and 24 scoped bindings. On the fixed offline corpus, 9,091 / 9,781 anime releases from 2024–2026 are automatic (92.9455%); excluding VCB bundles that will be handled separately, the result is 8,744 / 9,339 (93.6289%). This is automatic-decision coverage, not external ground-truth accuracy.
+</Callout>
 
 ## v3 response
 
@@ -114,7 +121,7 @@ The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORB
     "candidateSetComplete": true,
     "strictRecallUsed": true,
     "fuzzyRecallUsed": false,
-    "generation": "match_v3_20260716_1310"
+    "generation": "match_v3_20260716_2112"
   },
   "diagnostics": null
 }
