@@ -13,6 +13,14 @@ description: AniBT Wiki 与站点功能更新记录。
 
 <TypeTable
   type={{
+    '番剧多标题模板': {
+      description: '字幕组可为同一番剧分别配置简体、繁体和简繁三个标题模板槽位；每个槽位支持搜索并选择字幕组自定义模板或内置模板，也可以保持继承。自动模式按资源的 CHS/CHT 语言选择槽位，再依次回退到字幕组默认自定义模板、默认内置模板和原始种子标题。',
+      type: '新增',
+    },
+    '发布第三步标题选择': {
+      description: '发布第三步的标题模板选择器改为番剧自动、字幕组自定义模板和内置模板三组，并显示当前模式、来源与示例。支持单条快速搜索选择和已勾选资源的批量应用；批量时每条资源独立生成标题，直接编辑标题会进入不会被元数据变化覆盖的手工模式。',
+      type: '优化',
+    },
     '种子匹配 v3 正式切流': {
       description: 'Canonical 接口 hard cut 为 POST /api/animes/torrent-match，GET 返回 JSON 405，不保留 v2 DTO、缓存或兼容层。服务端分别解析发布标题与 torrent internal name，生成多语言 AST，并让 exact、strict recall、fuzzy recall 独立检索；新增 Season N - EP、括号版本年份、混合脚本和跨季连续集数判断，任何 overflow、cutoff、hydrate 或 generation/projection 不一致都会禁止自动绑定。',
       type: '优化',

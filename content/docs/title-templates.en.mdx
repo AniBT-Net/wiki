@@ -1,0 +1,51 @@
+---
+title: Anime title templates
+description: Configure separate Simplified, Traditional, and bilingual title templates per anime, then switch quickly between auto, pinned-template, and manual titles in publish step 3.
+---
+
+A release group can save three title-template slots for each anime: **Simplified**, **Traditional**, and **Both**. During publishing, AniBT chooses a slot from each item's subtitle languages, while still allowing a publisher to pin another template or edit the title manually.
+
+## Workflow
+
+1. Open `/groups/<slug>/settings` and set the group default under “Title Templates”. You can also create a custom template there and make it the group default.
+2. Open `/groups/<slug>/anime_templates`, then add or edit an anime template.
+3. Switch between the Simplified, Traditional, and Both slots. Each slot can use a built-in template, a group custom template, or Inherit. The searchable picker shows an immediate title preview.
+4. Open `/groups/<slug>/publish`. In step 3, review the title mode on each item. To change several items together, select them and use the batch title-template action.
+
+## Language slots
+
+| Item languages | Anime slot selected by Auto |
+| --- | --- |
+| Contains `CHS` but not `CHT` | Simplified |
+| Contains `CHT` but not `CHS` | Traditional |
+| Contains both `CHS` and `CHT` | Both |
+| Contains neither `CHS` nor `CHT` | Skip anime slots and use group-default fallback |
+
+An Inherit slot does not copy the current default. It is resolved against the latest group settings when the title is generated. Auto mode follows this order:
+
+```text
+matching anime slot
+→ group default custom template
+→ group default built-in template
+→ original torrent title
+```
+
+This lets you configure only the languages that need anime-specific naming and leave the rest attached to group defaults. The built-in catalogue also includes the Collection template for batch or collection releases.
+
+## Title modes in publish step 3
+
+Each item shows a compact title-mode button with its current source. The searchable picker groups choices into:
+
+- **Anime auto**: select the anime language slot and apply the fallback order above.
+- **Group custom templates**: pin the selected custom template.
+- **Built-in templates**: pin the selected built-in template.
+
+Editing the title text directly switches the item to **Manual title**. Later anime, episode, language, resolution, or container changes will not overwrite a manual title. Select Anime auto or a template again to resume generated titles.
+
+## Batch selection
+
+Step 3 can apply one title mode to all selected items. The preview at the top represents one item only; when applied, every item renders independently from its own anime, languages, episode, and media metadata. The operation does not copy one preview string to the whole batch, and it can be undone immediately.
+
+<Callout type="info">
+  Keep routine naming in the group default and add anime slots only where Simplified, Traditional, or bilingual releases genuinely need different rules. Inherited anime templates will then follow future group-default changes automatically.
+</Callout>

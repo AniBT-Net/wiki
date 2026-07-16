@@ -13,6 +13,14 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 <TypeTable
   type={{
+    'Per-anime multi-title templates': {
+      description: 'A group can configure separate Simplified, Traditional, and bilingual title-template slots for the same anime. Each slot can search and select a group custom or built-in template, or remain inherited. Auto mode selects the slot from CHS/CHT languages, then falls back through the group custom default, group built-in default, and original torrent title.',
+      type: 'Added',
+    },
+    'Publish step 3 title picker': {
+      description: 'The title-template picker now groups Anime auto, group custom templates, and built-in templates while showing the current mode, source, and preview. Publishers can search per item or apply a mode to selected items in bulk; each item renders independently, while direct title edits enter a manual mode that metadata changes do not overwrite.',
+      type: 'Improved',
+    },
     'Torrent matcher v3 cutover': {
       description: 'The canonical API is hard-cut to POST /api/animes/torrent-match. GET returns JSON 405, with no v2 DTO, cache, or compatibility layer. The server parses release title and torrent internal name independently, builds a multilingual AST, and separates exact, strict-recall, and fuzzy-recall retrieval. Any overflow, cutoff, missing hydration, or generation/projection mismatch blocks automatic binding.',
       type: 'Improved',
