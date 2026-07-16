@@ -3,7 +3,8 @@ title: 種子標題匹配番劇
 description: POST /api/animes/torrent-match —— 解析釋出標題與種子內部名稱，並用可解釋的多語證據匹配站內番劇。
 ---
 
-`/api/animes/torrent-match` 是公開、無需鑑權的番劇識別端點。Canonical 介面是
+`/api/animes/torrent-match` 預設是公開、無需鑑權的番劇識別端點；只有請求字幕組內
+scoped binding 時需要登入。Canonical 介面是
 `POST` v3：保留原始釋出標題與 torrent internal name，先生成結構化 AST，再執行
 獨立 exact / strict recall / fuzzy recall 分支，最後返回可機器處理的自動、人工、
 非番劇、unsupported 或不可用決定。
@@ -50,7 +51,7 @@ JSON
       type: 'integer',
     },
     'groupId': {
-      description: '可選 AniBT 字幕組 ID，最多 200 字元。站內釋出流程會自動使用已鑑權 API Key 對應的字幕組；一般公開呼叫通常省略。',
+      description: '可選 AniBT 字幕組 ID，最多 200 字元。傳入時必須攜帶登入工作階段且目前使用者屬於該字幕組，否則返回 403；只可讀取本組已啟用的項目 binding。API Key 釋出會在服務端自動使用對應字幕組。',
       type: 'string',
     },
     'limit': {
@@ -72,11 +73,11 @@ JSON
 
 - 釋出標題與 torrent name 分開解析；相同檢索只執行一次，但兩個輸入仍分別參與一致性判斷。
 - 中文、繁中、日文、羅馬字、英文、緊湊多語拼接、全形斜線、反斜線與 script boundary 都可形成 title hypothesis。
-- 自動授權來源只允許 BGM / bgm.tv、bangumi-data、本站人工全域 alias；弱站點線索與派生 stem 只能支援召回或消歧。
+- 自動授權來源只允許 BGM / bgm.tv、bangumi-data、本站人工全域 alias，以及目前已鑑權字幕組內唯一 active scoped binding；弱站點線索與派生 stem 只能支援召回或消歧。
 - TMDB / TVDB、外部數字 ID、官網 slug、fuzzy、typo、prefix、infix、split/join 與文字分數都不能獨立授權自動釋出。
-- Season / Cour / Part / Sequence / Format、明確年份、開播窗口與已知 TV 集數會執行候選 veto。
+- Season / Cour / Part / Sequence / Format、明確年份、開播窗口與已知 TV 集數會執行候選 veto。明確 Season 使用季內集數；沒有 Season 時，只有作品族、時間 cohort 與累計集數窗口都唯一，才會用 `EP25` 等絕對集數安全提升續作。
 - 任一 exact / recall / 全域候選 overflow、search cutoff、lookup 二次複核失敗、hydrate 缺失、generation / projection 不一致，都會令 `candidateSetComplete=false` 並禁止 `auto`。
-- 獨立 PV / CM、MAD / AMV、遊戲影片、音樂包、公告、桌布或字型包可返回 `non_anime`；OVA / OAD / ONA / SP / MOVIE 仍屬動畫內容。
+- 獨立 PV / CM、MAD / AMV、遊戲影片、演唱會、真人劇、音樂專輯、舞台/朗讀劇、公告、桌布或字型包可返回 `non_anime`；OVA / OAD / ONA / SP / MOVIE 仍屬動畫內容。
 - 多番劇、多季或 `S1+S2+OVA` 合集返回 `unsupported`，不會強行挑一個 subject。
 
 ## v3 響應
@@ -118,7 +119,7 @@ JSON
     "candidateSetComplete": true,
     "strictRecallUsed": true,
     "fuzzyRecallUsed": false,
-    "generation": "match_v3_20260716_0346"
+    "generation": "match_v3_20260716_1310"
   },
   "diagnostics": null
 }
@@ -138,6 +139,8 @@ JSON
 常見 `decision.reason`：
 
 - `single_branch_identity_unique` / `multi_branch_identity_unique`：可信 identity 分支唯一且一致。
+- `scoped_binding_active`：目前字幕組的項目 binding 已啟用，且仍通過候選投影、結構 veto、衝突與完整性檢查。
+- `scoped_binding_conflict`：組內 binding 與目前強標題證據衝突，保留人工確認。
 - `projection_gap`：一個強語言分支缺少可信投影；有候選也保留人工確認。
 - `input_title_conflict` / `branch_conflict`：釋出標題、torrent name 或多語分支指向不同番劇。
 - `modifier_conflict` / `candidate_veto`：季度、Part、格式、年份、時間或集數衝突。
@@ -157,6 +160,7 @@ JSON
 | ---- | ------- |
 | 請求體 | JSON，最大 32 KiB；超出返回 `413 PAYLOAD_TOO_LARGE` |
 | Schema 錯誤 | `422 VALIDATION_ERROR` |
+| `groupId` 無工作階段或非成員 | `403 FORBIDDEN` |
 | 非法 JSON | `400 INVALID_JSON` |
 | 速率限制 | 預設 180 次 / 60 秒 / IP；返回 `429 RATE_LIMIT_EXCEEDED` |
 | 快取 | `Cache-Control: no-store`，同時禁止 CDN / Cloudflare 快取 |

@@ -3,7 +3,7 @@ title: Match a torrent title to anime
 description: POST /api/animes/torrent-match — parse a release title and torrent internal name, then match them to AniBT anime with explainable multilingual evidence.
 ---
 
-`/api/animes/torrent-match` is a public, unauthenticated anime-identification endpoint. The canonical API is POST v3. It keeps the raw release title and torrent internal name, builds a structured AST, runs independent exact / strict-recall / fuzzy-recall branches, and returns a machine-readable automatic, manual, non-anime, unsupported, or unavailable decision.
+`/api/animes/torrent-match` is public and unauthenticated by default; authentication is required only when requesting a subtitle-group scoped binding. The canonical API is POST v3. It keeps the raw release title and torrent internal name, builds a structured AST, runs independent exact / strict-recall / fuzzy-recall branches, and returns a machine-readable automatic, manual, non-anime, unsupported, or unavailable decision.
 
 <Callout type="info">
   Production reads only data already stored by AniBT and its internal Typesense indexes. It does not crawl Anime Garden, Nyaa, TMDB, TVDB, or any other external site at request time, and it never trusts an external `subjectId`. Anime Garden is offline test corpus only.
@@ -47,7 +47,7 @@ JSON
       type: 'integer',
     },
     'groupId': {
-      description: 'Optional AniBT subtitle-group ID, maximum 200 characters. The authenticated publish flow supplies the API key group automatically; ordinary public calls normally omit it.',
+      description: 'Optional AniBT subtitle-group ID, maximum 200 characters. Supplying it requires a login session and membership in that group, otherwise the route returns 403. It can read only that group’s active project bindings. API-key publishing supplies its group server-side.',
       type: 'string',
     },
     'limit': {
@@ -68,11 +68,11 @@ The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORB
 
 - Release title and torrent name are parsed separately. Identical searches are executed once, but both inputs still participate in consensus.
 - Chinese, Traditional Chinese, Japanese, romaji, English, compact multilingual joins, fullwidth slashes, backslashes, and script boundaries can form title hypotheses.
-- Automatic authorization is restricted to BGM / bgm.tv, bangumi-data, and AniBT manual-global aliases. Site hints and derived stems are support evidence only.
+- Automatic authorization is restricted to BGM / bgm.tv, bangumi-data, AniBT manual-global aliases, and one active scoped binding inside the authenticated subtitle group. Site hints and derived stems are support evidence only.
 - TMDB / TVDB, external numeric IDs, site slugs, fuzzy matching, typos, prefix/infix, split/join behavior, and text score cannot authorize automatic publishing by themselves.
-- Season / Cour / Part / Sequence / Format, explicit year, premiere window, and known TV episode count are candidate vetoes.
+- Season / Cour / Part / Sequence / Format, explicit year, premiere window, and known TV episode count are candidate vetoes. Explicit seasons use per-season episode numbers. Without a season marker, an absolute number such as `EP25` may promote a sequel only when the work family, time cohort, and cumulative episode window are all unique.
 - Any exact / recall / global overflow, search cutoff, lookup re-verification failure, missing hydration, or generation/projection mismatch sets `candidateSetComplete=false` and forbids `auto`.
-- Standalone PV/CM, MAD/AMV, game video, music package, announcement, wallpaper, or font package may return `non_anime`. OVA/OAD/ONA/SP/MOVIE remain anime content.
+- Standalone PV/CM, MAD/AMV, game video, concert, live-action title, music album, stage/reading production, announcement, wallpaper, or font package may return `non_anime`. OVA/OAD/ONA/SP/MOVIE remain anime content.
 - Multi-anime, multi-season, and `S1+S2+OVA` bundles return `unsupported`; the matcher does not force one subject.
 
 ## v3 response
@@ -114,7 +114,7 @@ The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORB
     "candidateSetComplete": true,
     "strictRecallUsed": true,
     "fuzzyRecallUsed": false,
-    "generation": "match_v3_20260716_0346"
+    "generation": "match_v3_20260716_1310"
   },
   "diagnostics": null
 }
@@ -134,6 +134,8 @@ The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORB
 Common `decision.reason` values:
 
 - `single_branch_identity_unique` / `multi_branch_identity_unique`: trusted identity branches are unique and agree.
+- `scoped_binding_active`: the current group has an active project binding that also passed projection, structural veto, conflict, and completeness checks.
+- `scoped_binding_conflict`: the group binding conflicts with current strong title evidence, so the result stays manual.
 - `projection_gap`: one strong language branch lacks a trusted projection, so the result stays manual.
 - `input_title_conflict` / `branch_conflict`: release title, torrent name, or multilingual branches disagree.
 - `modifier_conflict` / `candidate_veto`: season, part, format, year, time, or episode evidence conflicts.
@@ -154,6 +156,7 @@ Common `decision.reason` values:
 | ---- | ------- |
 | Body | JSON, maximum 32 KiB; overflow returns `413 PAYLOAD_TOO_LARGE` |
 | Schema error | `422 VALIDATION_ERROR` |
+| Missing session or non-member with `groupId` | `403 FORBIDDEN` |
 | Invalid JSON | `400 INVALID_JSON` |
 | Rate limit | Default 180 requests / 60 seconds / IP; `429 RATE_LIMIT_EXCEEDED` |
 | Cache | `Cache-Control: no-store`, including CDN and Cloudflare no-store headers |

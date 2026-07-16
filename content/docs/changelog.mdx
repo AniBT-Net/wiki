@@ -14,19 +14,23 @@ description: AniBT Wiki 与站点功能更新记录。
 <TypeTable
   type={{
     '种子匹配 v3 正式切流': {
-      description: 'Canonical 接口 hard cut 为 POST /api/animes/torrent-match，GET 返回 JSON 405，不保留 v2 DTO、缓存或兼容层。服务端分别解析发布标题与 torrent internal name，生成多语言 AST，并让 exact、strict recall、fuzzy recall 独立检索；任何 overflow、cutoff、hydrate 或 generation/projection 不一致都会禁止自动绑定。',
+      description: 'Canonical 接口 hard cut 为 POST /api/animes/torrent-match，GET 返回 JSON 405，不保留 v2 DTO、缓存或兼容层。服务端分别解析发布标题与 torrent internal name，生成多语言 AST，并让 exact、strict recall、fuzzy recall 独立检索；新增 Season N - EP、括号版本年份、混合脚本和跨季连续集数判断，任何 overflow、cutoff、hydrate 或 generation/projection 不一致都会禁止自动绑定。',
       type: '优化',
     },
     '非番剧与合集安全退出': {
-      description: '独立 PV/CM、MAD/AMV、游戏视频、音乐包、公告、壁纸与字体包可返回 non_anime；多番剧、多季和 S1+S2+OVA 合集返回 unsupported，不再强行匹配成一个番剧。',
+      description: '独立 PV/CM、MAD/AMV、游戏视频、演唱会、真人剧、音乐专辑、舞台/朗读剧、公告、壁纸与字体包可返回 non_anime；单番剧单季合集仍可匹配，多番剧、真正多季和 S1+S2+OVA 合集返回 unsupported。',
       type: '新增',
     },
     '发布流程统一 matcher': {
       description: '发布页、批量发布、人工匹配和 API Key 发布统一使用服务端 v3 matcher。未传番剧 ID 时发布 API 直接执行同一决策；调用方伪造的内部自动匹配结果会被丢弃，只有 decision.kind=auto 才会直接绑定。',
       type: '优化',
     },
+    '字幕组项目学习': {
+      description: '显式确认会按字幕组与项目指纹学习：第一次确认记录 pending，第二个不同集数仍指向同一番剧后激活，也可由 Web 人工选择立即记住；冲突会暂停。自动 matcher 不反向训练，active binding 仍必须通过候选投影、季度/年份/格式/集数 veto 与完整性检查。',
+      type: '新增',
+    },
     '干净匹配索引': {
-      description: '生产 matcher 已切到 match_v3_20260716_0346，共 8,621 个候选番剧和 223,742 条可信/支持别名，binding 为 0；活跃匹配集合的 TMDB/TVDB facet 为 0，旧污染集合已删除且不作为回滚目标。',
+      description: '生产 matcher 已切到 match_v3_20260716_1310，共 8,621 个候选番剧和 223,777 条可信/支持别名，初始 binding 为 0；34,083 条固定语料中，2024–2026 番剧自动匹配为 8,890 / 9,781（90.8905%）。TMDB/TVDB 不参与匹配，旧污染集合已删除且不作为回滚目标。',
       type: '数据',
     },
   }}

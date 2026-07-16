@@ -237,6 +237,14 @@ actual `info.name`. JSON / magnet-only requests contain no torrent bytes, so aut
 primarily uses `title`; keep the full group, Chinese/Japanese/romaji/English, season, and episode
 structure instead of sending an aggressively cleaned short title.
 
+Explicit anime IDs also provide group-scoped project confirmations. The server recomputes a project
+fingerprint from `title` and torrent `info.name`; the first explicit confirmation is `pending`, and a
+second distinct episode that confirms the same anime activates the binding. Web manual matching can
+explicitly choose “remember this project” to activate immediately. Future matches use the binding only
+inside the same group and project, and only after candidate projection, season/year/format/episode veto,
+conflict, and completeness checks pass. Automatic matcher selections never train the binding; a
+conflicting confirmation suspends it, and callers cannot forge the internal fingerprint or auto result.
+
 ### Resolution, Language, Subtitles, Format
 
 | Field | Value | Meaning |
