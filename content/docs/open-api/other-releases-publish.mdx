@@ -138,7 +138,7 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
       type: 'string',
     },
     'fileSize': {
-      description: '文件大小（字节）。上传 torrent 或 magnet 带 xl 参数时可自动推断。',
+      description: '文件大小（字节）。上传 torrent 或 magnet 带 xl 参数时可自动推断。无 torrent 时正式发布必须 > 0，否则 reason=EMPTY_RELEASE_CONTENT。',
       type: 'number',
     },
     'trackers': {
@@ -189,12 +189,21 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 | `magnetLink` | 原始 `magnet:?xt=urn:btih:...` | JSON 或 multipart 都可传。表单字段 `magnet` 是兼容别名。 |
 | `magnetBase64` | 原始 magnet 或 Base64 编码后的 magnet | 与 `magnetLink` 二选一即可；存在 `torrent` 时通常不用手填。 |
 | `torrentStorageId` | 已上传的公共 torrent key | 内部自动化场景使用。普通客户端不要手工构造。 |
-| `fileSize` | 字节数，例如 `734003200` | 上传 torrent 时可自动提取；magnet 带 `xl=` 时也可推断。 |
+| `fileSize` | 字节数，例如 `734003200` | 上传 torrent 时可自动提取；magnet 带 `xl=` 时也可推断。无 torrent 且无法得到 >0 的大小时正式发布会 422 / `EMPTY_RELEASE_CONTENT`。 |
 | `trackers` | JSON 数组或 multipart 换行文本 | 追加 tracker。不要把多个 URL 写成一个逗号字符串，除非是 `customTags`。 |
 | `notes` | Markdown 文本 | 发布页和 RSS 描述使用。 |
 | `descriptionMarkdown` | Markdown 文本 | `notes` 的兼容别名。`content`、`description`、`intro` 也会被兼容为说明文本。 |
 | `customTags` | JSON 数组或 multipart 逗号分隔 | 最多 20 个，每个最长 80 字符。例：`FLAC,BK,自购`。 |
 | `tags` | 同 `customTags` | `customTags` 的兼容别名。 |
+
+## 身份自检（Whoami）
+
+```bash
+curl -X GET 'https://anibt.net/api/other-releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>'
+```
+
+返回 `groupId` / `groupName` / `groupSlug` / `apiKeySuffix`（`kind: "other"`），用法与番剧发布 whoami 相同。
 
 ## 返回
 
@@ -204,7 +213,12 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
   "result": {
     "releaseId": "orel_DYXiEZs5KMep",
     "groupId": "org_xxx",
+    "groupName": "示例字幕组",
+    "groupSlug": "example",
+    "apiKeyId": "sgak_xxx",
+    "apiKeySuffix": "ab12cd34",
     "category": "manga",
+    "fileSize": 734003200,
     "createdTorrentFileKey": "torrent/..."
   }
 }

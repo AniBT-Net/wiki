@@ -9,6 +9,21 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 17 日
+
+<TypeTable
+  type={{
+    '釋出 API 組身份自檢': {
+      description: '`GET /api/releases/publish` 與 `GET /api/other-releases/publish` 支援 whoami：返回目前 API Key 綁定的 groupId/groupName/groupSlug/apiKeySuffix，不寫庫。正式釋出與 preview 成功響應也回顯同一組身份欄位，便於自動化在寫庫前發現 Key 綁錯字幕組。',
+      type: '新增',
+    },
+    '禁止 0B magnet-only 正式入庫': {
+      description: '無 torrent 且 fileSize 無法解析為 >0（含缺少 magnet xl=）時，正式 publish 返回 422 / reason=EMPTY_RELEASE_CONTENT。preview 仍允許 0B 以便核對匹配與組身份。',
+      type: '修復',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 16 日
 
 <TypeTable

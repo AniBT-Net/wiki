@@ -16,6 +16,31 @@ POST https://anibt.net/api/releases/publish
 Authorization: Bearer <YOUR_API_KEY>
 ```
 
+### Whoami
+
+Before bulk publishing, **GET** the same endpoint to confirm which subtitle group the API key is bound to (**no write**):
+
+```bash title="whoami"
+curl -X GET 'https://anibt.net/api/releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>'
+```
+
+```json title="whoami response"
+{
+  "ok": true,
+  "result": {
+    "groupId": "org_xxxxxxxx",
+    "groupName": "LoliHouse",
+    "groupSlug": "lolihouse",
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "kind": "anime"
+  }
+}
+```
+
+Automation should assert `groupSlug` / `groupName` before formal publish. Group identity comes **only** from the API key, not from the `[GroupName]` prefix in the title.
+
 ## `200 OK` and public visibility
 
 A production publish response with `200 OK` and a `releaseId` means the canonical AniBT record was written and the downstream index, public-snapshot, and cache work was handed off reliably. It does **not** mean that RSS, search, public pages, and every CDN location already contain the release when the response returns, nor that publishing to Nyaa or another external site has completed.
@@ -139,7 +164,7 @@ The public read path advances asynchronously. After the corresponding Typesense 
       type: 'string',
     },
     'fileSize': {
-      description: 'File size in bytes; auto-extracted from the torrent.',
+      description: 'File size in bytes; auto-extracted from the torrent or inferred from magnet xl=. Formal magnet-only publishes require fileSize > 0; otherwise the API returns reason=EMPTY_RELEASE_CONTENT (no 0 B rows).',
       type: 'number',
     },
     'publishedAt': {
@@ -204,7 +229,7 @@ The public read path advances asynchronously. After the corresponding Typesense 
 | Scenario | How to send it |
 | -------- | -------------- |
 | Upload a `.torrent` | Use `multipart/form-data` with field name `torrent`, e.g. `-F 'torrent=@release.torrent'`. |
-| Magnet-only publish | Use JSON and pass `magnetBase64`. This field accepts either raw `magnet:?xt=...` or Base64-encoded magnet text. |
+| Magnet-only publish | Use JSON and pass `magnetBase64`. Accepts raw `magnet:?xt=...` or Base64. **Formal** publish still requires `fileSize > 0` (or magnet `xl=`); otherwise `422` / `EMPTY_RELEASE_CONTENT`. Prefer uploading a torrent. |
 | Multiple languages | JSON uses an array: `"language":["CHS","JP"]`; multipart may repeat the field: `-F 'language=CHS' -F 'language=JP'`, or send a JSON array string. |
 | Tracker list | JSON uses an array; multipart uses newline-separated text. The site merges and de-duplicates with defaults. |
 | Booleans | JSON uses `true/false`; multipart accepts `true/false`, `1/0`, `yes/no`, and `on/off`. |
@@ -353,6 +378,21 @@ Nyaa category codes must be sent exactly as shown:
 | `6_1` | Software - Applications | Applications. |
 | `6_2` | Software - Games | Games. |
 
+## Success response fields
+
+A formal publish success `result` includes at least:
+
+| Field | Meaning |
+| ----- | ------- |
+| `releaseId` | Created (or idempotent) release id |
+| `animeId` | Bound anime id; placeholder when pending |
+| `matchStatus` | `matched` or `pending` |
+| `fileSize` | Stored size in bytes |
+| `groupId` / `groupName` / `groupSlug` | **Subtitle group bound to the API key** |
+| `apiKeyId` / `apiKeySuffix` | Key identity for logs (suffix is not the full secret) |
+
+Preview responses also return the same group identity fields at the top level so wrong-key mistakes are visible before durable write.
+
 ## Preview mode
 
 To verify how a release will render (title parsing, Markdown notes, magnet correctness) before going public, set `preview=true`:
@@ -400,8 +440,10 @@ const res = await fetch("https://anibt.net/api/releases/publish", {
   body: JSON.stringify(body),
 });
 const data = await res.json();
-console.log(res.status, data.ok, data.previewUrl);
+console.log(res.status, data.ok, data.previewUrl, data.groupSlug, data.apiKeySuffix);
 if (!res.ok || !data.previewUrl) process.exit(1);
+// Optional: assert groupSlug matches the expected group before formal publish
+// if (data.groupSlug !== "lolihouse") process.exit(2);
 ```
 
 ## Authentication & key management

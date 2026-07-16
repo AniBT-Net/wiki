@@ -9,6 +9,21 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 17, 2026
+
+<TypeTable
+  type={{
+    'Publish API group whoami': {
+      description: '`GET /api/releases/publish` and `GET /api/other-releases/publish` return the API key’s bound groupId/groupName/groupSlug/apiKeySuffix without writing. Formal publish and preview success responses also echo the same identity fields so automation can detect a wrong-group key before durable write.',
+      type: 'Added',
+    },
+    'Block empty magnet-only formal publishes': {
+      description: 'When there is no torrent and fileSize cannot be resolved to >0 (including magnets without xl=), formal publish returns 422 / reason=EMPTY_RELEASE_CONTENT. Preview still allows 0 B so operators can check match status and group identity.',
+      type: 'Fixed',
+    },
+  }}
+/>
+
 ## July 16, 2026
 
 <TypeTable

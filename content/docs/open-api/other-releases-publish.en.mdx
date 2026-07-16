@@ -138,7 +138,7 @@ Aliases and structured JSON fields match anime publishing:
       type: 'string',
     },
     'fileSize': {
-      description: 'File size in bytes. It can be inferred from the torrent or from a magnet xl parameter.',
+      description: 'File size in bytes. It can be inferred from the torrent or from a magnet xl parameter. Formal magnet-only publishes require fileSize > 0; otherwise reason=EMPTY_RELEASE_CONTENT.',
       type: 'number',
     },
     'trackers': {
@@ -189,12 +189,21 @@ Aliases and structured JSON fields match anime publishing:
 | `magnetLink` | Raw `magnet:?xt=urn:btih:...` | Accepted in JSON or multipart. Form field `magnet` is a compatibility alias. |
 | `magnetBase64` | Raw magnet or Base64-encoded magnet | Alternative to `magnetLink`; usually unnecessary when `torrent` is uploaded. |
 | `torrentStorageId` | Existing public torrent key | Internal automation use. Normal clients should not construct this manually. |
-| `fileSize` | Byte count, e.g. `734003200` | Auto-extracted from torrent uploads; can also be inferred from magnet `xl=`. |
+| `fileSize` | Byte count, e.g. `734003200` | Auto-extracted from torrent uploads; can also be inferred from magnet `xl=`. Formal magnet-only without size > 0 returns 422 / `EMPTY_RELEASE_CONTENT`. |
 | `trackers` | JSON array or multipart newline-separated text | Additional trackers. Do not send multiple URLs as a comma string; commas are for `customTags`. |
 | `notes` | Markdown text | Used on the release page and RSS description. |
 | `descriptionMarkdown` | Markdown text | Compatibility alias for `notes`. `content`, `description`, and `intro` are also accepted as note aliases. |
 | `customTags` | JSON array or multipart comma-separated text | Up to 20 tags, each up to 80 characters. Example: `FLAC,BK,self-purchased`. |
 | `tags` | Same as `customTags` | Compatibility alias for `customTags`. |
+
+## Whoami
+
+```bash
+curl -X GET 'https://anibt.net/api/other-releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>'
+```
+
+Returns `groupId` / `groupName` / `groupSlug` / `apiKeySuffix` with `kind: "other"`, same purpose as the anime publish whoami.
 
 ## Response
 
@@ -204,7 +213,12 @@ Aliases and structured JSON fields match anime publishing:
   "result": {
     "releaseId": "orel_DYXiEZs5KMep",
     "groupId": "org_xxx",
+    "groupName": "Example Group",
+    "groupSlug": "example",
+    "apiKeyId": "sgak_xxx",
+    "apiKeySuffix": "ab12cd34",
     "category": "manga",
+    "fileSize": 734003200,
     "createdTorrentFileKey": "torrent/..."
   }
 }

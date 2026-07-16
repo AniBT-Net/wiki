@@ -196,6 +196,15 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 | `customTags` | JSON 陣列或 multipart 逗號分隔 | 最多 20 個，每個最長 80 字元。例：`FLAC,BK,自購`。 |
 | `tags` | 同 `customTags` | `customTags` 的相容別名。 |
 
+## 身份自檢（Whoami）
+
+```bash
+curl -X GET 'https://anibt.net/api/other-releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>'
+```
+
+返回 `groupId` / `groupName` / `groupSlug` / `apiKeySuffix`（`kind: "other"`）。
+
 ## 返回
 
 ```json title="成功回應"

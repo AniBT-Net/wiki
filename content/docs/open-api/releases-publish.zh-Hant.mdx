@@ -16,6 +16,31 @@ POST https://anibt.net/api/releases/publish
 Authorization: Bearer <YOUR_API_KEY>
 ```
 
+### 身份自檢（Whoami）
+
+批次釋出前，用 **GET** 同一端點確認目前 API Key 綁定的字幕組（**不寫庫**）：
+
+```bash title="whoami"
+curl -X GET 'https://anibt.net/api/releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>'
+```
+
+```json title="whoami 響應"
+{
+  "ok": true,
+  "result": {
+    "groupId": "org_xxxxxxxx",
+    "groupName": "LoliHouse",
+    "groupSlug": "lolihouse",
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "kind": "anime"
+  }
+}
+```
+
+自動化腳本應在正式 publish 前斷言 `groupSlug` / `groupName` 符合預期。`groupId` 只來自 API Key 所屬字幕組，**與標題裡的 `[字幕組名]` 無關**。
+
 ## `200 OK` 與公開可見性
 
 正式釋出返回 `200 OK` 和 `releaseId`，表示站內主記錄已寫入，後續索引、公開快照與快取任務已經可靠交接。它**不表示** RSS、搜尋、公開頁面和 CDN 在這個響應返回時已經包含該資源，也不表示 Nyaa 等外站代發已經完成。
@@ -139,7 +164,7 @@ Authorization: Bearer <YOUR_API_KEY>
       type: 'string',
     },
     'fileSize': {
-      description: '檔案大小（位元組）。可從種子檔案自動提取。',
+      description: '檔案大小（位元組）。可從種子檔案自動提取，也可從 magnet 的 xl= 推斷。無 torrent 時正式釋出必須 > 0，否則返回 reason=EMPTY_RELEASE_CONTENT（禁止 0B 入庫）。',
       type: 'number',
     },
     'publishedAt': {
@@ -204,7 +229,7 @@ Authorization: Bearer <YOUR_API_KEY>
 | 場景 | 應該怎麼傳 |
 | ---- | ---------- |
 | 上傳 `.torrent` | 使用 `multipart/form-data`，欄位名為 `torrent`，例如 `-F 'torrent=@release.torrent'`。 |
-| 只傳磁力連結 | 使用 JSON，傳 `magnetBase64`。這個欄位既接受原始 `magnet:?xt=...`，也接受 Base64 編碼後的 magnet。 |
+| 只傳磁力連結 | 使用 JSON，傳 `magnetBase64`。這個欄位既接受原始 `magnet:?xt=...`，也接受 Base64 編碼後的 magnet。**正式釋出**還須提供 `fileSize>0`（或 magnet 自帶 `xl=`），否則 422 / `EMPTY_RELEASE_CONTENT`。推薦仍上傳 torrent。 |
 | 多語言 | JSON 用陣列：`"language":["CHS","JP"]`；multipart 可以重複欄位：`-F 'language=CHS' -F 'language=JP'`，也可以傳 JSON 陣列字串。 |
 | tracker 列表 | JSON 用陣列；multipart 用換行分隔。站點會與預設 tracker 合併去重。 |
 | 布林值 | JSON 用 `true/false`；multipart 可用 `true/false`、`1/0`、`yes/no`、`on/off`。 |
@@ -349,6 +374,21 @@ Nyaa 分類代碼必須原樣填寫：
 | `6_1` | Software - Applications | 應用軟體。 |
 | `6_2` | Software - Games | 遊戲。 |
 
+## 成功響應欄位
+
+正式釋出成功時，`result` 至少包含：
+
+| 欄位 | 說明 |
+| ---- | ---- |
+| `releaseId` | 新建（或冪等返回）的資源 ID |
+| `animeId` | 綁定的番劇 ID；待匹配時為佔位值 |
+| `matchStatus` | `matched` 或 `pending` |
+| `fileSize` | 寫入的檔案大小（位元組） |
+| `groupId` / `groupName` / `groupSlug` | **API Key 所屬字幕組**（用於核對釋出身份） |
+| `apiKeyId` / `apiKeySuffix` | 本次使用的 Key 識別（suffix 便於日誌核對，不是完整密鑰） |
+
+預覽模式也會在頂層返回同樣的組身份欄位，便於在寫庫前發現 Key 綁錯組。
+
 ## 預覽模式
 
 釋出前想先看看渲染效果（標題解析、Markdown 備註、磁力是否正確），把 `preview=true` 即可：
@@ -396,8 +436,10 @@ const res = await fetch("https://anibt.net/api/releases/publish", {
   body: JSON.stringify(body),
 });
 const data = await res.json();
-console.log(res.status, data.ok, data.previewUrl);
+console.log(res.status, data.ok, data.previewUrl, data.groupSlug, data.apiKeySuffix);
 if (!res.ok || !data.previewUrl) process.exit(1);
+// 可選：斷言 groupSlug 符合預期，防止 Key 綁錯字幕組
+// if (data.groupSlug !== "lolihouse") process.exit(2);
 ```
 
 ## 鑑權與 Key 管理
