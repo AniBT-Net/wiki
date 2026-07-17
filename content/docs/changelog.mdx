@@ -21,6 +21,14 @@ description: AniBT Wiki 与站点功能更新记录。
       description: '无 torrent 且 fileSize 无法解析为 >0（含缺少 magnet xl=）时，正式 publish 返回 422 / reason=EMPTY_RELEASE_CONTENT。preview 仍允许 0B 以便核对匹配与组身份。',
       type: '修复',
     },
+    '人工匹配同项目回溯': {
+      description: '字幕组/管理员对待匹配发布做人工绑定时，默认「记住项目」并「同时匹配同项目其他 pending」。一次确认会激活该字幕组 + projectFingerprint 的 scoped binding，并把同组同指纹下最多 64 条 pending 一并匹配到所选番剧；不跨字幕组。',
+      type: '优化',
+    },
+    '官方缩写别名提案审批': {
+      description: '新增管理员别名提案队列（/admin/anime-alias-proposals）。离线挖掘脚本从 low_evidence 等失败样本聚类拉丁缩写/别名，提案需人工通过后才写入 manual alias 并触发投影同步；拒绝后不会再次复活同 anime+normalizedAlias 提案。运行时不自动降阈值、不自动入库。',
+      type: '新增',
+    },
   }}
 />
 

@@ -21,6 +21,14 @@ This page records AniBT Wiki changes and feature updates that are directly cover
       description: 'When there is no torrent and fileSize cannot be resolved to >0 (including magnets without xl=), formal publish returns 422 / reason=EMPTY_RELEASE_CONTENT. Preview still allows 0 B so operators can check match status and group identity.',
       type: 'Fixed',
     },
+    'Manual match project fan-out': {
+      description: 'When a fansub member or admin manually matches a pending release, “remember project” and “also match other pending releases in this project” default on. One confirmation activates the group+projectFingerprint scoped binding and retroactively matches up to 64 pending siblings with the same fingerprint. Never crosses groups.',
+      type: 'Improved',
+    },
+    'Official abbreviation alias proposal queue': {
+      description: 'Admins get /admin/anime-alias-proposals. An offline miner clusters latin abbreviation gaps from low_evidence failures; proposals must be approved before writing a manual alias and triggering projection sync. Rejected (animeId, normalizedAlias) pairs stay dead. Runtime thresholds are unchanged and nothing auto-writes aliases.',
+      type: 'Added',
+    },
   }}
 />
 
