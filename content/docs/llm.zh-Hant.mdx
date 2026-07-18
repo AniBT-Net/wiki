@@ -1,9 +1,9 @@
 ---
 title: LLM 對接
-description: AniBT Wiki 提供 llms.txt、llms-full.txt 與每頁 Markdown 端點，方便外部 LLM / Agent / RAG 系統抓取整站內容做問答與程式碼生成。
+description: AniBT 提供 llms.txt、llms-full.txt、每頁 Markdown 端點與 HTTP Markdown 內容協商，方便外部 LLM / Agent / RAG 系統讀取公開內容。
 ---
 
-AniBT Wiki 內容全部對外暴露成 LLM 友好的 Markdown 資源，方便你用 ChatGPT / Claude / Cursor / 自建 RAG 系統直接拉取整站文件當上下文。下面四種端點按需選用。
+AniBT Wiki 內容全部對外暴露成 LLM 友好的 Markdown 資源，AniBT 公開 HTML 頁面也支援按請求即時轉換。你可以用 ChatGPT / Claude / Cursor / 自建 RAG 系統直接拉取內容當上下文。
 
 ## 端點一覽
 
@@ -28,7 +28,30 @@ AniBT Wiki 內容全部對外暴露成 LLM 友好的 Markdown 資源，方便你
     href="/zh-CN/docs/open-api.md"
     description="任意一篇文件加 .md 字尾就能拿到它的純 Markdown 源，例：/zh-CN/docs/open-api.md"
   />
+  <Card
+    title="Accept: text/markdown"
+    href="https://anibt.net/anime/638151"
+    description="請求任意公開 HTML 頁面時宣告 Markdown 偏好，由 Cloudflare 在邊緣即時轉換。"
+  />
 </Cards>
+
+## 公開頁面即時轉換
+
+AniBT 已啟用 Cloudflare Markdown for Agents。請求公開 HTML 頁面時加入 `Accept: text/markdown`：
+
+```bash
+curl 'https://anibt.net/anime/638151' \
+  -H 'Accept: text/markdown'
+```
+
+成功響應會使用 `Content-Type: text/markdown; charset=utf-8`，並包含：
+
+- `Vary: accept`：HTML 與 Markdown 使用不同快取變體。
+- `x-markdown-tokens`：轉換後 Markdown 的估算 token 數。
+- `x-original-tokens`：轉換前 HTML 的估算 token 數。
+- `Content-Signal: ai-train=yes, search=yes, ai-input=yes`：目前公開內容允許用於 AI 訓練、搜尋與 Agent 輸入。
+
+只會轉換 HTML。JSON API、RSS/XML、圖片與 R2 物件仍保持原本的內容類型。即時轉換會移除腳本、樣式、導覽等非正文內容，但頁面若同時渲染多套響應式 DOM，結果仍可能出現重複區塊；抓取 Wiki 文件時優先使用上面的靜態 `.md` 或 `llms-full.*` 端點。
 
 ## 用法示例
 
@@ -80,9 +103,10 @@ for path in urls:
 | `/llms-full.txt`        | 全部 zh-CN 內容（約 80 KB）     | 一次性喂中文 LLM                   |
 | `/llms-full.en.txt`     | 全部英文內容                    | 喂國際 LLM / 寫英文回答           |
 | `/<lang>/docs/<slug>.md`| 單頁源 Markdown                | 精準引用某一篇                    |
+| `Accept: text/markdown` | 任意公開 HTML 頁的即時轉換      | Agent 臨時抓取站點公開頁面         |
 
 <Callout type="info">
-  這些端點都是**純靜態產物**，快取 1 年（`Cache-Control: s-maxage=31536000`）。Wiki 更新發布後會重新構建，幾分鐘內端點跟著更新。
+  `llms.txt`、`llms-full.*` 與單頁 `.md` 是**純靜態產物**，快取 1 年（`Cache-Control: s-maxage=31536000`）。Wiki 更新發布後會重新構建，幾分鐘內端點跟著更新。`Accept: text/markdown` 即時轉換則沿用原 HTML 頁面的快取策略。
 </Callout>
 
 ## 內容覆蓋

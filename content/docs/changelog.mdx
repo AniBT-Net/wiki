@@ -13,6 +13,10 @@ description: AniBT Wiki 与站点功能更新记录。
 
 <TypeTable
   type={{
+    '全站 Markdown 内容协商': {
+      description: 'AniBT 公开 HTML 页面现支持 Accept: text/markdown，由 Cloudflare 在边缘实时转换；响应通过 Vary: accept 与 HTML 分离缓存，并提供转换前后 token 估算。JSON API、RSS/XML、图片与 R2 对象保持原格式。当前公开内容信号为 ai-train=yes, search=yes, ai-input=yes。',
+      type: '新增',
+    },
     '资源搜索排序稳定性': {
       description: '`/magnets` 与 `/rss/magnets.xml` 在文本搜索同时按文件大小或集数排序时，不再因 Typesense 最多 3 个排序字段的限制导致搜索失败。显式排序、发布时间与文本匹配优先级保持不变。',
       type: '修复',

@@ -1,9 +1,9 @@
 ---
 title: LLM 对接
-description: AniBT Wiki 提供 llms.txt、llms-full.txt 与每页 Markdown 端点，方便外部 LLM / Agent / RAG 系统抓取整站内容做问答与代码生成。
+description: AniBT 提供 llms.txt、llms-full.txt、每页 Markdown 端点与 HTTP Markdown 内容协商，方便外部 LLM / Agent / RAG 系统读取公开内容。
 ---
 
-AniBT Wiki 内容全部对外暴露成 LLM 友好的 Markdown 资源，方便你用 ChatGPT / Claude / Cursor / 自建 RAG 系统直接拉取整站文档当上下文。下面四种端点按需选用。
+AniBT Wiki 内容全部对外暴露成 LLM 友好的 Markdown 资源，AniBT 公开 HTML 页面也支持按请求实时转换。你可以用 ChatGPT / Claude / Cursor / 自建 RAG 系统直接拉取内容当上下文。
 
 ## 端点一览
 
@@ -28,7 +28,30 @@ AniBT Wiki 内容全部对外暴露成 LLM 友好的 Markdown 资源，方便你
     href="/zh-CN/docs/open-api.md"
     description="任意一篇文档加 .md 后缀就能拿到它的纯 Markdown 源，例：/zh-CN/docs/open-api.md"
   />
+  <Card
+    title="Accept: text/markdown"
+    href="https://anibt.net/anime/638151"
+    description="请求任意公开 HTML 页面时声明 Markdown 偏好，由 Cloudflare 在边缘实时转换。"
+  />
 </Cards>
+
+## 公开页面实时转换
+
+AniBT 已启用 Cloudflare Markdown for Agents。请求公开 HTML 页面时加入 `Accept: text/markdown`：
+
+```bash
+curl 'https://anibt.net/anime/638151' \
+  -H 'Accept: text/markdown'
+```
+
+成功响应会使用 `Content-Type: text/markdown; charset=utf-8`，并包含：
+
+- `Vary: accept`：HTML 与 Markdown 使用不同缓存变体。
+- `x-markdown-tokens`：转换后 Markdown 的估算 token 数。
+- `x-original-tokens`：转换前 HTML 的估算 token 数。
+- `Content-Signal: ai-train=yes, search=yes, ai-input=yes`：当前公开内容允许用于 AI 训练、搜索与 Agent 输入。
+
+只会转换 HTML。JSON API、RSS/XML、图片与 R2 对象仍保持原本的内容类型。实时转换会移除脚本、样式、导航等非正文内容，但页面若同时渲染多套响应式 DOM，结果仍可能出现重复区块；抓取 Wiki 文档时优先使用上面的静态 `.md` 或 `llms-full.*` 端点。
 
 ## 用法示例
 
@@ -80,9 +103,10 @@ for path in urls:
 | `/llms-full.txt`        | 全部 zh-CN 内容（约 80 KB）     | 一次性喂中文 LLM                   |
 | `/llms-full.en.txt`     | 全部英文内容                    | 喂国际 LLM / 写英文回答           |
 | `/<lang>/docs/<slug>.md`| 单页源 Markdown                | 精准引用某一篇                    |
+| `Accept: text/markdown` | 任意公开 HTML 页的实时转换      | Agent 临时抓取站点公开页面         |
 
 <Callout type="info">
-  这些端点都是**纯静态产物**，缓存 1 年（`Cache-Control: s-maxage=31536000`）。Wiki 更新发布后会重新构建，几分钟内端点跟着更新。
+  `llms.txt`、`llms-full.*` 与单页 `.md` 是**纯静态产物**，缓存 1 年（`Cache-Control: s-maxage=31536000`）。Wiki 更新发布后会重新构建，几分钟内端点跟着更新。`Accept: text/markdown` 实时转换则沿用原 HTML 页面的缓存策略。
 </Callout>
 
 ## 内容覆盖

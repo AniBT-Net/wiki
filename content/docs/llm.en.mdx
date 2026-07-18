@@ -1,9 +1,9 @@
 ---
 title: LLM integration
-description: AniBT Wiki ships llms.txt, llms-full.txt, and per-page Markdown endpoints so any LLM / Agent / RAG system can ingest the entire site.
+description: AniBT provides llms.txt, llms-full.txt, per-page Markdown endpoints, and HTTP Markdown content negotiation for LLM, Agent, and RAG clients.
 ---
 
-The Wiki exposes its full contents as LLM-friendly Markdown so you can pull it into ChatGPT / Claude / Cursor / your own RAG pipeline as authoritative context. Pick whichever endpoint fits.
+The Wiki exposes its full contents as LLM-friendly Markdown, and AniBT public HTML pages can be converted on request. You can pull either form into ChatGPT / Claude / Cursor / your own RAG pipeline as context.
 
 ## Endpoints
 
@@ -28,7 +28,30 @@ The Wiki exposes its full contents as LLM-friendly Markdown so you can pull it i
     href="/en/docs/open-api.md"
     description="Append .md to any doc to get its raw Markdown. e.g. /en/docs/open-api.md"
   />
+  <Card
+    title="Accept: text/markdown"
+    href="https://anibt.net/anime/638151"
+    description="Request any public HTML page as Markdown through real-time Cloudflare edge conversion."
+  />
 </Cards>
+
+## Real-time conversion for public pages
+
+AniBT has enabled Cloudflare Markdown for Agents. Add `Accept: text/markdown` when requesting a public HTML page:
+
+```bash
+curl 'https://anibt.net/anime/638151' \
+  -H 'Accept: text/markdown'
+```
+
+A successful response uses `Content-Type: text/markdown; charset=utf-8` and includes:
+
+- `Vary: accept`, so HTML and Markdown are stored as separate cache variants.
+- `x-markdown-tokens`, the estimated token count of the converted Markdown.
+- `x-original-tokens`, the estimated token count of the original HTML.
+- `Content-Signal: ai-train=yes, search=yes, ai-input=yes`, the current policy for public content.
+
+Only HTML is converted. JSON APIs, RSS/XML, images, and R2 objects keep their native content types. Conversion removes scripts, styles, navigation, and other non-content elements, but pages that render multiple responsive DOM variants may still contain repeated sections. Prefer the static `.md` or `llms-full.*` endpoints above when ingesting Wiki documentation.
 
 ## Usage
 
@@ -80,9 +103,10 @@ Swap `/en` for `/zh-Hant` for Traditional Chinese, or omit the prefix for the de
 | `/llms-full.txt`         | All zh-CN content (~80 KB)    | One-shot ingestion into a CN LLM    |
 | `/llms-full.en.txt`      | All English content           | International LLMs / English answers |
 | `/<lang>/docs/<slug>.md` | Single page Markdown source   | Citing or quoting one specific page |
+| `Accept: text/markdown`  | Real-time conversion of any public HTML page | Ad-hoc Agent retrieval of public site pages |
 
 <Callout type="info">
-  All endpoints are **fully static** with `Cache-Control: s-maxage=31536000`. After a Wiki update lands, a rebuild refreshes them within a few minutes.
+  `llms.txt`, `llms-full.*`, and per-page `.md` files are **fully static** with `Cache-Control: s-maxage=31536000`. A Wiki rebuild refreshes them within a few minutes. Real-time `Accept: text/markdown` conversion follows the cache policy of the original HTML page.
 </Callout>
 
 ## Coverage

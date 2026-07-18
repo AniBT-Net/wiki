@@ -13,6 +13,10 @@ description: AniBT Wiki 與站點功能更新紀錄。
 
 <TypeTable
   type={{
+    '全站 Markdown 內容協商': {
+      description: 'AniBT 公開 HTML 頁面現支援 Accept: text/markdown，由 Cloudflare 在邊緣即時轉換；響應透過 Vary: accept 與 HTML 分離快取，並提供轉換前後 token 估算。JSON API、RSS/XML、圖片與 R2 物件保持原格式。目前公開內容信號為 ai-train=yes, search=yes, ai-input=yes。',
+      type: '新增',
+    },
     '公開 RSS 嚴格參數契約': {
       description: '所有公開 RSS 的 limit 統一為單值 1..100（預設 100）；超大、重複、空、前導零或非整數不再靜默截斷。q/search 只允許一個值，並執行 NFKC、trim、空白折疊和 160 UTF-8 bytes 上限。規範化 URL 返回可快取一天的 308；非法輸入返回應用 400，生產邊緣可先返回 403。',
       type: '變更',
