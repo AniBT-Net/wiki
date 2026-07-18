@@ -7,9 +7,10 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
 
 | 端点                    | `limit` 默认 | `limit` 上限 | 后端候选扫描上限 | 速率限制（默认）   |
 | ----------------------- | ------------ | ------------ | ---------------- | ------------------ |
-| `/rss/anime.xml`        | **100**      | **200**      | Typesense filter | 120 次 / 60 秒 / IP |
-| `/rss/group/<slug>.xml` | 100          | **200**      | —                | 120 次 / 60 秒 / IP |
-| `/rss/magnets.xml`      | 100          | **200**      | —                | 120 次 / 60 秒 / IP |
+| `/rss/anime.xml`        | **100**      | **100**      | Typesense filter | 120 次 / 60 秒 / IP |
+| `/rss/group/<slug>.xml` | 100          | **100**      | —                | 120 次 / 60 秒 / IP |
+| `/rss/magnets.xml`      | 100          | **100**      | —                | 120 次 / 60 秒 / IP |
+| `/rss/other/<category>.xml` | 100      | **100**      | Typesense filter | 120 次 / 60 秒 / IP |
 | `/api/bgm/search`       | 5            | **25**       | Typesense search | 60 次 / 60 秒 / IP  |
 | `/api/animes/search`    | 24           | **50**       | Typesense search | 120 次 / 60 秒 / IP |
 | `/api/animes/torrent-match` | 10       | **50**       | Typesense search | 180 次 / 60 秒 / IP |
@@ -19,8 +20,12 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
 | `/api/seasons/anime`    | —            | —            | —                | 30 次 / 60 秒 / IP  |
 | `/api/anime/groups`     | —            | —            | —                | 30 次 / 60 秒 / IP  |
 
+<Callout type="warn">
+  **公开 RSS 的 `limit` 是严格合同**：只接受一个 `1..100` 的十进制整数，不能重复、为空、含前导零或小数。非法值在应用返回 `400 + no-store`，生产边缘可能先返回 Cloudflare `403`；不会再静默截断。默认就是 100，建议省略 `limit=100`，否则会收到可缓存一天的规范化 `308`。
+</Callout>
+
 <Callout type="info">
-  **`limit` 越界处理**：超过上限会被自动**截断到上限**，不会报错。例如 `?limit=5000` 给 `/rss/anime.xml` 实际返回 200 条。
+  `/rss/magnets.xml` 与 `/rss/other/*` 的 `q`/`search` 合计只能出现一个值。搜索词会做 NFKC、trim、连续空白折叠，UTF-8 最多 160 bytes。只有真正穿透 CDN/Redis 的**新搜索 MISS**才计入 120 个新查询/10 分钟、1000 个新查询/24 小时的 subject 预算以及全站 32 个 MISS 并发 lease；稳定查询、空结果复查和缓存 HIT 不扣额度。超限返回 `429 + Retry-After`。
 </Callout>
 
 ### 公开搜索翻页深度
@@ -37,11 +42,11 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
 
 极冷门组合如果叠加过多过滤，可能返回少于 `limit` 条；这是索引窗口和性能保护的结果。需要更多历史数据时，优先放宽过滤或按字幕组短链分页式轮询。
 
-## 提高上限
+## 正确使用上限
 
 <Tabs items={['客户端层面', '服务端层面（自部署）', '触发 429']}>
   <Tab value="客户端层面">
-    1. **拉满 `limit`**：把 URL 的 `?limit=` 改成端点上限（200）。一次请求拿更多，等于把 N 次轮询合成 1 次。
+    1. **默认就拉满 100 条**：省略 `limit` 即可；只有需要更小响应时才显式传 `1..99`。
     2. **用 304 替代轮询**：每次请求带 `If-None-Match`。服务端确认数据没变就返回 304 空 body，**不计入很多客户端的"流量统计"**，但仍会消耗 1 次速率配额。
     3. **拉长间隔**：默认建议 ≥ 5 分钟。番剧发布频率本身按"集数"计算，每分钟扫一次没有意义。
     4. **合并并发**：不要对同一 URL 并发发多个请求，缓存层会让后续请求拿到一样的结果，但白白消耗速率额度。
@@ -63,12 +68,12 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
     ```
 
     <Callout type="warn">
-      `/rss/anime.xml` 的 `limit` 上限是 Web 路由源码常量（`src/routes/rss/anime[.]xml.ts`），**不通过环境变量调整**。如果私有部署需要更高，改源码后重新构建并部署 Web runtime。
+      所有公开 RSS 的 `limit` 上限由共享请求合同 `src/lib/rss-request-policy.ts` 定义，**不通过环境变量调整**。如果私有部署确实需要更高，必须同时修改共享 policy、缓存/边缘合同和测试后重新构建。
     </Callout>
 
     提高之后需要观察：
 
-    - **单次响应 XML 大小**：200 条通常已经足够 RSS reader 使用，继续提高要注意带宽。
+    - **单次响应 XML 大小**：100 条通常已经足够 RSS reader 使用，继续提高会同步放大 XML 生成、传输、缓存和客户端解析成本。
     - **Typesense 查询 P95 与 Web SSR cache hit/miss**：公开 RSS 不应出现 Convex RSS 查询或扫库 fallback。
     - **客户端解析时长**：很多 RSS reader 默认只保留最近 N 条，请同步调整。
   </Tab>
@@ -99,15 +104,16 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
 
 | 端点                                     | 客户端日请求量    | origin 真实回源（次/小时） | 备注                                          |
 | ---------------------------------------- | ----------------- | -------------------------- | --------------------------------------------- |
-| `/rss/anime.xml`（全站）                  | ~96k              | **~12**                    | 5min CDN 窗口，全部用户共享同一缓存            |
-| `/rss/group/<slug>.xml`                  | 取决于 slug 数    | **~12 × slug 数**          | 50 个 slug ≈ 600 次/小时                      |
-| `/rss/magnets.xml`（简单）                | —                 | **~30**                    | 全部用户用相同筛选时                          |
-| `/rss/magnets.xml`（复杂、按 query 分缓存） | —                 | **接近 1× 唯一查询数 / 60s** | 每人查询条件不同时 CDN 命中率 ≈ 0，SWR 缓解延迟 |
+| `/rss/anime.xml`（实体查询）              | 取决于实体 URL 数 | **每个热规范 URL ≤ ~30**   | edge 120s；Redis 900s，发布时精确失效已知 URL   |
+| `/rss/group/<slug>.xml`                  | 取决于 slug 数    | **每个热 slug ≤ ~30**      | edge 120s；相同 URL 的所有用户共享缓存          |
+| `/rss/magnets.xml`（无 `q`）              | —                 | **每个规范 URL ≤ ~30**     | latest/filter edge 120s                        |
+| `/rss/magnets.xml` / `/rss/other/*`（稳定 `q`） | —          | **每个规范查询 ≤ ~6**      | 搜索与空结果 edge/Redis 600s                   |
+| 高基数随机 `q`                            | —                 | **每个新查询最多一次 MISS 后受预算限制** | 120/10m、1000/day、全站 32 MISS 并发 lease |
 | `/api/subtitle-groups`                   | ~96k              | **~12**                    | 数据极少变化，几乎全 304                       |
 | `/api/seasons/anime`                     | ~48k              | **~6**                     | 季度数据周更，长缓存                           |
 | `/api/anime/groups`（按 bgmId）           | —                 | **~12 × 热门番剧数**        | 冷门番剧首次回源较多                          |
 
-**综合**：1000 用户全套订阅 + 前端使用，origin 一小时实际承受 **< 1000 次请求**，其中 90%+ 是 304。SWR 让"用户感知延迟"和"origin 回源压力"完全解耦——回源慢不会拖慢用户。
+**综合**：稳定轮询的 origin 成本按“规范 URL 数量”而不是用户数增长；同一查询由 Cloudflare/Redis 合并。随机不存在关键词不能依靠缓存共享，因此另用 distinct-query 预算和并发 lease 封顶；不要再用单一“1000 用户 = 固定回源数”估算高基数搜索。
 
 ## 给客户端的轮询建议
 
@@ -122,7 +128,7 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
       type: '间隔',
     },
     '复杂搜索 (magnets.xml?q=…)': {
-      description: '10 分钟+。缓存窗口短，频繁打会触发 origin。',
+      description: '10 分钟+。稳定查询与空结果缓存 600 秒；持续制造新关键词会触发 429。',
       type: '间隔',
     },
     '字幕组目录 / 季度列表': {
@@ -158,7 +164,7 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
 ### 针对场景的预期
 
 - **个人订阅 1–2 个番剧 RSS（NetNewsWire / Inoreader）**：每小时 1 个请求，全部 304，origin 几乎感知不到。
-- **qBittorrent 用 RSS 规则自动下载**：每 30 分钟拉一次全量 XML（约 50–200 KB），但因为 CDN 命中，实际打到 origin 也只是 5 分钟一次。
+- **qBittorrent 用 RSS 规则自动下载**：每 30 分钟拉一次全量 XML，但同一规范 URL 由 CDN 合并；无 `q` 变体的兜底回源窗口是 120 秒，带 `q` 的稳定查询是 600 秒。
 - **公开聚合站（Inoreader / Feedly）**：1000 个订阅者后端共享同一份订阅，对 origin 等同 1 个用户。
 
 ### 调优建议

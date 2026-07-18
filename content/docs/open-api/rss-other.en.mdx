@@ -23,16 +23,16 @@ https://anibt.net/rss/other/stage.xml
 <TypeTable
   type={{
     'limit': {
-      description: 'Number of items, 1..200, default 100.',
+      description: 'Number of items, 1..100, default 100. Exactly one decimal integer without leading zeroes.',
       type: 'integer',
       default: '100',
     },
     'q': {
-      description: 'Keyword search. Alias: search.',
+      description: 'Keyword search. Alias: search. NFKC-normalized, trimmed, internal whitespace collapsed, max 160 UTF-8 bytes.',
       type: 'string',
     },
     'search': {
-      description: 'Alias for q.',
+      description: 'Alias for q; q and search may contain only one value in total.',
       type: 'string',
     },
     'groupId': {
@@ -117,7 +117,9 @@ Each `<item>` contains:
 ## Cache and indexing
 
 - Responses support `ETag` / `If-None-Match`; unchanged feeds return `304 Not Modified`.
-- Shared cache uses `s-maxage=120` with long `stale-while-revalidate` / `stale-if-error` windows.
+- Latest/filter variants without `q` use `s-maxage=120`; searches with `q`, including empty results, use `s-maxage=600`; both use `stale-while-revalidate=60`.
+- Search cache identities contain only a SHA-256 of the normalized query. Repeated/empty/control-bearing q, q+search together, or more than 160 UTF-8 bytes return `400 + no-store`; canonical equivalents return a cacheable one-day `308`.
+- Only a new search MISS that passes both CDN and Redis consumes distinct-query/global-concurrency admission. Rejection returns `429 + Retry-After`; stable queries and cache HITs are not charged.
 - These RSS responses use a `noindex, follow` search engine policy so category feeds are not indexed.
 
 Continue: [Publish other releases](/docs/open-api/other-releases-publish). The anime RSS main entry is [RSS main entry](/docs/open-api/rss-anime).

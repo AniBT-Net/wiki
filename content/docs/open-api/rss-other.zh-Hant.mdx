@@ -23,16 +23,16 @@ https://anibt.net/rss/other/stage.xml
 <TypeTable
   type={{
     'limit': {
-      description: '返回條數，1..200，預設 100。',
+      description: '返回條數，1..100，預設 100。只接受單個無前導零的十進位整數。',
       type: 'integer',
       default: '100',
     },
     'q': {
-      description: '關鍵詞搜尋。別名：search。',
+      description: '關鍵詞搜尋。別名：search。NFKC 規範化、去首尾空白、折疊連續空白，UTF-8 最多 160 bytes。',
       type: 'string',
     },
     'search': {
-      description: 'q 的別名。',
+      description: 'q 的別名；q/search 合計只能出現一個值。',
       type: 'string',
     },
     'groupId': {
@@ -117,7 +117,9 @@ https://anibt.net/rss/other/stage.xml
 ## 快取與索引
 
 - RSS 回應支援 `ETag` / `If-None-Match`，未變更時返回 `304 Not Modified`。
-- 共享快取標頭為 `s-maxage=120`，並啟用長時間 `stale-while-revalidate` / `stale-if-error`。
+- 無 `q` 的 latest/filter 變體為 `s-maxage=120`；帶 `q` 的搜尋（包括空結果）為 `s-maxage=600`；兩類統一 `stale-while-revalidate=60`。
+- 搜尋快取身份只保存規範化查詢的 SHA-256。重複/空/control 字元 q、同時傳 q+search 或超過 160 bytes 返回 `400 + no-store`；規範化等價 URL 返回可快取一天的 `308`。
+- 只有真正穿透 CDN/Redis 的新搜尋 MISS 才受 distinct-query 與全站併發預算保護；超限返回 `429 + Retry-After`，穩定查詢和快取 HIT 不扣額度。
 - 這些 RSS 回應會帶 `noindex, follow` 搜尋引擎策略，避免分類 feed 被搜尋引擎索引。
 
 繼續：[釋出其他類資源](/docs/open-api/other-releases-publish)；番劇主 RSS 見 [RSS 主入口](/docs/open-api/rss-anime)。

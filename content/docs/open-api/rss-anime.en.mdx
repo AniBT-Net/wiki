@@ -52,12 +52,16 @@ GET https://anibt.net/rss/anime.xml?<query>
       type: 'string',
     },
     'limit': {
-      description: '1..200, default 100.',
+      description: '1..100, default 100. Exactly one decimal integer without leading zeroes.',
       type: 'integer',
       default: '100',
     },
   }}
 />
+
+<Callout type="warn">
+  A repeated, empty, zero-padded, non-integer, or greater-than-100 `limit` returns application `400 + no-store`; the production edge may block it first with Cloudflare `403`. Canonically equivalent forms such as `limit=100` return a cacheable one-day `308` to the canonical URL. Clients must follow permanent redirects.
+</Callout>
 
 ## Two equivalent ways to repeat a parameter
 
@@ -124,7 +128,7 @@ The same `anibt:` fields are also emitted on [`/rss/magnets.xml`](/docs/open-api
 | `bgmId` only            | Typesense filter constrained by anime       |
 | `groupSlug` only        | Typesense filter constrained by group       |
 
-Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Redis SSR cache defaults to **120 seconds TTL + 60 seconds stale-while-revalidate**; on publish events, the Cloudflare Worker clears the Redis RSS cache and purges CDN. The public RSS freshness target is therefore within 5 minutes, and the normal event path is usually faster.
+Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Entity RSS uses **900 seconds in Redis + 120 seconds at edge/CDN + 60 seconds stale-while-revalidate**. Publish events invalidate known affected entity URLs; query variants that cannot be enumerated converge through the 120-second edge revalidation and 900-second Redis bound.
 
 ## Mikan parameter compatibility
 

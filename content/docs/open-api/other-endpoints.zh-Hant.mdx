@@ -19,7 +19,7 @@ description: 字幕組短鏈 RSS、全站磁力 RSS、季度番劇 JSON、單番
 等價於 `/rss/anime.xml?groupSlug=<slug>` 但 URL 更短，便於貼 README / 論壇。
 
 <Callout type="warn">
-  路徑必須以 `.xml` 結尾。支援 `?limit=`，**不支援** Tag 過濾；需要過濾請走 [RSS 主入口](/docs/open-api/rss-anime)。
+  路徑必須以 `.xml` 結尾。支援單值 `limit=1..100`，**不支援** Tag 過濾；需要過濾請走 [RSS 主入口](/docs/open-api/rss-anime)。非法 limit 返回應用 400，生產邊緣可能先返回 Cloudflare 403。
 </Callout>
 
 ```txt title="示例"
@@ -37,7 +37,7 @@ https://anibt.net/rss/group/haruhana.xml
 
 ```txt title="基本用法"
 https://anibt.net/rss/magnets.xml
-https://anibt.net/rss/magnets.xml?limit=200
+https://anibt.net/rss/magnets.xml?limit=100
 https://anibt.net/rss/magnets.xml?q=葬送的芙莉蓮
 https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 ```
@@ -45,7 +45,11 @@ https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 每個 anime `<item>` 含 `xmlns:anibt` 結構化元資料，其中 **`<anibt:bgmId>`** 為 Bangumi subject id（已綁定則輸出）。與 `/rss/anime.xml`、`/rss/group/*.xml` 欄位一致；`/rss/other/*` 無此欄位。
 
 <Callout type="info">
-  簡單查詢快取 **120 秒**；帶 `q` + 多 filter 的複雜查詢快取 **60 秒**。兩者都疊加 `stale-while-revalidate=600s`，CDN 在視窗過期後仍立即吐舊版給使用者、後臺非同步重新整理。詳見 [HTTP 快取與 304](/docs/open-api/caching)。
+  無 `q` 的 latest/filter 變體快取 **120 秒**；帶 `q` 的搜尋（包括空結果）快取 **600 秒**；兩者均為 `stale-while-revalidate=60s`。詳見 [HTTP 快取與 304](/docs/open-api/caching)。
+</Callout>
+
+<Callout type="warn">
+  `q` 與 `search` 是別名，只能提供一個值。搜尋詞會做 NFKC、trim 與空白折疊，UTF-8 最多 160 bytes；重複、空、控制字元或超長輸入返回 `400 + no-store`。規範化等價 URL 返回可快取一天的 `308`；新的高基數 MISS 超出預算時返回 `429 + Retry-After`。
 </Callout>
 
 ## 季度番劇 `/api/seasons/anime`

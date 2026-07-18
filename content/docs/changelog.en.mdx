@@ -9,6 +9,25 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 18, 2026
+
+<TypeTable
+  type={{
+    'Strict public RSS request contract': {
+      description: 'Every public RSS endpoint now accepts exactly one limit from 1..100 (default 100); oversized, repeated, empty, zero-padded, or non-integer values are no longer silently truncated. q/search allow one value total with NFKC, trim, whitespace collapse, and a 160 UTF-8-byte cap. Canonical URLs return a one-day-cacheable 308; invalid input returns application 400 and may be blocked first by production Cloudflare 403.',
+      type: 'Changed',
+    },
+    'High-cardinality search MISS protection': {
+      description: 'Magnets/other searches and empty results cache for 600 seconds while latest/filter variants cache for 120 seconds. Stable queries and cache HITs do not consume new-query budget. New high-cardinality MISSes use 10-minute/24-hour distinct-query budgets and a global concurrency lease; rejection returns 429 + Retry-After. Redis keys and structured logs retain only query hashes, never raw search text.',
+      type: 'Improved',
+    },
+    'Indexer edge and origin hardening': {
+      description: 'Normal Jackett, Auto_Bangumi, and ani-rss requests remain compatible. Cloudflare blocks invalid limits at edge, dynamic origin protection remains 500 requests per 10 seconds, and publish invalidation now uses exact URLs instead of clearing every search variant. Front proxies add edge-bypass validation, privacy-safe sampled logs, and reliable rotation.',
+      type: 'Operations',
+    },
+  }}
+/>
+
 ## July 17, 2026
 
 <TypeTable

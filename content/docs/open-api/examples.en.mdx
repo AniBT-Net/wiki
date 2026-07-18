@@ -88,9 +88,9 @@ https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BA
 ## 8. High throughput (max out a single request)
 
 ```txt
-https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=200
+https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=100
 ```
 
 <Callout type="info">
-  `/rss/anime.xml`, `/rss/group/<slug>.xml`, and `/rss/magnets.xml` all cap `limit` at **200**. Excess values are silently truncated. See [Rate limits & caps](/docs/open-api/limits).
+  Every public RSS endpoint caps `limit` at **100**. Oversized, repeated, empty, zero-padded, or non-integer values are not truncated: the application returns 400 and the production edge may block them first with Cloudflare 403. See [Rate limits & caps](/docs/open-api/limits).
 </Callout>

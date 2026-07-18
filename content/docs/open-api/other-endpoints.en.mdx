@@ -19,7 +19,7 @@ The RSS endpoints on this page return native RSS 2.0 XML. Opening an RSS URL in 
 Equivalent to `/rss/anime.xml?groupSlug=<slug>`, but with a shorter URL — handy for READMEs and forums.
 
 <Callout type="warn">
-  The path **must** end with `.xml`. `?limit=` is supported, but tag filters are **not**; for filtering, use [the main entry](/docs/open-api/rss-anime).
+  The path **must** end with `.xml`. A single `limit=1..100` is supported, but tag filters are **not**; for filtering, use [the main entry](/docs/open-api/rss-anime). Invalid limits return application 400 and may be blocked first by Cloudflare 403 at the production edge.
 </Callout>
 
 ```txt title="Examples"
@@ -37,7 +37,7 @@ Good for "what's new across the whole site".
 
 ```txt title="Common queries"
 https://anibt.net/rss/magnets.xml
-https://anibt.net/rss/magnets.xml?limit=200
+https://anibt.net/rss/magnets.xml?limit=100
 https://anibt.net/rss/magnets.xml?q=葬送的芙莉莲
 https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 ```
@@ -45,7 +45,11 @@ https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 Each anime `<item>` includes `xmlns:anibt` structured metadata; **`<anibt:bgmId>`** is the Bangumi subject id (emitted when bound). Field set matches `/rss/anime.xml` and `/rss/group/*.xml`. `/rss/other/*` does not emit `bgmId`.
 
 <Callout type="info">
-  Simple queries cache for **120s**; complex queries (with `q` and multiple filters) cache for **60s**. Both layer on `stale-while-revalidate=600s`, so the CDN serves stale content immediately and refreshes asynchronously. See [HTTP caching & 304](/docs/open-api/caching).
+  Latest/filter variants without `q` cache for **120s**; searches with `q`, including empty results, cache for **600s**; both use `stale-while-revalidate=60s`. See [HTTP caching & 304](/docs/open-api/caching).
+</Callout>
+
+<Callout type="warn">
+  `q` and `search` are aliases and may contain only one value. Search text is NFKC-normalized, trimmed, whitespace-collapsed, and capped at 160 UTF-8 bytes; repeated, empty, control-bearing, or oversized input returns `400 + no-store`. Canonical equivalents return a cacheable one-day `308`; excessive new high-cardinality MISSes return `429 + Retry-After`.
 </Callout>
 
 ## Seasonal anime `/api/seasons/anime`

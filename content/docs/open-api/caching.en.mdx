@@ -64,9 +64,12 @@ The TTLs above are fallback policies for shared caches, not timers that every pu
 
 | Endpoint                           | Client cache    | `s-maxage` (CDN) | `stale-while-revalidate` |
 | ---------------------------------- | --------------- | ---------------- | ------------------------ |
-| `/rss/anime.xml`                   | revalidate + ETag | 120s           | 60s                      |
-| `/rss/group/<slug>.xml`            | revalidate + ETag | 120s           | 60s                      |
-| `/rss/magnets.xml`                 | revalidate + ETag | 120s           | 60s                      |
+| `/rss/anime.xml` (entity)          | revalidate + ETag | 120s           | 60s                      |
+| `/rss/group/<slug>.xml` (entity)   | revalidate + ETag | 120s           | 60s                      |
+| `/rss/magnets.xml` (without `q`)   | revalidate + ETag | 120s           | 60s                      |
+| `/rss/magnets.xml` (with `q`)      | revalidate + ETag | 600s           | 60s                      |
+| `/rss/other/<category>.xml` (without `q`) | revalidate + ETag | 120s    | 60s                      |
+| `/rss/other/<category>.xml` (with `q`) | revalidate + ETag | 600s       | 60s                      |
 | `/api/subtitle-groups`             | revalidate + ETag | 300s           | 86400s                   |
 | `/api/seasons/anime`               | revalidate + ETag | 600s           | 86400s                   |
 | `/api/anime/groups`                | revalidate + ETag | 300s           | 3600s                    |
@@ -75,6 +78,15 @@ The TTLs above are fallback policies for shared caches, not timers that every pu
 | `POST /api/animes/torrent-match`   | no-store          | 0              | 0 (raw release titles)      |
 | `/api/anime/lookup`                | revalidate + ETag | 300s           | 300s                     |
 | `/api/mikan/group-lookup`          | revalidate + ETag | 600s           | 3600s                    |
+
+Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds, because publish events cannot enumerate every `bgmId + groupSlug + filter` query variant. Searches and empty results cache for 600 seconds at both edge and Redis; Redis keys contain only a SHA-256 of the normalized query.
+
+### Canonical RSS URLs and error caching
+
+- URLs equivalent to defaults, or normalizable by parameter order/case/whitespace, return `308`; both cache headers allow the redirect to be cached for one day. Clients should follow the permanent redirect and retain the final URL.
+- Invalid/repeated/empty/greater-than-100 `limit`, and repeated/empty/control-bearing/over-160-UTF-8-byte `q`, return application `400 + no-store`; the production edge may block first with Cloudflare `403 + no-store`.
+- Unknown anime/group entities return a share-cacheable `404` for 600 seconds + 60 seconds SWR, preventing repeated origin MISSes for nonexistent identities.
+- Excessive new high-cardinality search MISSes return `429 + Retry-After`; cache HITs and previously seen stable queries do not consume new-query budget.
 
 ## ETag formulas
 

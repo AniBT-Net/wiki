@@ -19,7 +19,7 @@ description: 字幕组短链 RSS、全站磁力 RSS、季度番剧 JSON、单番
 等价于 `/rss/anime.xml?groupSlug=<slug>` 但 URL 更短，便于贴 README / 论坛。
 
 <Callout type="warn">
-  路径必须以 `.xml` 结尾。支持 `?limit=`，**不支持** Tag 过滤；需要过滤请走 [RSS 主入口](/docs/open-api/rss-anime)。
+  路径必须以 `.xml` 结尾。支持单值 `limit=1..100`，**不支持** Tag 过滤；需要过滤请走 [RSS 主入口](/docs/open-api/rss-anime)。非法 limit 返回应用 400，生产边缘可能先返回 Cloudflare 403。
 </Callout>
 
 ```txt title="示例"
@@ -37,7 +37,7 @@ https://anibt.net/rss/group/haruhana.xml
 
 ```txt title="基本用法"
 https://anibt.net/rss/magnets.xml
-https://anibt.net/rss/magnets.xml?limit=200
+https://anibt.net/rss/magnets.xml?limit=100
 https://anibt.net/rss/magnets.xml?q=葬送的芙莉莲
 https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 ```
@@ -45,7 +45,11 @@ https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 每个 anime `<item>` 含 `xmlns:anibt` 结构化元数据，其中 **`<anibt:bgmId>`** 为 Bangumi subject id（已绑定则输出）。与 `/rss/anime.xml`、`/rss/group/*.xml` 字段一致；`/rss/other/*` 无此字段。
 
 <Callout type="info">
-  简单查询缓存 **120 秒**；带 `q` + 多 filter 的复杂查询缓存 **60 秒**。两者都叠加 `stale-while-revalidate=600s`，CDN 在窗口过期后仍立即吐旧版给用户、后台异步刷新。详见 [HTTP 缓存与 304](/docs/open-api/caching)。
+  无 `q` 的 latest/filter 变体缓存 **120 秒**；带 `q` 的搜索（包括空结果）缓存 **600 秒**；两者均为 `stale-while-revalidate=60s`。详见 [HTTP 缓存与 304](/docs/open-api/caching)。
+</Callout>
+
+<Callout type="warn">
+  `q` 与 `search` 是别名，只能提供一个值。搜索词会做 NFKC、trim 与空白折叠，UTF-8 最多 160 bytes；重复、空、控制字符或超长输入返回 `400 + no-store`。规范化等价 URL 返回可缓存一天的 `308`；新的高基数 MISS 超出预算时返回 `429 + Retry-After`。
 </Callout>
 
 ## 季度番剧 `/api/seasons/anime`

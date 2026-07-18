@@ -9,6 +9,25 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 18 日
+
+<TypeTable
+  type={{
+    '公開 RSS 嚴格參數契約': {
+      description: '所有公開 RSS 的 limit 統一為單值 1..100（預設 100）；超大、重複、空、前導零或非整數不再靜默截斷。q/search 只允許一個值，並執行 NFKC、trim、空白折疊和 160 UTF-8 bytes 上限。規範化 URL 返回可快取一天的 308；非法輸入返回應用 400，生產邊緣可先返回 403。',
+      type: '變更',
+    },
+    '高基數搜尋 MISS 防護': {
+      description: 'magnets/other 搜尋與空結果快取 600 秒，latest/filter 快取 120 秒；穩定查詢和快取 HIT 不消耗新查詢額度。新的高基數 MISS 使用 10 分鐘/24 小時 distinct-query 預算和全站併發 lease，超限返回 429 + Retry-After。Redis key 與結構化日誌只保存查詢 hash，不保存原始搜尋詞。',
+      type: '最佳化',
+    },
+    '索引器邊緣與源站硬化': {
+      description: 'Jackett、Auto_Bangumi、ani-rss 的正常請求保持可用；Cloudflare 在邊緣攔截非法 limit，動態回源保護保持 500/10 秒，釋出失效改為精確 URL，不再清空全部搜尋變體。前置代理增加繞邊緣校驗、隱私安全採樣日誌與可靠輪轉。',
+      type: '運維',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 17 日
 
 <TypeTable

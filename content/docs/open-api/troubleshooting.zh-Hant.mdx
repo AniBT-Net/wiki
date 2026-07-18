@@ -43,6 +43,9 @@ description: 一行 curl 除錯 + RSS 接入常見問題解答。
   <Accordion title="為什麼我的 If-Modified-Since 沒生效？">
     按 RFC 7232，**ETag（`If-None-Match`）優先**。如果你同時發了兩個頭，服務端只看 ETag。建議永遠用 ETag。
   </Accordion>
+  <Accordion title="為什麼 RSS 返回 308、400、403 或 429？">
+    `308` 表示 URL 可規範化（例如顯式 `limit=100`、參數順序/大小寫/空白等），請跟隨重新導向並保存最終 URL。`400 + no-store` 表示參數違反公開契約：`limit` 必須是單個 `1..100` 整數；`q`/`search` 合計只能一個值，規範化後不能為空、不能含控制字元且最多 160 UTF-8 bytes。生產 Cloudflare 可能在應用前用 `403` 攔截非法 limit。`429` 只保護真正穿透快取的新高基數搜尋 MISS；按 `Retry-After` 退避即可。
+  </Accordion>
   <Accordion title="episode=5 會匹配 episodeKey='05' 嗎？">
     是的，二者都會過濾；但 `episode` 是數字精確匹配，`episodeKey` 是字串原樣匹配。合集請用 `episodeKey=BATCH`。
   </Accordion>
@@ -50,7 +53,7 @@ description: 一行 curl 除錯 + RSS 接入常見問題解答。
     RSS 裡 `<enclosure url>` 已經是可直接餵給 BT 客戶端的磁力 URL（帶預設 tracker），`<torrent>` 元素裡也帶 infoHash。
   </Accordion>
   <Accordion title="介面會變嗎？">
-    路徑與查詢引數視為公開契約，**不會做不相容變更**；新增引數只會擴充套件。`slug` 一旦釋出也儘量保持穩定。
+    路徑、欄位和規範參數會保持穩定；但為保護公共服務，安全上限與非法輸入處理可能收緊並在 changelog 公告。客戶端應遵守目前文件、跟隨 308、處理 400/403/429，而不是依賴靜默截斷。`slug` 一旦釋出也儘量保持穩定。
   </Accordion>
   <Accordion title="為什麼我配置了極嚴格的過濾後返回數量很少？">
     `/rss/anime.xml` 現在由 Web runtime + Typesense 生成，解析度、語言、格式、字幕方式等 Tag 會盡量下推到 Typesense filter。極嚴格過濾時返回少通常表示真實匹配少；如果後過濾視窗不足以保證結果完整，服務端會返回 `503`，不會回退 Convex 掃庫。詳見 [限流與上限](/docs/open-api/limits)。
@@ -79,6 +82,10 @@ description: 一行 curl 除錯 + RSS 接入常見問題解答。
   <Step>
     ### 永遠帶 If-None-Match
     快取上次響應的 `ETag`，下次請求帶 `If-None-Match`，詳見 [HTTP 快取與 304](/docs/open-api/caching)。
+  </Step>
+  <Step>
+    ### 跟隨 308 並保存規範 URL
+    不要反覆請求會重新導向的舊參數形式；使用客戶端最終 URL 作為後續輪詢鍵。
   </Step>
   <Step>
     ### 間隔 ≥ 5 分鐘

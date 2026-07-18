@@ -52,12 +52,16 @@ GET https://anibt.net/rss/anime.xml?<query>
       type: 'string',
     },
     'limit': {
-      description: '1..200，預設 100。',
+      description: '1..100，預設 100。只接受單個無前導零的十進位整數。',
       type: 'integer',
       default: '100',
     },
   }}
 />
+
+<Callout type="warn">
+  `limit` 重複、為空、含前導零、不是整數或大於 100 時，應用返回 `400 + no-store`；生產邊緣可能先返回 Cloudflare `403`。`limit=100` 等與預設值等價的寫法會 `308` 到規範 URL，跳轉可快取 1 天；客戶端應跟隨永久重新導向。
+</Callout>
 
 ## 重複引數兩種寫法等價
 
@@ -124,7 +128,7 @@ GET https://anibt.net/rss/anime.xml?<query>
 | 僅 `bgmId`              | Typesense filter 約束番劇          |
 | 僅 `groupSlug`          | Typesense filter 約束字幕組        |
 
-解析度、語言、格式、字幕方式等 Tag 盡量下推到 Typesense filter；`episode` / `episodeKey` 等展示欄位只在 Web runtime 做小視窗後過濾。Redis SSR cache 預設 **120 秒 TTL + 60 秒 stale-while-revalidate**，Cloudflare Worker 在釋出事件後會主動清理 Redis RSS cache 並 purge CDN，因此公開 RSS 的新鮮度上限目標是 5 分鐘內，正常路徑通常更快。
+解析度、語言、格式、字幕方式等 Tag 盡量下推到 Typesense filter；`episode` / `episodeKey` 等展示欄位只在 Web runtime 做小視窗後過濾。實體 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。釋出事件只失效明確受影響的實體 URL；無法列舉的參數變體依靠 120 秒 edge 重新驗證與 900 秒 Redis 上限收斂。
 
 ## Mikan 參數相容
 

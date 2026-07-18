@@ -88,9 +88,9 @@ https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BA
 ## 8. 高吞吐场景（一次性拉满）
 
 ```txt
-https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=200
+https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=100
 ```
 
 <Callout type="info">
-  `/rss/anime.xml`、`/rss/group/<slug>.xml` 和 `/rss/magnets.xml` 的 `limit` 上限都是 **200**。超过会被静默截断到上限。详见 [限流与上限](/docs/open-api/limits)。
+  所有公开 RSS 的 `limit` 上限都是 **100**。超过上限、重复、为空、含前导零或非整数时不会截断：应用返回 400，生产边缘可能先返回 Cloudflare 403。详见 [限流与上限](/docs/open-api/limits)。
 </Callout>
