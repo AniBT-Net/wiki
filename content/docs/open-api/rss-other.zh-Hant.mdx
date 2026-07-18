@@ -118,7 +118,7 @@ https://anibt.net/rss/other/stage.xml
 
 - RSS 回應支援 `ETag` / `If-None-Match`，未變更時返回 `304 Not Modified`。
 - 無 `q` 的 latest/filter 變體為 `s-maxage=120`；帶 `q` 的搜尋（包括空結果）為 `s-maxage=600`；兩類統一 `stale-while-revalidate=60`。
-- 搜尋快取身份只保存規範化查詢的 SHA-256。重複/空/control 字元 q、同時傳 q+search 或超過 160 bytes 返回 `400 + no-store`；規範化等價 URL 返回可快取一天的 `308`。
+- 搜尋快取身份只保存規範化查詢的 SHA-256。重複/空/控制字元 q、同時傳 q+search 或超過 160 bytes 返回 `400 + no-store`；規範化等價 URL 返回可快取一天的 `308`。
 - 只有真正穿透 CDN/Redis 的新搜尋 MISS 才受 distinct-query 與全站併發預算保護；超限返回 `429 + Retry-After`，穩定查詢和快取 HIT 不扣額度。
 - 這些 RSS 回應會帶 `noindex, follow` 搜尋引擎策略，避免分類 feed 被搜尋引擎索引。
 

@@ -81,10 +81,10 @@ Vary:             Accept-Encoding
 
 实体 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒；这是因为发布事件无法枚举所有 `bgmId + groupSlug + filter` 参数变体。搜索与空结果在 edge/Redis 都缓存 600 秒，Redis key 只保存规范化查询的 SHA-256。
 
-### RSS 规范 URL与错误缓存
+### RSS 规范 URL 与错误缓存
 
 - 与默认值等价或参数顺序/大小写/空白可规范化的 URL 返回 `308`，`Cache-Control` 与 `CDN-Cache-Control` 均可缓存 1 天。客户端应跟随永久重定向并保存最终 URL。
-- 非法、重复、空或 `>100` 的 `limit`，以及重复/空/control 字符/超过 160 UTF-8 bytes 的 `q` 返回应用 `400 + no-store`；生产边缘可能先返回 Cloudflare `403 + no-store`。
+- 非法、重复、空或 `>100` 的 `limit`，以及重复/空/控制字符/超过 160 UTF-8 bytes 的 `q` 返回应用 `400 + no-store`；生产边缘可能先返回 Cloudflare `403 + no-store`。
 - 未知 anime/group 实体的 `404` 可共享缓存 600 秒 + SWR 60 秒，避免不存在标识持续回源。
 - 新的高基数搜索 MISS 超出语义预算时返回 `429 + Retry-After`；缓存 HIT 与已见稳定查询不消耗新查询预算。
 
