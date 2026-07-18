@@ -256,22 +256,28 @@ matcher。只有 `decision.kind="auto"` 才会直接绑定；`manual`、`none`�
 `decision.kind="auto"`。
 
 匹配输入按发布方式保持两份证据：multipart 上传真实 `.torrent` 时，发布字段 `title`
-作为 `rawTitle`，服务端解析出的 torrent `info.name` 作为独立 `torrentName`；Web 上传页
-同样使用编辑后的发布标题与实际 `info.name`。JSON / magnet-only 请求没有 torrent bytes，
-因此自动匹配主要依赖 `title`，应尽量保留完整的字幕组、中文/日文/罗马字/英文、季度和
-集数结构，不要只传清洗后的短标题。
+作为 `rawTitle`，服务端解析出的 torrent `info.name` 作为独立 `torrentName`。Web 上传页会
+先验证当前用户确实属于目标字幕组，再用编辑后的发布标题与实际 `info.name` 在服务端重放
+v3 matcher；multipart 中调用方提交的 `matchProjectContext` 会被忽略。JSON / magnet-only
+请求没有 torrent bytes，因此自动匹配主要依赖 `title`，应尽量保留完整的字幕组、中文/
+日文/罗马字/英文、季度和集数结构，不要只传清洗后的短标题。
 
 当前解析会按上下文区分 bracket 裸数字：`[Title][24][1080p]` 中的 `24` 是集数，
 `[Title][1080p][24][AAC]` 中仍是帧率；`2024年版` / `(2024)` 必须精确命中候选首播年。
 若官方上季总集数包含一个 SP 而字幕组只连续编号正片，单集边界与精确整季范围可在完整
 family、发布时间和唯一目标共同证明后安全前移一集，不会放宽真正多季合集的限制。
 
-显式番剧 ID 也会参与本组项目学习：服务端从 `title` 与 torrent `info.name` 重算项目
-指纹，同组同项目第一次显式确认只记录 `pending`，第二个不同集数仍指向同一番剧后才
-激活；Web 人工匹配还可以明确选择“记住该项目”立即激活。后续匹配只有在同组、同项目
-且候选投影、季度/年份/格式/集数 veto 与完整性检查全部通过时才会使用该 binding。
-自动 matcher 选中的发布不会反向训练；冲突确认会暂停 binding，且调用方不能提交内部
-项目指纹或自动结果绕过服务端重算。
+Web torrent 上传中的显式番剧选择也会参与本组项目学习：服务端从 `title` 与 torrent
+`info.name` 重算项目指纹。若 matcher 已自动命中用户选择的同一站内番剧，则不会反向
+训练；若决定仍需人工确认，或自动结果与用户选择不同，该项目的第一次确认只记录
+`pending`，第二个不同集数仍指向同一番剧后才激活。同一集的重复版本不会增加确认数，
+指向其他番剧的冲突确认会把 binding 置为 `suspended`。对既有 pending 发布执行人工匹配
+时，仍可明确选择“记住该项目”立即激活。
+
+后续匹配只有在同组、同项目且候选投影、季度/年份/格式/集数 veto 与完整性检查全部通过
+时才会使用该 binding。matcher 不可用、内部异常，或 torrent `info.name` 超过 Web matcher
+的 500 字符上限时，已通过 torrent 合法性与字幕组权限校验的显式选择仍可继续发布，但
+不会学习 binding；无效 torrent 与无权限请求仍会正常失败。
 
 ### 分辨率、语言、字幕、格式
 

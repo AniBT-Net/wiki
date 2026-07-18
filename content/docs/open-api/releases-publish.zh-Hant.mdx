@@ -256,22 +256,28 @@ matcher。只有 `decision.kind="auto"` 才會直接綁定；`manual`、`none`�
 `decision.kind="auto"`。
 
 匹配輸入會在存在時保留兩份證據：multipart 上傳真實 `.torrent` 時，釋出欄位 `title`
-作為 `rawTitle`，服務端解析出的 torrent `info.name` 作為獨立 `torrentName`；Web 上傳頁
-同樣使用編輯後的釋出標題與實際 `info.name`。JSON / magnet-only 請求沒有 torrent bytes，
-因此自動匹配主要依賴 `title`，應盡量保留完整字幕組、中文/日文/羅馬字/英文、季度與
-集數結構，不要只傳過度清洗的短標題。
+作為 `rawTitle`，服務端解析出的 torrent `info.name` 作為獨立 `torrentName`。Web 上傳頁會
+先驗證目前使用者確實屬於目標字幕組，再用編輯後的釋出標題與實際 `info.name` 在服務端
+重放 v3 matcher；multipart 中呼叫方提交的 `matchProjectContext` 會被忽略。JSON /
+magnet-only 請求沒有 torrent bytes，因此自動匹配主要依賴 `title`，應盡量保留完整字幕組、
+中文/日文/羅馬字/英文、季度與集數結構，不要只傳過度清洗的短標題。
 
 目前解析會按上下文區分 bracket 裸數字：`[Title][24][1080p]` 中的 `24` 是集數，
 `[Title][1080p][24][AAC]` 中仍是幀率；`2024年版` / `(2024)` 必須精確命中候選首播年。
 若官方上季總集數包含一個 SP 而字幕組只連續編號正片，單集邊界與精確整季範圍可在完整
 family、釋出時間和唯一目標共同證明後安全前移一集，不會放寬真正多季合集的限制。
 
-明確番劇 ID 也會參與本組項目學習：服務端從 `title` 與 torrent `info.name` 重新計算
-項目指紋，同組同項目第一次明確確認只記錄 `pending`，第二個不同集數仍指向同一番劇後
-才啟用；Web 人工匹配亦可明確選擇「記住此項目」立即啟用。後續匹配只會在同組、同項目，
-且候選投影、季度/年份/格式/集數 veto 與完整性檢查全部通過時使用該 binding。自動
-matcher 選中的釋出不會反向訓練；衝突確認會暫停 binding，呼叫方也不能提交內部項目
-指紋或自動結果繞過服務端重算。
+Web torrent 上傳中的明確番劇選擇也會參與本組項目學習：服務端從 `title` 與 torrent
+`info.name` 重新計算項目指紋。若 matcher 已自動命中使用者選擇的同一站內番劇，則不會
+反向訓練；若決定仍需人工確認，或自動結果與使用者選擇不同，該項目的第一次確認只記錄
+`pending`，第二個不同集數仍指向同一番劇後才啟用。同一集的重複版本不會增加確認數，
+指向其他番劇的衝突確認會把 binding 設為 `suspended`。對既有 pending 釋出執行人工匹配
+時，仍可明確選擇「記住此項目」立即啟用。
+
+後續匹配只會在同組、同項目，且候選投影、季度/年份/格式/集數 veto 與完整性檢查全部
+通過時使用該 binding。matcher 不可用、內部異常，或 torrent `info.name` 超過 Web matcher
+的 500 字元上限時，已通過 torrent 合法性與字幕組權限校驗的明確選擇仍可繼續釋出，但
+不會學習 binding；無效 torrent 與無權限請求仍會正常失敗。
 
 ### 解析度、語言、字幕、格式
 

@@ -257,10 +257,12 @@ recall never replace `decision.kind="auto"`.
 
 The matcher preserves two inputs when they exist. For a real multipart `.torrent` upload,
 the publish field `title` becomes `rawTitle`, while the parsed torrent `info.name` becomes an
-independent `torrentName`. The Web upload flow likewise uses the edited release title plus the
-actual `info.name`. JSON / magnet-only requests contain no torrent bytes, so automatic matching
-primarily uses `title`; keep the full group, Chinese/Japanese/romaji/English, season, and episode
-structure instead of sending an aggressively cleaned short title.
+independent `torrentName`. The Web upload flow first verifies that the current user belongs to the
+target group, then replays v3 server-side with the edited release title and actual `info.name`;
+caller-supplied `matchProjectContext` multipart data is ignored. JSON / magnet-only requests contain
+no torrent bytes, so automatic matching primarily uses `title`; keep the full group,
+Chinese/Japanese/romaji/English, season, and episode structure instead of sending an aggressively
+cleaned short title.
 
 Context distinguishes bare numeric brackets: `24` is an episode in `[Title][24][1080p]`, but remains
 frame-rate metadata in `[Title][1080p][24][AAC]`. An explicit `2024 edition` / `(2024)` must match the
@@ -269,13 +271,20 @@ group numbers regular episodes continuously, a single boundary episode and an ex
 range may shift back by one only when complete family, publication-time, and unique-target evidence
 all agree; this does not relax true multi-season bundle handling.
 
-Explicit anime IDs also provide group-scoped project confirmations. The server recomputes a project
-fingerprint from `title` and torrent `info.name`; the first explicit confirmation is `pending`, and a
-second distinct episode that confirms the same anime activates the binding. Web manual matching can
-explicitly choose “remember this project” to activate immediately. Future matches use the binding only
-inside the same group and project, and only after candidate projection, season/year/format/episode veto,
-conflict, and completeness checks pass. Automatic matcher selections never train the binding; a
-conflicting confirmation suspends it, and callers cannot forge the internal fingerprint or auto result.
+An explicit anime selection in the Web torrent upload flow can also provide a group-scoped project
+confirmation. The server recomputes the fingerprint from `title` and torrent `info.name`. If the matcher
+already auto-selected the same internal anime, it does not train itself. If the decision still needs
+manual confirmation, or the automatic target differs from the user's selection, the first confirmation
+for that project is `pending` and a second distinct episode confirming the same anime activates the
+binding. Re-publishing the same episode does not increment confirmation count; confirming another anime
+suspends the binding. The manual flow for an existing pending release may still explicitly choose
+“remember this project” to activate immediately.
+
+Future matches use the binding only inside the same group and project, and only after candidate
+projection, season/year/format/episode veto, conflict, and completeness checks pass. If the matcher is
+unavailable, throws internally, or the torrent `info.name` exceeds the Web matcher's 500-character
+bound, an explicit selection that already passed torrent validation and group authorization still
+publishes without learning a binding. Invalid torrents and unauthorized requests still fail normally.
 
 ### Resolution, Language, Subtitles, Format
 

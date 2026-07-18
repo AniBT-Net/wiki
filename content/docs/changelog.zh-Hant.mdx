@@ -25,6 +25,18 @@ description: AniBT Wiki 與站點功能更新紀錄。
       description: 'Jackett、Auto_Bangumi、ani-rss 的正常請求保持可用；Cloudflare 在邊緣攔截非法 limit，動態回源保護保持 500/10 秒，釋出失效改為精確 URL，不再清空全部搜尋變體。前置代理增加繞邊緣校驗、隱私安全採樣日誌與可靠輪轉。',
       type: '運維',
     },
+    'Latin 重音標題等價匹配': {
+      description: '純 Latin 標題同時保留原始重音與去變音符號的等價 token，例如 Caraméliser / Carameliser；CJK 與混合腳本不折疊。若折疊產生多個番劇候選，matcher 保留全部候選並 fail closed，不會取第一名自動綁定。',
+      type: '修復',
+    },
+    'Web 人工上傳匹配閉環': {
+      description: 'Web torrent 上傳在字幕組成員鑑權後解析真實 info.name 並在服務端重放 v3，呼叫方不能偽造項目指紋。matcher 已自動命中同一番劇時不學習；人工選擇或不同自動目標第一次記為 pending，第二個不同集數啟用，同集不重複計數，衝突轉 suspended。matcher 不可用、內部異常或超長 info.name 不阻塞已校驗的明確選擇釋出，也不會學習 binding。',
+      type: '修復',
+    },
+    '匹配索引 generation 2040': {
+      description: '生產已切到 match_v3_20260718_2040：8,621 個候選番劇、223,792 條別名、168 個 scoped bindings。固定 34,083 條語料中 28,559 條自動匹配（83.7925%），2024–2026 子集為 9,084 / 9,807（92.6277%）；Carameliser 與 Caraméliser 線上均自動命中 BGM 617123。',
+      type: '資料',
+    },
   }}
 />
 

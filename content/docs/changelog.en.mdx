@@ -25,6 +25,18 @@ This page records AniBT Wiki changes and feature updates that are directly cover
       description: 'Normal Jackett, Auto_Bangumi, and ani-rss requests remain compatible. Cloudflare blocks invalid limits at edge, dynamic origin protection remains 500 requests per 10 seconds, and publish invalidation now uses exact URLs instead of clearing every search variant. Front proxies add edge-bypass validation, privacy-safe sampled logs, and reliable rotation.',
       type: 'Operations',
     },
+    'Latin-diacritic title equivalence': {
+      description: 'Pure-Latin titles keep both the original diacritic token and a folded equivalent, such as Caraméliser / Carameliser; CJK and mixed-script text are not folded. If folding produces candidates from multiple anime, the matcher keeps all of them and fails closed instead of auto-binding the first result.',
+      type: 'Fixed',
+    },
+    'Web manual-upload evidence loop': {
+      description: 'Web torrent upload now verifies group membership, parses the real info.name, and replays v3 server-side; callers cannot forge the project fingerprint. A matcher result that already selects the same anime does not train itself. Manual or different-target confirmation starts pending, a second distinct episode activates, repeated episodes do not increment, and conflicts suspend. Matcher outages, internal exceptions, and oversized info.name values do not block an already validated explicit selection and do not learn a binding.',
+      type: 'Fixed',
+    },
+    'Matcher generation 2040': {
+      description: 'Production now uses match_v3_20260718_2040 with 8,621 anime candidates, 223,792 aliases, and 168 scoped bindings. The fixed 34,083-item corpus has 28,559 automatic decisions (83.7925%); the 2024–2026 subset is 9,084 / 9,807 (92.6277%). Both Carameliser and Caraméliser now auto-match BGM 617123 in production.',
+      type: 'Data',
+    },
   }}
 />
 

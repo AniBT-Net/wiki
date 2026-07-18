@@ -73,6 +73,7 @@ JSON
 
 - 釋出標題與 torrent name 分開解析；相同檢索只執行一次，但兩個輸入仍分別參與一致性判斷。
 - 中文、繁中、日文、羅馬字、英文、緊湊多語拼接、全形斜線、反斜線與 script boundary 都可形成 title hypothesis。
+- 純 Latin 標題會同時保留原始重音 token 與去變音符號的等價 token，例如 `Caraméliser` / `Carameliser`。折疊只作用於純 Latin 片段，CJK 與混合腳本不會被改寫；若折疊後碰撞到多個番劇，所有候選都會保留並 fail closed，不會取第一名自動綁定。
 - 自動授權來源只允許 BGM / bgm.tv、bangumi-data、本站人工全域 alias，以及目前已鑑權字幕組內唯一 active scoped binding；弱站點線索與派生 stem 只能支援召回或消歧。
 - TMDB / TVDB、外部數字 ID、官網 slug、fuzzy、typo、prefix、infix、split/join 與文字分數都不能獨立授權自動釋出。
 - Season / Cour / Part / Sequence / Format、明確年份、開播窗口與已知 TV 集數會執行候選 veto。明確 Season 使用季內集數；沒有 Season 時，只有作品族、時間 cohort 與累計集數窗口都唯一，才會用 `EP25` 等絕對集數安全提升續作。
@@ -84,7 +85,7 @@ JSON
 - 多番劇、多季或 `S1+S2+OVA` 合集返回 `unsupported`，不會強行挑一個 subject。
 
 <Callout type="info">
-  目前生產 generation 為 `match_v3_20260716_2112`：8,621 個候選番劇、223,778 條別名、24 個 scoped bindings。固定離線語料中，2024–2026 番劇自動匹配為 9,091 / 9,781（92.9455%）；排除後續單獨處理合集的 VCB 後為 8,744 / 9,339（93.6289%）。這是自動決策覆蓋率，不是外部真值準確率。
+  目前生產 generation 為 `match_v3_20260718_2040`：8,621 個候選番劇、223,792 條別名、168 個 scoped bindings。固定 34,083 條離線語料中有 28,559 條自動匹配（83.7925%）；2024–2026 子集為 9,084 / 9,807（92.6277%）。這是自動決策覆蓋率，不是外部真值準確率。
 </Callout>
 
 ## v3 響應
@@ -126,7 +127,7 @@ JSON
     "candidateSetComplete": true,
     "strictRecallUsed": true,
     "fuzzyRecallUsed": false,
-    "generation": "match_v3_20260716_2112"
+    "generation": "match_v3_20260718_2040"
   },
   "diagnostics": null
 }

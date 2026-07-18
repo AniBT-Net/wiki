@@ -68,6 +68,7 @@ The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORB
 
 - Release title and torrent name are parsed separately. Identical searches are executed once, but both inputs still participate in consensus.
 - Chinese, Traditional Chinese, Japanese, romaji, English, compact multilingual joins, fullwidth slashes, backslashes, and script boundaries can form title hypotheses.
+- Pure-Latin titles keep both their original diacritic token and a diacritic-folded equivalent, for example `Caraméliser` / `Carameliser`. Folding applies only to pure-Latin segments; CJK and mixed-script text are not rewritten. If folding collides across multiple anime, every candidate survives and the decision fails closed instead of auto-binding the first result.
 - Automatic authorization is restricted to BGM / bgm.tv, bangumi-data, AniBT manual-global aliases, and one active scoped binding inside the authenticated subtitle group. Site hints and derived stems are support evidence only.
 - TMDB / TVDB, external numeric IDs, site slugs, fuzzy matching, typos, prefix/infix, split/join behavior, and text score cannot authorize automatic publishing by themselves.
 - Season / Cour / Part / Sequence / Format, explicit year, premiere window, and known TV episode count are candidate vetoes. Explicit seasons use per-season episode numbers. Without a season marker, an absolute number such as `EP25` may promote a sequel only when the work family, time cohort, and cumulative episode window are all unique.
@@ -79,7 +80,7 @@ The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORB
 - Multi-anime, multi-season, and `S1+S2+OVA` bundles return `unsupported`; the matcher does not force one subject.
 
 <Callout type="info">
-  The active production generation is `match_v3_20260716_2112`: 8,621 anime candidates, 223,778 aliases, and 24 scoped bindings. On the fixed offline corpus, 9,091 / 9,781 anime releases from 2024–2026 are automatic (92.9455%); excluding VCB bundles that will be handled separately, the result is 8,744 / 9,339 (93.6289%). This is automatic-decision coverage, not external ground-truth accuracy.
+  The active production generation is `match_v3_20260718_2040`: 8,621 anime candidates, 223,792 aliases, and 168 scoped bindings. On the fixed 34,083-item offline corpus, 28,559 decisions are automatic (83.7925%); the 2024–2026 subset is 9,084 / 9,807 (92.6277%). This is automatic-decision coverage, not external ground-truth accuracy.
 </Callout>
 
 ## v3 response
@@ -121,7 +122,7 @@ The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORB
     "candidateSetComplete": true,
     "strictRecallUsed": true,
     "fuzzyRecallUsed": false,
-    "generation": "match_v3_20260716_2112"
+    "generation": "match_v3_20260718_2040"
   },
   "diagnostics": null
 }
