@@ -13,13 +13,13 @@ description: AniBT Wiki 與站點功能更新紀錄。
 
 <TypeTable
   type={{
-    'Tracker hash-bound 簽名': {
-      description: 'AniBT Tracker 改為依每個 v1 info_hash 生成簽名 announce capability。站內釋出的 magnet 與 canonical .torrent 會自動寫入唯一簽名地址，保留第三方 tracker，且改寫不改變 infohash；remote torrent 代理不會為外部種子生成 capability。',
-      type: '安全',
+    'Tracker 固定入口恢復': {
+      description: 'AniBT Tracker 已恢復固定 https://tracker.anibt.net/announce，不保留 signed 雙軌。既有站內種子不需更換地址或重新下載；magnet、RSS 與 canonical .torrent 已規範為唯一固定 AniBT Tracker，且 infohash 不變。',
+      type: '修復',
     },
-    '舊 Tracker 入口關閉': {
-      description: '通用 /announce 與公網 /scrape 已關閉。錯誤 MAC、hash 不相符、重複 info_hash 會在 Cloudflare 邊緣拒絕；通過簽名校驗但不在 AniBT 白名單的 hash 仍由 Torrust 拒絕。釋出者不再需要手動填寫 AniBT Tracker 地址。',
-      type: '變更',
+    'Tracker 白名單與邊緣保護': {
+      description: '固定 /announce 繼續只服務 AniBT 已收錄的 v1 info_hash；外部 hash 返回 not whitelisted。Cloudflare 保留 20-byte info_hash/peer_id 協議校驗與基礎 burst limit，公網 /scrape、/api/*、/announce/v1/* 與 UDP 繼續關閉。',
+      type: '安全',
     },
   }}
 />

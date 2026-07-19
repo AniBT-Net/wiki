@@ -13,13 +13,13 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 <TypeTable
   type={{
-    'Hash-bound tracker signing': {
-      description: 'AniBT now generates an announce capability for each v1 info_hash. Magnets and canonical .torrent downloads automatically contain exactly one signed AniBT URL, preserve third-party trackers, and keep the infohash unchanged. The remote-torrent proxy does not mint capabilities for external torrents.',
-      type: 'Security',
+    'Fixed tracker URL restored': {
+      description: 'AniBT has restored https://tracker.anibt.net/announce with no signed dual path. Existing AniBT torrents need no URL replacement or data re-download. Magnets, RSS, and canonical .torrent downloads now contain exactly one fixed AniBT tracker while preserving the infohash.',
+      type: 'Fixed',
     },
-    'Legacy tracker endpoints closed': {
-      description: 'The generic /announce and public /scrape endpoints are closed. Cloudflare rejects an invalid MAC, a hash mismatch, or duplicate info_hash values; Torrust still rejects signed requests for hashes outside the AniBT whitelist. Publishers no longer add an AniBT tracker URL manually.',
-      type: 'Changed',
+    'Tracker whitelist and edge protection': {
+      description: 'The fixed /announce endpoint still serves only v1 info_hash values admitted by AniBT; external hashes receive not whitelisted. Cloudflare retains 20-byte info_hash/peer_id validation and a basic burst limit. Public /scrape, /api/*, /announce/v1/*, and UDP remain closed.',
+      type: 'Security',
     },
   }}
 />

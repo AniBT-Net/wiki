@@ -1,45 +1,35 @@
 ---
 title: Tracker
-description: AniBT 官方 Tracker 的 hash-bound announce 使用方式。
+description: AniBT 官方 Tracker 固定 announce 地址與白名單規則。
 ---
 
-AniBT Tracker 只服務 AniBT 站內釋出的種子。Tracker 地址由站點依照每個種子的
-`info_hash` 自動簽名，不再提供可手動複製到任意種子的通用 announce 地址。
+AniBT Tracker 只服務 AniBT 站內釋出並已加入白名單的種子。公開地址保持固定：
 
-<Callout type="warn">
-  請不要手動加入舊地址 `https://tracker.anibt.net/announce`。該入口已關閉，
-  Cloudflare 會返回 403。
-</Callout>
-
-## 目前地址形態
-
-AniBT 生成的 magnet 與 `.torrent` 會包含以下形態的地址：
-
-```txt title="Hash-bound Tracker"
-https://tracker.anibt.net/announce/v1/0000000000-<signed-capability>
+```txt title="AniBT Tracker"
+https://tracker.anibt.net/announce
 ```
 
-`<signed-capability>` 與該種子的 v1 `info_hash` 綁定，不能複製給另一個種子使用。
-即使外部釋出者複製 AniBT 地址，只要簽名與請求中的 `info_hash` 不相符，請求就會在
-Cloudflare 邊緣被拒絕；未被 AniBT 白名單收錄的 hash 也會被 Tracker 拒絕。
+<Callout type="info">
+  地址公開不代表任意種子都能使用。Tracker 最終依 v1 `info_hash` 檢查 AniBT 的
+  append-only 白名單；外部釋出且未被 AniBT 收錄的 hash 會返回 `not whitelisted`。
+</Callout>
 
 ## 釋出與下載
 
 - 透過 AniBT 網頁或 [`/api/releases/publish`](/docs/open-api/releases-publish) 釋出時，
-  站點會自動把正確的簽名 Tracker 寫入 magnet。
+  站點會自動把固定 Tracker 寫入 magnet。
 - 從 AniBT 的 `.torrent` 下載介面取得種子時，站點會在不改變 infohash 的前提下，
-  移除舊 AniBT 地址並寫入唯一的簽名地址。
+  把歷史 signed/重複 AniBT 地址規範為唯一固定地址。
 - 其他第三方 tracker 會保留。建議種子仍包含 1–2 個可靠的公開 tracker，避免只依賴
   單一服務。
-- 通用 remote torrent 代理不會為外部種子生成 AniBT capability，返回的仍是上游原始
-  torrent bytes。
+- 通用 remote torrent 代理返回上游原始 torrent bytes，不注入 AniBT Tracker。
 
-因此，釋出者不需要在 qBittorrent、Transmission、mktorrent 或 API 請求中手動填寫
-AniBT Tracker。只需正常上傳 torrent 或提交 magnet，AniBT 會完成簽名與規範化。
+既有 AniBT 種子仍可繼續使用固定 `/announce`，不需要更換地址或重新下載資料；
+Tracker 欄位位於 torrent `info` dictionary 之外，規範化不會改變 infohash。
 
 ## 已關閉的入口
 
-- `https://tracker.anibt.net/announce`
+- `https://tracker.anibt.net/announce/v1/*`
 - `https://tracker.anibt.net/scrape`
 - 公網 `/api/*`
 - UDP announce
