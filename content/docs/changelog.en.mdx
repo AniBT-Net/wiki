@@ -9,6 +9,21 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 19, 2026
+
+<TypeTable
+  type={{
+    'Hash-bound tracker signing': {
+      description: 'AniBT now generates an announce capability for each v1 info_hash. Magnets and canonical .torrent downloads automatically contain exactly one signed AniBT URL, preserve third-party trackers, and keep the infohash unchanged. The remote-torrent proxy does not mint capabilities for external torrents.',
+      type: 'Security',
+    },
+    'Legacy tracker endpoints closed': {
+      description: 'The generic /announce and public /scrape endpoints are closed. Cloudflare rejects an invalid MAC, a hash mismatch, or duplicate info_hash values; Torrust still rejects signed requests for hashes outside the AniBT whitelist. Publishers no longer add an AniBT tracker URL manually.',
+      type: 'Changed',
+    },
+  }}
+/>
+
 ## July 18, 2026
 
 <TypeTable

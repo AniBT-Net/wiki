@@ -9,6 +9,21 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 19 日
+
+<TypeTable
+  type={{
+    'Tracker hash-bound 簽名': {
+      description: 'AniBT Tracker 改為依每個 v1 info_hash 生成簽名 announce capability。站內釋出的 magnet 與 canonical .torrent 會自動寫入唯一簽名地址，保留第三方 tracker，且改寫不改變 infohash；remote torrent 代理不會為外部種子生成 capability。',
+      type: '安全',
+    },
+    '舊 Tracker 入口關閉': {
+      description: '通用 /announce 與公網 /scrape 已關閉。錯誤 MAC、hash 不相符、重複 info_hash 會在 Cloudflare 邊緣拒絕；通過簽名校驗但不在 AniBT 白名單的 hash 仍由 Torrust 拒絕。釋出者不再需要手動填寫 AniBT Tracker 地址。',
+      type: '變更',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 18 日
 
 <TypeTable

@@ -1,63 +1,47 @@
 ---
-title: Tracker 地址
-description: AniBT 官方 Tracker Announce 地址，釋出種子時請將其加入種子檔案。
+title: Tracker
+description: AniBT 官方 Tracker 的 hash-bound announce 使用方式。
 ---
 
-釋出種子時請將以下 **HTTPS Tracker Announce** 地址新增到種子檔案中。
-
-```txt title="官方 Tracker"
-https://tracker.anibt.net/announce
-```
-
-<Callout type="info">
-  HTTPS 相容性更好，可穿透大多數防火牆與公司網路代理。
-</Callout>
-
-## 在常見 BT 客戶端新增
-
-<Tabs items={['qBittorrent', 'Transmission', 'mktorrent']}>
-  <Tab value="qBittorrent">
-    新建種子時（**Tools → Torrent Creator**）：
-    1. 選好原始檔 / 資料夾。
-    2. 在 **Tracker URLs** 列表裡貼上：
-       ```txt
-       https://tracker.anibt.net/announce
-       ```
-    3. 點 **Create Torrent**。
-
-    給已存在的種子追加 tracker：右鍵種子 → **Edit trackers...** → 貼上一行後儲存。
-  </Tab>
-  <Tab value="Transmission">
-    GUI：右鍵種子 → **Properties** → **Trackers** 面板 → **Add**，貼上：
-    ```txt
-    https://tracker.anibt.net/announce
-    ```
-
-    CLI：
-    ```bash
-    transmission-remote -t <id> --tracker-add 'https://tracker.anibt.net/announce'
-    ```
-  </Tab>
-  <Tab value="mktorrent">
-    生成新種子時直接用 `-a` 指定：
-    ```bash
-    mktorrent -a 'https://tracker.anibt.net/announce' -o release.torrent /path/to/release/
-    ```
-
-    多個 tracker 寫多個 `-a` 即可。
-  </Tab>
-</Tabs>
-
-## 透過 API 釋出時
-
-[`/api/releases/publish`](/docs/open-api/releases-publish) 在生成磁力連結的 RSS `<enclosure>` 時，會**自動附加站點預設 tracker**，所以你**不需要**在請求體裡再傳一遍。如果你的種子裡已經包含其他自有 tracker，原樣保留即可——後端做去重合並。
-
-## 為什麼用 HTTPS
-
-- **穿透更好**：公司 / 校園 / 行動網路常封 UDP，HTTPS 在 443 埠走 TLS，被封機率最低。
-- **隱私**：tracker 流量加密，少受中間網路嗅探。
-- **與 RSS 一致**：本站 RSS 永遠走 HTTPS，整條鏈路統一。
+AniBT Tracker 只服務 AniBT 站內釋出的種子。Tracker 地址由站點依照每個種子的
+`info_hash` 自動簽名，不再提供可手動複製到任意種子的通用 announce 地址。
 
 <Callout type="warn">
-  請**不要**在公開種子裡只放本站 tracker——多 tracker 才能保證可用性。常見做法：本站 + 1–2 個公開 tracker（如 OpenTrackr）。
+  請不要手動加入舊地址 `https://tracker.anibt.net/announce`。該入口已關閉，
+  Cloudflare 會返回 403。
 </Callout>
+
+## 目前地址形態
+
+AniBT 生成的 magnet 與 `.torrent` 會包含以下形態的地址：
+
+```txt title="Hash-bound Tracker"
+https://tracker.anibt.net/announce/v1/0000000000-<signed-capability>
+```
+
+`<signed-capability>` 與該種子的 v1 `info_hash` 綁定，不能複製給另一個種子使用。
+即使外部釋出者複製 AniBT 地址，只要簽名與請求中的 `info_hash` 不相符，請求就會在
+Cloudflare 邊緣被拒絕；未被 AniBT 白名單收錄的 hash 也會被 Tracker 拒絕。
+
+## 釋出與下載
+
+- 透過 AniBT 網頁或 [`/api/releases/publish`](/docs/open-api/releases-publish) 釋出時，
+  站點會自動把正確的簽名 Tracker 寫入 magnet。
+- 從 AniBT 的 `.torrent` 下載介面取得種子時，站點會在不改變 infohash 的前提下，
+  移除舊 AniBT 地址並寫入唯一的簽名地址。
+- 其他第三方 tracker 會保留。建議種子仍包含 1–2 個可靠的公開 tracker，避免只依賴
+  單一服務。
+- 通用 remote torrent 代理不會為外部種子生成 AniBT capability，返回的仍是上游原始
+  torrent bytes。
+
+因此，釋出者不需要在 qBittorrent、Transmission、mktorrent 或 API 請求中手動填寫
+AniBT Tracker。只需正常上傳 torrent 或提交 magnet，AniBT 會完成簽名與規範化。
+
+## 已關閉的入口
+
+- `https://tracker.anibt.net/announce`
+- `https://tracker.anibt.net/scrape`
+- 公網 `/api/*`
+- UDP announce
+
+Tracker 統計透過站內服務存取 Tailscale-only 管理 API，不依賴公網 scrape。

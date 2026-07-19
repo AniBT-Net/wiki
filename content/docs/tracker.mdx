@@ -1,63 +1,47 @@
 ---
-title: Tracker 地址
-description: AniBT 官方 Tracker Announce 地址，发布种子时请将其加入种子文件。
+title: Tracker
+description: AniBT 官方 Tracker 使用方式与 hash-bound announce 机制。
 ---
 
-发布种子时请将以下 **HTTPS Tracker Announce** 地址添加到种子文件中。
-
-```txt title="官方 Tracker"
-https://tracker.anibt.net/announce
-```
-
-<Callout type="info">
-  HTTPS 兼容性更好，可穿透大多数防火墙与公司网络代理。
-</Callout>
-
-## 在常见 BT 客户端添加
-
-<Tabs items={['qBittorrent', 'Transmission', 'mktorrent']}>
-  <Tab value="qBittorrent">
-    新建种子时（**Tools → Torrent Creator**）：
-    1. 选好源文件 / 文件夹。
-    2. 在 **Tracker URLs** 列表里粘贴：
-       ```txt
-       https://tracker.anibt.net/announce
-       ```
-    3. 点 **Create Torrent**。
-
-    给已存在的种子追加 tracker：右键种子 → **Edit trackers...** → 粘贴一行后保存。
-  </Tab>
-  <Tab value="Transmission">
-    GUI：右键种子 → **Properties** → **Trackers** 面板 → **Add**，粘贴：
-    ```txt
-    https://tracker.anibt.net/announce
-    ```
-
-    CLI：
-    ```bash
-    transmission-remote -t <id> --tracker-add 'https://tracker.anibt.net/announce'
-    ```
-  </Tab>
-  <Tab value="mktorrent">
-    生成新种子时直接用 `-a` 指定：
-    ```bash
-    mktorrent -a 'https://tracker.anibt.net/announce' -o release.torrent /path/to/release/
-    ```
-
-    多个 tracker 写多个 `-a` 即可。
-  </Tab>
-</Tabs>
-
-## 通过 API 发布时
-
-[`/api/releases/publish`](/docs/open-api/releases-publish) 在生成磁力链接的 RSS `<enclosure>` 时，会**自动附加站点默认 tracker**，所以你**不需要**在请求体里再传一遍。如果你的种子里已经包含其他自有 tracker，原样保留即可——后端做去重合并。
-
-## 为什么用 HTTPS
-
-- **穿透更好**：公司 / 校园 / 移动网络常封 UDP，HTTPS 在 443 端口走 TLS，被封概率最低。
-- **隐私**：tracker 流量加密，少受中间网络嗅探。
-- **与 RSS 一致**：本站 RSS 永远走 HTTPS，整条链路统一。
+AniBT Tracker 只服务 AniBT 站内发布的种子。Tracker 地址由站点根据每个种子的
+`info_hash` 自动签名，不再提供可手工复制到任意种子的通用 announce 地址。
 
 <Callout type="warn">
-  请**不要**在公开种子里只放本站 tracker——多 tracker 才能保证可用性。常见做法：本站 + 1–2 个公开 tracker（如 OpenTrackr）。
+  请不要手动添加旧地址 `https://tracker.anibt.net/announce`。该入口已经关闭，
+  Cloudflare 会返回 403。
 </Callout>
+
+## 当前地址形态
+
+AniBT 生成的 magnet 与 `.torrent` 会包含以下形态的地址：
+
+```txt title="Hash-bound Tracker"
+https://tracker.anibt.net/announce/v1/0000000000-<signed-capability>
+```
+
+`<signed-capability>` 与该种子的 v1 `info_hash` 绑定，不能复制给另一个种子使用。
+即使某个外部种子作者复制了 AniBT 地址，只要签名与请求中的 `info_hash` 不匹配，
+请求就会在 Cloudflare 边缘被拒绝；未被 AniBT 白名单收录的 hash 也会被 Tracker 拒绝。
+
+## 发布与下载
+
+- 通过 AniBT 网页或 [`/api/releases/publish`](/docs/open-api/releases-publish) 发布时，
+  站点会自动把正确的签名 Tracker 写入 magnet。
+- 从 AniBT 的 `.torrent` 下载接口取得种子时，站点会在不改变 infohash 的前提下，
+  移除旧 AniBT 地址并写入唯一的签名地址。
+- 其他第三方 tracker 会保留。建议种子仍包含 1–2 个可靠的公开 tracker，避免只依赖
+  单一服务。
+- 通用 remote torrent 代理不会为外部种子生成 AniBT capability，返回的仍是上游原始
+  torrent bytes。
+
+因此，发布者不需要在 qBittorrent、Transmission、mktorrent 或 API 请求中手工填写
+AniBT Tracker。只需正常上传 torrent 或提交 magnet，AniBT 会完成签名和规范化。
+
+## 已关闭的入口
+
+- `https://tracker.anibt.net/announce`
+- `https://tracker.anibt.net/scrape`
+- 公网 `/api/*`
+- UDP announce
+
+Tracker 统计通过站内服务访问 Tailscale-only 管理 API，不依赖公网 scrape。
