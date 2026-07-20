@@ -20,23 +20,26 @@ description: 字幕组后台的图床工具：粘贴、拖拽或选择图片，�
 ## 上传方式
 
 - 支持点击选择图片、拖拽图片到上传区、在页面中直接粘贴剪贴板图片。
-- 请求体是原始图片二进制，浏览器不会用 multipart/FormData 包装。
-- 服务端会在读取图片内容前先完成登录与字幕组成员授权，避免非成员消耗转码资源。
+- 浏览器先向主站提交小型 JSON，请求登录与字幕组成员授权；授权通过后取得短期 staging R2 预签名地址。
+- 原始图片二进制由浏览器直接 `PUT` 到 staging R2，不使用 multipart/FormData，也不经过 Web runtime。上传完成后，浏览器再通知主站核对对象元数据并排队处理。
+- 页面会轮询后台处理状态；只有 worker 完成转码、写入正式对象并登记元数据后，才显示复制格式。
 
 ## 图片处理规则
 
 | 项目 | 当前规则 |
 | --- | --- |
-| 输出格式 | 静态 JPEG/PNG/WebP/GIF/BMP/AVIF/HEIC/HEIF 会优先转成 `image/webp`；无法可靠转码时保留原格式。 |
+| 输出格式 | 可解码的静态 JPEG/PNG/WebP/GIF/BMP/AVIF/HEIC/HEIF 会转成 `image/webp`；静态图解码或编码失败时上传失败，不保存损坏原图。 |
 | 默认大小上限 | 单张输入默认 20 MiB，可由部署环境调整。 |
 | 默认像素上限 | 解码后默认最多 50,000,000 像素。 |
 | 默认最长边 | 输出最长边默认 3840px，按比例缩小，不放大。 |
 | 默认质量 | WebP quality 默认 88。 |
-| 服务端并发 | 转码默认 8 并发，硬上限 8。 |
+| 服务端并发 | shared worker 默认同时转码 1 张，部署上限 4；每张图片使用独立短生命周期 Bun 子进程。 |
 | SVG | 支持上传并保留 `image/svg+xml` 原格式。 |
 | 动画 GIF / 动画 WebP / APNG | 支持上传并保留原格式，不抽帧、不压成静态图。 |
 
-图片转码和对象存储写入都在 TanStack Start 的 Bun Web runtime 内完成：`Bun.Image` 负责可解码静态图的解码、自动方向、缩放与 WebP 编码；`Bun.S3Client` 负责按实际输出 `Content-Type` 写入图床专用对象桶。删除图片时，Convex 会先完成权限校验、软删除元数据并投递 `media/r2_object_delete_batch`，再由 Bun background-worker 使用原生 `Bun.S3Client` 异步删除对象。Convex 不处理图片二进制或对象存储 IO。
+图片转码和正式对象写入由 shared Bun background-worker 完成。每张图片会启动一个短生命周期子进程，读取 staging 对象前后核对 size、`Content-Type` 与 ETag，再由 `Bun.Image` 完成解码、自动方向、缩放和 WebP 编码，并直接写入 `Bun.S3File`。子进程退出后，图片 native 内存由操作系统回收，不会留在长寿命 Web SSR 进程中。Convex 只保存短期 upload intent、排队任务和最终元数据，不处理图片二进制或对象存储 IO。
+
+删除图片时，Convex 会先完成权限校验、软删除元数据并投递 `media/r2_object_delete_batch`，再由 Bun background-worker 使用原生 `Bun.S3Client` 异步删除对象。
 
 ## 复制格式
 
@@ -79,6 +82,7 @@ description: 字幕组后台的图床工具：粘贴、拖拽或选择图片，�
 | `IMAGE_HOST_R2_ENDPOINT` | S3/R2 endpoint；可填账号级 endpoint，带 `/<bucket>` 路径时会校验并归一化。 |
 | `IMAGE_HOST_R2_ACCESS_KEY_ID` | 图床桶 access key。 |
 | `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | 图床桶 secret key。 |
-| `IMAGE_HOST_PUBLIC_DOMAIN` | 公开图片域名；裸域名会自动补 `https://`。仅 Web runtime 需要。 |
+| `IMAGE_HOST_PUBLIC_DOMAIN` | 公开图片域名；裸域名会自动补 `https://`。由 Convex 控制面生成最终直链。 |
+| `IMAGE_HOST_CONVERT_CONCURRENCY` | shared worker 图片转换并发；生产建议 `1`，最大 `4`。 |
 
-Web runtime 和 media background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；`IMAGE_HOST_PUBLIC_DOMAIN` 只需要配置在 Web runtime。生产 Docker 镜像会在构建阶段检查 `Bun.Image` 和 `Bun.S3Client`。如果运行时不支持这两个原生 API，构建会失败。
+Web runtime 和 shared background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；Convex 需要 `IMAGE_HOST_PUBLIC_DOMAIN`。图床桶还必须允许 `https://anibt.net` 对预签名地址执行跨域 `PUT`，允许上传所需请求头，并暴露 ETag。生产 Docker 镜像会在构建阶段检查 `Bun.Image` 和 `Bun.S3Client`；如果运行时不支持这些原生 API，构建会失败。

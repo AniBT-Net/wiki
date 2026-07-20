@@ -9,6 +9,17 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 20, 2026
+
+<TypeTable
+  type={{
+    'Direct image upload and isolated transcoding': {
+      description: 'Subtitle-group image hosting now uploads browser bytes directly to staging R2. The main Web runtime only handles authorization, presigning, object verification, and status queries; it no longer reads image bytes or transcodes them. The shared Bun worker starts a short-lived child per image and uses native Bun.Image to write directly to Bun.S3File. Damaged or failed static-image transcodes fail explicitly, while animation and SVG remain preserved.',
+      type: 'Optimized',
+    },
+  }}
+/>
+
 ## July 19, 2026
 
 <TypeTable

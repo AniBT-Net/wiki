@@ -20,23 +20,26 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 ## 上傳方式
 
 - 支援點選選擇圖片、拖曳圖片到上傳區、在頁面中直接貼上剪貼簿圖片。
-- 請求體是原始圖片二進位，瀏覽器不會用 multipart/FormData 包裝。
-- 服務端會在讀取圖片內容前先完成登入與字幕組成員授權，避免非成員消耗轉碼資源。
+- 瀏覽器先向主站提交小型 JSON，完成登入與字幕組成員授權後取得短期 staging R2 預簽名網址。
+- 原始圖片二進位由瀏覽器直接 `PUT` 到 staging R2，不使用 multipart/FormData，也不經過 Web runtime。上傳完成後，瀏覽器再通知主站核對物件中繼資料並排隊處理。
+- 頁面會輪詢背景處理狀態；只有 worker 完成轉碼、寫入正式物件並登記中繼資料後，才顯示複製格式。
 
 ## 圖片處理規則
 
 | 項目 | 當前規則 |
 | --- | --- |
-| 輸出格式 | 靜態 JPEG/PNG/WebP/GIF/BMP/AVIF/HEIC/HEIF 會優先轉成 `image/webp`；無法可靠轉碼時保留原格式。 |
+| 輸出格式 | 可解碼的靜態 JPEG/PNG/WebP/GIF/BMP/AVIF/HEIC/HEIF 會轉成 `image/webp`；靜態圖解碼或編碼失敗時上傳失敗，不保存損壞原圖。 |
 | 預設大小上限 | 單張輸入預設 20 MiB，可由部署環境調整。 |
 | 預設像素上限 | 解碼後預設最多 50,000,000 像素。 |
 | 預設最長邊 | 輸出最長邊預設 3840px，按比例縮小，不放大。 |
 | 預設品質 | WebP quality 預設 88。 |
-| 服務端併發 | 轉碼預設 8 併發，硬上限 8。 |
+| 服務端併發 | shared worker 預設同時轉碼 1 張，部署上限 4；每張圖片使用獨立短生命週期 Bun 子程序。 |
 | SVG | 支援上傳並保留 `image/svg+xml` 原格式。 |
 | 動畫 GIF / 動畫 WebP / APNG | 支援上傳並保留原格式，不抽幀、不壓成靜態圖。 |
 
-圖片轉碼和物件儲存寫入都在 TanStack Start 的 Bun Web runtime 內完成：`Bun.Image` 負責可解碼靜態圖的解碼、自動方向、縮放與 WebP 編碼；`Bun.S3Client` 負責按實際輸出 `Content-Type` 寫入圖床專用物件桶。刪除圖片時，Convex 會先完成權限校驗、軟刪除元資料並投遞 `media/r2_object_delete_batch`，再由 Bun background-worker 使用原生 `Bun.S3Client` 非同步刪除物件。Convex 不處理圖片二進位或物件儲存 IO。
+圖片轉碼和正式物件寫入由 shared Bun background-worker 完成。每張圖片會啟動一個短生命週期子程序，讀取 staging 物件前後核對 size、`Content-Type` 與 ETag，再由 `Bun.Image` 完成解碼、自動方向、縮放和 WebP 編碼，並直接寫入 `Bun.S3File`。子程序退出後，圖片 native 記憶體由作業系統回收，不會留在長生命週期 Web SSR 程序中。Convex 只保存短期 upload intent、排隊任務和最終中繼資料，不處理圖片二進位或物件儲存 IO。
+
+刪除圖片時，Convex 會先完成權限校驗、軟刪除元資料並投遞 `media/r2_object_delete_batch`，再由 Bun background-worker 使用原生 `Bun.S3Client` 非同步刪除物件。
 
 ## 複製格式
 
@@ -79,6 +82,7 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 | `IMAGE_HOST_R2_ENDPOINT` | S3/R2 endpoint；可填帳號級 endpoint，帶 `/<bucket>` 路徑時會校驗並歸一化。 |
 | `IMAGE_HOST_R2_ACCESS_KEY_ID` | 圖床桶 access key。 |
 | `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | 圖床桶 secret key。 |
-| `IMAGE_HOST_PUBLIC_DOMAIN` | 公開圖片域名；裸域名會自動補 `https://`。僅 Web runtime 需要。 |
+| `IMAGE_HOST_PUBLIC_DOMAIN` | 公開圖片域名；裸域名會自動補 `https://`。由 Convex 控制面生成最終直連。 |
+| `IMAGE_HOST_CONVERT_CONCURRENCY` | shared worker 圖片轉換併發；生產建議 `1`，最大 `4`。 |
 
-Web runtime 和 media background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；`IMAGE_HOST_PUBLIC_DOMAIN` 只需要配置在 Web runtime。生產 Docker 映像會在構建階段檢查 `Bun.Image` 和 `Bun.S3Client`。如果執行時不支援這兩個原生 API，構建會失敗。
+Web runtime 和 shared background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；Convex 需要 `IMAGE_HOST_PUBLIC_DOMAIN`。圖床桶還必須允許 `https://anibt.net` 對預簽名網址執行跨來源 `PUT`、允許上傳所需請求標頭，並暴露 ETag。生產 Docker 映像會在構建階段檢查 `Bun.Image` 和 `Bun.S3Client`；如果執行時不支援這些原生 API，構建會失敗。

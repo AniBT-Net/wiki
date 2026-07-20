@@ -20,23 +20,26 @@ The image-host page uses a **single upload entry followed by image management**.
 ## Upload methods
 
 - Choose images from the file picker, drag images into the drop zone, or paste images from the clipboard while the page is focused.
-- The upload request body is the raw image bytes; the browser does not wrap it in multipart/FormData.
-- The server checks login and subtitle group membership before reading and transcoding the body, so non-members cannot consume image-processing capacity.
+- The browser first sends a small JSON request to the main site. After login and subtitle-group membership checks, it receives a short-lived presigned staging R2 URL.
+- The browser sends the raw image bytes directly to staging R2 with `PUT`. The bytes are not wrapped in multipart/FormData and never pass through the Web runtime. The browser then asks the main site to verify object metadata and enqueue processing.
+- The page polls the background status. Copy formats appear only after the worker has processed the image, written the final object, and recorded its metadata.
 
 ## Processing rules
 
 | Item | Current rule |
 | --- | --- |
-| Output format | Static JPEG/PNG/WebP/GIF/BMP/AVIF/HEIC/HEIF uploads are converted to `image/webp` when possible; files that cannot be converted reliably keep their original format. |
+| Output format | Decodable static JPEG/PNG/WebP/GIF/BMP/AVIF/HEIC/HEIF uploads are converted to `image/webp`. A static-image decode or encode failure fails the upload instead of preserving damaged input. |
 | Default input limit | 20 MiB per image, configurable at deploy time. |
 | Default pixel limit | 50,000,000 decoded pixels. |
 | Default longest edge | 3840px, downscaled proportionally and never upscaled. |
 | Default quality | WebP quality 88. |
-| Server concurrency | 8 transcodes by default, with a hard max of 8. |
+| Server concurrency | The shared worker transcodes 1 image at a time by default, with a deploy-time maximum of 4. Each image uses a separate short-lived Bun child process. |
 | SVG | Supported and preserved as `image/svg+xml`. |
 | Animated GIF / animated WebP / APNG | Supported and preserved in the original format; animation is not flattened or extracted as a still frame. |
 
-Image processing and object storage writes run in the TanStack Start Bun Web runtime. `Bun.Image` handles decoding, auto orientation, resizing, and WebP encoding for static images it can decode reliably. `Bun.S3Client` writes objects in the dedicated image-host bucket with the actual output `Content-Type`. On deletion, Convex authorizes the request, soft-deletes the metadata, and enqueues `media/r2_object_delete_batch`; the Bun background-worker then deletes the object asynchronously through native `Bun.S3Client`. Convex never processes image bytes or object-storage IO.
+Image processing and final object writes run in the shared Bun background-worker. Each image starts a short-lived child process that verifies staging size, `Content-Type`, and ETag before and after reading. `Bun.Image` performs decoding, auto orientation, resizing, and WebP encoding, then writes directly to a `Bun.S3File`. When the child exits, the operating system reclaims its native image memory instead of retaining it in the long-lived Web SSR process. Convex stores only the short-lived upload intent, queue request, and final metadata; it never handles image bytes or object-storage IO.
+
+On deletion, Convex authorizes the request, soft-deletes the metadata, and enqueues `media/r2_object_delete_batch`; the Bun background-worker then deletes the object asynchronously through native `Bun.S3Client`.
 
 ## Copy formats
 
@@ -79,6 +82,7 @@ Use a dedicated object bucket and dedicated credentials for image hosting. Produ
 | `IMAGE_HOST_R2_ENDPOINT` | S3/R2 endpoint. Account-level endpoints are supported; endpoints ending in `/<bucket>` are validated and normalized. |
 | `IMAGE_HOST_R2_ACCESS_KEY_ID` | Access key for the image-host bucket. |
 | `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | Secret key for the image-host bucket. |
-| `IMAGE_HOST_PUBLIC_DOMAIN` | Public image domain. Bare domains are normalized to `https://`. Required only by the Web runtime. |
+| `IMAGE_HOST_PUBLIC_DOMAIN` | Public image domain. Bare domains are normalized to `https://`. Convex uses it to generate final direct URLs. |
+| `IMAGE_HOST_CONVERT_CONCURRENCY` | Shared-worker image conversion concurrency. Production should use `1`; the maximum is `4`. |
 
-Both the Web runtime and the media background-worker need the same `IMAGE_HOST_R2_*` configuration; only the Web runtime needs `IMAGE_HOST_PUBLIC_DOMAIN`. The production Docker image checks for `Bun.Image` and `Bun.S3Client` during build. If the runtime does not support both native APIs, the build fails.
+Both the Web runtime and the shared background-worker need the same `IMAGE_HOST_R2_*` configuration; Convex needs `IMAGE_HOST_PUBLIC_DOMAIN`. The image-host bucket must also allow cross-origin `PUT` requests from `https://anibt.net`, allow the required upload headers, and expose ETag. Production Docker images check for `Bun.Image` and `Bun.S3Client` during build; the build fails if the runtime lacks these native APIs.

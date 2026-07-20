@@ -9,6 +9,17 @@ description: AniBT Wiki 与站点功能更新记录。
   日期按北京时间（UTC+8）记录。较新的更新会放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 20 日
+
+<TypeTable
+  type={{
+    '图床直传与隔离转码': {
+      description: '字幕组图床改为浏览器直传 staging R2，主站 Web 只负责鉴权、预签名、对象核对和状态查询，不再读取图片二进制或执行转码。shared Bun worker 为每张图片启动短生命周期子进程，使用原生 Bun.Image 直接写入 Bun.S3File；静态图损坏或转码失败会明确失败，动画与 SVG 继续保留原格式。',
+      type: '优化',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 19 日
 
 <TypeTable
