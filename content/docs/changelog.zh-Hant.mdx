@@ -9,6 +9,21 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 22 日
+
+<TypeTable
+  type={{
+    '賬號註冊與 session 恢復': {
+      description: '郵箱註冊改為「傳送驗證碼 → 原子驗證並建立 session → 在 session 內登記密碼」。密碼格式錯誤不消耗驗證碼，驗證或密碼登記遇到響應遺失可冪等重試，未過期流程整頁重新整理後也能繼續。公開頁只在伺服器明確確認無 session 後顯示登入入口，臨時網路/5xx 不再造成假登出。',
+      type: '最佳化',
+    },
+    '認證安全與 OAuth 穩定性': {
+      description: 'Better Auth 升級到 1.6.23；CAPTCHA ticket 改為精確路徑匹配與原子一次性消耗，註冊/登入旁路繼續關閉。KUNGal token exchange 使用標準 form-urlencoded，OTP、驗證、重設與歡迎郵件進入可重試郵件佇列，不再同步等待外部郵件 provider。',
+      type: '安全',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 21 日
 
 <TypeTable

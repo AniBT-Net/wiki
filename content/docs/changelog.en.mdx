@@ -9,6 +9,21 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 22, 2026
+
+<TypeTable
+  type={{
+    'Registration and session restoration': {
+      description: 'Email registration now runs as send code → atomically verify and create a session → attach the password inside that session. Invalid password format does not consume the code; lost verify/password responses are retryable, and an unexpired flow survives a full-page reload. Public pages show sign-in only after the server explicitly confirms no session, so temporary network/5xx failures no longer create false logout.',
+      type: 'Improved',
+    },
+    'Auth security and OAuth reliability': {
+      description: 'Better Auth is now 1.6.23. CAPTCHA tickets use exact path matching and atomic one-time consumption while registration/sign-in bypasses remain closed. KUNGal token exchange uses standard form encoding, and OTP, verification, reset, and welcome mail are durably queued instead of waiting on an external mail provider in the auth request.',
+      type: 'Security',
+    },
+  }}
+/>
+
 ## July 21, 2026
 
 <TypeTable
