@@ -1,6 +1,6 @@
 ---
 title: 字幕组图床
-description: 字幕组后台的图床工具：粘贴、拖拽或选择图片，服务端按格式转 WebP 或保留原格式后生成 BBCode、HTML、Markdown 和直链。
+description: 字幕组后台的图床工具：粘贴、拖拽或选择图片，浏览器按需预缩放、worker 校验并转 WebP 或保留原格式后生成 BBCode、HTML、Markdown 和直链。
 ---
 
 字幕组图床位于 `/groups/<slug>/image-host`，菜单名称是 **图床**。它只对已加入该字幕组组织的成员开放；普通登录用户和未加入该字幕组的用户不能上传、查看管理列表或删除图片。
@@ -21,8 +21,9 @@ description: 字幕组后台的图床工具：粘贴、拖拽或选择图片，�
 
 - 支持点击选择图片、拖拽图片到上传区、在页面中直接粘贴剪贴板图片。
 - 浏览器每批最多提交 5 张的小型 JSON；主站只做一次登录与字幕组成员授权，随后一次返回该批所有 staging R2 预签名地址。
-- 原始图片二进制由浏览器最多 5 路并发直接 `PUT` 到 staging R2，不使用 multipart/FormData，也不经过 Web runtime；页面分别显示每张图片的真实上传百分比。上传完成后，浏览器只通知主站排队处理，对象校验由 worker 统一完成。
-- 页面会轮询后台处理状态；只有 worker 完成转码、写入正式对象并登记元数据后，才显示复制格式。
+- 对可确认是静态、像素受控且能明显减小的较大 JPEG/PNG 或超长边静态 WebP，浏览器会先按 EXIF 方向预缩放并编码为 WebP；APNG、动画 WebP、GIF、HEIC/HEIF、AVIF、SVG 和无法安全识别的输入不会走客户端转换。worker 始终负责最终校验。
+- 图片二进制由浏览器最多 5 路并发直接 `PUT` 到 staging R2，不使用 multipart/FormData，也不经过 Web runtime；页面分别显示每张图片的真实上传百分比。上传完成后，浏览器读取 R2 返回的 ETag 并通知主站排队处理。
+- 同一批图片每 500 ms 只发送一次批量状态查询，而不是每张图片各自轮询；只有 worker 完成处理、写入正式对象并登记元数据后，才显示复制格式。
 
 ## 图片处理规则
 
@@ -37,7 +38,7 @@ description: 字幕组后台的图床工具：粘贴、拖拽或选择图片，�
 | SVG | 支持上传并保留 `image/svg+xml` 原格式。 |
 | 动画 GIF / 动画 WebP / APNG | 支持上传并保留原格式，不抽帧、不压成静态图。 |
 
-图片转码和正式对象写入由 shared Bun background-worker 完成。每张图片会启动一个短生命周期子进程：第一次 HEAD 对照准备阶段声明的 size 与 `Content-Type`，读取后第二次 HEAD 再核对 size、类型和 ETag，防止读取期间对象被替换。随后由 `Bun.Image` 完成校验、自动方向、按需缩放和 WebP 编码，并直接写入 `Bun.S3File`。子进程退出后，图片 native 内存由操作系统回收，不会留在长寿命 Web SSR 进程中。Convex 只保存短期 upload intent、排队任务和最终元数据，不处理图片二进制或对象存储 IO。
+图片转码和正式对象写入由 shared Bun background-worker 完成。每张图片会启动一个短生命周期子进程，并使用浏览器回传的 ETag 发起 `If-Match` 条件 GET；worker 在一次读取中同时核对 ETag、size、`Content-Type` 与实际 body 长度，防止预签名地址有效期内对象被替换，不再执行读前/读后两次 HEAD。随后由 `Bun.Image` 完成校验、自动方向、按需缩放和 WebP 编码，并直接写入 `Bun.S3File`。子进程退出后，图片 native 内存由操作系统回收，不会留在长寿命 Web SSR 进程中。Convex 只保存短期 upload intent、排队任务和最终元数据，不处理图片二进制或对象存储 IO。
 
 删除图片时，Convex 会先完成权限校验、软删除元数据并投递 `media/r2_object_delete_batch`，再由 Bun background-worker 使用原生 `Bun.S3Client` 异步删除对象。
 
@@ -87,4 +88,4 @@ description: 字幕组后台的图床工具：粘贴、拖拽或选择图片，�
 | `IMAGE_HOST_CONVERT_CONCURRENCY` | shared worker 图片转换并发；生产使用 `5`，最大 `5`。 |
 | `WORKER_QUEUE_CONCURRENCY_MEDIA` | shared worker 的 `media` 队列并发；生产使用 `5`。 |
 
-Web runtime 和 shared background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；Convex 需要 `IMAGE_HOST_PUBLIC_DOMAIN`。图床桶还必须允许 `https://anibt.net` 对预签名地址执行跨域 `PUT` 并允许上传所需请求头；worker 通过 S3 HEAD 读取 ETag，不依赖浏览器回传。生产 Docker 镜像会在构建阶段检查 `Bun.Image` 和 `Bun.S3Client`；如果运行时不支持这些原生 API，构建会失败。
+Web runtime 和 shared background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；Convex 需要 `IMAGE_HOST_PUBLIC_DOMAIN`。图床桶必须允许 `https://anibt.net` 对预签名地址执行跨域 `PUT`，并通过 `ExposeHeaders: ["ETag"]` 让浏览器读取上传结果；缺少 ETag 时上传会 fail closed，不会进入 worker。生产 Docker 镜像会在构建阶段检查 `Bun.Image` 和 `Bun.S3Client`；如果运行时不支持这些原生 API，构建会失败。

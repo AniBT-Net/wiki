@@ -14,7 +14,7 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 <TypeTable
   type={{
     'Image batch upload, latency, and progress': {
-      description: 'Upload preparation now handles up to five images in one membership check and one control-plane transaction, avoiding contention between items in the same batch. Browser direct uploads, shared-worker image conversion, and media-queue concurrency are all raised to five. The per-image limit remains 10 MiB, direct upload shows real percentage progress across each stage, and validated static WebP files that need no resize avoid redundant encoding.',
+      description: 'Upload preparation handles up to five images in one membership check and one control-plane transaction, while one batch GET and one Convex query now poll every active image together. The R2 PUT ETag travels with the worker job, and one If-Match conditional read replaces staging HEAD requests before and after the body read. Supported browsers pre-scale oversized static JPEG/PNG/WebP files only when the result is meaningfully smaller; animation, HEIC/HEIF, and other skipped formats still go through the worker. The per-image limit remains 10 MiB.',
       type: 'Optimized',
     },
   }}

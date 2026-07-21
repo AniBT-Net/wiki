@@ -14,7 +14,7 @@ description: AniBT Wiki 與站點功能更新紀錄。
 <TypeTable
   type={{
     '圖床批次上傳、延遲與進度最佳化': {
-      description: '準備上傳改為每批最多 5 張，只做一次成員校驗與一次批次控制面交易，避免同批請求互相競爭；瀏覽器直傳、shared worker 圖片轉換與 media 佇列併發統一提升到 5。單圖仍限制 10 MiB，直傳顯示真實百分比並區分準備、排隊、校驗轉碼與收尾階段；尺寸無需縮放的靜態 WebP 校驗後直接保留。',
+      description: '準備上傳改為每批最多 5 張，只做一次成員校驗與一次批次控制面交易；同批狀態輪詢合併為一次 GET 與一次 Convex query。R2 PUT 的 ETag 會隨任務傳給 worker，使用 If-Match 單次條件讀取取代 staging 讀前/讀後 HEAD。支援的瀏覽器會先預縮放明顯可縮小的超大靜態 JPEG/PNG/WebP，動畫、HEIC/HEIF 等仍由 worker 處理；單圖仍限制 10 MiB。',
       type: '最佳化',
     },
   }}

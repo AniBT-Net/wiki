@@ -1,6 +1,6 @@
 ---
 title: 字幕組圖床
-description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，服務端按格式轉 WebP 或保留原格式後生成 BBCode、HTML、Markdown 和直連。
+description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，瀏覽器按需預縮放、worker 校驗並轉 WebP 或保留原格式後生成 BBCode、HTML、Markdown 和直連。
 ---
 
 字幕組圖床位於 `/groups/<slug>/image-host`，選單名稱是 **圖床**。它只對已加入該字幕組組織的成員開放；普通登入使用者和未加入該字幕組的使用者不能上傳、查看管理列表或刪除圖片。
@@ -21,8 +21,9 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 
 - 支援點選選擇圖片、拖曳圖片到上傳區、在頁面中直接貼上剪貼簿圖片。
 - 瀏覽器每批最多提交 5 張的小型 JSON；主站只做一次登入與字幕組成員授權，隨後一次返回該批全部 staging R2 預簽名網址。
-- 原始圖片二進位由瀏覽器最多 5 路併發直接 `PUT` 到 staging R2，不使用 multipart/FormData，也不經過 Web runtime；頁面分別顯示每張圖片的真實上傳百分比。上傳完成後，瀏覽器只通知主站排隊處理，物件校驗由 worker 統一完成。
-- 頁面會輪詢背景處理狀態；只有 worker 完成轉碼、寫入正式物件並登記中繼資料後，才顯示複製格式。
+- 對可確認為靜態、像素受控且能明顯縮小的較大 JPEG/PNG 或超長邊靜態 WebP，瀏覽器會先按 EXIF 方向預縮放並編碼為 WebP；APNG、動畫 WebP、GIF、HEIC/HEIF、AVIF、SVG 和無法安全識別的輸入不會走客戶端轉換。worker 始終負責最終校驗。
+- 圖片二進位由瀏覽器最多 5 路併發直接 `PUT` 到 staging R2，不使用 multipart/FormData，也不經過 Web runtime；頁面分別顯示每張圖片的真實上傳百分比。上傳完成後，瀏覽器讀取 R2 返回的 ETag 並通知主站排隊處理。
+- 同一批圖片每 500 ms 只發送一次批次狀態查詢，而不是每張圖片各自輪詢；只有 worker 完成處理、寫入正式物件並登記中繼資料後，才顯示複製格式。
 
 ## 圖片處理規則
 
@@ -37,7 +38,7 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 | SVG | 支援上傳並保留 `image/svg+xml` 原格式。 |
 | 動畫 GIF / 動畫 WebP / APNG | 支援上傳並保留原格式，不抽幀、不壓成靜態圖。 |
 
-圖片轉碼和正式物件寫入由 shared Bun background-worker 完成。每張圖片會啟動一個短生命週期子程序：第一次 HEAD 對照準備階段聲明的 size 與 `Content-Type`，讀取後第二次 HEAD 再核對 size、類型和 ETag，防止讀取期間物件被替換。隨後由 `Bun.Image` 完成校驗、自動方向、按需縮放和 WebP 編碼，並直接寫入 `Bun.S3File`。子程序退出後，圖片 native 記憶體由作業系統回收，不會留在長生命週期 Web SSR 程序中。Convex 只保存短期 upload intent、排隊任務和最終中繼資料，不處理圖片二進位或物件儲存 IO。
+圖片轉碼和正式物件寫入由 shared Bun background-worker 完成。每張圖片會啟動一個短生命週期子程序，並使用瀏覽器回傳的 ETag 發起 `If-Match` 條件 GET；worker 在一次讀取中同時核對 ETag、size、`Content-Type` 與實際 body 長度，防止預簽名網址有效期內物件被替換，不再執行讀前/讀後兩次 HEAD。隨後由 `Bun.Image` 完成校驗、自動方向、按需縮放和 WebP 編碼，並直接寫入 `Bun.S3File`。子程序退出後，圖片 native 記憶體由作業系統回收，不會留在長生命週期 Web SSR 程序中。Convex 只保存短期 upload intent、排隊任務和最終中繼資料，不處理圖片二進位或物件儲存 IO。
 
 刪除圖片時，Convex 會先完成權限校驗、軟刪除元資料並投遞 `media/r2_object_delete_batch`，再由 Bun background-worker 使用原生 `Bun.S3Client` 非同步刪除物件。
 
@@ -87,4 +88,4 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 | `IMAGE_HOST_CONVERT_CONCURRENCY` | shared worker 圖片轉換併發；生產使用 `5`，最大 `5`。 |
 | `WORKER_QUEUE_CONCURRENCY_MEDIA` | shared worker 的 `media` 佇列併發；生產使用 `5`。 |
 
-Web runtime 和 shared background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；Convex 需要 `IMAGE_HOST_PUBLIC_DOMAIN`。圖床桶還必須允許 `https://anibt.net` 對預簽名網址執行跨來源 `PUT` 並允許上傳所需請求標頭；worker 透過 S3 HEAD 讀取 ETag，不依賴瀏覽器回傳。生產 Docker 映像會在構建階段檢查 `Bun.Image` 和 `Bun.S3Client`；如果執行時不支援這些原生 API，構建會失敗。
+Web runtime 和 shared background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；Convex 需要 `IMAGE_HOST_PUBLIC_DOMAIN`。圖床桶必須允許 `https://anibt.net` 對預簽名網址執行跨來源 `PUT`，並透過 `ExposeHeaders: ["ETag"]` 讓瀏覽器讀取上傳結果；缺少 ETag 時上傳會 fail closed，不會進入 worker。生產 Docker 映像會在構建階段檢查 `Bun.Image` 和 `Bun.S3Client`；如果執行時不支援這些原生 API，構建會失敗。
