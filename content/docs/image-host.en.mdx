@@ -13,31 +13,31 @@ The subtitle group image host lives at `/groups/<slug>/image-host` under the **I
 
 The image-host page uses a **single upload entry followed by image management**. There is no top mode switcher and no two-column upload panel. The upload area stays at the top of the page, while the historical library loads below it by time-based pages.
 
-- **Upload**: click the upload area to choose images, drag images onto it, or paste clipboard images while the page is focused. Upload tasks are not shown as a separate queue; active and failed counts appear only as small status badges.
-- **Just uploaded**: after upload, copy formats appear directly in the page result area for immediate use in forums, announcements, or release notes. Multiple fresh uploads are shown as a compact horizontal thumbnail switcher.
+- **Upload**: click the upload area to choose images, drag images onto it, or paste clipboard images while the page is focused. Each image has a stable result row. Direct R2 upload shows a real percentage, followed by preparing, queued, validating/converting, finalizing, and completed states.
+- **Just uploaded**: after upload, copy formats appear in the matching result row for immediate use in forums, announcements, or release notes. File names, states, and progress remain aligned during batch uploads.
 - **Image Management**: browse images already uploaded by the subtitle group. The library uses a dense small-thumbnail grid, lazy image loading, and paginated loading for large collections. Use the copy-format button to open the full BBCode, HTML, Markdown, and direct-link dialog without expanding the library layout.
 
 ## Upload methods
 
 - Choose images from the file picker, drag images into the drop zone, or paste images from the clipboard while the page is focused.
 - The browser first sends a small JSON request to the main site. After login and subtitle-group membership checks, it receives a short-lived presigned staging R2 URL.
-- The browser sends the raw image bytes directly to staging R2 with `PUT`. The bytes are not wrapped in multipart/FormData and never pass through the Web runtime. The browser then asks the main site to verify object metadata and enqueue processing.
+- The browser sends the raw image bytes directly to staging R2 with `PUT`. The bytes are not wrapped in multipart/FormData and never pass through the Web runtime, and the page shows the real transfer percentage. The browser then only asks the main site to enqueue processing; the worker owns object verification.
 - The page polls the background status. Copy formats appear only after the worker has processed the image, written the final object, and recorded its metadata.
 
 ## Processing rules
 
 | Item | Current rule |
 | --- | --- |
-| Output format | Decodable static JPEG/PNG/WebP/GIF/BMP/AVIF/HEIC/HEIF uploads are converted to `image/webp`. A static-image decode or encode failure fails the upload instead of preserving damaged input. |
-| Default input limit | 20 MiB per image, configurable at deploy time. |
+| Output format | Decodable static JPEG/PNG/GIF/BMP/AVIF/HEIC/HEIF uploads are converted to `image/webp`. A validated static WebP is preserved when it needs no resize and is only resized/re-encoded when it exceeds the longest edge. A static-image decode or encode failure fails the upload instead of preserving damaged input. |
+| Default input limit | 10 MiB per image, configurable at deploy time. |
 | Default pixel limit | 50,000,000 decoded pixels. |
 | Default longest edge | 3840px, downscaled proportionally and never upscaled. |
 | Default quality | WebP quality 88. |
-| Server concurrency | The shared worker transcodes 1 image at a time by default, with a deploy-time maximum of 4. Each image uses a separate short-lived Bun child process. |
+| Server concurrency | The shared worker processes 2 images at a time by default, with a deploy-time maximum of 4. Each image uses a separate short-lived Bun child process. |
 | SVG | Supported and preserved as `image/svg+xml`. |
 | Animated GIF / animated WebP / APNG | Supported and preserved in the original format; animation is not flattened or extracted as a still frame. |
 
-Image processing and final object writes run in the shared Bun background-worker. Each image starts a short-lived child process that verifies staging size, `Content-Type`, and ETag before and after reading. `Bun.Image` performs decoding, auto orientation, resizing, and WebP encoding, then writes directly to a `Bun.S3File`. When the child exits, the operating system reclaims its native image memory instead of retaining it in the long-lived Web SSR process. Convex stores only the short-lived upload intent, queue request, and final metadata; it never handles image bytes or object-storage IO.
+Image processing and final object writes run in the shared Bun background-worker. Each image starts a short-lived child process. Its first HEAD checks the prepared size and `Content-Type`; a second HEAD after reading verifies size, type, and ETag stability so an object cannot be replaced during the read. `Bun.Image` then validates, auto-orients, resizes when needed, and encodes to WebP before writing directly to a `Bun.S3File`. When the child exits, the operating system reclaims its native image memory instead of retaining it in the long-lived Web SSR process. Convex stores only the short-lived upload intent, queue request, and final metadata; it never handles image bytes or object-storage IO.
 
 On deletion, Convex authorizes the request, soft-deletes the metadata, and enqueues `media/r2_object_delete_batch`; the Bun background-worker then deletes the object asynchronously through native `Bun.S3Client`.
 
@@ -83,6 +83,7 @@ Use a dedicated object bucket and dedicated credentials for image hosting. Produ
 | `IMAGE_HOST_R2_ACCESS_KEY_ID` | Access key for the image-host bucket. |
 | `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | Secret key for the image-host bucket. |
 | `IMAGE_HOST_PUBLIC_DOMAIN` | Public image domain. Bare domains are normalized to `https://`. Convex uses it to generate final direct URLs. |
-| `IMAGE_HOST_CONVERT_CONCURRENCY` | Shared-worker image conversion concurrency. Production should use `1`; the maximum is `4`. |
+| `IMAGE_HOST_MAX_INPUT_BYTES` | Shared 10 MiB limit for Web, Convex, and the shared worker; production uses `10485760`. |
+| `IMAGE_HOST_CONVERT_CONCURRENCY` | Shared-worker image conversion concurrency. Production uses `2`; the maximum is `4`. |
 
-Both the Web runtime and the shared background-worker need the same `IMAGE_HOST_R2_*` configuration; Convex needs `IMAGE_HOST_PUBLIC_DOMAIN`. The image-host bucket must also allow cross-origin `PUT` requests from `https://anibt.net`, allow the required upload headers, and expose ETag. Production Docker images check for `Bun.Image` and `Bun.S3Client` during build; the build fails if the runtime lacks these native APIs.
+Both the Web runtime and the shared background-worker need the same `IMAGE_HOST_R2_*` configuration; Convex needs `IMAGE_HOST_PUBLIC_DOMAIN`. The image-host bucket must also allow cross-origin `PUT` requests from `https://anibt.net` and the required upload headers. The worker reads ETag through S3 HEAD and does not rely on the browser returning it. Production Docker images check for `Bun.Image` and `Bun.S3Client` during build; the build fails if the runtime lacks these native APIs.

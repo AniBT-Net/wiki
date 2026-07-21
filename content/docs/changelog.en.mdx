@@ -9,6 +9,17 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 21, 2026
+
+<TypeTable
+  type={{
+    'Image upload latency and progress': {
+      description: 'Fixed background intent polling that could reuse an old empty result and add several seconds of waiting. Upload confirmation no longer performs an extra status query or Web-side R2 access. The per-image limit is now 10 MiB, direct upload shows real percentage progress with distinct preparation, queue, validation/conversion, and finalization stages, shared-worker image concurrency is 2, and validated static WebP files that need no resize avoid redundant encoding.',
+      type: 'Optimized',
+    },
+  }}
+/>
+
 ## July 20, 2026
 
 <TypeTable
