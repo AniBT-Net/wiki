@@ -13,8 +13,8 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 <TypeTable
   type={{
-    'Image upload latency and progress': {
-      description: 'Fixed background intent polling that could reuse an old empty result and add several seconds of waiting. Upload confirmation no longer performs an extra status query or Web-side R2 access. The per-image limit is now 10 MiB, direct upload shows real percentage progress with distinct preparation, queue, validation/conversion, and finalization stages, shared-worker image concurrency is 2, and validated static WebP files that need no resize avoid redundant encoding.',
+    'Image batch upload, latency, and progress': {
+      description: 'Upload preparation now handles up to five images in one membership check and one control-plane transaction, avoiding contention between items in the same batch. Browser direct uploads, shared-worker image conversion, and media-queue concurrency are all raised to five. The per-image limit remains 10 MiB, direct upload shows real percentage progress across each stage, and validated static WebP files that need no resize avoid redundant encoding.',
       type: 'Optimized',
     },
   }}

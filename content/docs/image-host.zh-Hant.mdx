@@ -20,8 +20,8 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 ## 上傳方式
 
 - 支援點選選擇圖片、拖曳圖片到上傳區、在頁面中直接貼上剪貼簿圖片。
-- 瀏覽器先向主站提交小型 JSON，完成登入與字幕組成員授權後取得短期 staging R2 預簽名網址。
-- 原始圖片二進位由瀏覽器直接 `PUT` 到 staging R2，不使用 multipart/FormData，也不經過 Web runtime；頁面顯示這一步的真實上傳百分比。上傳完成後，瀏覽器只通知主站排隊處理，物件校驗由 worker 統一完成。
+- 瀏覽器每批最多提交 5 張的小型 JSON；主站只做一次登入與字幕組成員授權，隨後一次返回該批全部 staging R2 預簽名網址。
+- 原始圖片二進位由瀏覽器最多 5 路併發直接 `PUT` 到 staging R2，不使用 multipart/FormData，也不經過 Web runtime；頁面分別顯示每張圖片的真實上傳百分比。上傳完成後，瀏覽器只通知主站排隊處理，物件校驗由 worker 統一完成。
 - 頁面會輪詢背景處理狀態；只有 worker 完成轉碼、寫入正式物件並登記中繼資料後，才顯示複製格式。
 
 ## 圖片處理規則
@@ -33,7 +33,7 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 | 預設像素上限 | 解碼後預設最多 50,000,000 像素。 |
 | 預設最長邊 | 輸出最長邊預設 3840px，按比例縮小，不放大。 |
 | 預設品質 | WebP quality 預設 88。 |
-| 服務端併發 | shared worker 預設同時處理 2 張，部署上限 4；每張圖片使用獨立短生命週期 Bun 子程序。 |
+| 服務端併發 | shared worker 預設同時處理 5 張，部署上限 5；每張圖片使用獨立短生命週期 Bun 子程序，全域 worker 併發仍為 8。 |
 | SVG | 支援上傳並保留 `image/svg+xml` 原格式。 |
 | 動畫 GIF / 動畫 WebP / APNG | 支援上傳並保留原格式，不抽幀、不壓成靜態圖。 |
 
@@ -84,6 +84,7 @@ description: 字幕組後台的圖床工具：貼上、拖曳或選擇圖片，�
 | `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | 圖床桶 secret key。 |
 | `IMAGE_HOST_PUBLIC_DOMAIN` | 公開圖片域名；裸域名會自動補 `https://`。由 Convex 控制面生成最終直連。 |
 | `IMAGE_HOST_MAX_INPUT_BYTES` | Web、Convex 和 shared worker 的單圖上限；生產為 `10485760`。 |
-| `IMAGE_HOST_CONVERT_CONCURRENCY` | shared worker 圖片轉換併發；生產使用 `2`，最大 `4`。 |
+| `IMAGE_HOST_CONVERT_CONCURRENCY` | shared worker 圖片轉換併發；生產使用 `5`，最大 `5`。 |
+| `WORKER_QUEUE_CONCURRENCY_MEDIA` | shared worker 的 `media` 佇列併發；生產使用 `5`。 |
 
 Web runtime 和 shared background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；Convex 需要 `IMAGE_HOST_PUBLIC_DOMAIN`。圖床桶還必須允許 `https://anibt.net` 對預簽名網址執行跨來源 `PUT` 並允許上傳所需請求標頭；worker 透過 S3 HEAD 讀取 ETag，不依賴瀏覽器回傳。生產 Docker 映像會在構建階段檢查 `Bun.Image` 和 `Bun.S3Client`；如果執行時不支援這些原生 API，構建會失敗。

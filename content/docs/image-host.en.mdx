@@ -20,8 +20,8 @@ The image-host page uses a **single upload entry followed by image management**.
 ## Upload methods
 
 - Choose images from the file picker, drag images into the drop zone, or paste images from the clipboard while the page is focused.
-- The browser first sends a small JSON request to the main site. After login and subtitle-group membership checks, it receives a short-lived presigned staging R2 URL.
-- The browser sends the raw image bytes directly to staging R2 with `PUT`. The bytes are not wrapped in multipart/FormData and never pass through the Web runtime, and the page shows the real transfer percentage. The browser then only asks the main site to enqueue processing; the worker owns object verification.
+- The browser sends up to five images in one small JSON preparation batch. The main site performs login and subtitle-group membership checks once, then returns every short-lived staging R2 presigned URL in that batch.
+- The browser sends raw image bytes directly to staging R2 with up to five concurrent `PUT` requests. The bytes are not wrapped in multipart/FormData and never pass through the Web runtime, and the page shows a real percentage for each image. The browser then only asks the main site to enqueue processing; the worker owns object verification.
 - The page polls the background status. Copy formats appear only after the worker has processed the image, written the final object, and recorded its metadata.
 
 ## Processing rules
@@ -33,7 +33,7 @@ The image-host page uses a **single upload entry followed by image management**.
 | Default pixel limit | 50,000,000 decoded pixels. |
 | Default longest edge | 3840px, downscaled proportionally and never upscaled. |
 | Default quality | WebP quality 88. |
-| Server concurrency | The shared worker processes 2 images at a time by default, with a deploy-time maximum of 4. Each image uses a separate short-lived Bun child process. |
+| Server concurrency | The shared worker processes 5 images at a time by default, with a maximum of 5. Each image uses a separate short-lived Bun child process, while global worker concurrency remains 8. |
 | SVG | Supported and preserved as `image/svg+xml`. |
 | Animated GIF / animated WebP / APNG | Supported and preserved in the original format; animation is not flattened or extracted as a still frame. |
 
@@ -84,6 +84,7 @@ Use a dedicated object bucket and dedicated credentials for image hosting. Produ
 | `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | Secret key for the image-host bucket. |
 | `IMAGE_HOST_PUBLIC_DOMAIN` | Public image domain. Bare domains are normalized to `https://`. Convex uses it to generate final direct URLs. |
 | `IMAGE_HOST_MAX_INPUT_BYTES` | Shared 10 MiB limit for Web, Convex, and the shared worker; production uses `10485760`. |
-| `IMAGE_HOST_CONVERT_CONCURRENCY` | Shared-worker image conversion concurrency. Production uses `2`; the maximum is `4`. |
+| `IMAGE_HOST_CONVERT_CONCURRENCY` | Shared-worker image conversion concurrency. Production uses `5`; the maximum is `5`. |
+| `WORKER_QUEUE_CONCURRENCY_MEDIA` | Shared-worker `media` queue concurrency. Production uses `5`. |
 
 Both the Web runtime and the shared background-worker need the same `IMAGE_HOST_R2_*` configuration; Convex needs `IMAGE_HOST_PUBLIC_DOMAIN`. The image-host bucket must also allow cross-origin `PUT` requests from `https://anibt.net` and the required upload headers. The worker reads ETag through S3 HEAD and does not rely on the browser returning it. Production Docker images check for `Bun.Image` and `Bun.S3Client` during build; the build fails if the runtime lacks these native APIs.
