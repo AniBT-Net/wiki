@@ -19,6 +19,10 @@ description: Per-endpoint limits, scan caps, rate limiting, RSS-client compatibi
 | `/api/subtitle-groups`    | —               | full list   | —                 | 60 req / 60 s / IP    |
 | `/api/seasons/anime`      | —               | —           | —                 | 30 req / 60 s / IP    |
 | `/api/anime/groups`       | —               | —           | —                 | 30 req / 60 s / IP    |
+| `DELETE /api/releases/{releaseId}` | — | — | Deletion receipt and completion barrier | 30 req / 60 s / API key |
+| `GET /api/releases/{releaseId}/deletion` | — | — | Deletion status receipt | 120 req / 60 s / API key |
+
+Deletion routes also have a separate pre-auth abuse window. `retryAfterMs` / `Retry-After` on a `pending` receipt is polling guidance; an exhausted rate limit returns `429 RATE_LIMIT_EXCEEDED`, whose `Retry-After` must also be honoured. See [Delete an anime release](/docs/open-api/releases-delete).
 
 <Callout type="warn">
   **Public RSS uses a strict `limit` contract**: exactly one decimal integer from `1..100`, with no duplicate, empty, zero-padded, or fractional form. Invalid input returns application `400 + no-store` and may be blocked first by Cloudflare `403` at the production edge; it is no longer silently truncated. The default is already 100, so omit `limit=100` or expect a cacheable one-day canonical `308`.

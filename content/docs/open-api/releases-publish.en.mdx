@@ -3,7 +3,7 @@ title: Publish a release
 description: POST /api/releases/publish — the authenticated write endpoint groups use to upload torrents; supports JSON (magnet) and multipart/form-data (torrent file).
 ---
 
-`/api/releases/publish` is the only **write** endpoint a release group uses. Authenticate by passing the group's API key in the request header. Both `application/json` (magnet link) and `multipart/form-data` (torrent file upload) are supported.
+`/api/releases/publish` is the group endpoint that **writes** anime releases. Send a subtitle-group API key; formal publish and preview both require the `releases:publish` scope. Both `application/json` (magnet link) and `multipart/form-data` (torrent upload) are supported.
 
 <Callout type="warn">
   This is a **write endpoint**: rate limits and quotas are tracked per group, separate from the IP-based RSS rate window. Rotate the key immediately if it leaks.
@@ -34,12 +34,13 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
     "groupSlug": "lolihouse",
     "apiKeyId": "sgak_xxxxxxxx",
     "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish"],
     "kind": "anime"
   }
 }
 ```
 
-Automation should assert `groupSlug` / `groupName` before formal publish. Group identity comes **only** from the API key, not from the `[GroupName]` prefix in the title.
+Automation should assert `groupSlug` / `groupName` and confirm that `scopes` contains `releases:publish` before formal publish. Group identity comes **only** from the API key, not from the `[GroupName]` prefix in the title. GET whoami is identity-only and does not require publish scope.
 
 ## `200 OK` and public visibility
 
@@ -460,7 +461,7 @@ if (!res.ok || !data.previewUrl) process.exit(1);
 <Steps>
   <Step>
     ### Generate an API key in the group dashboard
-    Each group can have multiple keys; consider one for CI and one for ad-hoc scripts.
+    Each group can have multiple keys; consider one for CI and one for ad-hoc scripts. A key used here must explicitly include `releases:publish`.
   </Step>
   <Step>
     ### Send it on every request
@@ -520,8 +521,8 @@ When the write limit is reached, the endpoint returns `429 Too Many Requests` wi
 | HTTP | Cause                                                  | Fix                                                            |
 | ---- | ------------------------------------------------------ | -------------------------------------------------------------- |
 | 400  | Missing `title` / anime identifier, or torrent could not be parsed | Check required fields; ensure a valid .torrent file              |
-| 401  | `Authorization` missing or malformed                    | The `Bearer ` prefix (with a space) is mandatory                |
-| 403  | API key invalid / revoked / does not belong to the group | Generate a new key                                              |
+| 401  | API key missing, malformed, invalid, or revoked          | Check Bearer / `X-API-Key`; re-issue an invalid key             |
+| 403  | `INSUFFICIENT_SCOPE`; key lacks `releases:publish`       | Create or use a key that includes `releases:publish`            |
 | 409  | `reason=RELEASE_VERSION_EXISTS`; the same release version exists | Do not retry unchanged; use a new `version` only for a genuine revision |
 | 413  | Torrent / form too large                                | Trim the tracker list inside the torrent and retry              |
 | 429  | `reason=RATE_LIMITED`; write quota exhausted            | Back off using `Retry-After` / `retryAfterMs`                   |

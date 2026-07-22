@@ -3,7 +3,7 @@ title: Publish other releases
 description: POST /api/other-releases/publish — publish manga, music, RAW, and stage releases with a group API key; no bgmId required.
 ---
 
-`/api/other-releases/publish` is the write endpoint for **non-anime releases** from a release group. Use it for manga, music, RAW, and stage releases. It uses the same group API key system, does not require `bgmId`, and stays separate from anime releases.
+`/api/other-releases/publish` is the write endpoint for **non-anime releases** from a release group. Use it for manga, music, RAW, and stage releases. It uses the same group API-key system and requires `releases:publish`; it does not require `bgmId` and stays separate from anime releases.
 
 <Callout type="warn">
   This is a **write endpoint**. A leaked key lets others publish under your group name, so use it only from server-side scripts or CI secrets.
@@ -203,7 +203,22 @@ curl -X GET 'https://anibt.net/api/other-releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>'
 ```
 
-Returns `groupId` / `groupName` / `groupSlug` / `apiKeySuffix` with `kind: "other"`, same purpose as the anime publish whoami.
+```json title="Whoami response"
+{
+  "ok": true,
+  "result": {
+    "groupId": "org_xxxxxxxx",
+    "groupName": "Example Group",
+    "groupSlug": "example",
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish"],
+    "kind": "other"
+  }
+}
+```
+
+Use it like the anime whoami: assert the group identity and confirm that `scopes` contains `releases:publish` before writing. GET whoami itself does not require publish scope.
 
 ## Response
 
@@ -256,8 +271,8 @@ A deployment handoff pause returns `503 Service Unavailable` with `code=PUBLIC_S
 | HTTP | Cause                                                   | Fix                                                           |
 | ---- | ------------------------------------------------------- | ------------------------------------------------------------- |
 | 400  | Missing `category` / `title`, or no torrent / magnet source | Fill required fields; ensure `category` is one of the four allowed values |
-| 401  | API key missing                                          | Add `Authorization: Bearer <YOUR_API_KEY>`                    |
-| 403  | API key invalid / revoked, or the user is no longer in the group | Generate a new key and confirm group membership               |
+| 401  | API key missing, invalid, or revoked                       | Check Bearer / `X-API-Key`; re-issue an invalid key           |
+| 403  | `INSUFFICIENT_SCOPE`; key lacks `releases:publish`         | Create or use a key that includes `releases:publish`          |
 | 404  | `torrentStorageId` points to a missing file              | Upload with multipart, or verify the file key belongs to the group |
 | 429  | `reason=RATE_LIMITED`; write rate too high               | Back off using `Retry-After` / `retryAfterMs`                  |
 | 503  | `reason=DEPLOYMENT_IN_PROGRESS`; deployment in progress  | Wait for `Retry-After` / `retryAfterMs`, then retry            |

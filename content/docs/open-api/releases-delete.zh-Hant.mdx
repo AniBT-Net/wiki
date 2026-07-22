@@ -1,0 +1,266 @@
+---
+title: 刪除番劇釋出
+description: DELETE /api/releases/{releaseId} 與 GET /api/releases/{releaseId}/deletion —— 帶穩定回執、冪等重試和嚴格可見性完成語義的種子刪除介面。
+---
+
+`DELETE /api/releases/{releaseId}` 用於刪除一個 AniBT 番劇釋出；`GET /api/releases/{releaseId}/deletion` 用於查詢同一刪除操作的狀態。兩個端點都只接受字幕組 API Key，並要求 `releases:delete` scope。
+
+<Callout type="warn">
+  刪除是破壞性非同步操作。`202 Accepted` 只表示刪除已被可靠接受；只有回執進入 `completed`，才表示 AniBT 自有的主記錄、公開讀取模型、快取和物件儲存已通過刪除屏障。
+</Callout>
+
+<Callout type="info">
+  V1 只支援 `rel_*` 番劇釋出。`orel_*` 其他類資源不在此介面範圍內。
+</Callout>
+
+## 端點
+
+| 方法 | 路徑 | 用途 |
+| --- | --- | --- |
+| `DELETE` | `/api/releases/{releaseId}` | 啟動刪除，或冪等重放既有刪除 |
+| `GET` | `/api/releases/{releaseId}/deletion` | 查詢穩定刪除回執 |
+| `OPTIONS` | 兩個路徑 | CORS 預檢，返回 `204` |
+
+生產 base URL：`https://anibt.net`。
+
+## API Key scope 與授權
+
+API Key 在字幕組後台建立時必須明確選擇至少一個 scope：
+
+- `releases:publish`：釋出番劇或其他類資源。
+- `releases:delete`：呼叫刪除和刪除狀態端點。
+
+一把 Key 可以只有其中一個 scope，也可以同時擁有兩個。scope 上線前建立的既有 Key 已遷移為**僅 `releases:publish`**；刪除能力不會自動授予。可透過 [`GET /api/subtitle-groups/me`](/zh-Hant/docs/open-api/me) 查看目前 Key 的 `scopes`。
+
+<Callout type="warn">
+  API Key 永遠綁定到簽發它的字幕組。即使 Key 的擁有者同時是站點管理員，這把 Key 也不能跨字幕組刪除。
+</Callout>
+
+資源授權規則：
+
+| 目前成員身份 | 可刪除範圍 |
+| --- | --- |
+| 普通字幕組成員 | 僅自己釋出的 release（`publisherId` 為目前成員） |
+| 字幕組 owner / admin | 本字幕組內任意 release |
+| Key 不屬於目標字幕組，或成員已無權限 | 返回與不存在資源相同的 `404 NOT_FOUND` |
+
+公開 HTTP 端點不使用瀏覽器 session 取代 API Key。權限和目前成員關係會在每次請求時重新判斷。
+
+## 請求參數契約
+
+<TypeTable
+  type={{
+    'releaseId': {
+      description: '路徑參數。必須是 5–100 字元、匹配 ^rel_[A-Za-z0-9_-]+$ 的番劇釋出 ID。',
+      type: 'string',
+      required: true,
+    },
+    'Authorization': {
+      description: '建議請求標頭：Bearer <API_KEY>。如果同時提供 Authorization 與 X-API-Key，優先使用 Bearer。',
+      type: 'header',
+      required: true,
+    },
+    'X-API-Key': {
+      description: '相容請求標頭；未提供有效 Bearer 時使用。',
+      type: 'header',
+    },
+  }}
+/>
+
+嚴格限制：
+
+- 兩個端點都**不接受任何 query 參數**。`?force=true`、`?groupId=...`、`?wait=true` 都會被拒絕。
+- `DELETE` 請求體必須是**零位元組**；不要傳送 JSON、表單、`force`、物件 key 或 provider 選項。
+- 只接受呼叫方已知的 `releaseId`；客戶端不能指定字幕組、R2 key、infoHash 或外站刪除參數。
+
+## 啟動刪除
+
+```bash title="DELETE"
+curl -i -X DELETE \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  'https://anibt.net/api/releases/rel_example'
+```
+
+不要加入 `--data`。服務端最多等待約 2 秒觀察完成屏障，然後返回 `200` 或 `202`。
+
+### `202 Accepted`：仍在清理
+
+```json title="pending 回執"
+{
+  "ok": true,
+  "result": {
+    "operationId": "rdel_example",
+    "releaseId": "rel_example",
+    "state": "pending",
+    "statusUrl": "/api/releases/rel_example/deletion",
+    "acceptedAt": 1784693156387,
+    "updatedAt": 1784693156387,
+    "retryAfterMs": 2000
+  }
+}
+```
+
+關鍵響應標頭：
+
+```http
+HTTP/2 202
+Location: /api/releases/rel_example/deletion
+Retry-After: 2
+Cache-Control: private, no-store, max-age=0
+X-Request-ID: ...
+```
+
+### `200 OK`：已同步觀察到完成
+
+如果跨系統清理在 2 秒等待視窗內已經完成，`DELETE` 直接返回：
+
+```json title="completed 回執"
+{
+  "ok": true,
+  "result": {
+    "operationId": "rdel_example",
+    "releaseId": "rel_example",
+    "state": "completed",
+    "statusUrl": "/api/releases/rel_example/deletion",
+    "acceptedAt": 1784693156387,
+    "updatedAt": 1784693190989,
+    "completedAt": 1784693190989
+  }
+}
+```
+
+## 查詢刪除狀態
+
+```bash title="GET status"
+curl -i \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  'https://anibt.net/api/releases/rel_example/deletion'
+```
+
+只要呼叫方仍有權存取該 tombstone，狀態端點對 `pending`、`completed`、`failed` 都返回 `200 OK`。未知 release、從未刪除的 release、或呼叫方無權存取時統一返回 `404`。
+
+| `state` | 含義 | 客戶端動作 |
+| --- | --- | --- |
+| `pending` | 至少一個必要清理 witness 尚未完成 | 按 `Retry-After` / `retryAfterMs` 繼續輪詢 |
+| `completed` | AniBT 自有可見面已通過完成屏障 | 停止輪詢 |
+| `failed` | 某個必要依賴終止失敗 | 停止自動重試並記錄 `failure.code`、`X-Request-ID` |
+
+最小輪詢範例：
+
+```bash title="輪詢到終態"
+release_id='rel_example'
+base='https://anibt.net'
+
+response=$(curl -sS -X DELETE \
+  -H "Authorization: Bearer $ANIBT_API_KEY" \
+  "$base/api/releases/$release_id")
+
+while [ "$(jq -r '.result.state // .error.details.state // empty' <<<"$response")" = "pending" ]; do
+  sleep 2
+  response=$(curl -sS \
+    -H "Authorization: Bearer $ANIBT_API_KEY" \
+    "$base/api/releases/$release_id/deletion")
+done
+
+jq . <<<"$response"
+```
+
+## 回執欄位
+
+<TypeTable
+  type={{
+    'operationId': {
+      description: '穩定、不透明的 rdel_* 刪除操作 ID。對同一 release 的授權重試保持不變。',
+      type: 'string',
+    },
+    'releaseId': {
+      description: '請求刪除的 rel_* ID。',
+      type: 'string',
+    },
+    'state': {
+      description: 'pending / completed / failed。',
+      type: 'enum',
+    },
+    'statusUrl': {
+      description: '相對的規範狀態路徑。',
+      type: 'string',
+    },
+    'acceptedAt': {
+      description: '首次接受刪除的 Unix 毫秒時間戳；冪等重放不會改變。',
+      type: 'number',
+    },
+    'updatedAt': {
+      description: '目前回執狀態最近更新時間，Unix 毫秒。',
+      type: 'number',
+    },
+    'retryAfterMs': {
+      description: '僅 pending 存在；預設 2000。',
+      type: 'number?',
+    },
+    'completedAt': {
+      description: '僅 completed 存在，Unix 毫秒。',
+      type: 'number?',
+    },
+    'failedAt': {
+      description: '僅 failed 存在，Unix 毫秒。',
+      type: 'number?',
+    },
+    'failure': {
+      description: '僅 failed 存在；包含安全且有界的 RELEASE_DELETION_FAILED code/message。',
+      type: 'object?',
+    },
+  }}
+/>
+
+內部 job ID、物件儲存憑據、token hash、使用者 ID 和 provider 響應不會出現在公開回執裡。
+
+## 冪等語義
+
+- 第一次被授權的刪除會永久寫入一個 tombstone，並建立一個穩定 `rdel_*` 回執。
+- 同一有權呼叫方再次 `DELETE`，即使 canonical release 行已經不存在，也返回**同一個 `operationId`**。
+- `completed` 的重放返回 `200`；不會再發第二個 canonical 刪除事件。
+- `failed` 的重放返回 `500 RELEASE_DELETION_FAILED` 和同一安全回執；不會隱式建立新操作或重新排程失敗任務。
+- 被 tombstone 覆蓋的 `releaseId` 永遠不能被新釋出重用。
+
+## `completed` 到底保證什麼
+
+`completed` 只在以下 AniBT 自有面全部驗證通過後出現：
+
+- canonical release 與詳情讀取不存在；
+- torrent 下載路由不再返回種子；
+- Typesense 文件、搜尋、預設/過濾 magnets 不再包含該 release；
+- 字幕組/番劇列表、公開 RSS 和個人訂閱 RSS 不再包含該 release；
+- Redis 相關 key/family 已失效，Cloudflare 精確與窄前綴 purge 已獲得終態確認；
+- 捕獲的 AniBT 公共 R2 torrent / MediaInfo 原文物件及其後設資料不存在；
+- 相關公開讀取模型、聚合和計數已完成刪除 generation。
+
+<Callout type="warn">
+  `completed` **不保證召回**：使用者已經開啟的頁面、瀏覽器/RSS 客戶端本地快取、已經下載的 torrent 或 magnet、Tracker swarm/白名單狀態，以及 Nyaa / Mikan / DMHY 等外站帖子。外站撤稿和 Tracker 管理是獨立流程。
+</Callout>
+
+如果歷史資料中同一個 torrent 或 MediaInfo 物件仍被另一條 live release 引用，刪除會在 canonical mutation 前返回 `409 CONFLICT`，`reason=RELEASE_OBJECT_SHARED`；不會刪除 release 或共享物件。
+
+## 錯誤響應
+
+| HTTP | `code` / 原因 | 處理 |
+| --- | --- | --- |
+| `400` | `INVALID_BODY`；DELETE 收到任意 body byte | 移除請求體 |
+| `401` | `TOKEN_MISSING` / `TOKEN_INVALID` | 檢查 Bearer / X-API-Key，必要時重新簽發 |
+| `403` | `INSUFFICIENT_SCOPE` | 建立或改用包含 `releases:delete` 的 Key |
+| `404` | `NOT_FOUND` | 資源不存在，或目前 Key 無權存取；兩者不可區分 |
+| `409` | `CONFLICT` + `RELEASE_OBJECT_SHARED` | 先解除 live release 對共享物件的引用 |
+| `422` | `VALIDATION_ERROR`；非法 `releaseId` 或任何 query 參數 | 只傳規範 `rel_*` 路徑 |
+| `429` | `RATE_LIMIT_EXCEEDED` | 按 `Retry-After` 退避 |
+| `500` | `RELEASE_DELETION_FAILED`（DELETE 觀察到終態失敗） | 保存安全回執和 `X-Request-ID`，停止盲目重試 |
+
+`GET` 讀取一個已經失敗的操作仍返回 `200`，並在 `result.state=failed` 中給出安全 `failure`。只有再次呼叫 `DELETE` 時，終態失敗映射為 `500`。
+
+## 限流、CORS 與快取
+
+- 預設認證限流：`DELETE` 30 次 / 60 秒 / API Key；狀態 `GET` 120 次 / 60 秒 / API Key。
+- 另有請求進入認證前的防濫用視窗；其細節不應用作客戶端吞吐配額。
+- `429` 返回 `Retry-After`。
+- 成功和錯誤響應均為 `private, no-store`；不要快取刪除回執。
+- CORS 允許 `GET, DELETE, OPTIONS`，並暴露 `Location`、`Retry-After`、`WWW-Authenticate`、`X-Request-ID`。
+
+下一步：用 [`/api/subtitle-groups/me`](/zh-Hant/docs/open-api/me) 檢查 Key scope；釋出介面見 [釋出資源](/zh-Hant/docs/open-api/releases-publish)。

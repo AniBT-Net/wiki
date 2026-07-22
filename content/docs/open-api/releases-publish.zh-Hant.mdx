@@ -3,7 +3,7 @@ title: 釋出資源
 description: POST /api/releases/publish —— 字幕組用 API Key 釋出種子的寫入端點；支援 JSON（磁力）和 multipart/form-data（種子檔案）兩種格式。
 ---
 
-`/api/releases/publish` 是字幕組**寫入**資源的唯一端點。需要在請求頭裡攜帶字幕組 API Key 鑑權；支援 `application/json`（直接傳磁力連結）和 `multipart/form-data`（上傳種子檔案）兩種格式。
+`/api/releases/publish` 是字幕組**寫入**番劇資源的端點。請求必須攜帶字幕組 API Key，正式釋出與 preview 都要求 `releases:publish` scope；支援 `application/json`（直接傳磁力連結）和 `multipart/form-data`（上傳種子檔案）兩種格式。
 
 <Callout type="warn">
   這是**寫入介面**，呼叫頻率與配額由字幕組維度獨立計數；與公開 RSS 的 IP 速率視窗不共享。Key 一旦洩露請立即在後臺重置。
@@ -34,12 +34,13 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
     "groupSlug": "lolihouse",
     "apiKeyId": "sgak_xxxxxxxx",
     "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish"],
     "kind": "anime"
   }
 }
 ```
 
-自動化腳本應在正式 publish 前斷言 `groupSlug` / `groupName` 符合預期。`groupId` 只來自 API Key 所屬字幕組，**與標題裡的 `[字幕組名]` 無關**。
+自動化腳本應在正式 publish 前斷言 `groupSlug` / `groupName` 符合預期，並確認 `scopes` 包含 `releases:publish`。`groupId` 只來自 API Key 所屬字幕組，**與標題裡的 `[字幕組名]` 無關**。GET whoami 只做身分檢查，不要求 publish scope。
 
 ## `200 OK` 與公開可見性
 
@@ -453,7 +454,7 @@ if (!res.ok || !data.previewUrl) process.exit(1);
 <Steps>
   <Step>
     ### 在字幕組後臺生成 API Key
-    每個字幕組可獨立生成多個 Key，建議為 CI / 個人指令碼各申請一把。
+    每個字幕組可獨立生成多個 Key，建議為 CI / 個人指令碼各申請一把；用於本介面的 Key 必須明確選擇 `releases:publish`。
   </Step>
   <Step>
     ### 在請求頭攜帶
@@ -513,8 +514,8 @@ if (!res.ok || !data.previewUrl) process.exit(1);
 | HTTP | 原因                                              | 處理                                                          |
 | ---- | ------------------------------------------------- | ------------------------------------------------------------- |
 | 400  | `title` / 番劇標識缺失，或 `torrent` 解析失敗       | 檢查必填項；確認上傳的是合法 .torrent 檔案                       |
-| 401  | `Authorization` 頭缺失或格式錯誤                    | `Bearer ` 字首必填，注意空格                                    |
-| 403  | API Key 無效 / 已撤銷 / 不屬於該字幕組              | 重新生成 Key                                                  |
+| 401  | API Key 缺失、格式錯誤、無效或已撤銷                 | 檢查 Bearer / `X-API-Key`；失效時重新產生 Key                  |
+| 403  | `INSUFFICIENT_SCOPE`；Key 缺少 `releases:publish`   | 建立或改用包含 `releases:publish` 的 Key                       |
 | 409  | `reason=RELEASE_VERSION_EXISTS`，同一釋出版本已存在  | 不要原樣重試；確認是新修訂後使用新的 `version`                    |
 | 413  | 種子檔案 / 表單超過大小限制                         | 壓縮種子（裁剪 tracker 列表）                                   |
 | 429  | `reason=RATE_LIMITED`，寫入配額耗盡                 | 按 `Retry-After` / `retryAfterMs` 退避                          |

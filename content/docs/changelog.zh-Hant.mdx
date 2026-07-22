@@ -13,6 +13,14 @@ description: AniBT Wiki 與站點功能更新紀錄。
 
 <TypeTable
   type={{
+    '番劇釋出刪除 API': {
+      description: '新增 DELETE /api/releases/{releaseId} 與 GET /api/releases/{releaseId}/deletion。V1 僅支援 rel_*；DELETE 不接受 query 或請求本文，返回穩定 rdel_* 回執並以 200/202 表示 completed/pending。completed 只在站內主記錄、詳情/種子、Typesense 搜尋與列表、magnets、公開/訂閱 RSS、Redis、Cloudflare 和 AniBT R2 物件完成不可見性驗證後出現；外站帖子、Tracker 與客戶端已快取/下載內容不在召回範圍內。',
+      type: '新增',
+    },
+    '字幕組 API Key scopes': {
+      description: 'API Key 現在明確選擇 releases:publish / releases:delete，至少一個；舊 Key 安全遷移為僅 releases:publish。番劇與其他類釋出要求 releases:publish，刪除及狀態查詢要求 releases:delete；/api/subtitle-groups/me 與 publish whoami 會返回 apiKeyId、apiKeySuffix 和 scopes。',
+      type: '安全',
+    },
     '賬號註冊與 session 恢復': {
       description: '郵箱註冊改為「傳送驗證碼 → 原子驗證並建立 session → 在 session 內登記密碼」。密碼格式錯誤不消耗驗證碼，驗證或密碼登記遇到響應遺失可冪等重試，未過期流程整頁重新整理後也能繼續。公開頁只在伺服器明確確認無 session 後顯示登入入口，臨時網路/5xx 不再造成假登出。',
       type: '最佳化',

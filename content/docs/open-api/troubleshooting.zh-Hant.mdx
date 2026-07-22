@@ -61,6 +61,15 @@ description: 一行 curl 除錯 + RSS 接入常見問題解答。
   <Accordion title="新發的種子多久能在 RSS 裡看到？">
     釋出介面的 `200 OK` 表示寫入已接受，不是同步可見性確認。站點側重新整理由 Typesense 完成、不可變快照釋出、Redis 嚴格預熱和 Edge CDN purge 事件驅動，不需要等滿 120 秒 TTL；運維上，publication pending 超過 15 秒就進入告警檢查。你在 RSS 閱讀器裡實際看到的時間還要加上客戶端自己的 5–10 分鐘輪詢間隔。詳見 [HTTP 快取與 304](/docs/open-api/caching)。
   </Accordion>
+  <Accordion title="為什麼 DELETE 返回 202，而不是立刻 200？">
+    `202 Accepted` 表示刪除已被可靠接受，但 Typesense、列表/RSS、Redis、Cloudflare 和 R2 的嚴格清理屏障仍在執行。保存 `operationId`，按 `Location` / `statusUrl` 請求 `GET /api/releases/{releaseId}/deletion`，並遵守 `Retry-After`。重複 DELETE 是冪等的，會返回同一回執；只有 `state=completed` 才表示 AniBT 自有公開面已完成不可見性證明。詳見 [刪除番劇釋出](/docs/open-api/releases-delete)。
+  </Accordion>
+  <Accordion title="API Key 明明有效，為什麼刪除返回 403？">
+    刪除和狀態查詢都要求 `releases:delete`。scope 上線前建立的舊 Key 被安全遷移為僅 `releases:publish`，不會自動獲得刪除權。呼叫 [`GET /api/subtitle-groups/me`](/docs/open-api/me) 檢查 `scopes`，再建立或改用明確包含 `releases:delete` 的 Key。缺少 scope 會在資源查詢前返回 `403 INSUFFICIENT_SCOPE`；有 scope 但無權存取目標時，則與不存在資源一樣返回 404。
+  </Accordion>
+  <Accordion title="刪除 completed 後，外站、Tracker 和本機快取也會消失嗎？">
+    不會全部消失。`completed` 覆蓋 AniBT 自有 canonical 記錄、詳情/種子讀取、Typesense 搜尋與列表、magnets、公開/訂閱 RSS、Redis、Cloudflare CDN 和捕獲的 R2 物件。它不召回已經開啟或被瀏覽器/RSS 客戶端快取的內容、已經下載的 torrent/magnet，不修改 Tracker swarm/白名單，也不撤回 Nyaa、Mikan、DMHY 等外站帖子；這些是獨立流程。
+  </Accordion>
   <Accordion title="為什麼狀態碼、generatedAt 或 cf-cache-status 都正常，正文卻還是舊的？">
     這些欄位只表示請求和某一層快取成功，不能證明觸發釋出的資源已經進入響應。請直接在詳情頁及對應 RSS / magnets 正文中檢查返回的 `releaseId`，並同時記錄 ETag / Last-Modified。運維側再對比 snapshot queue age、publication pending age 與 `snapshot_redis_warm.completed.latencyMs`：queue age 高但 warm latency 低，應該處理排程或 backlog，而不是加長 Redis TTL。不要等待下一次無關釋出「順便重新整理」。
   </Accordion>

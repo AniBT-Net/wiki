@@ -3,7 +3,7 @@ title: Overview
 description: Design overview, endpoint cheat sheet, and integration entry points for the AniBT public RSS and JSON APIs.
 ---
 
-AniBT exposes public data through two kinds of endpoints: **RSS** for subscriptions and **JSON APIs** for programmatic integration. Every endpoint is anonymously readable, and they all support **HTTP 304 Not Modified**, so polling can be frequent without cost.
+AniBT exposes public read data through two kinds of endpoints: **RSS** for subscriptions and **JSON APIs** for programmatic integration. Public read routes are anonymous and support **HTTP 304 Not Modified** according to their cache contracts. Publishing, deletion, and identity routes require a subtitle-group API key and are not cacheable.
 
 <Callout type="info">
   Standard RSS clients like qBittorrent, Sonarr, FlexGet, and Tiny Tiny RSS work **without any extra configuration** — caching and conditional requests are emitted in the response headers automatically.
@@ -65,6 +65,11 @@ AniBT exposes public data through two kinds of endpoints: **RSS** for subscripti
     title="Publish a release (group)"
     href="/docs/open-api/releases-publish"
     description="POST /api/releases/publish (auth)"
+  />
+  <Card
+    title="Delete an anime release"
+    href="/docs/open-api/releases-delete"
+    description="DELETE /api/releases/{releaseId} (auth + async receipt)"
   />
   <Card
     title="Publish other releases"
@@ -139,4 +144,4 @@ The system is layered by responsibility so third parties can pick the right endp
 - `slug` values are stable once published.
 - Internal primary keys (e.g. `organizationId`) are not part of the public contract; always use `slug`.
 
-Continue: [Subtitle group catalogue](/docs/open-api/subtitle-groups), [RSS main entry](/docs/open-api/rss-anime), [HTTP caching & 304](/docs/open-api/caching).
+Continue: [Subtitle group catalogue](/docs/open-api/subtitle-groups), [RSS main entry](/docs/open-api/rss-anime), [Delete an anime release](/docs/open-api/releases-delete), [HTTP caching & 304](/docs/open-api/caching).

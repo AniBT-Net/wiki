@@ -12,6 +12,7 @@
     "other-endpoints",
     "examples",
     "releases-publish",
+    "releases-delete",
     "other-releases-publish",
     "caching",
     "limits",

@@ -1,6 +1,6 @@
 ---
 title: Examples
-description: Eight typical query combinations using bgmId=543360 ("Kamiina Botan") across four release groups.
+description: Typical RSS queries for bgmId=543360 plus the stable-receipt workflow for deleting an anime release.
 ---
 
 The examples below all target `bgmId=543360` (*Kamiina Botan, Yoeru Sugata wa Yuri no Hana*). The four group slugs were validated against [`/api/subtitle-groups`](/docs/open-api/subtitle-groups):
@@ -94,3 +94,27 @@ https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=100
 <Callout type="info">
   Every public RSS endpoint caps `limit` at **100**. Oversized, repeated, empty, zero-padded, or non-integer values are not truncated: the application returns 400 and the production edge may block them first with Cloudflare 403. See [Rate limits & caps](/docs/open-api/limits).
 </Callout>
+
+## 9. Delete an anime release and poll to completion
+
+The key must explicitly include `releases:delete`. After `202 Accepted`, poll the status route; acceptance does not mean every public surface has already been cleaned.
+
+```bash title="DELETE + status polling"
+release_id='rel_example'
+base_url='https://anibt.net'
+
+response=$(curl -sS -X DELETE \
+  -H "Authorization: Bearer $ANIBT_API_KEY" \
+  "$base_url/api/releases/$release_id")
+
+while [ "$(jq -r '.result.state // .error.details.state // empty' <<<"$response")" = "pending" ]; do
+  sleep 2
+  response=$(curl -sS \
+    -H "Authorization: Bearer $ANIBT_API_KEY" \
+    "$base_url/api/releases/$release_id/deletion")
+done
+
+jq . <<<"$response"
+```
+
+Stop only at `completed`. For `failed`, retain the `operationId` and `X-Request-ID` and do not retry blindly. See [Delete an anime release](/docs/open-api/releases-delete) for the complete fields, status codes, and completion boundary.

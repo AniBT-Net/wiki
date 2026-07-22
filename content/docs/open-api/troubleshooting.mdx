@@ -61,6 +61,15 @@ description: 一行 curl 调试 + RSS 接入常见问题解答。
   <Accordion title="新发的种子多久能在 RSS 里看到？">
     发布接口的 `200 OK` 表示写入已接受，不是同步可见性确认。站点侧刷新由 Typesense 完成、不可变快照发布、Redis 严格预热和 Edge CDN purge 事件驱动，不需要等满 120 秒 TTL；运维上，publication pending 超过 15 秒就进入告警检查。你在 RSS 阅读器里实际看到的时间还要加上客户端自己的 5–10 分钟轮询间隔。详见 [HTTP 缓存与 304](/docs/open-api/caching)。
   </Accordion>
+  <Accordion title="为什么 DELETE 返回 202，而不是立刻 200？">
+    `202 Accepted` 表示删除已被可靠接受，但 Typesense、列表/RSS、Redis、Cloudflare 和 R2 的严格清理屏障仍在运行。保存 `operationId`，按 `Location` / `statusUrl` 请求 `GET /api/releases/{releaseId}/deletion`，并遵守 `Retry-After`。重复 DELETE 是幂等的，会返回同一回执；只有 `state=completed` 才表示 AniBT 自有公开面已经完成不可见性证明。详见 [删除番剧发布](/docs/open-api/releases-delete)。
+  </Accordion>
+  <Accordion title="API Key 明明有效，为什么删除返回 403？">
+    删除和状态查询都要求 `releases:delete`。scope 上线前创建的旧 Key 被安全迁移为仅 `releases:publish`，不会自动获得删除权。调用 [`GET /api/subtitle-groups/me`](/docs/open-api/me) 检查 `scopes`，再创建或改用显式包含 `releases:delete` 的 Key。缺 scope 会在资源查询前返回 `403 INSUFFICIENT_SCOPE`；有 scope 但无权访问目标时则与不存在资源一样返回 404。
+  </Accordion>
+  <Accordion title="删除 completed 后，外站、Tracker 和本地缓存也会消失吗？">
+    不会全部消失。`completed` 覆盖 AniBT 自有 canonical 记录、详情/种子读取、Typesense 搜索与列表、magnets、公开/订阅 RSS、Redis、Cloudflare CDN 和捕获的 R2 对象。它不召回已经打开或被浏览器/RSS 客户端缓存的内容、已经下载的 torrent/magnet，不修改 Tracker swarm/白名单，也不撤回 Nyaa、Mikan、DMHY 等外站帖子；这些是独立流程。
+  </Accordion>
   <Accordion title="为什么状态码、generatedAt 或 cf-cache-status 都正常，正文却还是旧的？">
     这些字段只说明请求和某一层缓存成功，不能证明触发发布的资源已经进入响应。请直接在详情页及对应 RSS / magnets 正文中检查返回的 `releaseId`，并同时记录 ETag / Last-Modified。运维侧再对比 snapshot queue age、publication pending age 与 `snapshot_redis_warm.completed.latencyMs`：queue age 高但 warm latency 低，应该处理调度或 backlog，而不是加长 Redis TTL。不要等待下一次无关发布“顺便刷新”。
   </Accordion>

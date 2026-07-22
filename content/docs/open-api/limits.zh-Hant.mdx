@@ -19,6 +19,10 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
 | `/api/subtitle-groups`  | —            | 全量返回     | —                | 60 次 / 60 秒 / IP  |
 | `/api/seasons/anime`    | —            | —            | —                | 30 次 / 60 秒 / IP  |
 | `/api/anime/groups`     | —            | —            | —                | 30 次 / 60 秒 / IP  |
+| `DELETE /api/releases/{releaseId}` | — | — | 刪除回執與完成屏障 | 30 次 / 60 秒 / API Key |
+| `GET /api/releases/{releaseId}/deletion` | — | — | 刪除狀態回執 | 120 次 / 60 秒 / API Key |
+
+刪除端點另有認證前防濫用視窗。`pending` 回執裡的 `retryAfterMs` / `Retry-After` 是狀態輪詢建議；真正觸發速率限制時返回 `429 RATE_LIMIT_EXCEEDED`，同樣必須按 `Retry-After` 退避。詳見 [刪除番劇釋出](/docs/open-api/releases-delete)。
 
 <Callout type="warn">
   **公開 RSS 的 `limit` 是嚴格契約**：只接受一個 `1..100` 的十進位整數，不能重複、為空、含前導零或小數。非法值在應用返回 `400 + no-store`，生產邊緣可能先返回 Cloudflare `403`；不再靜默截斷。預設就是 100，建議省略 `limit=100`，否則會收到可快取一天的規範化 `308`。

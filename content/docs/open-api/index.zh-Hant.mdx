@@ -3,7 +3,7 @@ title: 總覽
 description: AniBT 公開 RSS 與 JSON API 的設計邏輯、端點速查與第三方接入入口。
 ---
 
-AniBT 把公開資料透過兩類端點暴露給第三方：用於訂閱的 **RSS** 和用於程式整合的 **JSON API**。所有介面對公網匿名可讀，統一支援 **HTTP 304 Not Modified**，可放心高頻輪詢。
+AniBT 把公開讀取資料透過兩類端點暴露給第三方：用於訂閱的 **RSS** 和用於程式整合的 **JSON API**。公開讀取端點可匿名存取，並依各自快取契約支援 **HTTP 304 Not Modified**；釋出、刪除和身分檢查端點必須攜帶字幕組 API Key，回應不快取。
 
 <Callout type="info">
   qBittorrent / Sonarr / FlexGet / Tiny Tiny RSS 等標準 RSS 客戶端**無需任何額外配置**，快取與條件請求在響應頭裡自動生效。
@@ -65,6 +65,11 @@ AniBT 把公開資料透過兩類端點暴露給第三方：用於訂閱的 **RS
     title="字幕組釋出資源"
     href="/docs/open-api/releases-publish"
     description="POST /api/releases/publish（鑑權）"
+  />
+  <Card
+    title="刪除番劇釋出"
+    href="/docs/open-api/releases-delete"
+    description="DELETE /api/releases/{releaseId}（鑑權 + 非同步回執）"
   />
   <Card
     title="釋出其他類資源"
@@ -139,4 +144,4 @@ AniBT 把公開資料透過兩類端點暴露給第三方：用於訂閱的 **RS
 - `slug` 一旦釋出也儘量保持穩定。
 - 內部主鍵（如 `organizationId`）不屬於公開契約，第三方一律使用 `slug`。
 
-繼續閱讀：[字幕組目錄](/docs/open-api/subtitle-groups)、[RSS 主入口](/docs/open-api/rss-anime)、[HTTP 快取與 304](/docs/open-api/caching)。
+繼續閱讀：[字幕組目錄](/docs/open-api/subtitle-groups)、[RSS 主入口](/docs/open-api/rss-anime)、[刪除番劇釋出](/docs/open-api/releases-delete)、[HTTP 快取與 304](/docs/open-api/caching)。

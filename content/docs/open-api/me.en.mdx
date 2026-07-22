@@ -1,11 +1,11 @@
 ---
 title: Inspect your group
-description: GET /api/subtitle-groups/me — authenticated lookup of the calling group's basic info and stats.
+description: GET /api/subtitle-groups/me — authenticated lookup of the calling group, key identity, scopes, and stats.
 ---
 
-`/api/subtitle-groups/me` is the **authenticated read** endpoint. With the group's API key, it returns the group's basic info (name, slug, description, website) and stats (releases, anime coverage, members).
+`/api/subtitle-groups/me` is the **authenticated read** endpoint. With a group API key, it returns the group's basic info, the active key's safe identity and `scopes`, plus release, anime-coverage, and member statistics.
 
-Use it for: a CI banner that prints which group key is in use, a dashboard widget showing live group state, or a sanity check ("am I authenticated as the right group?") in automation.
+Use it for a CI identity banner, a dashboard widget, a group-binding sanity check, and a preflight that confirms `releases:publish` or `releases:delete` before a write.
 
 ## Request
 
@@ -36,7 +36,10 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       "memberCount": 5
     },
     "status": "active",
-    "createdAt": 1700000000000
+    "createdAt": 1700000000000,
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish", "releases:delete"]
   }
 }
 ```
@@ -85,6 +88,18 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       description: 'First-ingest timestamp (ms).',
       type: 'number',
     },
+    'apiKeyId': {
+      description: 'Stable identifier of the active API key. Safe for log correlation; not the secret.',
+      type: 'string',
+    },
+    'apiKeySuffix': {
+      description: 'Safe suffix for identifying the key. It cannot authenticate a request.',
+      type: 'string',
+    },
+    'scopes': {
+      description: 'Explicit capabilities of the active key: releases:publish and/or releases:delete. Non-empty and unique.',
+      type: 'string[]',
+    },
   }}
 />
 
@@ -93,12 +108,12 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
 <Callout type="info">
   Key differences from [`/api/subtitle-groups`](/docs/open-api/subtitle-groups):
   - `/api/subtitle-groups`: **public**, returns the trimmed list of **all** groups, no auth.
-  - `/api/subtitle-groups/me`: **authenticated**, returns detailed info for the **caller's** group only — adds `stats`, internal `_id`, `description`, and `status`.
+  - `/api/subtitle-groups/me`: **authenticated**, returns detailed info for the **caller's** group only — adds `stats`, key identity and `scopes`, plus internal `_id`, `description`, and `status`.
 </Callout>
 
 ## Errors
 
-| HTTP | Cause                                              | Fix                                  |
-| ---- | -------------------------------------------------- | ------------------------------------ |
-| 401  | Missing or malformed `Authorization` header        | Use `Bearer ` prefix; mind the space |
-| 403  | API key invalid / revoked                          | Re-issue from the group dashboard    |
+| HTTP | Cause | Fix |
+| ---- | ----- | --- |
+| 401 | API key missing, malformed, invalid, or revoked | Use `Authorization: Bearer <KEY>` or `X-API-Key`; re-issue a revoked key |
+| 429 | Too many requests | Back off according to `Retry-After` |

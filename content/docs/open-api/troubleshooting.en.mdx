@@ -61,6 +61,15 @@ description: One-line curl recipes for debugging plus the most common RSS-integr
   <Accordion title="How long until a new release shows up in my RSS reader?">
     A publish API `200 OK` means the write was accepted; it is not a synchronous visibility confirmation. Site-side refresh is event-driven through Typesense completion, immutable-snapshot publication, strict Redis warm, and Edge CDN purge, so it does not wait out the full 120-second TTL. Operationally, a publication pending for more than 15 seconds enters alert investigation. The time you observe in an RSS reader also includes the client's own 5–10 minute poll interval. See [HTTP caching & 304](/docs/open-api/caching).
   </Accordion>
+  <Accordion title="Why did DELETE return 202 instead of an immediate 200?">
+    `202 Accepted` means deletion was durably accepted while the strict Typesense, list/RSS, Redis, Cloudflare, and R2 cleanup barrier is still running. Retain `operationId`, follow `Location` / `statusUrl` with `GET /api/releases/{releaseId}/deletion`, and honour `Retry-After`. Repeating DELETE is idempotent and returns the same receipt. Only `state=completed` proves that AniBT-owned public visibility has been removed. See [Delete an anime release](/docs/open-api/releases-delete).
+  </Accordion>
+  <Accordion title="Why does a valid API key receive 403 on deletion?">
+    Both deletion and status reads require `releases:delete`. Keys created before scopes were introduced were safely migrated to `releases:publish` only; deletion was not granted automatically. Inspect `scopes` through [`GET /api/subtitle-groups/me`](/docs/open-api/me), then create or use a key that explicitly includes `releases:delete`. Missing scope returns `403 INSUFFICIENT_SCOPE` before resource lookup; a scoped key without access receives the same 404 as a nonexistent release.
+  </Accordion>
+  <Accordion title="Does completed also remove external posts, tracker state, and local caches?">
+    No. `completed` covers AniBT-owned canonical data, detail/torrent reads, Typesense search and lists, magnets, public/subscription RSS, Redis, Cloudflare CDN, and captured R2 objects. It cannot recall a page already loaded or cached by a browser/RSS client, a downloaded torrent or magnet, tracker swarm/whitelist state, or posts on Nyaa, Mikan, DMHY, and other external sites. Those require separate workflows.
+  </Accordion>
   <Accordion title="Why are the status code, generatedAt, or cf-cache-status healthy while the body is still old?">
     Those fields prove that the request and one cache layer succeeded; they do not prove that the release which triggered the work is present. Check the returned `releaseId` directly in the release page and relevant RSS / magnets body, and record ETag / Last-Modified as well. Operators should then compare snapshot queue age, publication pending age, and `snapshot_redis_warm.completed.latencyMs`: high queue age with low warm latency points to scheduling or backlog, not a Redis TTL problem. Do not wait for an unrelated later publish to refresh it by chance.
   </Accordion>

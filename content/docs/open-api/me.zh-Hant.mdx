@@ -1,11 +1,11 @@
 ---
 title: 字幕組自身資訊
-description: GET /api/subtitle-groups/me —— 用 API Key 查詢當前字幕組的基本資訊與統計資料。
+description: GET /api/subtitle-groups/me —— 用 API Key 查詢當前字幕組、Key 識別、scope 與統計資料。
 ---
 
-`/api/subtitle-groups/me` 是**鑑權讀取**端點。帶上字幕組 API Key，返回該字幕組的基本資訊（名稱、slug、簡介、網站）和統計資料（釋出數、覆蓋番劇數、成員數）。
+`/api/subtitle-groups/me` 是**鑑權讀取**端點。帶上字幕組 API Key，返回該字幕組的基本資訊、目前 Key 的安全識別與 `scopes`，以及釋出數、覆蓋番劇數、成員數等統計資料。
 
-適合用在：CI 啟動時列印當前用哪把 Key 跑、控制檯 dashboard 展示字幕組當前狀態、自動化指令碼里做"是不是登在正確字幕組"的最小校驗。
+適合用在：CI 啟動時列印目前使用哪把 Key、控制台 dashboard 展示字幕組狀態、自動化指令碼校驗字幕組身分，並在釋出或刪除前確認 Key 是否具有 `releases:publish` / `releases:delete`。
 
 ## 請求
 
@@ -36,7 +36,10 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       "memberCount": 5
     },
     "status": "active",
-    "createdAt": 1700000000000
+    "createdAt": 1700000000000,
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish", "releases:delete"]
   }
 }
 ```
@@ -85,6 +88,18 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       description: '字幕組首次入庫時間（毫秒）。',
       type: 'number',
     },
+    'apiKeyId': {
+      description: '目前 API Key 的穩定識別；可用於日誌核對，不是完整密鑰。',
+      type: 'string',
+    },
+    'apiKeySuffix': {
+      description: '目前 Key 的安全尾碼，只用於人工識別，不能用於鑑權。',
+      type: 'string',
+    },
+    'scopes': {
+      description: '目前 Key 的明確能力集合：releases:publish、releases:delete，至少包含一個且不會重複。',
+      type: 'string[]',
+    },
   }}
 />
 
@@ -93,12 +108,12 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
 <Callout type="info">
   與 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 的核心差別：
   - `/api/subtitle-groups`：**公開**，返回**所有**字幕組的精簡資訊，不需要鑑權。
-  - `/api/subtitle-groups/me`：**鑑權**，只返回**呼叫方**這一組的詳細資訊，附帶 `stats` 與內部 `_id`、`description`、`status`。
+  - `/api/subtitle-groups/me`：**鑑權**，只返回**呼叫方**這一組的詳細資訊，附帶 `stats`、Key 識別與 `scopes`，以及內部 `_id`、`description`、`status`。
 </Callout>
 
 ## 錯誤響應
 
-| HTTP | 原因                            | 處理                            |
-| ---- | ------------------------------- | ------------------------------- |
-| 401  | `Authorization` 頭缺失或格式錯誤 | `Bearer ` 字首必填，注意空格      |
-| 403  | API Key 無效 / 已撤銷           | 在後臺重新生成                  |
+| HTTP | 原因 | 處理 |
+| ---- | ---- | ---- |
+| 401 | API Key 缺失、格式錯誤、無效或已撤銷 | 使用 `Authorization: Bearer <KEY>` 或 `X-API-Key`；失效時在後台重新產生 |
+| 429 | 請求過於頻繁 | 按 `Retry-After` 退避 |

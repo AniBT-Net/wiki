@@ -13,6 +13,14 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 <TypeTable
   type={{
+    'Anime release deletion API': {
+      description: 'Added DELETE /api/releases/{releaseId} and GET /api/releases/{releaseId}/deletion. V1 accepts rel_* only; DELETE rejects query parameters and request bodies, returns a stable rdel_* receipt, and uses 200/202 for completed/pending. completed is emitted only after absence is proven across canonical/detail/torrent reads, Typesense search and lists, magnets, public/subscription RSS, Redis, Cloudflare, and AniBT-owned R2 objects. External posts, tracker state, and client-cached/downloaded content are explicit exclusions.',
+      type: 'New',
+    },
+    'Subtitle-group API-key scopes': {
+      description: 'API keys now explicitly select at least one of releases:publish and releases:delete; existing keys were safely migrated to releases:publish only. Anime/other publishing requires releases:publish, while deletion and status reads require releases:delete. /api/subtitle-groups/me and publish whoami now expose apiKeyId, apiKeySuffix, and scopes.',
+      type: 'Security',
+    },
     'Registration and session restoration': {
       description: 'Email registration now runs as send code → atomically verify and create a session → attach the password inside that session. Invalid password format does not consume the code; lost verify/password responses are retryable, and an unexpired flow survives a full-page reload. Public pages show sign-in only after the server explicitly confirms no session, so temporary network/5xx failures no longer create false logout.',
       type: 'Improved',

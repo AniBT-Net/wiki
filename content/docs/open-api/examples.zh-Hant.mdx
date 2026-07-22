@@ -1,6 +1,6 @@
 ---
 title: 實戰示例
-description: 基於 bgmId=543360（《上伊那牡丹》）+ 4 個字幕組的 8 種典型查詢組合。
+description: 基於 bgmId=543360 的典型 RSS 查詢，以及帶穩定回執的番劇釋出刪除流程。
 ---
 
 下列示例都基於 `bgmId=543360`（《上伊那牡丹，酒醉身姿似百合花般》），4 個字幕組的 slug 已透過 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 校驗：
@@ -94,3 +94,27 @@ https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=100
 <Callout type="info">
   所有公開 RSS 的 `limit` 上限都是 **100**。超過上限、重複、為空、含前導零或非整數時不會截斷：應用返回 400，生產邊緣可能先返回 Cloudflare 403。詳見 [限流與上限](/docs/open-api/limits)。
 </Callout>
+
+## 9. 刪除番劇釋出並輪詢完成
+
+刪除 Key 必須明確包含 `releases:delete`。`202 Accepted` 後按狀態端點輪詢，不要把「請求已接受」誤判為「所有公開面已清理」。
+
+```bash title="DELETE + 狀態輪詢"
+release_id='rel_example'
+base_url='https://anibt.net'
+
+response=$(curl -sS -X DELETE \
+  -H "Authorization: Bearer $ANIBT_API_KEY" \
+  "$base_url/api/releases/$release_id")
+
+while [ "$(jq -r '.result.state // .error.details.state // empty' <<<"$response")" = "pending" ]; do
+  sleep 2
+  response=$(curl -sS \
+    -H "Authorization: Bearer $ANIBT_API_KEY" \
+    "$base_url/api/releases/$release_id/deletion")
+done
+
+jq . <<<"$response"
+```
+
+終態為 `completed` 時才停止；若為 `failed`，保存 `operationId` 與 `X-Request-ID` 並停止盲目重試。完整欄位、狀態碼和完成邊界見 [刪除番劇釋出](/docs/open-api/releases-delete)。

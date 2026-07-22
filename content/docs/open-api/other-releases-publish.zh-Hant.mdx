@@ -3,7 +3,7 @@ title: 釋出其他類資源
 description: POST /api/other-releases/publish —— 字幕組用 API Key 釋出漫畫、音樂、RAW、舞台劇資源；不綁定 bgmId。
 ---
 
-`/api/other-releases/publish` 是字幕組釋出**非番劇資源**的寫入端點，適用於漫畫、音樂、RAW、舞台劇。它使用同一套字幕組 API Key 鑑權，但不需要 `bgmId`，也不會混入番劇釋出列表。
+`/api/other-releases/publish` 是字幕組釋出**非番劇資源**的寫入端點，適用於漫畫、音樂、RAW、舞台劇。它使用同一套字幕組 API Key 鑑權，並要求 `releases:publish` scope；不需要 `bgmId`，也不會混入番劇釋出列表。
 
 <Callout type="warn">
   這是**寫入介面**。Key 外洩會允許別人以你的字幕組名義釋出其他類資源；請只在服務端腳本或 CI secret 中使用。
@@ -203,7 +203,22 @@ curl -X GET 'https://anibt.net/api/other-releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>'
 ```
 
-返回 `groupId` / `groupName` / `groupSlug` / `apiKeySuffix`（`kind: "other"`）。
+```json title="whoami 回應"
+{
+  "ok": true,
+  "result": {
+    "groupId": "org_xxxxxxxx",
+    "groupName": "示例字幕組",
+    "groupSlug": "example",
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish"],
+    "kind": "other"
+  }
+}
+```
+
+用法與番劇釋出 whoami 相同：正式寫入前應確認字幕組身分，並檢查 `scopes` 包含 `releases:publish`。GET whoami 本身不要求 publish scope。
 
 ## 返回
 
@@ -251,8 +266,8 @@ JSON 磁力釋出和 multipart 種子上傳使用同一種錯誤 envelope；欄�
 | HTTP | 原因                                             | 處理                                                   |
 | ---- | ------------------------------------------------ | ------------------------------------------------------ |
 | 400  | 缺少 `category` / `title`，或沒有任何種子 / 磁力來源 | 補齊必填項；確認 `category` 是四個允許值之一              |
-| 401  | 未傳 API Key                                      | 加上 `Authorization: Bearer <YOUR_API_KEY>`             |
-| 403  | API Key 無效、已撤銷，或使用者已不在字幕組          | 在字幕組後台重新生成 Key，確認成員權限                   |
+| 401  | API Key 缺失、無效或已撤銷                         | 檢查 Bearer / `X-API-Key`；失效時重新產生 Key           |
+| 403  | `INSUFFICIENT_SCOPE`；Key 缺少 `releases:publish` | 建立或改用包含 `releases:publish` 的 Key                |
 | 404  | `torrentStorageId` 指向的檔案不存在                | 改用 multipart 上傳，或確認檔案 key 屬於該字幕組          |
 | 429  | `reason=RATE_LIMITED`，寫入頻率過高                | 按 `Retry-After` / `retryAfterMs` 退避                  |
 | 503  | `reason=DEPLOYMENT_IN_PROGRESS`，系統正在部署       | 按 `Retry-After` / `retryAfterMs` 等待後重試            |
