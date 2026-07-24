@@ -9,6 +9,17 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first.
 </Callout>
 
+## July 24, 2026
+
+<TypeTable
+  type={{
+    'Immediate entity-RSS cache invalidation': {
+      description: 'After publish events invalidate the matching Redis family, public anime, group, and other-category RSS now purge every Cloudflare CDN query variant for the same bgmId, groupSlug, or category in one operation. URLs, TTLs, ETags, and 304 semantics are unchanged; magnets search and search Redis identities keep their existing TTL behavior.',
+      type: 'Improved',
+    },
+  }}
+/>
+
 ## July 22, 2026
 
 <TypeTable

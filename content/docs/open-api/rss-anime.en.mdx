@@ -128,7 +128,7 @@ The same `anibt:` fields are also emitted on [`/rss/magnets.xml`](/docs/open-api
 | `bgmId` only            | Typesense filter constrained by anime       |
 | `groupSlug` only        | Typesense filter constrained by group       |
 
-Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Entity RSS uses **900 seconds in Redis + 120 seconds at edge/CDN + 60 seconds stale-while-revalidate**. Publish events invalidate known affected entity URLs; query variants that cannot be enumerated converge through the 120-second edge revalidation and 900-second Redis bound.
+Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Entity RSS uses **900 seconds in Redis + 120 seconds at edge/CDN + 60 seconds stale-while-revalidate**. Publish events invalidate the matching Redis family first, then purge every CDN query variant for the same `bgmId` / `groupSlug`. TTL and ETag semantics are unchanged and remain the fallback if the event path fails.
 
 ## Mikan parameter compatibility
 

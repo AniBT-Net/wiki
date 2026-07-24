@@ -128,7 +128,7 @@ GET https://anibt.net/rss/anime.xml?<query>
 | 仅 `bgmId`              | Typesense filter 约束番剧          |
 | 仅 `groupSlug`          | Typesense filter 约束字幕组        |
 
-分辨率、语言、格式、字幕方式等 Tag 尽量下推到 Typesense filter；`episode` / `episodeKey` 等展示字段只在 Web runtime 做小窗口后过滤。实体 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。发布事件只失效明确受影响的实体 URL；无法枚举的参数变体依靠 120 秒 edge 重新验证与 900 秒 Redis 上限收敛。
+分辨率、语言、格式、字幕方式等 Tag 尽量下推到 Typesense filter；`episode` / `episodeKey` 等展示字段只在 Web runtime 做小窗口后过滤。实体 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。发布事件会先失效对应 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一实体的全部 CDN 参数变体；TTL 与 ETag 合同不变，并继续作为事件链路失败时的兜底。
 
 ## Mikan 参数兼容
 

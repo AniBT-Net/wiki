@@ -79,7 +79,7 @@ Vary:             Accept-Encoding
 | `/api/anime/lookup`              | 重新驗證 + ETag | 300s             | 300s                     |
 | `/api/mikan/group-lookup`        | 重新驗證 + ETag | 600s             | 3600s                    |
 
-實體 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒；這是因為釋出事件無法列舉所有 `bgmId + groupSlug + filter` 參數變體。搜尋與空結果在 edge/Redis 都快取 600 秒，Redis key 只保存規範化查詢的 SHA-256。
+實體 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒。釋出事件先失效 Redis 家族，再按 `bgmId` / `groupSlug` / category 清除同一實體的全部 CDN 參數變體；TTL 繼續作為事件鏈路失敗時的兜底。搜尋與空結果在 edge/Redis 都快取 600 秒，Redis key 只保存規範化查詢的 SHA-256。
 
 ### RSS 規範 URL 與錯誤快取
 

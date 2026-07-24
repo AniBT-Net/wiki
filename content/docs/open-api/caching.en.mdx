@@ -79,7 +79,7 @@ The TTLs above are fallback policies for shared caches, not timers that every pu
 | `/api/anime/lookup`                | revalidate + ETag | 300s           | 300s                     |
 | `/api/mikan/group-lookup`          | revalidate + ETag | 600s           | 3600s                    |
 
-Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds, because publish events cannot enumerate every `bgmId + groupSlug + filter` query variant. Searches and empty results cache for 600 seconds at both edge and Redis; Redis keys contain only a SHA-256 of the normalized query.
+Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds. Publish events invalidate the Redis family first, then purge every CDN query variant for the same `bgmId`, `groupSlug`, or category; TTL remains the fallback when the event path fails. Searches and empty results cache for 600 seconds at both edge and Redis; Redis keys contain only a SHA-256 of the normalized query.
 
 ### Canonical RSS URLs and error caching
 

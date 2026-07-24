@@ -9,6 +9,17 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 24 日
+
+<TypeTable
+  type={{
+    'RSS 實體快取即時失效': {
+      description: '番劇、字幕組與其他類公開 RSS 在釋出事件完成 Redis 家族失效後，會按 bgmId、groupSlug 或 category 一次清除同實體全部 Cloudflare CDN 參數變體。介面 URL、TTL、ETag 與 304 合同不變；magnets 搜尋及搜尋 Redis 身份繼續按原 TTL 管理。',
+      type: '最佳化',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 22 日
 
 <TypeTable

@@ -79,7 +79,7 @@ Vary:             Accept-Encoding
 | `/api/anime/lookup`              | 重新验证 + ETag | 300s             | 300s                     |
 | `/api/mikan/group-lookup`        | 重新验证 + ETag | 600s             | 3600s                    |
 
-实体 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒；这是因为发布事件无法枚举所有 `bgmId + groupSlug + filter` 参数变体。搜索与空结果在 edge/Redis 都缓存 600 秒，Redis key 只保存规范化查询的 SHA-256。
+实体 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒。发布事件先失效 Redis 家族，再按 `bgmId` / `groupSlug` / category 清除同一实体的全部 CDN 参数变体；TTL 继续作为事件链路失败时的兜底。搜索与空结果在 edge/Redis 都缓存 600 秒，Redis key 只保存规范化查询的 SHA-256。
 
 ### RSS 规范 URL 与错误缓存
 
