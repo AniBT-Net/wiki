@@ -44,7 +44,7 @@ description: One-line curl recipes for debugging plus the most common RSS-integr
     Per RFC 7232, **ETag (`If-None-Match`) takes precedence**. If you send both, the server only honours the ETag. Always use ETag.
   </Accordion>
   <Accordion title="Why did RSS return 308, 400, 403, or 429?">
-    `308` means the URL can be canonicalized (for example explicit `limit=100`, parameter order/case/whitespace); follow it and retain the final URL. `400 + no-store` means the public contract was violated: `limit` is exactly one integer from `1..100`; `q`/`search` contain at most one value total and normalize to non-empty, control-free text of at most 160 UTF-8 bytes. Production Cloudflare may block an invalid limit first with `403`. `429` protects only new high-cardinality search MISSes that pass cache; back off using `Retry-After`.
+    Reordering otherwise byte-identical raw query pairs returns the same canonical `200`. `308` means another canonicalization difference remains, such as explicit `limit=100`, a compatibility alias, or case/whitespace/encoding changes; follow it and retain the final URL. `400 + no-store` means the public contract was violated: `limit` is exactly one integer from `1..100`; `q`/`search` contain at most one value total and normalize to non-empty, control-free text of at most 160 UTF-8 bytes. Production Cloudflare may block an invalid limit first with `403`. `429` protects only new high-cardinality search MISSes that pass cache; back off using `Retry-After`.
   </Accordion>
   <Accordion title="Will episode=5 match episodeKey=&quot;05&quot;?">
     Yes — both filters apply. `episode` does numeric exact match; `episodeKey` does string exact match. For batches use `episodeKey=BATCH`.

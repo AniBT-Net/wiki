@@ -49,7 +49,7 @@ https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 </Callout>
 
 <Callout type="warn">
-  `q` 与 `search` 是别名，只能提供一个值。搜索词会做 NFKC、trim 与空白折叠，UTF-8 最多 160 bytes；重复、空、控制字符或超长输入返回 `400 + no-store`。规范化等价 URL 返回可缓存一天的 `308`；新的高基数 MISS 超出预算时返回 `429 + Retry-After`。
+  `q` 与 `search` 是别名，只能提供一个值。搜索词会做 NFKC、trim 与空白折叠，UTF-8 最多 160 bytes；重复、空、控制字符或超长输入返回 `400 + no-store`。仅改变原始 query 参数对顺序时直接返回同一规范 `200`；默认值、兼容别名或其它字节级规范化仍返回可缓存一天的 `308`。新的高基数 MISS 超出预算时返回 `429 + Retry-After`。
 </Callout>
 
 ## 季度番剧 `/api/seasons/anime`

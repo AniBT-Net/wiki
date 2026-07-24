@@ -83,7 +83,8 @@ Vary:             Accept-Encoding
 
 ### RSS 規範 URL 與錯誤快取
 
-- 與預設值等價或參數順序/大小寫/空白可規範化的 URL 返回 `308`，`Cache-Control` 與 `CDN-Cache-Control` 均可快取 1 天。客戶端應跟隨永久重新導向並保存最終 URL。
+- 僅原始 query 參數對的順序不同、其餘位元組完全相同的 URL 會直接返回同一份規範 `200`；self URL、ETag、Last-Modified 與快取身份仍使用穩定的規範順序。
+- 與預設值等價、使用相容別名，或需要大小寫/空白/編碼規範化的 URL 返回 `308`，`Cache-Control` 與 `CDN-Cache-Control` 均可快取 1 天。客戶端應跟隨永久重新導向並保存最終 URL。
 - 非法、重複、空或 `>100` 的 `limit`，以及重複/空/控制字元/超過 160 UTF-8 bytes 的 `q` 返回應用 `400 + no-store`；生產邊緣可能先返回 Cloudflare `403 + no-store`。
 - 未知 anime/group 實體的 `404` 可共享快取 600 秒 + SWR 60 秒，避免不存在標識持續回源。
 - 新的高基數搜尋 MISS 超出語義預算時返回 `429 + Retry-After`；快取 HIT 與已見穩定查詢不消耗新查詢預算。

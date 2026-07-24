@@ -63,6 +63,8 @@ GET https://anibt.net/rss/anime.xml?<query>
   A repeated, empty, zero-padded, non-integer, or greater-than-100 `limit` returns application `400 + no-store`; the production edge may block it first with Cloudflare `403`. Canonically equivalent forms such as `limit=100` return a cacheable one-day `308` to the canonical URL. Clients must follow permanent redirects.
 </Callout>
 
+Reordering otherwise byte-identical raw query pairs no longer redirects: the request returns the same canonical `200`, while `atom:link rel="self"`, ETag, and Last-Modified continue to use the stable canonical URL.
+
 ## Two equivalent ways to repeat a parameter
 
 ```txt title="Standard repeated query (recommended)"

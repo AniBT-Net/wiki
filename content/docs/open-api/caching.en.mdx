@@ -83,7 +83,8 @@ Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds. P
 
 ### Canonical RSS URLs and error caching
 
-- URLs equivalent to defaults, or normalizable by parameter order/case/whitespace, return `308`; both cache headers allow the redirect to be cached for one day. Clients should follow the permanent redirect and retain the final URL.
+- URLs whose raw query pairs differ only in order return the same canonical `200`; the self URL, ETag, Last-Modified, and cache identity still use the stable canonical order.
+- URLs equivalent to defaults, using compatibility aliases, or requiring case/whitespace/encoding normalization return `308`; both cache headers allow the redirect to be cached for one day. Clients should follow the permanent redirect and retain the final URL.
 - Invalid/repeated/empty/greater-than-100 `limit`, and repeated/empty/control-bearing/over-160-UTF-8-byte `q`, return application `400 + no-store`; the production edge may block first with Cloudflare `403 + no-store`.
 - Unknown anime/group entities return a share-cacheable `404` for 600 seconds + 60 seconds SWR, preventing repeated origin MISSes for nonexistent identities.
 - Excessive new high-cardinality search MISSes return `429 + Retry-After`; cache HITs and previously seen stable queries do not consume new-query budget.

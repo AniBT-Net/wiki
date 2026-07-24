@@ -49,7 +49,7 @@ Each anime `<item>` includes `xmlns:anibt` structured metadata; **`<anibt:bgmId>
 </Callout>
 
 <Callout type="warn">
-  `q` and `search` are aliases and may contain only one value. Search text is NFKC-normalized, trimmed, whitespace-collapsed, and capped at 160 UTF-8 bytes; repeated, empty, control-bearing, or oversized input returns `400 + no-store`. Canonical equivalents return a cacheable one-day `308`; excessive new high-cardinality MISSes return `429 + Retry-After`.
+  `q` and `search` are aliases and may contain only one value. Search text is NFKC-normalized, trimmed, whitespace-collapsed, and capped at 160 UTF-8 bytes; repeated, empty, control-bearing, or oversized input returns `400 + no-store`. Reordering otherwise byte-identical raw query pairs returns the same canonical `200`; defaults, compatibility aliases, and other lexical normalization still return a cacheable one-day `308`. Excessive new high-cardinality MISSes return `429 + Retry-After`.
 </Callout>
 
 ## Seasonal anime `/api/seasons/anime`

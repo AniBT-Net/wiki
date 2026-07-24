@@ -63,6 +63,8 @@ GET https://anibt.net/rss/anime.xml?<query>
   `limit` 重复、为空、含前导零、不是整数或大于 100 时，应用返回 `400 + no-store`；生产边缘可能先返回 Cloudflare `403`。`limit=100` 等与默认值等价的写法会 `308` 到规范 URL，跳转可缓存 1 天；客户端应跟随永久重定向。
 </Callout>
 
+只调整原始 query 参数对顺序、没有改变任何参数字节时，不再跳转：请求直接返回同一份规范 `200`，`atom:link rel="self"`、ETag 与 Last-Modified 仍使用稳定规范 URL。
+
 ## 重复参数两种写法等价
 
 ```txt title="标准重复 query（推荐）"

@@ -9,6 +9,17 @@ description: AniBT Wiki 与站点功能更新记录。
   日期按北京时间（UTC+8）记录。较新的更新会放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 25 日
+
+<TypeTable
+  type={{
+    '公开 RSS 参数顺序与 CDN 缓存一致': {
+      description: '仅原始 query 参数对顺序不同的 magnets、anime、group 与 other RSS 现在直接返回同一规范 200；self URL、ETag、Last-Modified 与缓存身份保持稳定。默认值、兼容别名、大小写/空白/编码差异仍返回 308；非法重复参数保持应用 400 + no-store，非法 limit 在生产边缘可先返回 Cloudflare 403。',
+      type: '修复',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 24 日
 
 <TypeTable

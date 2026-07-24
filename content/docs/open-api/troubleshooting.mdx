@@ -44,7 +44,7 @@ description: 一行 curl 调试 + RSS 接入常见问题解答。
     按 RFC 7232，**ETag（`If-None-Match`）优先**。如果你同时发了两个头，服务端只看 ETag。建议永远用 ETag。
   </Accordion>
   <Accordion title="为什么 RSS 返回 308、400、403 或 429？">
-    `308` 表示 URL 可规范化（例如显式 `limit=100`、参数顺序/大小写/空白等），请跟随跳转并保存最终 URL。`400 + no-store` 表示参数违反公开合同：`limit` 必须是单个 `1..100` 整数；`q`/`search` 合计只能一个值，规范化后不能为空、不能含控制字符且最多 160 UTF-8 bytes。生产 Cloudflare 可能在应用前用 `403` 拦截非法 limit。`429` 只保护真正穿透缓存的新高基数搜索 MISS；按 `Retry-After` 退避即可。
+    仅原始 query 参数对顺序不同会直接返回同一规范 `200`。`308` 表示存在其它规范化差异，例如显式 `limit=100`、兼容别名、大小写/空白/编码变化；请跟随跳转并保存最终 URL。`400 + no-store` 表示参数违反公开合同：`limit` 必须是单个 `1..100` 整数；`q`/`search` 合计只能一个值，规范化后不能为空、不能含控制字符且最多 160 UTF-8 bytes。生产 Cloudflare 可能在应用前用 `403` 拦截非法 limit。`429` 只保护真正穿透缓存的新高基数搜索 MISS；按 `Retry-After` 退避即可。
   </Accordion>
   <Accordion title="episode=5 会匹配 episodeKey='05' 吗？">
     是的，二者都会过滤；但 `episode` 是数字精确匹配，`episodeKey` 是字符串原样匹配。合集请用 `episodeKey=BATCH`。
