@@ -55,9 +55,9 @@ Opening an RSS URL in a browser no longer loads AniBT custom XSL/CSS; the browse
 
 ## Caching & latency
 
-- **Private content**: response carries `Cache-Control: private`, so CDNs **never** cache it shared. You always get the latest state.
+- **Every response is non-cacheable publicly**: successful XML plus missing/invalid credentials, rate limits, and server errors all carry `Cache-Control: private, no-store`, `CDN-Cache-Control: no-store`, and `Cloudflare-CDN-Cache-Control: no-store`. Browsers and CDNs must not store or share this private content.
 - **Polling**: 5–10 minutes is plenty for BT clients. Per-user throttling is in place; faster polling will be rate-limited.
-- **ETag**: returned and respected via `If-None-Match` (304), so you don't re-download unchanged content.
+- **No public validator**: this private feed does not return a public `ETag` or offer an `If-None-Match` / `304 Not Modified` contract. Clients should handle each successful poll as a complete private response.
 
 See [Caching](/docs/open-api/caching) and [Limits](/docs/open-api/limits) for details.
 
@@ -74,6 +74,7 @@ See [Caching](/docs/open-api/caching) and [Limits](/docs/open-api/limits) for de
 
 | HTTP | Cause                                            | Fix                                       |
 | ---- | ------------------------------------------------ | ----------------------------------------- |
+| 400  | Personal RSS key / token is missing              | Copy the complete subscription URL again from the dashboard |
 | 401  | Not logged in / credentials expired               | Log in again, or re-copy the URL from dashboard |
 | 403  | Credentials revoked / user banned                 | Contact site staff                         |
 | 429  | Polling too aggressively                          | Back off (≥ 5 min between polls)           |

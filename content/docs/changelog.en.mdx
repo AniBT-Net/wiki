@@ -17,6 +17,10 @@ This page records AniBT Wiki changes and feature updates that are directly cover
       description: 'Magnets, anime, group, and other RSS URLs whose raw query pairs differ only in order now return the same canonical 200; self URL, ETag, Last-Modified, and cache identity remain stable. Defaults, compatibility aliases, and case/whitespace/encoding differences still return 308. Invalid duplicates remain application 400 + no-store, while invalid limit may be blocked first by production Cloudflare 403.',
       type: 'Fixed',
     },
+    'Private-cache contract for personal subscription RSS': {
+      description: 'Successful, missing/invalid credential, rate-limited, and server-error responses from /rss/subscriptions.xml now consistently carry private, no-store plus both CDN no-store headers. This private feed does not provide a public ETag or If-None-Match 304 contract.',
+      type: 'Security',
+    },
   }}
 />
 

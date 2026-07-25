@@ -17,6 +17,10 @@ description: AniBT Wiki 與站點功能更新紀錄。
       description: '僅原始 query 參數對順序不同的 magnets、anime、group 與 other RSS 現在直接返回同一規範 200；self URL、ETag、Last-Modified 與快取身份保持穩定。預設值、相容別名、大小寫/空白/編碼差異仍返回 308；非法重複參數保持應用 400 + no-store，非法 limit 在生產邊緣可先返回 Cloudflare 403。',
       type: '修復',
     },
+    '個人訂閱 RSS 私有快取合同': {
+      description: '/rss/subscriptions.xml 的成功、缺少或無效憑證、限流與服務端錯誤響應現在統一返回 private, no-store 和兩層 CDN no-store；該私人 feed 不提供公開 ETag 或 If-None-Match 304 合同。',
+      type: '安全',
+    },
   }}
 />
 

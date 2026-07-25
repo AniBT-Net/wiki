@@ -55,9 +55,9 @@ GET https://anibt.net/rss/subscriptions.xml
 
 ## 快取與延遲
 
-- **私人內容**：響應頭是 `Cache-Control: private`，CDN **不會**做共享快取，因此你每次拉取都是當前訂閱的最新結果。
+- **所有響應都禁止共享快取**：成功 XML 與缺少/無效憑證、限流、服務端錯誤等響應統一返回 `Cache-Control: private, no-store`、`CDN-Cache-Control: no-store` 和 `Cloudflare-CDN-Cache-Control: no-store`。瀏覽器或 CDN 不應儲存或共享這些私人內容。
 - **頻率**：建議 BT 客戶端配 5–10 分鐘輪詢一次。後端單使用者維度做了限流，過快輪詢會被節流。
-- **ETag**：返回 `ETag` + 支援 `If-None-Match` 304，減少傳輸量。
+- **無公開校驗器**：該私人 feed 不返回公開 `ETag`，也不提供基於 `If-None-Match` 的 `304 Not Modified` 合同；客戶端應按完整私人響應處理每次成功請求。
 
 詳見 [快取機制](/docs/open-api/caching) 和 [限流與上限](/docs/open-api/limits)。
 
@@ -74,6 +74,7 @@ GET https://anibt.net/rss/subscriptions.xml
 
 | HTTP | 原因                                      | 處理                                  |
 | ---- | ----------------------------------------- | ------------------------------------- |
+| 400  | 缺少個人 RSS key / token                  | 從賬戶後臺重新複製完整訂閱連結          |
 | 401  | 未登入 / 憑證過期                          | 重新登入，或在後臺重新獲取訂閱連結      |
 | 403  | 憑證已吊銷 / 使用者被封禁                    | 聯絡站點管理員                          |
 | 429  | 輪詢過快                                   | 拉長輪詢間隔（建議 ≥ 5 分鐘）            |
