@@ -1,174 +1,165 @@
 import { localizedPath } from '@/lib/i18n';
 import {
-  ArrowRight,
+  ArrowUpRight,
   BookOpen,
-  ExternalLink,
   ImageIcon,
   Radio,
   Rss,
-  Sparkles,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
 
 const copy = {
   'zh-CN': {
-    badge: '面向动漫与字幕组',
-    titleLead: 'Ani',
-    titleMid: 'BT',
-    titleTail: 'Wiki',
-    tagline: '字幕组发布指南 · Tracker · 站点同步 · Open API · 图床',
-    subtitle:
-      '从入驻申请到一键同步多站，从 RSS 追番到 API 自动化——这里是 AniBT 的完整使用说明。',
-    enter: '进入文档',
+    badge: '面向动漫与字幕组的公共 BT 站文档',
+    title: (
+      <>
+        写清楚怎么发、
+        <br className="max-md:hidden" />
+        怎么追、怎么接 <span className="text-[var(--anibt-brand)]">API</span>。
+      </>
+    ),
+    intro: (
+      <>
+        <span className="font-medium text-[var(--anibt-brand)]">AniBT Wiki</span>{' '}
+        是字幕组发布、站点同步、Tracker 与 Open API 的使用说明。按你的角色挑一条线读即可。
+      </>
+    ),
+    enter: '开始阅读',
     site: '打开 AniBT',
-    explore: '快速入口',
+    sectionsLabel: '从这里开始',
     features: [
       {
         title: '字幕组入驻',
-        desc: '申请流程、身份审核与发布权限说明。',
+        desc: '申请流程、身份审核与发布权限。',
         href: '/docs/apply',
-        icon: 'users',
+        icon: Users,
       },
       {
         title: '站点同步',
-        desc: 'Nyaa / 萌番组 / 末日站 / Mikan / ACG.rip 一键分发。',
+        desc: 'Nyaa、萌番组、末日站、Mikan、ACG.rip 一键分发。',
         href: '/docs/site-sync',
-        icon: 'radio',
+        icon: Radio,
       },
       {
         title: 'Open API & RSS',
         desc: '发布接口、单番剧 RSS、订阅 feed 与集成示例。',
         href: '/docs/open-api',
-        icon: 'rss',
+        icon: Rss,
       },
       {
         title: '字幕组图床',
-        desc: 'Web 上传，直出全球加速链接与 BBCode / Markdown / HTML。',
+        desc: 'Web 上传，直出加速链接与 BBCode / Markdown / HTML。',
         href: '/docs/image-host',
-        icon: 'image',
+        icon: ImageIcon,
       },
     ],
-    footer: '找不到想要的？发邮件到 support@anibt.net',
+    docs: '完整文档',
+    docsDesc: '入驻、Tracker、账号会话、LLM 对接与更新日志。',
+    contact: '需要帮助？',
+    contactDesc: '发邮件到 support@anibt.net',
   },
   'zh-Hant': {
-    badge: '面向動漫與字幕組',
-    titleLead: 'Ani',
-    titleMid: 'BT',
-    titleTail: 'Wiki',
-    tagline: '字幕組發布指南 · Tracker · 站點同步 · Open API · 圖床',
-    subtitle:
-      '從入駐申請到一鍵同步多站，從 RSS 追番到 API 自動化——這裡是 AniBT 的完整使用說明。',
-    enter: '進入文件',
+    badge: '面向動漫與字幕組的公共 BT 站文件',
+    title: (
+      <>
+        寫清楚怎麼發、
+        <br className="max-md:hidden" />
+        怎麼追、怎麼接 <span className="text-[var(--anibt-brand)]">API</span>。
+      </>
+    ),
+    intro: (
+      <>
+        <span className="font-medium text-[var(--anibt-brand)]">AniBT Wiki</span>{' '}
+        是字幕組發布、站點同步、Tracker 與 Open API 的使用說明。依你的角色挑一條線讀即可。
+      </>
+    ),
+    enter: '開始閱讀',
     site: '開啟 AniBT',
-    explore: '快速入口',
+    sectionsLabel: '從這裡開始',
     features: [
       {
         title: '字幕組入駐',
-        desc: '申請流程、身分審核與發布權限說明。',
+        desc: '申請流程、身分審核與發布權限。',
         href: '/docs/apply',
-        icon: 'users',
+        icon: Users,
       },
       {
         title: '站點同步',
-        desc: 'Nyaa / 萌番組 / 末日站 / Mikan / ACG.rip 一鍵分發。',
+        desc: 'Nyaa、萌番組、末日站、Mikan、ACG.rip 一鍵分發。',
         href: '/docs/site-sync',
-        icon: 'radio',
+        icon: Radio,
       },
       {
         title: 'Open API & RSS',
         desc: '發布介面、單番劇 RSS、訂閱 feed 與整合範例。',
         href: '/docs/open-api',
-        icon: 'rss',
+        icon: Rss,
       },
       {
         title: '字幕組圖床',
-        desc: 'Web 上傳，直出全球加速連結與 BBCode / Markdown / HTML。',
+        desc: 'Web 上傳，直出加速連結與 BBCode / Markdown / HTML。',
         href: '/docs/image-host',
-        icon: 'image',
+        icon: ImageIcon,
       },
     ],
-    footer: '找不到想要的？寄信到 support@anibt.net',
+    docs: '完整文件',
+    docsDesc: '入駐、Tracker、帳號工作階段、LLM 對接與更新日誌。',
+    contact: '需要幫助？',
+    contactDesc: '寄信到 support@anibt.net',
   },
   en: {
-    badge: 'For anime fans & fansub groups',
-    titleLead: 'Ani',
-    titleMid: 'BT',
-    titleTail: 'Wiki',
-    tagline: 'Publishing · Tracker · Site sync · Open API · Image host',
-    subtitle:
-      'From onboarding to multi-site sync, from RSS tracking to API automation — the complete AniBT handbook.',
-    enter: 'Read the docs',
+    badge: 'Docs for anime fansub groups & consumers',
+    title: (
+      <>
+        Publish, track, and
+        <br className="max-md:hidden" />
+        integrate — with clear{' '}
+        <span className="text-[var(--anibt-brand)]">docs</span>.
+      </>
+    ),
+    intro: (
+      <>
+        <span className="font-medium text-[var(--anibt-brand)]">AniBT Wiki</span>{' '}
+        covers group publishing, multi-site sync, Tracker, and Open API. Pick the
+        path that matches your role.
+      </>
+    ),
+    enter: 'Get started',
     site: 'Open AniBT',
-    explore: 'Quick links',
+    sectionsLabel: 'Start here',
     features: [
       {
         title: 'Group onboarding',
-        desc: 'Application flow, identity review, and publish permissions.',
+        desc: 'Application flow, review, and publish permissions.',
         href: '/docs/apply',
-        icon: 'users',
+        icon: Users,
       },
       {
         title: 'Site sync',
-        desc: 'One-shot distribute to Nyaa, Bangumi, ACGNX, Mikan, ACG.rip.',
+        desc: 'Distribute to Nyaa, Bangumi, ACGNX, Mikan, and ACG.rip.',
         href: '/docs/site-sync',
-        icon: 'radio',
+        icon: Radio,
       },
       {
         title: 'Open API & RSS',
-        desc: 'Publish endpoints, anime RSS, private feeds, and integration examples.',
+        desc: 'Publish endpoints, anime RSS, private feeds, and examples.',
         href: '/docs/open-api',
-        icon: 'rss',
+        icon: Rss,
       },
       {
         title: 'Image host',
-        desc: 'Web upload with global CDN, BBCode, Markdown, and HTML formats.',
+        desc: 'Web upload with CDN links, BBCode, Markdown, and HTML.',
         href: '/docs/image-host',
-        icon: 'image',
+        icon: ImageIcon,
       },
     ],
-    footer: 'Need help? Email support@anibt.net',
+    docs: 'Full documentation',
+    docsDesc: 'Onboarding, Tracker, auth sessions, LLM surfaces, and changelog.',
+    contact: 'Need help?',
+    contactDesc: 'Email support@anibt.net',
   },
 } as const;
-
-type FeatureIcon = (typeof copy)['zh-CN']['features'][number]['icon'];
-
-function FeatureGlyph({ name }: { name: FeatureIcon }) {
-  const cls = 'size-5';
-  switch (name) {
-    case 'users':
-      return <Users className={cls} aria-hidden="true" />;
-    case 'radio':
-      return <Radio className={cls} aria-hidden="true" />;
-    case 'rss':
-      return <Rss className={cls} aria-hidden="true" />;
-    case 'image':
-      return <ImageIcon className={cls} aria-hidden="true" />;
-    default:
-      return <BookOpen className={cls} aria-hidden="true" />;
-  }
-}
-
-function PetalField() {
-  return (
-    <div className="anibt-petals" aria-hidden="true">
-      {Array.from({ length: 12 }, (_, i) => (
-        <span key={i} className={`anibt-petal anibt-petal-${i + 1}`} />
-      ))}
-    </div>
-  );
-}
-
-function StarField() {
-  return (
-    <div className="anibt-stars" aria-hidden="true">
-      {Array.from({ length: 18 }, (_, i) => (
-        <i key={i} className={`anibt-star anibt-star-${i + 1}`} />
-      ))}
-    </div>
-  );
-}
 
 export default async function HomePage({
   params,
@@ -179,102 +170,112 @@ export default async function HomePage({
   const t = copy[lang as keyof typeof copy] ?? copy['zh-CN'];
 
   return (
-    <main className="anibt-home">
-      <div className="anibt-home-bg" aria-hidden="true">
-        <div className="anibt-home-aurora anibt-home-aurora-a" />
-        <div className="anibt-home-aurora anibt-home-aurora-b" />
-        <div className="anibt-home-aurora anibt-home-aurora-c" />
-        <div className="anibt-home-mesh" />
-        <div className="anibt-home-ring anibt-home-ring-outer" />
-        <div className="anibt-home-ring anibt-home-ring-inner" />
-        <StarField />
-        <PetalField />
-        <div className="anibt-home-noise" />
-      </div>
+    <main className="pt-4 pb-10 text-fd-foreground md:pb-16">
+      {/* Hero — Fumadocs-style bordered panel */}
+      <div className="relative mx-4 flex min-h-[min(70vh,560px)] w-[calc(100%-2rem)] max-w-[1400px] overflow-hidden rounded-2xl border bg-fd-card/40 bg-origin-border max-md:min-h-[480px] lg:mx-auto">
+        <div
+          className="pointer-events-none absolute inset-0 -z-1"
+          aria-hidden="true"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_10%_0%,color-mix(in_srgb,var(--anibt-brand)_18%,transparent),transparent_55%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_100%_20%,color-mix(in_srgb,var(--anibt-brand-2)_14%,transparent),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_40%,var(--color-fd-background))] dark:bg-[linear-gradient(to_bottom,transparent_30%,var(--color-fd-background))]" />
+        </div>
 
-      <div className="anibt-home-stage">
-        <div className="anibt-home-hero">
-          <div className="anibt-home-frame" aria-hidden="true">
-            <span className="anibt-corner anibt-corner-tl" />
-            <span className="anibt-corner anibt-corner-tr" />
-            <span className="anibt-corner anibt-corner-bl" />
-            <span className="anibt-corner anibt-corner-br" />
-          </div>
+        <div className="z-2 flex size-full flex-col px-6 py-10 max-md:items-center max-md:text-center md:p-12">
+          <p className="mt-2 w-fit rounded-full border border-[color-mix(in_srgb,var(--anibt-brand)_50%,transparent)] p-2 text-xs font-medium text-[var(--anibt-brand)]">
+            {t.badge}
+          </p>
 
-          <div className="anibt-home-badge">
-            <Sparkles className="size-3.5" aria-hidden="true" />
-            <span>{t.badge}</span>
-          </div>
-
-          <h1 className="anibt-home-title">
-            <span className="anibt-home-title-lead">{t.titleLead}</span>
-            <em className="anibt-home-title-mid">{t.titleMid}</em>
-            <span className="anibt-home-title-tail">{t.titleTail}</span>
-            <i className="anibt-home-title-dot" aria-hidden="true" />
+          <h1 className="my-8 max-w-3xl text-4xl leading-[1.12] font-medium tracking-tight xl:mb-10 xl:text-5xl">
+            {t.title}
           </h1>
 
-          <p className="anibt-home-tagline">{t.tagline}</p>
-          <p className="anibt-home-subtitle">{t.subtitle}</p>
-
-          <div className="anibt-home-actions">
+          <div className="flex w-fit flex-row flex-wrap items-center justify-center gap-3">
             <Link
               href={localizedPath(lang, '/docs')}
-              className="anibt-home-btn anibt-home-btn-primary"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--anibt-brand)] px-5 py-3 text-sm font-medium tracking-tight text-[var(--anibt-brand-foreground)] transition-colors hover:bg-[var(--anibt-brand-hover)] max-sm:text-sm"
             >
               <BookOpen className="size-4" aria-hidden="true" />
               {t.enter}
-              <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <a
               href="https://anibt.net"
               target="_blank"
-              rel="noreferrer"
-              className="anibt-home-btn anibt-home-btn-ghost"
+              rel="noreferrer noopener"
+              className="inline-flex items-center justify-center gap-2 rounded-full border bg-fd-secondary px-5 py-3 text-sm font-medium tracking-tight text-fd-secondary-foreground transition-colors hover:bg-fd-accent max-sm:text-sm"
             >
               {t.site}
-              <ExternalLink className="size-3.5" aria-hidden="true" />
+              <ArrowUpRight className="size-4" aria-hidden="true" />
             </a>
           </div>
         </div>
+      </div>
 
-        <section className="anibt-home-explore" aria-labelledby="home-explore">
-          <div className="anibt-home-explore-head">
-            <span className="anibt-home-explore-kicker" aria-hidden="true">
-              ✦
-            </span>
-            <h2 id="home-explore" className="anibt-home-explore-title">
-              {t.explore}
-            </h2>
-            <span className="anibt-home-explore-line" aria-hidden="true" />
-          </div>
-
-          <div className="anibt-home-cards">
-            {t.features.map((feature, index) => (
-              <Link
-                key={feature.href}
-                href={localizedPath(lang, feature.href)}
-                className="anibt-home-card"
-                style={{ '--card-i': index } as CSSProperties}
-              >
-                <span className="anibt-home-card-icon" data-tone={feature.icon}>
-                  <FeatureGlyph name={feature.icon} />
-                </span>
-                <span className="anibt-home-card-body">
-                  <span className="anibt-home-card-title">{feature.title}</span>
-                  <span className="anibt-home-card-desc">{feature.desc}</span>
-                </span>
-                <ArrowRight
-                  className="anibt-home-card-arrow size-4"
-                  aria-hidden="true"
-                />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <p className="anibt-home-footer">
-          <a href="mailto:support@anibt.net">{t.footer}</a>
+      {/* Content grid */}
+      <div className="mx-auto mt-12 grid w-full max-w-[1400px] grid-cols-1 gap-6 px-6 md:mt-16 md:grid-cols-2 md:gap-8 md:px-12 lg:grid-cols-2">
+        <p className="col-span-full max-w-4xl text-2xl leading-snug font-light tracking-tight text-fd-muted-foreground md:text-3xl">
+          {t.intro}
         </p>
+
+        <div className="col-span-full mt-2 flex items-center gap-3">
+          <h2 className="text-sm font-medium tracking-tight text-fd-foreground">
+            {t.sectionsLabel}
+          </h2>
+          <div className="h-px flex-1 bg-fd-border" />
+        </div>
+
+        {t.features.map((feature) => {
+          const Icon = feature.icon;
+          return (
+            <Link
+              key={feature.href}
+              href={localizedPath(lang, feature.href)}
+              className="group rounded-2xl border bg-fd-card p-6 text-sm shadow-lg transition-colors hover:bg-fd-accent/40"
+            >
+              <Icon
+                className="mb-4 size-5 text-[var(--anibt-brand)]"
+                aria-hidden="true"
+              />
+              <h3 className="mb-2 text-xl font-medium tracking-tight lg:text-2xl">
+                {feature.title}
+              </h3>
+              <p className="mb-4 text-fd-muted-foreground">{feature.desc}</p>
+              <span className="inline-flex items-center gap-1 text-sm font-medium text-[var(--anibt-brand)] opacity-80 transition-opacity group-hover:opacity-100">
+                {t.enter}
+                <ArrowUpRight className="size-3.5" aria-hidden="true" />
+              </span>
+            </Link>
+          );
+        })}
+
+        <Link
+          href={localizedPath(lang, '/docs')}
+          className="group rounded-2xl border bg-fd-card p-6 text-sm shadow-lg transition-colors hover:bg-fd-accent/40 md:col-span-1"
+        >
+          <BookOpen
+            className="mb-4 size-5 text-[var(--anibt-brand)]"
+            aria-hidden="true"
+          />
+          <h3 className="mb-2 text-xl font-medium tracking-tight lg:text-2xl">
+            {t.docs}
+          </h3>
+          <p className="text-fd-muted-foreground">{t.docsDesc}</p>
+        </Link>
+
+        <a
+          href="mailto:support@anibt.net"
+          className="group rounded-2xl border bg-fd-card p-6 text-sm shadow-lg transition-colors hover:bg-fd-accent/40"
+        >
+          <h3 className="mb-2 text-xl font-medium tracking-tight lg:text-2xl">
+            {t.contact}
+          </h3>
+          <p className="text-fd-muted-foreground">{t.contactDesc}</p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[var(--anibt-brand)]">
+            support@anibt.net
+            <ArrowUpRight className="size-3.5" aria-hidden="true" />
+          </span>
+        </a>
       </div>
     </main>
   );
