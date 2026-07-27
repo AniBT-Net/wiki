@@ -2,41 +2,197 @@
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
-/*
-  Brand tokens — used sparingly like Fumadocs `text-brand`.
-  Keep the rest of the UI on fumadocs design tokens (fd-*).
-*/
 :root {
-  --anibt-brand: #e11d70;
-  --anibt-brand-2: #0d9488;
-  --anibt-brand-hover: #c21660;
-  --anibt-brand-foreground: #ffffff;
-
-  /* legacy aliases used by docs utilities / nav */
-  --anibt-accent-primary: var(--anibt-brand);
-  --anibt-accent-secondary: var(--anibt-brand-2);
-  --anibt-accent-warning: #eab308;
-  --anibt-accent-violet: #7c3aed;
+  color-scheme: light;
+  --anibt-bg-base: #fafafa;
+  --anibt-bg-elevated: #ffffff;
+  --anibt-paper: color-mix(in srgb, #ffffff 90%, #ffd64d 10%);
+  --anibt-text-primary: #1a1a1c;
+  --anibt-text-secondary: #58585d;
+  --anibt-text-tertiary: #88888e;
+  --anibt-accent-primary: #ff5a8d;
+  --anibt-accent-secondary: #3ebdb4;
+  --anibt-accent-warning: #ffd64d;
+  --anibt-border: color-mix(in srgb, #e4e4e7 88%, var(--anibt-accent-primary) 12%);
+  --anibt-shadow: 0 18px 48px color-mix(in srgb, var(--anibt-text-primary) 10%, transparent);
 }
 
 .dark {
-  --anibt-brand: #fb6aa0;
-  --anibt-brand-2: #2dd4bf;
-  --anibt-brand-hover: #ff85b3;
-  --anibt-brand-foreground: #14060d;
+  --anibt-bg-base: #0a0a0b;
+  --anibt-bg-elevated: #141416;
+  --anibt-paper: color-mix(in srgb, #141416 88%, #ffe66d 12%);
+  --anibt-text-primary: #e8e8ea;
+  --anibt-text-secondary: #a1a1a6;
+  --anibt-text-tertiary: #68686d;
+  --anibt-accent-primary: #ff6b9d;
+  --anibt-accent-secondary: #4ecdc4;
+  --anibt-accent-warning: #ffe66d;
+  --anibt-border: color-mix(in srgb, rgba(255, 255, 255, 0.08) 86%, var(--anibt-accent-primary) 14%);
+  --anibt-shadow: 0 18px 52px rgba(0, 0, 0, 0.32);
 }
 
-/* Optional soft page wash — much quieter than the previous mesh/aurora stack */
 body {
-  background-color: var(--color-fd-background);
+  background:
+    linear-gradient(135deg, var(--anibt-bg-base), color-mix(in srgb, var(--anibt-bg-base) 94%, var(--anibt-accent-primary) 6%)),
+    var(--fd-background);
 }
 
 .anibt-hero {
   background:
-    linear-gradient(
-      120deg,
-      color-mix(in oklch, var(--fd-primary) 12%, transparent),
-      transparent 42%
-    ),
+    linear-gradient(120deg, color-mix(in oklch, var(--fd-primary) 12%, transparent), transparent 42%),
     color-mix(in oklch, var(--fd-card) 96%, var(--fd-primary));
 }
+
+.anibt-home {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: calc(100svh - 3.5rem);
+  padding: 3rem 1.5rem;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--anibt-text-primary);
+}
+
+.anibt-home-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.anibt-home-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--anibt-text-primary) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--anibt-text-primary) 4%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black 50%, transparent 100%);
+}
+
+.dark .anibt-home-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+.anibt-home-glow {
+  position: absolute;
+  width: 36rem;
+  height: 36rem;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.55;
+}
+
+.anibt-home-glow-a {
+  top: -8rem;
+  left: -6rem;
+  background: radial-gradient(circle, var(--anibt-accent-primary), transparent 65%);
+}
+
+.anibt-home-glow-b {
+  bottom: -10rem;
+  right: -8rem;
+  background: radial-gradient(circle, var(--anibt-accent-secondary), transparent 65%);
+}
+
+.dark .anibt-home-glow {
+  opacity: 0.32;
+}
+
+.anibt-home-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(46rem, 90vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -52%);
+  border-radius: 9999px;
+  border: 1px dashed color-mix(in srgb, var(--anibt-accent-primary) 22%, transparent);
+  opacity: 0.5;
+}
+
+.anibt-home-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 36rem;
+}
+
+.anibt-home-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: clamp(2.5rem, 6vw, 3.75rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--anibt-text-primary);
+}
+
+.anibt-home-title em {
+  font-style: normal;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--anibt-accent-primary), var(--anibt-accent-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.anibt-home-title-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: var(--anibt-accent-primary);
+  transform: translateY(-0.1rem);
+}
+
+.anibt-home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 2rem;
+}
+
+.anibt-home-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 2.5rem;
+  padding: 0 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.anibt-home-btn:hover {
+  transform: translateY(-1px);
+}
+
+.anibt-home-btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--anibt-accent-primary), color-mix(in srgb, var(--anibt-accent-secondary) 70%, var(--anibt-accent-primary)));
+  box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--anibt-accent-primary) 60%, transparent);
+}
+
+.anibt-home-btn-ghost {
+  color: var(--anibt-text-secondary);
+  border-color: var(--anibt-border);
+  background: color-mix(in srgb, var(--anibt-bg-elevated) 50%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.anibt-home-btn-ghost:hover {
+  color: var(--anibt-text-primary);
+  border-color: color-mix(in srgb, var(--anibt-accent-secondary) 50%, var(--anibt-border));
+}
+

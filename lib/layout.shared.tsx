@@ -110,14 +110,16 @@ export function baseOptions(locale: string): BaseLayoutProps {
     githubUrl: 'https://github.com/AniBT-Net/wiki',
     nav: {
       title: (
-        <span className="inline-flex items-center gap-2.5 font-semibold">
+        <span className="inline-flex items-center gap-2 font-semibold">
           <img
             src="/favicon.png"
             alt=""
             className="size-5 rounded-sm"
             aria-hidden="true"
           />
-          <span className="font-medium tracking-tight">AniBT Wiki</span>
+          <span className="bg-gradient-to-r from-[var(--anibt-accent-primary)] to-[var(--anibt-accent-secondary)] bg-clip-text font-serif font-black text-transparent">
+            AniBT Wiki
+          </span>
         </span>
       ),
       url: localizedPath(locale, '/'),
