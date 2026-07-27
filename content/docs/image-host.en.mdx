@@ -1,91 +1,23 @@
 ---
 title: Subtitle group image host
-description: "The image-hosting tool in subtitle group admin pages: paste, drop, or choose images, with optional browser pre-scaling and worker-validated WebP conversion or original-format preservation before BBCode, HTML, Markdown, and direct links are generated."
+description: Upload images from the subtitle group Image Host module and copy global CDN links, BBCode, Markdown, HTML, and more.
 ---
 
-The subtitle group image host lives at `/groups/<slug>/image-host` under the **Image Host** menu item. It is available only to members of that subtitle group's organization. Regular users and users outside the group cannot upload, view the management list, or delete images.
+Go to the subtitle group admin **Image Host** module and upload via the web UI.
+
+After upload, you can copy these formats:
+
+| Format | Example |
+| --- | --- |
+| Global CDN link | `https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp` |
+| BBCode | `[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]` |
+| Markdown | `![pasted-image.webp](https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp)` |
+| HTML | `<img src="https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp" alt="pasted-image.webp">` |
+| BBCode linked | `[url=https://anibt.net/i/Ab3CdE1][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
+| BBCode direct | `[url=https://i.anibt.net/image-host/...webp][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
+| HTML linked | `<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
+| HTML direct | `<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
 
 <Callout type="info">
-  The public short page `/i/<shortCode>` only displays an uploaded image. It does not expose upload or management actions.
+  Image Host is only available to members of that subtitle group. Path: group admin → **Image Host** (`/groups/<slug>/image-host`).
 </Callout>
-
-## Page structure
-
-The image-host page uses a **single upload entry followed by image management**. There is no top mode switcher and no two-column upload panel. The upload area stays at the top of the page, while the historical library loads below it by time-based pages.
-
-- **Upload**: click the upload area to choose images, drag images onto it, or paste clipboard images while the page is focused. Each image has a stable result row. Direct R2 upload shows a real percentage, followed by preparing, queued, validating/converting, finalizing, and completed states.
-- **Just uploaded**: after upload, copy formats appear in the matching result row for immediate use in forums, announcements, or release notes. File names, states, and progress remain aligned during batch uploads.
-- **Image Management**: browse images already uploaded by the subtitle group. The library uses a dense small-thumbnail grid, lazy image loading, and paginated loading for large collections. Use the copy-format button to open the full BBCode, HTML, Markdown, and direct-link dialog without expanding the library layout.
-
-## Upload methods
-
-- Choose images from the file picker, drag images into the drop zone, or paste images from the clipboard while the page is focused.
-- The browser sends up to five images in one small JSON preparation batch. The main site performs login and subtitle-group membership checks once, then returns every short-lived staging R2 presigned URL in that batch.
-- For large JPEG/PNG files or over-edge static WebP files that are confirmed static, pixel-bounded, and meaningfully smaller after conversion, the browser first applies EXIF-aware downscaling and WebP encoding. APNG, animated WebP, GIF, HEIC/HEIF, AVIF, SVG, and inputs that cannot be identified safely skip client conversion. The worker remains the final validator.
-- The browser sends image bytes directly to staging R2 with up to five concurrent `PUT` requests. The bytes are not wrapped in multipart/FormData and never pass through the Web runtime, and the page shows a real percentage for each image. After upload, the browser reads the R2 ETag and asks the main site to enqueue processing.
-- One batch status request polls all active images every 500 ms instead of one poll per image. Copy formats appear only after the worker has processed the image, written the final object, and recorded its metadata.
-
-## Processing rules
-
-| Item | Current rule |
-| --- | --- |
-| Output format | Decodable static JPEG/PNG/GIF/BMP/AVIF/HEIC/HEIF uploads are converted to `image/webp`. A validated static WebP is preserved when it needs no resize and is only resized/re-encoded when it exceeds the longest edge. A static-image decode or encode failure fails the upload instead of preserving damaged input. |
-| Default input limit | 10 MiB per image, configurable at deploy time. |
-| Default pixel limit | 50,000,000 decoded pixels. |
-| Default longest edge | 3840px, downscaled proportionally and never upscaled. |
-| Default quality | WebP quality 88. |
-| Server concurrency | The shared worker processes 5 images at a time by default, with a maximum of 5. Each image uses a separate short-lived Bun child process, while global worker concurrency remains 8. |
-| SVG | Supported and preserved as `image/svg+xml`. |
-| Animated GIF / animated WebP / APNG | Supported and preserved in the original format; animation is not flattened or extracted as a still frame. |
-
-Image processing and final object writes run in the shared Bun background-worker. Each image starts a short-lived child process and uses the browser-returned ETag for an `If-Match` conditional GET. That single read verifies ETag, size, `Content-Type`, and actual body length, preventing replacement during the presigned-URL window without before/after HEAD requests. `Bun.Image` then validates, auto-orients, resizes when needed, and encodes to WebP before writing directly to a `Bun.S3File`. When the child exits, the operating system reclaims its native image memory instead of retaining it in the long-lived Web SSR process. Convex stores only the short-lived upload intent, queue request, and final metadata; it never handles image bytes or object-storage IO.
-
-On deletion, Convex authorizes the request, soft-deletes the metadata, and enqueues `media/r2_object_delete_batch`; the Bun background-worker then deletes the object asynchronously through native `Bun.S3Client`.
-
-## Copy formats
-
-After a successful upload, the Upload workspace generates:
-
-- BBCode: `[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]`
-- BBCode linked: `[url=https://anibt.net/i/Ab3CdE1][img]...[/img][/url]`
-- BBCode direct linked: `[url=https://i.anibt.net/image-host/...webp][img]...[/img][/url]`
-- HTML: `<img src="..." alt="pasted-image.webp" title="pasted-image.webp">`
-- HTML linked: `<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img ...></a>`
-- HTML direct linked: `<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img ...></a>`
-- Markdown: `![pasted-image.webp](https://i.anibt.net/image-host/...webp)`
-- Direct link: `https://i.anibt.net/image-host/...webp`; preserved originals use matching extensions such as `.gif`, `.svg`, or `.apng`.
-
-## Management and deletion
-
-The Image Management area shows the group's historical uploads. Members can preview images, copy the direct link, open the direct image link, or delete images they are allowed to remove. To access every copy format, use the copy-format button to open the dialog.
-
-Delete permissions:
-
-- Uploaders can delete their own images.
-- Subtitle group owners/admins can delete images in their group.
-- Site admins can delete images from any group.
-
-For deletion, the Web runtime first asks Convex for delete authorization and the object key, then calls Convex to mark the metadata as deleted and enqueue a media-worker delete job. The image disappears from lists and short-page lookup immediately; the direct object URL may remain reachable briefly until the background-worker completes the asynchronous delete.
-
-## Admin recent review
-
-Site admins can review recent image-host uploads at `/admin/image-host`. The page lists uploads across subtitle groups by upload time and uses a dense small-thumbnail grid, making it easier to scan many recent images for sensitive, policy-breaking, or unsuitable public content.
-
-Admins can copy direct links, open direct image links, view every copy format, and delete image-host images from any subtitle group. This page is only for site admins, not regular users or regular subtitle group members.
-
-## Deployment requirements
-
-Use a dedicated object bucket and dedicated credentials for image hosting. Production must define:
-
-| Environment variable | Purpose |
-| --- | --- |
-| `IMAGE_HOST_R2_BUCKET` | Dedicated image-host bucket name. |
-| `IMAGE_HOST_R2_ENDPOINT` | S3/R2 endpoint. Account-level endpoints are supported; endpoints ending in `/<bucket>` are validated and normalized. |
-| `IMAGE_HOST_R2_ACCESS_KEY_ID` | Access key for the image-host bucket. |
-| `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | Secret key for the image-host bucket. |
-| `IMAGE_HOST_PUBLIC_DOMAIN` | Public image domain. Bare domains are normalized to `https://`. Convex uses it to generate final direct URLs. |
-| `IMAGE_HOST_MAX_INPUT_BYTES` | Shared 10 MiB limit for Web, Convex, and the shared worker; production uses `10485760`. |
-| `IMAGE_HOST_CONVERT_CONCURRENCY` | Shared-worker image conversion concurrency. Production uses `5`; the maximum is `5`. |
-| `WORKER_QUEUE_CONCURRENCY_MEDIA` | Shared-worker `media` queue concurrency. Production uses `5`. |
-
-Both the Web runtime and the shared background-worker need the same `IMAGE_HOST_R2_*` configuration; Convex needs `IMAGE_HOST_PUBLIC_DOMAIN`. The image-host bucket must allow cross-origin `PUT` requests from `https://anibt.net` and expose the upload result with `ExposeHeaders: ["ETag"]`. Uploads fail closed before worker enqueue when the ETag is unavailable. Production Docker images check for `Bun.Image` and `Bun.S3Client` during build; the build fails if the runtime lacks these native APIs.

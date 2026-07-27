@@ -1,91 +1,23 @@
 ---
 title: 字幕组图床
-description: 字幕组后台的图床工具：粘贴、拖拽或选择图片，浏览器按需预缩放、worker 校验并转 WebP 或保留原格式后生成 BBCode、HTML、Markdown 和直链。
+description: 在字幕组后台图床模块上传图片，获取全球加速链接、BBCode、Markdown、HTML 等多种格式。
 ---
 
-字幕组图床位于 `/groups/<slug>/image-host`，菜单名称是 **图床**。它只对已加入该字幕组组织的成员开放；普通登录用户和未加入该字幕组的用户不能上传、查看管理列表或删除图片。
+前往字幕组后台的 **图床** 模块进行 Web 上传即可。
+
+上传成功后，可直接复制以下格式：
+
+| 格式 | 示例 |
+| --- | --- |
+| 全球加速链接 | `https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp` |
+| BBCode | `[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]` |
+| Markdown | `![pasted-image.webp](https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp)` |
+| HTML | `<img src="https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp" alt="pasted-image.webp">` |
+| BBCode 链接 | `[url=https://anibt.net/i/Ab3CdE1][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
+| BBCode 直链 | `[url=https://i.anibt.net/image-host/...webp][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
+| HTML 链接 | `<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
+| HTML 直链 | `<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
 
 <Callout type="info">
-  公开短链 `/i/<shortCode>` 只展示已经上传的图片，不提供上传或管理能力。
+  图床仅对已加入该字幕组的成员开放。菜单路径：字幕组后台 → **图床**（`/groups/<slug>/image-host`）。
 </Callout>
-
-## 页面结构
-
-图床页面采用 **单入口上传 + 下方图片管理** 的结构，避免顶部模式切换或两栏上传面板。上传区始终在页面上方，历史图库在下方按时间分页加载。
-
-- **上传**：点击上传区选择图片，也可以拖拽图片到上传区，或在页面中直接粘贴剪贴板图片。每张图片会在本次上传区显示固定状态行，直传阶段显示真实百分比，之后依次显示准备、已入队、校验与转码、收尾和完成。
-- **刚上传**：上传成功后，复制格式直接显示在对应结果行，方便马上粘贴到论坛、公告或发布说明；批量上传的文件名、状态和进度位置保持对齐。
-- **图片管理**：用于浏览该字幕组已经上传的图片。图库使用小缩略图密集网格、懒加载和分页加载，适合后续管理大量图片；需要完整 BBCode、HTML、Markdown 与直链时，点击复制格式打开弹层，不会撑开或打乱图库布局。
-
-## 上传方式
-
-- 支持点击选择图片、拖拽图片到上传区、在页面中直接粘贴剪贴板图片。
-- 浏览器每批最多提交 5 张的小型 JSON；主站只做一次登录与字幕组成员授权，随后一次返回该批所有 staging R2 预签名地址。
-- 对可确认是静态、像素受控且能明显减小的较大 JPEG/PNG 或超长边静态 WebP，浏览器会先按 EXIF 方向预缩放并编码为 WebP；APNG、动画 WebP、GIF、HEIC/HEIF、AVIF、SVG 和无法安全识别的输入不会走客户端转换。worker 始终负责最终校验。
-- 图片二进制由浏览器最多 5 路并发直接 `PUT` 到 staging R2，不使用 multipart/FormData，也不经过 Web runtime；页面分别显示每张图片的真实上传百分比。上传完成后，浏览器读取 R2 返回的 ETag 并通知主站排队处理。
-- 同一批图片每 500 ms 只发送一次批量状态查询，而不是每张图片各自轮询；只有 worker 完成处理、写入正式对象并登记元数据后，才显示复制格式。
-
-## 图片处理规则
-
-| 项目 | 当前规则 |
-| --- | --- |
-| 输出格式 | 可解码的静态 JPEG/PNG/GIF/BMP/AVIF/HEIC/HEIF 会转成 `image/webp`；无需缩放的静态 WebP 校验后直接保留，超出最长边时才缩放并重新编码。静态图解码或编码失败时上传失败，不保存损坏原图。 |
-| 默认大小上限 | 单张输入默认 10 MiB，可由部署环境调整。 |
-| 默认像素上限 | 解码后默认最多 50,000,000 像素。 |
-| 默认最长边 | 输出最长边默认 3840px，按比例缩小，不放大。 |
-| 默认质量 | WebP quality 默认 88。 |
-| 服务端并发 | shared worker 默认同时处理 5 张，部署上限 5；每张图片使用独立短生命周期 Bun 子进程，全局 worker 并发仍为 8。 |
-| SVG | 支持上传并保留 `image/svg+xml` 原格式。 |
-| 动画 GIF / 动画 WebP / APNG | 支持上传并保留原格式，不抽帧、不压成静态图。 |
-
-图片转码和正式对象写入由 shared Bun background-worker 完成。每张图片会启动一个短生命周期子进程，并使用浏览器回传的 ETag 发起 `If-Match` 条件 GET；worker 在一次读取中同时核对 ETag、size、`Content-Type` 与实际 body 长度，防止预签名地址有效期内对象被替换，不再执行读前/读后两次 HEAD。随后由 `Bun.Image` 完成校验、自动方向、按需缩放和 WebP 编码，并直接写入 `Bun.S3File`。子进程退出后，图片 native 内存由操作系统回收，不会留在长寿命 Web SSR 进程中。Convex 只保存短期 upload intent、排队任务和最终元数据，不处理图片二进制或对象存储 IO。
-
-删除图片时，Convex 会先完成权限校验、软删除元数据并投递 `media/r2_object_delete_batch`，再由 Bun background-worker 使用原生 `Bun.S3Client` 异步删除对象。
-
-## 复制格式
-
-上传成功后，上传工作区会在结果区生成以下格式：
-
-- BBCode：`[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]`
-- BBCode 链接：`[url=https://anibt.net/i/Ab3CdE1][img]...[/img][/url]`
-- BBCode 直链：`[url=https://i.anibt.net/image-host/...webp][img]...[/img][/url]`
-- HTML：`<img src="..." alt="pasted-image.webp" title="pasted-image.webp">`
-- HTML 链接：`<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img ...></a>`
-- HTML 直链：`<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img ...></a>`
-- Markdown：`![pasted-image.webp](https://i.anibt.net/image-host/...webp)`
-- 直接链接：`https://i.anibt.net/image-host/...webp`；保留原格式时扩展名会是 `.gif`、`.svg`、`.apng` 等对应格式。
-
-## 管理与删除
-
-图片管理区域展示该字幕组的历史上传。成员可以预览图片、复制直链、打开图片直链或删除有权限的图片；需要全部复制格式时，点击复制格式按钮打开弹层。
-
-删除权限：
-
-- 上传者可以删除自己上传的图片。
-- 字幕组 owner/admin 可以删除该组图片。
-- 站点管理员可以删除任意字幕组图床图片。
-
-删除时 Web runtime 会先向 Convex 请求删除授权和对象 key，再调用 Convex 将元数据标记为已删除并投递 media worker 删除任务。图片会立即从列表和短链查询中消失；直链对象可能短时间仍可访问，直到 background-worker 完成异步删除。
-
-## 管理员近期审查
-
-站点管理员可在 `/admin/image-host` 查看近期上传的图床图片。该页面按上传时间展示跨字幕组记录，并使用密集小缩略图网格，便于快速扫过大量近期图片并检查敏感、违规或不适合公开展示的内容。
-
-管理员可以从近期审查页复制直链、打开图片直链、查看完整复制格式，并删除任意字幕组的图床图片。该页面只对站点管理员开放，不面向普通用户或普通字幕组成员。
-
-## 部署要求
-
-图床必须使用独立对象桶和专用访问密钥。生产环境需要配置：
-
-| 环境变量 | 说明 |
-| --- | --- |
-| `IMAGE_HOST_R2_BUCKET` | 图床专用桶名。 |
-| `IMAGE_HOST_R2_ENDPOINT` | S3/R2 endpoint；可填账号级 endpoint，带 `/<bucket>` 路径时会校验并归一化。 |
-| `IMAGE_HOST_R2_ACCESS_KEY_ID` | 图床桶 access key。 |
-| `IMAGE_HOST_R2_SECRET_ACCESS_KEY` | 图床桶 secret key。 |
-| `IMAGE_HOST_PUBLIC_DOMAIN` | 公开图片域名；裸域名会自动补 `https://`。由 Convex 控制面生成最终直链。 |
-| `IMAGE_HOST_MAX_INPUT_BYTES` | Web、Convex 和 shared worker 的单图上限；生产为 `10485760`。 |
-| `IMAGE_HOST_CONVERT_CONCURRENCY` | shared worker 图片转换并发；生产使用 `5`，最大 `5`。 |
-| `WORKER_QUEUE_CONCURRENCY_MEDIA` | shared worker 的 `media` 队列并发；生产使用 `5`。 |
-
-Web runtime 和 shared background-worker 都需要同一套 `IMAGE_HOST_R2_*` 配置；Convex 需要 `IMAGE_HOST_PUBLIC_DOMAIN`。图床桶必须允许 `https://anibt.net` 对预签名地址执行跨域 `PUT`，并通过 `ExposeHeaders: ["ETag"]` 让浏览器读取上传结果；缺少 ETag 时上传会 fail closed，不会进入 worker。生产 Docker 镜像会在构建阶段检查 `Bun.Image` 和 `Bun.S3Client`；如果运行时不支持这些原生 API，构建会失败。
