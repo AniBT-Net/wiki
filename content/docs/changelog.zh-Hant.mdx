@@ -9,6 +9,21 @@ description: AniBT Wiki 與站點功能更新紀錄。
   日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
 </Callout>
 
+## 2026 年 7 月 30 日
+
+<TypeTable
+  type={{
+    'MediaInfo 純文字安全遷移': {
+      description: '釋出詳情的 MediaInfo 已統一為 UTF-8 純文字：主站 GET/HEAD 返回 text/plain 與 nosniff，頁面只按文字顯示。生產 Agent 改用 mediainfo --Output=Text，並強制驗證 qBittorrent TLS 憑證；全部歷史 .html 參照與物件已轉換為可讀文字並完成零殘留清理。',
+      type: '安全',
+    },
+    '釋出內容與 RSS 輸出加固': {
+      description: '釋出說明中的原始 HTML 現在按普通文字處理，不再作為活動 DOM 執行；公開 RSS 的 Markdown 連結與圖片 URL 使用獨立屬性編碼和安全協議白名單，正常 Markdown 內容保持可用。',
+      type: '安全',
+    },
+  }}
+/>
+
 ## 2026 年 7 月 25 日
 
 <TypeTable
