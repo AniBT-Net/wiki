@@ -173,11 +173,11 @@ The public read path advances asynchronously. After the corresponding Typesense 
       type: 'number',
     },
     'notes': {
-      description: 'Release notes. Markdown is supported, up to 50000 characters.',
+      description: 'Release notes support Markdown and raw HTML, up to 50000 characters. HTML is rendered directly without a sanitizer or HTML/CSS allowlist.',
       type: 'string',
     },
     'descriptionMarkdown': {
-      description: 'Compatibility alias for notes. content / description / intro are also accepted as note aliases.',
+      description: 'Compatibility alias for notes with the same Markdown + raw HTML rendering behavior. content / description / intro are also accepted as note aliases.',
       type: 'string',
     },
     'trackers': {
@@ -218,6 +218,10 @@ The public read path advances asynchronously. After the corresponding Typesense 
     },
   }}
 />
+
+<Callout type="warn">
+  Raw HTML in `notes` is rendered directly on release-detail and preview pages. No sanitizer or tag, attribute, or CSS allowlist is applied. Only trusted subtitle-group members, administrators, or controlled publishing API keys should write this field.
+</Callout>
 
 <Callout type="info">
   `torrent` is **required** in multipart requests. `magnetBase64` is optional — when omitted, the backend extracts it from the torrent.
@@ -405,7 +409,7 @@ Preview responses also return the same group identity fields at the top level so
 
 ## Preview mode
 
-To verify how a release will render (title parsing, Markdown notes, magnet correctness) before going public, set `preview=true`:
+To verify how a release will render (title parsing, Markdown/HTML notes, magnet correctness) before going public, set `preview=true`:
 
 ```bash title="Preview only — not published"
 curl -X POST 'https://anibt.net/api/releases/publish' \

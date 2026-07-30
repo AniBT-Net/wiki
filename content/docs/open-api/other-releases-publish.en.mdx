@@ -30,7 +30,7 @@ Authorization: Bearer <YOUR_API_KEY>
       -F 'category=manga' \
       -F 'title=Example Manga Vol.01' \
       -F 'customTags=digital,english' \
-      -F 'notes=Release notes support Markdown.' \
+      -F 'notes=Release notes support Markdown and raw HTML.' \
       -F 'nyaa=true' \
       -F 'nyaaCategory=3_2' \
       -F 'nyaaComplete=false' \
@@ -86,7 +86,7 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -F 'category=manga' \
   -F 'title=Example Manga Vol.01' \
-  -F 'notes=Release notes support Markdown.' \
+  -F 'notes=Release notes support Markdown and raw HTML.' \
   -F 'torrent=@/path/to/release.torrent' \
   -F 'nyaa=true' \
   -F 'nyaaCategory=3_2' \
@@ -146,11 +146,11 @@ Aliases and structured JSON fields match anime publishing:
       type: 'string[]',
     },
     'notes': {
-      description: 'Detail page description. Markdown is supported, up to 50000 characters.',
+      description: 'Detail-page notes support Markdown and raw HTML, up to 50000 characters. HTML is rendered directly without a sanitizer or HTML/CSS allowlist.',
       type: 'string',
     },
     'descriptionMarkdown': {
-      description: 'Compatibility alias for notes. content / description / intro are also accepted as description text.',
+      description: 'Compatibility alias for notes with the same Markdown + raw HTML rendering behavior. content / description / intro are also accepted as description text.',
       type: 'string',
     },
     'customTags': {
@@ -163,6 +163,10 @@ Aliases and structured JSON fields match anime publishing:
     },
   }}
 />
+
+<Callout type="warn">
+  Raw HTML in `notes` is rendered directly on other-release detail pages. No sanitizer or tag, attribute, or CSS allowlist is applied. Only trusted subtitle-group members, administrators, or controlled publishing API keys should write this field.
+</Callout>
 
 <Callout type="info">
   `category` and `title` are required. At least one of `torrent`, `torrentStorageId`, `magnetLink`, or `magnetBase64` must be provided.
@@ -191,8 +195,8 @@ Aliases and structured JSON fields match anime publishing:
 | `torrentStorageId` | Existing public torrent key | Internal automation use. Normal clients should not construct this manually. |
 | `fileSize` | Byte count, e.g. `734003200` | Auto-extracted from torrent uploads; can also be inferred from magnet `xl=`. Formal magnet-only without size > 0 returns 422 / `EMPTY_RELEASE_CONTENT`. |
 | `trackers` | JSON array or multipart newline-separated text | Additional trackers. Do not send multiple URLs as a comma string; commas are for `customTags`. |
-| `notes` | Markdown text | Used on the release page and RSS description. |
-| `descriptionMarkdown` | Markdown text | Compatibility alias for `notes`. `content`, `description`, and `intro` are also accepted as note aliases. |
+| `notes` | Markdown + raw HTML | Rendered directly on the detail page. The RSS description is produced by a separate RSS converter and is not the page DOM. |
+| `descriptionMarkdown` | Markdown + raw HTML | Compatibility alias for `notes`. `content`, `description`, and `intro` are also accepted as note aliases. |
 | `customTags` | JSON array or multipart comma-separated text | Up to 20 tags, each up to 80 characters. Example: `FLAC,BK,self-purchased`. |
 | `tags` | Same as `customTags` | Compatibility alias for `customTags`. |
 

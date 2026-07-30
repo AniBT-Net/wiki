@@ -173,11 +173,11 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
       type: 'number',
     },
     'notes': {
-      description: '釋出備註，支援 Markdown，最多 50000 字元。',
+      description: '釋出備註，支援 Markdown 與原始 HTML，最多 50000 字元。頁面會直接渲染 HTML，不經過 sanitizer 或 HTML/CSS 白名單。',
       type: 'string',
     },
     'descriptionMarkdown': {
-      description: 'notes 的相容別名。content / description / intro 也會被相容為說明文字。',
+      description: 'notes 的相容別名，使用相同的 Markdown + 原始 HTML 渲染規則。content / description / intro 也會被相容為說明文字。',
       type: 'string',
     },
     'trackers': {
@@ -218,6 +218,10 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
     },
   }}
 />
+
+<Callout type="warn">
+  `notes` 中的原始 HTML 會在釋出詳情與預覽頁面直接渲染，不啟用 sanitizer、標籤/屬性白名單或 CSS 白名單。請只讓可信的字幕組成員、管理員或受控釋出 API Key 寫入此欄位。
+</Callout>
 
 <Callout type="info">
   `torrent` 種子檔案**必填**（multipart）。`magnetBase64` 可選——不提供時後端會從種子檔案解析出磁力連結。
@@ -398,7 +402,7 @@ Nyaa 分類代碼必須原樣填寫：
 
 ## 預覽模式
 
-釋出前想先看看渲染效果（標題解析、Markdown 備註、磁力是否正確），把 `preview=true` 即可：
+釋出前想先看看渲染效果（標題解析、Markdown/HTML 備註、磁力是否正確），把 `preview=true` 即可：
 
 ```bash title="預覽，不公開"
 curl -X POST 'https://anibt.net/api/releases/publish' \

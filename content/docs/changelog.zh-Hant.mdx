@@ -17,8 +17,12 @@ description: AniBT Wiki 與站點功能更新紀錄。
       description: '釋出詳情的 MediaInfo 已統一為 UTF-8 純文字：主站 GET/HEAD 返回 text/plain 與 nosniff，頁面只按文字顯示。生產 Agent 改用 mediainfo --Output=Text，並強制驗證 qBittorrent TLS 憑證；全部歷史 .html 參照與物件已轉換為可讀文字並完成零殘留清理。',
       type: '安全',
     },
-    '釋出內容與 RSS 輸出加固': {
-      description: '釋出說明中的原始 HTML 現在按普通文字處理，不再作為活動 DOM 執行；公開 RSS 的 Markdown 連結與圖片 URL 使用獨立屬性編碼和安全協議白名單，正常 Markdown 內容保持可用。',
+    '釋出說明原始 HTML 支援恢復': {
+      description: '番劇與其他類釋出說明、詳情和預覽再次按 Markdown + 原始 HTML 渲染；details/summary、表格、圖片、連結、div/span/font 與行內 style 等歷史排版繼續可用。頁面不啟用 sanitizer 或 HTML/CSS 白名單，編輯邊界仍是字幕組成員、管理員及受控釋出 API Key。',
+      type: '修復',
+    },
+    'RSS 輸出編碼加固': {
+      description: '公開 RSS 的 Markdown 連結與圖片 URL 繼續使用獨立屬性編碼和安全協議策略；此 RSS 邊界與釋出詳情頁恢復原始 HTML 渲染相互獨立。',
       type: '安全',
     },
   }}

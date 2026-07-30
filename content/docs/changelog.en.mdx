@@ -17,8 +17,12 @@ This page records AniBT Wiki changes and feature updates that are directly cover
       description: 'MediaInfo on release details is now UTF-8 plain text end to end: Web GET/HEAD responses use text/plain plus nosniff, and the page renders only text. Production agents now use mediainfo --Output=Text and require verified qBittorrent TLS certificates. Every historical .html reference and object was converted to readable text and removed with zero legacy residue.',
       type: 'Security',
     },
-    'Publishing content and RSS output hardening': {
-      description: 'Raw HTML in publisher Markdown is now treated as ordinary text instead of active DOM. Markdown links and image URLs emitted into public RSS use separate attribute encoding and a safe-protocol allowlist while normal Markdown content remains available.',
+    'Raw HTML restored in release notes': {
+      description: 'Anime and other-release notes, detail pages, and previews once again render Markdown plus raw HTML. Historical layouts using details/summary, tables, images, links, div/span/font, and inline style remain available. The page renderer applies no sanitizer or HTML/CSS allowlist; editing remains limited to subtitle-group members, administrators, and controlled publishing API keys.',
+      type: 'Fixed',
+    },
+    'RSS output encoding hardening': {
+      description: 'Markdown links and image URLs in public RSS continue to use separate attribute encoding and safe protocol handling. This RSS boundary is independent from restoring raw HTML on release-detail pages.',
       type: 'Security',
     },
   }}

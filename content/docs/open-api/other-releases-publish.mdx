@@ -30,7 +30,7 @@ Authorization: Bearer <YOUR_API_KEY>
       -F 'category=manga' \
       -F 'title=Example Manga Vol.01' \
       -F 'customTags=电子版,中文' \
-      -F 'notes=发布说明支持 Markdown。' \
+      -F 'notes=发布说明支持 Markdown 与原始 HTML。' \
       -F 'nyaa=true' \
       -F 'nyaaCategory=3_2' \
       -F 'nyaaComplete=false' \
@@ -86,7 +86,7 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -F 'category=manga' \
   -F 'title=Example Manga Vol.01' \
-  -F 'notes=发布说明支持 Markdown。' \
+  -F 'notes=发布说明支持 Markdown 与原始 HTML。' \
   -F 'torrent=@/path/to/release.torrent' \
   -F 'nyaa=true' \
   -F 'nyaaCategory=3_2' \
@@ -146,11 +146,11 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
       type: 'string[]',
     },
     'notes': {
-      description: '发布页说明，支持 Markdown，最多 50000 字符。',
+      description: '发布页说明，支持 Markdown 与原始 HTML，最多 50000 字符。页面会直接渲染 HTML，不经过 sanitizer 或 HTML/CSS 白名单。',
       type: 'string',
     },
     'descriptionMarkdown': {
-      description: 'notes 的兼容别名。content / description / intro 也会被兼容为说明文本。',
+      description: 'notes 的兼容别名，使用相同的 Markdown + 原始 HTML 渲染规则。content / description / intro 也会被兼容为说明文本。',
       type: 'string',
     },
     'customTags': {
@@ -163,6 +163,10 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
     },
   }}
 />
+
+<Callout type="warn">
+  `notes` 中的原始 HTML 会在其他类发布详情直接渲染，不启用 sanitizer、标签/属性白名单或 CSS 白名单。请只让可信的字幕组成员、管理员或受控发布 API Key 写入该字段。
+</Callout>
 
 <Callout type="info">
   `category` 和 `title` 必填；`torrent`、`torrentStorageId`、`magnetLink`、`magnetBase64` 至少提供一个。
@@ -191,8 +195,8 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 | `torrentStorageId` | 已上传的公共 torrent key | 内部自动化场景使用。普通客户端不要手工构造。 |
 | `fileSize` | 字节数，例如 `734003200` | 上传 torrent 时可自动提取；magnet 带 `xl=` 时也可推断。无 torrent 且无法得到 >0 的大小时正式发布会 422 / `EMPTY_RELEASE_CONTENT`。 |
 | `trackers` | JSON 数组或 multipart 换行文本 | 追加 tracker。不要把多个 URL 写成一个逗号字符串，除非是 `customTags`。 |
-| `notes` | Markdown 文本 | 发布页和 RSS 描述使用。 |
-| `descriptionMarkdown` | Markdown 文本 | `notes` 的兼容别名。`content`、`description`、`intro` 也会被兼容为说明文本。 |
+| `notes` | Markdown + 原始 HTML | 发布页直接渲染；RSS 描述由独立 RSS 转换器生成，不等同于页面 DOM。 |
+| `descriptionMarkdown` | Markdown + 原始 HTML | `notes` 的兼容别名。`content`、`description`、`intro` 也会被兼容为说明文本。 |
 | `customTags` | JSON 数组或 multipart 逗号分隔 | 最多 20 个，每个最长 80 字符。例：`FLAC,BK,自购`。 |
 | `tags` | 同 `customTags` | `customTags` 的兼容别名。 |
 

@@ -173,11 +173,11 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
       type: 'number',
     },
     'notes': {
-      description: '发布备注，支持 Markdown，最多 50000 字符。',
+      description: '发布备注，支持 Markdown 与原始 HTML，最多 50000 字符。页面会直接渲染 HTML，不经过 sanitizer 或 HTML/CSS 白名单。',
       type: 'string',
     },
     'descriptionMarkdown': {
-      description: 'notes 的兼容别名。content / description / intro 也会被兼容为说明文本。',
+      description: 'notes 的兼容别名，使用相同的 Markdown + 原始 HTML 渲染规则。content / description / intro 也会被兼容为说明文本。',
       type: 'string',
     },
     'trackers': {
@@ -218,6 +218,10 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
     },
   }}
 />
+
+<Callout type="warn">
+  `notes` 中的原始 HTML 会在发布详情和预览页面直接渲染，不启用 sanitizer、标签/属性白名单或 CSS 白名单。请只让可信的字幕组成员、管理员或受控发布 API Key 写入该字段。
+</Callout>
 
 <Callout type="info">
   `torrent` 种子文件**必填**（multipart）。`magnetBase64` 可选——不提供时后端会从种子文件解析出磁力链接。
@@ -398,7 +402,7 @@ Nyaa 分类代码必须原样填写：
 
 ## 预览模式
 
-发布前想先看看渲染效果（标题解析、Markdown 备注、磁力是否正确），把 `preview=true` 即可：
+发布前想先看看渲染效果（标题解析、Markdown/HTML 备注、磁力是否正确），把 `preview=true` 即可：
 
 ```bash title="预览，不公开"
 curl -X POST 'https://anibt.net/api/releases/publish' \
