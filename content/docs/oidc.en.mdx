@@ -1,0 +1,41 @@
+---
+title: Sign in to third-party apps with AniBT
+description: Use AniBT accounts through the standard OpenID Connect platform.
+---
+
+AniBT now provides a standard OpenID Connect (OIDC) identity platform. Approved third-party applications can send users to AniBT for registration, sign-in, and consent, then receive an Authorization Code callback.
+
+<Callout type="info">
+  The issuer is `https://oauth.anibt.net`; discovery is available at [`https://oauth.anibt.net/.well-known/openid-configuration`](https://oauth.anibt.net/.well-known/openid-configuration). Production dynamic client registration is disabled. Contact [support@anibt.net](mailto:support@anibt.net) for onboarding.
+</Callout>
+
+## Supported flow
+
+- Authorization Code with PKCE S256 only. Web apps must use a backend/BFF; native clients do not keep a secret.
+- Clients must validate `state`, `nonce`, PKCE, the ID-token signature, issuer, audience, and expiry.
+- Callback and post-logout URIs are exact and reviewed; wildcards are forbidden. Browser SPAs must not hold long-lived tokens directly.
+- Access tokens are opaque. Codes live for up to 5 minutes, access and ID tokens for 15 minutes, and rotating refresh tokens for up to 30 days with reuse protection.
+
+## Scopes and claims
+
+| Scope | Data |
+| --- | --- |
+| `openid` | Required; returns a pairwise `sub` |
+| `profile` | Approved name, avatar, and standard profile claims |
+| `email` | Only for approved clients and a releasable real address |
+| `offline_access` | Rotating refresh token; requires separate review and explicit consent |
+| `anibt:role` | Namespaced role claim for approved first-party clients only |
+| `anibt:user_id` | Internal AniBT ID for approved first-party clients only |
+
+The default `sub` is pairwise and isolated by client sector. Applications must never auto-link by email. Synthetic `.anibt.local` addresses are never released in ID tokens, UserInfo, or access-token sessions.
+
+## Sign-in, consent, and logout
+
+Users complete AniBT's existing email/password, GitHub, Google, Microsoft, Bangumi, or KUNGal sign-in and registration on `anibt.net`. First authorization and scope expansion show the client, purpose, and requested data, and can be denied. RP-initiated logout ends the Hydra/RP session by default and does not automatically sign out of AniBT.
+
+Deleted, disabled, or banned accounts are rejected immediately. A user security disconnect also creates a durable task that revokes Hydra login and consent sessions.
+
+## Client application
+
+Provide business and technical owners, an incident contact, purpose and privacy policy, client type, exact callback/logout URIs, minimum scopes, PKCE/state/nonce/ID-token validation details, secret storage, and a rotation owner. Production clients are created and managed by a declarative operator; secrets are delivered only through a separate secure channel.
+

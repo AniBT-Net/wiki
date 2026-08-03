@@ -1,0 +1,41 @@
+---
+title: 使用 AniBT 登录第三方应用
+description: 第三方应用通过标准 OpenID Connect 使用 AniBT 账号登录。
+---
+
+AniBT 已提供标准 OpenID Connect（OIDC）身份平台。经人工审核的第三方应用可以把用户带到 AniBT 完成注册、登录与授权，再通过 Authorization Code 返回应用。
+
+<Callout type="info">
+  Issuer 是 `https://oauth.anibt.net`，discovery 地址是 [`https://oauth.anibt.net/.well-known/openid-configuration`](https://oauth.anibt.net/.well-known/openid-configuration)。生产环境不开放动态 Client 注册；接入请联系 [support@anibt.net](mailto:support@anibt.net)。
+</Callout>
+
+## 支持的流程
+
+- 仅支持 Authorization Code + PKCE S256；Web 应用必须使用后端/BFF，Native Client 不保存 secret。
+- Client 必须验证 `state`、`nonce`、PKCE、ID token 签名、issuer、audience 与过期时间。
+- callback 与 post-logout URI 必须逐字登记，不允许 wildcard；浏览器 SPA 不应直接持有长期 token。
+- access token 当前为 opaque；authorization code 最长 5 分钟，access token 与 ID token 为 15 分钟，refresh token 最长 30 天并启用 rotation/reuse protection。
+
+## Scope 与 claims
+
+| Scope | 数据 |
+| --- | --- |
+| `openid` | 必需；返回 pairwise `sub` |
+| `profile` | 审核后的昵称、头像与标准 profile claims |
+| `email` | 仅在 Client 获批且账号有可公开真实邮箱时返回 |
+| `offline_access` | 返回可轮换 refresh token，需要单独审核与明确同意 |
+| `anibt:role` | 仅获批第一方 Client 的 namespaced role claim |
+| `anibt:user_id` | 仅获批第一方 Client 的 AniBT 内部 ID claim |
+
+默认 `sub` 是按 Client sector 隔离的 pairwise identifier。应用不得用邮箱自动关联账号；AniBT 的 synthetic `.anibt.local` 邮箱永远不会进入 ID token、UserInfo 或 access-token session。
+
+## 登录、同意与登出
+
+用户会在 `anibt.net` 完成现有邮箱密码、GitHub、Google、Microsoft、Bangumi、KUNGal 登录或注册。首次授权或 scope 扩大时会显示 Client、用途和请求的数据；用户可以拒绝。RP-initiated logout 默认只结束 Hydra/RP 会话，不会自动退出 AniBT 主站会话。
+
+账号被删除、停用、封禁或用户主动断开 OIDC 连接后，AniBT 会立即拒绝新的登录，并通过持久化撤销任务清理 Hydra login/consent session。
+
+## Client 申请资料
+
+申请时请提供业务/技术 owner、事故联系人、用途与隐私政策、Client 类型、精确 callback/logout URI、最小 scopes、PKCE/state/nonce/ID-token 验证方案、secret manager 与轮换 owner。生产 Client 由声明式 operator 创建、审计、暂停、恢复、轮换和撤销；secret 只通过单独安全渠道交付。
+
