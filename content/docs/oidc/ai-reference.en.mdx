@@ -3,7 +3,7 @@ title: AI / Agent integration reference
 description: AniBT OIDC configuration, constraints, prompt, and acceptance checklist for AI coding tools.
 ---
 
-This page is a compact contract for AI coding assistants, agents, and code-generation tools. The static Markdown URL is [`/docs/oidc/ai-reference.md`](/docs/oidc/ai-reference.md); the full guide is [`/docs/oidc/integration.md`](/docs/oidc/integration.md).
+This page is a compact contract for AI coding assistants, agents, and code-generation tools. Open [`/docs/oidc/ai-reference`](/docs/oidc/ai-reference) in a browser; machine readers should request the same URL with `Accept: text/markdown`. The full guide is at [`/docs/oidc/integration`](/docs/oidc/integration).
 
 ## Canonical configuration
 
@@ -80,8 +80,10 @@ Copy this prompt and add your framework, callback URL, and session-store details
 Integrate AniBT OpenID Connect sign-in into this project.
 
 Authoritative documentation:
-- https://wiki.anibt.net/docs/oidc/integration.md
-- https://wiki.anibt.net/docs/oidc/ai-reference.md
+- https://wiki.anibt.net/docs/oidc/integration
+- https://wiki.anibt.net/docs/oidc/ai-reference
+
+When reading these pages programmatically, send: Accept: text/markdown
 
 Fixed contract:
 - issuer: https://oauth.anibt.net
@@ -155,8 +157,13 @@ known limitations:
 
 ## Documentation ingestion
 
-- This page: `https://wiki.anibt.net/docs/oidc/ai-reference.md`
-- Full integration guide: `https://wiki.anibt.net/docs/oidc/integration.md`
+- This page: `https://wiki.anibt.net/docs/oidc/ai-reference`
+- Full integration guide: `https://wiki.anibt.net/docs/oidc/integration`
+- Markdown content: request either normal page URL with `Accept: text/markdown`
 - Wiki index: `https://wiki.anibt.net/llms.txt`
 - Full Simplified Chinese Wiki: `https://wiki.anibt.net/llms-full.txt`
 - Full English Wiki: `https://wiki.anibt.net/llms-full.en.txt`
+
+```bash
+curl -H 'Accept: text/markdown' https://wiki.anibt.net/docs/oidc/ai-reference
+```

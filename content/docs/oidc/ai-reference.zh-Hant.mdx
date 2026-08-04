@@ -3,7 +3,7 @@ title: AI / Agent 接入參考
 description: 可直接提供給 AI 程式設計工具的 AniBT OIDC 設定、實作約束、提示詞與驗收清單。
 ---
 
-本頁是面向 AI 程式設計助手、Agent 和程式碼生成工具的緊湊合同。靜態 Markdown 網址為 [`/docs/oidc/ai-reference.md`](/docs/oidc/ai-reference.md)；完整接入說明見 [`/docs/oidc/integration.md`](/docs/oidc/integration.md)。
+本頁是面向 AI 程式設計助手、Agent 和程式碼生成工具的緊湊合同。人工瀏覽請直接開啟 [`/docs/oidc/ai-reference`](/docs/oidc/ai-reference)；機器抓取同一網址時傳送 `Accept: text/markdown`。完整接入說明見 [`/docs/oidc/integration`](/docs/oidc/integration)。
 
 ## Canonical configuration
 
@@ -80,8 +80,10 @@ description: 可直接提供給 AI 程式設計工具的 AniBT OIDC 設定、實
 為目前專案接入 AniBT OpenID Connect 登入。
 
 權威文件：
-- https://wiki.anibt.net/docs/oidc/integration.md
-- https://wiki.anibt.net/docs/oidc/ai-reference.md
+- https://wiki.anibt.net/docs/oidc/integration
+- https://wiki.anibt.net/docs/oidc/ai-reference
+
+機器讀取以上頁面時傳送請求標頭：Accept: text/markdown
 
 固定合同：
 - issuer: https://oauth.anibt.net
@@ -155,8 +157,13 @@ known limitations:
 
 ## 文件抓取
 
-- 目前頁 Markdown：`https://wiki.anibt.net/docs/oidc/ai-reference.md`
-- 完整接入指南 Markdown：`https://wiki.anibt.net/docs/oidc/integration.md`
+- 目前頁：`https://wiki.anibt.net/docs/oidc/ai-reference`
+- 完整接入指南：`https://wiki.anibt.net/docs/oidc/integration`
+- Markdown 內容：請求上述正常頁面網址，並傳送 `Accept: text/markdown`
 - Wiki 文件索引：`https://wiki.anibt.net/llms.txt`
 - 全量簡體中文 Wiki：`https://wiki.anibt.net/llms-full.txt`
 - 全量英文 Wiki：`https://wiki.anibt.net/llms-full.en.txt`
+
+```bash
+curl -H 'Accept: text/markdown' https://wiki.anibt.net/docs/oidc/ai-reference
+```
