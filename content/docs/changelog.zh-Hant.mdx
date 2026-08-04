@@ -6,404 +6,346 @@ description: AniBT Wiki 與站點功能更新紀錄。
 這裡記錄 AniBT Wiki 以及和文件直接相關的站點功能變化。
 
 <Callout type="info">
-  日期按北京時間（UTC+8）記錄。較新的更新會放在更靠前的位置。
+  日期按北京時間（UTC+8）。較新的更新在前。同一天內按 **新增 / 修復 / 安全 / 最佳化 / 變更 / 文件 / 運維 / 資料** 分組。
 </Callout>
 
 ## 2026 年 8 月 3 日
 
-<TypeTable
-  type={{
-    'AniBT OpenID Connect 身份平台': {
-      description: '上線 oauth.anibt.net 標準 OIDC issuer，支援 Authorization Code + PKCE S256、pairwise sub、明確 scope 同意、opaque access token、refresh rotation/reuse protection 與 RP logout。第三方 Client 需人工審核；synthetic 郵箱不會對外釋出，賬號安全撤銷會持久化清理 Hydra session。',
-      type: '新增',
-    },
-  }}
-/>
+### 新增
+
+- **AniBT OpenID Connect 身份平台**  
+  上線 `oauth.anibt.net` 標準 OIDC issuer，支援 Authorization Code + PKCE S256、pairwise `sub`、明確 scope 同意、opaque access token、refresh rotation / reuse protection 與 RP logout。第三方 Client 需人工審核；synthetic 郵箱不會對外釋出，賬號安全撤銷會持久化清理 Hydra session。詳見 [使用 AniBT 登入第三方應用](/docs/oidc)。
 
 ## 2026 年 7 月 30 日
 
-<TypeTable
-  type={{
-    'MediaInfo 純文字安全遷移': {
-      description: '釋出詳情的 MediaInfo 已統一為 UTF-8 純文字：主站 GET/HEAD 返回 text/plain 與 nosniff，頁面只按文字顯示。生產 Agent 改用 mediainfo --Output=Text，並強制驗證 qBittorrent TLS 憑證；全部歷史 .html 參照與物件已轉換為可讀文字並完成零殘留清理。',
-      type: '安全',
-    },
-    '釋出說明原始 HTML 支援恢復': {
-      description: '番劇與其他類釋出說明、詳情和預覽再次按 Markdown + 原始 HTML 渲染；details/summary、表格、圖片、連結、div/span/font 與行內 style 等歷史排版繼續可用。頁面不啟用 sanitizer 或 HTML/CSS 白名單，編輯邊界仍是字幕組成員、管理員及受控釋出 API Key。',
-      type: '修復',
-    },
-    'RSS 輸出編碼加固': {
-      description: '公開 RSS 的 Markdown 連結與圖片 URL 繼續使用獨立屬性編碼和安全協議策略；此 RSS 邊界與釋出詳情頁恢復原始 HTML 渲染相互獨立。',
-      type: '安全',
-    },
-  }}
-/>
+### 安全
+
+- **MediaInfo 純文字安全遷移**  
+  釋出詳情的 MediaInfo 統一為 UTF-8 純文字：主站 GET/HEAD 返回 `text/plain` 與 nosniff，頁面只按文字顯示。生產 Agent 改用 `mediainfo --Output=Text`，並強制驗證 qBittorrent TLS 憑證；歷史 `.html` 參照與物件已全部轉為可讀文字並完成零殘留清理。
+
+- **RSS 輸出編碼加固**  
+  公開 RSS 的 Markdown 連結與圖片 URL 繼續使用獨立屬性編碼和安全協議策略；此邊界與釋出詳情頁恢復原始 HTML 相互獨立。
+
+### 修復
+
+- **釋出說明原始 HTML 支援恢復**  
+  番劇與其他類釋出說明、詳情和預覽再次按 Markdown + 原始 HTML 渲染；`details`/`summary`、表格、圖片、連結、`div`/`span`/`font` 與行內 style 等歷史排版繼續可用。頁面不啟用 sanitizer；編輯邊界仍是字幕組成員、管理員及受控釋出 API Key。
 
 ## 2026 年 7 月 25 日
 
-<TypeTable
-  type={{
-    '公開 RSS 參數順序與 CDN 快取一致': {
-      description: '僅原始 query 參數對順序不同的 magnets、anime、group 與 other RSS 現在直接返回同一規範 200；self URL、ETag、Last-Modified 與快取身份保持穩定。預設值、相容別名、大小寫/空白/編碼差異仍返回 308；非法重複參數保持應用 400 + no-store，非法 limit 在生產邊緣可先返回 Cloudflare 403。',
-      type: '修復',
-    },
-    '個人訂閱 RSS 私有快取合同': {
-      description: '/rss/subscriptions.xml 的成功、缺少或無效憑證、限流與服務端錯誤響應現在統一返回 private, no-store 和兩層 CDN no-store；該私人 feed 不提供公開 ETag 或 If-None-Match 304 合同。',
-      type: '安全',
-    },
-  }}
-/>
+### 修復
+
+- **公開 RSS 參數順序與 CDN 快取一致**  
+  僅原始 query 參數對順序不同的 magnets、anime、group 與 other RSS 現在直接返回同一規範 200；self URL、ETag、Last-Modified 與快取身份保持穩定。預設值、相容別名、大小寫 / 空白 / 編碼差異仍返回 308；非法重複參數保持應用 400 + no-store，非法 limit 在生產邊緣可先返回 Cloudflare 403。
+
+### 安全
+
+- **個人訂閱 RSS 私有快取契約**  
+  `/rss/subscriptions.xml` 的成功、缺少或無效憑證、限流與服務端錯誤響應統一返回 `private, no-store` 和兩層 CDN no-store；該私人 feed 不提供公開 ETag 或 If-None-Match 304 契約。
 
 ## 2026 年 7 月 24 日
 
-<TypeTable
-  type={{
-    'RSS 實體快取即時失效': {
-      description: '番劇、字幕組與其他類公開 RSS 在釋出事件完成 Redis 家族失效後，會按 bgmId、groupSlug 或 category 一次清除同實體全部 Cloudflare CDN 參數變體。介面 URL、TTL、ETag 與 304 合同不變；magnets 搜尋及搜尋 Redis 身份繼續按原 TTL 管理。',
-      type: '最佳化',
-    },
-  }}
-/>
+### 最佳化
+
+- **RSS 實體快取即時失效**  
+  番劇、字幕組與其他類公開 RSS 在釋出事件完成 Redis 家族失效後，會按 `bgmId`、`groupSlug` 或 category 一次清除同實體全部 Cloudflare CDN 參數變體。介面 URL、TTL、ETag 與 304 契約不變；magnets 搜尋及搜尋 Redis 身份繼續按原 TTL 管理。
 
 ## 2026 年 7 月 22 日
 
-<TypeTable
-  type={{
-    '番劇釋出刪除 API': {
-      description: '新增 DELETE /api/releases/{releaseId} 與 GET /api/releases/{releaseId}/deletion。V1 僅支援 rel_*；DELETE 不接受 query 或請求本文，返回穩定 rdel_* 回執並以 200/202 表示 completed/pending。completed 只在站內主記錄、詳情/種子、Typesense 搜尋與列表、magnets、公開/訂閱 RSS、Redis、Cloudflare 和 AniBT R2 物件完成不可見性驗證後出現；外站帖子、Tracker 與客戶端已快取/下載內容不在召回範圍內。',
-      type: '新增',
-    },
-    '字幕組 API Key scopes': {
-      description: 'API Key 現在明確選擇 releases:publish / releases:delete，至少一個；舊 Key 安全遷移為僅 releases:publish。番劇與其他類釋出要求 releases:publish，刪除及狀態查詢要求 releases:delete；/api/subtitle-groups/me 與 publish whoami 會返回 apiKeyId、apiKeySuffix 和 scopes。',
-      type: '安全',
-    },
-    '賬號註冊與 session 恢復': {
-      description: '郵箱註冊改為「傳送驗證碼 → 原子驗證並建立 session → 在 session 內登記密碼」。密碼格式錯誤不消耗驗證碼，驗證或密碼登記遇到響應遺失可冪等重試，未過期流程整頁重新整理後也能繼續。公開頁只在伺服器明確確認無 session 後顯示登入入口，臨時網路/5xx 不再造成假登出。',
-      type: '最佳化',
-    },
-    '認證安全與 OAuth 穩定性': {
-      description: 'Better Auth 升級到 1.6.23；CAPTCHA ticket 改為精確路徑匹配與原子一次性消耗，註冊/登入旁路繼續關閉。KUNGal token exchange 使用標準 form-urlencoded，OTP、驗證、重設與歡迎郵件進入可重試郵件佇列，不再同步等待外部郵件 provider。',
-      type: '安全',
-    },
-  }}
-/>
+### 新增
+
+- **番劇釋出刪除 API**  
+  新增 `DELETE /api/releases/{releaseId}` 與 `GET /api/releases/{releaseId}/deletion`。V1 僅支援 `rel_*`；DELETE 不接受 query 或請求本文，返回穩定 `rdel_*` 回執並以 200/202 表示 completed/pending。completed 僅在站內主記錄、詳情 / 種子、Typesense、magnets、公開 / 訂閱 RSS、Redis、Cloudflare 和 AniBT R2 完成不可見性驗證後出現。外站帖子、Tracker 與客戶端已快取內容不在召回範圍內。詳見 [刪除釋出](/docs/open-api/releases-delete)。
+
+### 安全
+
+- **字幕組 API Key scopes**  
+  API Key 現在明確選擇 `releases:publish` / `releases:delete`（至少一個）；舊 Key 安全遷移為僅 `releases:publish`。釋出要求 `releases:publish`，刪除及狀態查詢要求 `releases:delete`；`/api/subtitle-groups/me` 與 publish whoami 會返回 `apiKeyId`、`apiKeySuffix` 和 `scopes`。
+
+- **認證安全與 OAuth 穩定性**  
+  Better Auth 升級到 1.6.23；CAPTCHA ticket 改為精確路徑匹配與原子一次性消耗，註冊 / 登入旁路繼續關閉。KUNGal token exchange 使用標準 form-urlencoded；OTP、驗證、重設與歡迎郵件進入可重試郵件佇列，不再同步等待外部郵件 provider。
+
+### 最佳化
+
+- **賬號註冊與 session 恢復**  
+  郵箱註冊改為「傳送驗證碼 → 原子驗證並建立 session → 在 session 內登記密碼」。密碼格式錯誤不消耗驗證碼；驗證或密碼登記遇響應遺失可冪等重試，未過期流程整頁重新整理後也能繼續。公開頁只在伺服器明確確認無 session 後顯示登入入口，臨時網路 / 5xx 不再造成假登出。
 
 ## 2026 年 7 月 21 日
 
-<TypeTable
-  type={{
-    '圖床批次上傳、延遲與進度最佳化': {
-      description: '準備上傳改為每批最多 5 張，只做一次成員校驗與一次批次控制面交易；同批狀態輪詢合併為一次 GET 與一次 Convex query。R2 PUT 的 ETag 會隨任務傳給 worker，使用 If-Match 單次條件讀取取代 staging 讀前/讀後 HEAD。支援的瀏覽器會先預縮放明顯可縮小的超大靜態 JPEG/PNG/WebP，動畫、HEIC/HEIF 等仍由 worker 處理；單圖仍限制 10 MiB。',
-      type: '最佳化',
-    },
-  }}
-/>
+### 最佳化
+
+- **圖床批次上傳、延遲與進度**  
+  準備上傳改為每批最多 5 張，只做一次成員校驗與一次批次控制面交易；同批狀態輪詢合併為一次 GET 與一次 Convex query。R2 PUT 的 ETag 會隨任務傳給 worker，用 If-Match 單次條件讀取取代 staging 讀前 / 讀後 HEAD。支援的瀏覽器會先預縮放明顯可縮小的超大靜態 JPEG/PNG/WebP；動畫、HEIC/HEIF 等仍由 worker 處理。單圖限制仍為 10 MiB。
 
 ## 2026 年 7 月 20 日
 
-<TypeTable
-  type={{
-    '圖床直傳與隔離轉碼': {
-      description: '字幕組圖床改為瀏覽器直傳 staging R2，主站 Web 只負責鑑權、預簽名、物件核對和狀態查詢，不再讀取圖片二進位或執行轉碼。shared Bun worker 為每張圖片啟動短生命週期子程序，使用原生 Bun.Image 直接寫入 Bun.S3File；靜態圖損壞或轉碼失敗會明確失敗，動畫與 SVG 繼續保留原格式。',
-      type: '優化',
-    },
-  }}
-/>
+### 最佳化
+
+- **圖床直傳與隔離轉碼**  
+  字幕組圖床改為瀏覽器直傳 staging R2；主站 Web 只負責鑑權、預簽名、物件核對和狀態查詢，不再讀取圖片二進位或執行轉碼。shared Bun worker 為每張圖啟動短生命週期子程序，用原生 `Bun.Image` 直接寫入 `Bun.S3File`。靜態圖損壞或轉碼失敗會明確失敗；動畫與 SVG 繼續保留原格式。詳見 [字幕組圖床](/docs/image-host)。
 
 ## 2026 年 7 月 19 日
 
-<TypeTable
-  type={{
-    'Tracker 固定入口恢復': {
-      description: 'AniBT Tracker 已恢復固定 https://tracker.anibt.net/announce，不保留 signed 雙軌。既有站內種子不需更換地址或重新下載；magnet、RSS 與 canonical .torrent 已規範為唯一固定 AniBT Tracker，且 infohash 不變。',
-      type: '修復',
-    },
-    'Tracker 白名單與邊緣保護': {
-      description: '固定 /announce 繼續只服務 AniBT 已收錄的 v1 info_hash；外部 hash 返回 not whitelisted。Cloudflare 保留 20-byte info_hash/peer_id 協議校驗與基礎 burst limit，公網 /scrape、/api/*、/announce/v1/* 與 UDP 繼續關閉。',
-      type: '安全',
-    },
-  }}
-/>
+### 修復
+
+- **Tracker 固定入口恢復**  
+  AniBT Tracker 已恢復固定 `https://tracker.anibt.net/announce`，不保留 signed 雙軌。既有站內種子不需更換地址或重新下載；magnet、RSS 與 canonical `.torrent` 已規範為唯一固定 AniBT Tracker，且 infohash 不變。詳見 [Tracker](/docs/tracker)。
+
+### 安全
+
+- **Tracker 白名單與邊緣保護**  
+  固定 `/announce` 繼續只服務 AniBT 已收錄的 v1 `info_hash`；外部 hash 返回 not whitelisted。Cloudflare 保留 20-byte `info_hash`/`peer_id` 協議校驗與基礎 burst limit；公網 `/scrape`、`/api/*`、`/announce/v1/*` 與 UDP 繼續關閉。
 
 ## 2026 年 7 月 18 日
 
-<TypeTable
-  type={{
-    '全站 Markdown 內容協商': {
-      description: 'AniBT 公開 HTML 頁面現支援 Accept: text/markdown，由 Cloudflare 在邊緣即時轉換；響應透過 Vary: accept 與 HTML 分離快取，並提供轉換前後 token 估算。JSON API、RSS/XML、圖片與 R2 物件保持原格式。目前公開內容信號為 ai-train=yes, search=yes, ai-input=yes。',
-      type: '新增',
-    },
-    '公開 RSS 嚴格參數契約': {
-      description: '所有公開 RSS 的 limit 統一為單值 1..100（預設 100）；超大、重複、空、前導零或非整數不再靜默截斷。q/search 只允許一個值，並執行 NFKC、trim、空白折疊和 160 UTF-8 bytes 上限。規範化 URL 返回可快取一天的 308；非法輸入返回應用 400，生產邊緣可先返回 403。',
-      type: '變更',
-    },
-    '高基數搜尋 MISS 防護': {
-      description: 'magnets/other 搜尋與空結果快取 600 秒，latest/filter 快取 120 秒；穩定查詢和快取 HIT 不消耗新查詢額度。新的高基數 MISS 使用 10 分鐘/24 小時 distinct-query 預算和全站併發 lease，超限返回 429 + Retry-After。Redis key 與結構化日誌只保存查詢 hash，不保存原始搜尋詞。',
-      type: '最佳化',
-    },
-    '索引器邊緣與源站硬化': {
-      description: 'Jackett、Auto_Bangumi、ani-rss 的正常請求保持可用；Cloudflare 在邊緣攔截非法 limit，動態回源保護保持 500/10 秒，釋出失效改為精確 URL，不再清空全部搜尋變體。前置代理增加繞邊緣校驗、隱私安全採樣日誌與可靠輪轉。',
-      type: '運維',
-    },
-    'Latin 重音標題等價匹配': {
-      description: '純 Latin 標題同時保留原始重音與去變音符號的等價 token，例如 Caraméliser / Carameliser；CJK 與混合腳本不折疊。若折疊產生多個番劇候選，matcher 保留全部候選並 fail closed，不會取第一名自動綁定。',
-      type: '修復',
-    },
-    'Web 人工上傳匹配閉環': {
-      description: 'Web torrent 上傳在字幕組成員鑑權後解析真實 info.name 並在服務端重放 v3，呼叫方不能偽造項目指紋。matcher 已自動命中同一番劇時不學習；人工選擇或不同自動目標第一次記為 pending，第二個不同集數啟用，同集不重複計數，衝突轉 suspended。matcher 不可用、內部異常或超長 info.name 不阻塞已校驗的明確選擇釋出，也不會學習 binding。',
-      type: '修復',
-    },
-    '匹配索引 generation 2040': {
-      description: '生產已切到 match_v3_20260718_2040：8,621 個候選番劇、223,792 條別名、168 個 scoped bindings。固定 34,083 條語料中 28,559 條自動匹配（83.7925%），2024–2026 子集為 9,084 / 9,807（92.6277%）；Carameliser 與 Caraméliser 線上均自動命中 BGM 617123。',
-      type: '資料',
-    },
-  }}
-/>
+### 新增
+
+- **全站 Markdown 內容協商**  
+  公開 HTML 頁面支援 `Accept: text/markdown`，由 Cloudflare 在邊緣即時轉換；響應透過 `Vary: accept` 與 HTML 分離快取，並提供轉換前後 token 估算。JSON API、RSS/XML、圖片與 R2 物件保持原格式。目前公開內容信號為 `ai-train=yes, search=yes, ai-input=yes`。
+
+### 修復
+
+- **資源搜尋排序穩定性**  
+  `/magnets` 與 `/rss/magnets.xml` 在文字搜尋同時按檔案大小或集數排序時，不再因 Typesense 最多 3 個排序欄位的限制導致搜尋失敗。明確排序、釋出時間與文字匹配優先級保持不變。
+
+- **Latin 重音標題等價匹配**  
+  純 Latin 標題同時保留原始重音與去變音符號的等價 token（例如 Caraméliser / Carameliser）；CJK 與混合腳本不折疊。若折疊產生多個番劇候選，matcher 保留全部候選並 fail closed，不會取第一名自動綁定。
+
+- **Web 人工上傳匹配閉環**  
+  Web torrent 上傳在字幕組成員鑑權後解析真實 `info.name` 並在服務端重放 v3，呼叫方不能偽造項目指紋。matcher 已自動命中同一番劇時不學習；人工選擇或不同自動目標第一次記為 pending，第二個不同集數啟用，同集不重複計數，衝突轉 suspended。matcher 不可用、內部異常或超長 `info.name` 不阻塞已校驗的明確選擇釋出，也不會學習 binding。
+
+### 變更
+
+- **公開 RSS 嚴格參數契約**  
+  所有公開 RSS 的 `limit` 統一為單值 1..100（預設 100）；超大、重複、空、前導零或非整數不再靜默截斷。`q`/`search` 只允許一個值，並執行 NFKC、trim、空白折疊和 160 UTF-8 bytes 上限。規範化 URL 返回可快取一天的 308；非法輸入返回應用 400，生產邊緣可先返回 403。
+
+### 最佳化
+
+- **高基數搜尋 MISS 防護**  
+  magnets/other 搜尋與空結果快取 600 秒，latest/filter 快取 120 秒；穩定查詢和快取 HIT 不消耗新查詢額度。新的高基數 MISS 使用 10 分鐘 / 24 小時 distinct-query 預算和全站併發 lease，超限返回 429 + Retry-After。Redis key 與結構化日誌只保存查詢 hash，不保存原始搜尋詞。
+
+### 運維
+
+- **索引器邊緣與源站硬化**  
+  Jackett、Auto_Bangumi、ani-rss 的正常請求保持可用；Cloudflare 在邊緣攔截非法 limit，動態回源保護保持 500/10 秒，釋出失效改為精確 URL，不再清空全部搜尋變體。前置代理增加繞邊緣校驗、隱私安全採樣日誌與可靠輪轉。
+
+### 資料
+
+- **匹配索引 generation 2040**  
+  生產已切到 `match_v3_20260718_2040`：8,621 個候選番劇、223,792 條別名、168 個 scoped bindings。固定 34,083 條語料中 28,559 條自動匹配（83.7925%），2024–2026 子集為 9,084 / 9,807（92.6277%）；Carameliser 與 Caraméliser 線上均自動命中 BGM 617123。
 
 ## 2026 年 7 月 17 日
 
-<TypeTable
-  type={{
-    '釋出 API 組身份自檢': {
-      description: '`GET /api/releases/publish` 與 `GET /api/other-releases/publish` 支援 whoami：返回目前 API Key 綁定的 groupId/groupName/groupSlug/apiKeySuffix，不寫庫。正式釋出與 preview 成功響應也回顯同一組身份欄位，便於自動化在寫庫前發現 Key 綁錯字幕組。',
-      type: '新增',
-    },
-    '禁止 0B magnet-only 正式入庫': {
-      description: '無 torrent 且 fileSize 無法解析為 >0（含缺少 magnet xl=）時，正式 publish 返回 422 / reason=EMPTY_RELEASE_CONTENT。preview 仍允許 0B 以便核對匹配與組身份。',
-      type: '修復',
-    },
-    '人工匹配同項目回溯': {
-      description: '字幕組/管理員對待匹配發布做人工綁定時，預設「記住項目」並「同時匹配同項目其他 pending」。一次確認會啟用該字幕組 + projectFingerprint 的 scoped binding，並把同組同指紋下最多 64 條 pending 一併匹配到所選番劇；不跨字幕組。',
-      type: '最佳化',
-    },
-    '官方縮寫別名提案審批': {
-      description: '新增管理員別名提案佇列（/admin/anime-alias-proposals）。離線挖掘腳本從 low_evidence 等失敗樣本聚類拉丁縮寫/別名，提案需人工通過後才寫入 manual alias 並觸發投影同步；拒絕後不會再次復活同 anime+normalizedAlias 提案。執行期不自動降閾值、不自動入庫。',
-      type: '新增',
-    },
-  }}
-/>
+### 新增
+
+- **釋出 API 組身份自檢**  
+  `GET /api/releases/publish` 與 `GET /api/other-releases/publish` 支援 whoami：返回目前 API Key 綁定的 `groupId` / `groupName` / `groupSlug` / `apiKeySuffix`，不寫庫。正式釋出與 preview 成功響應也回顯同一組身份欄位，便於自動化在寫庫前發現 Key 綁錯字幕組。
+
+- **官方縮寫別名提案審批**  
+  新增管理員別名提案佇列（`/admin/anime-alias-proposals`）。離線挖掘腳本從 `low_evidence` 等失敗樣本聚類拉丁縮寫 / 別名，提案需人工通過後才寫入 manual alias 並觸發投影同步；拒絕後不會再次復活同 anime + normalizedAlias 提案。執行期不自動降閾值、不自動入庫。
+
+### 修復
+
+- **禁止 0B magnet-only 正式入庫**  
+  無 torrent 且 `fileSize` 無法解析為 >0（含缺少 magnet `xl=`）時，正式 publish 返回 422 / `reason=EMPTY_RELEASE_CONTENT`。preview 仍允許 0B，便於核對匹配與組身份。
+
+### 最佳化
+
+- **人工匹配同項目回溯**  
+  字幕組 / 管理員對待匹配發布做人工綁定時，預設「記住項目」並「同時匹配同項目其他 pending」。一次確認會啟用該字幕組 + `projectFingerprint` 的 scoped binding，並把同組同指紋下最多 64 條 pending 一併匹配到所選番劇；不跨字幕組。
 
 ## 2026 年 7 月 16 日
 
-<TypeTable
-  type={{
-    'RSS 輸出 anibt:bgmId': {
-      description: '`/rss/magnets.xml`、`/rss/anime.xml`、`/rss/group/<slug>.xml` 的 anime 條目在 `xmlns:anibt` 下增加 `<anibt:bgmId>`（Bangumi subject id；已綁定才輸出）。`/rss/other/*` 不加。標準閱讀器可忽略該命名空間。',
-      type: '新增',
-    },
-    '種子匹配 v3 正式切流': {
-      description: 'Canonical 介面 hard cut 為 POST /api/animes/torrent-match，GET 返回 JSON 405，不保留 v2 DTO、快取或相容層。服務端分別解析釋出標題與 torrent internal name，生成多語 AST，並讓 exact、strict recall、fuzzy recall 獨立檢索；任何 overflow、cutoff、hydrate 或 generation/projection 不一致都會禁止自動綁定。',
-      type: '最佳化',
-    },
-    '集數邊界與版本年收口': {
-      description: '新增 bracket 裸數字上下文判斷：[Title][24][1080p] 的 24 作為集數，[Title][1080p][24][AAC] 的 24 保持幀率；2024年版 / (2024) 必須精確命中候選首播年。上季官方計數多含一個 SP 時，單集邊界與精確整季範圍只在 family 完整、後季排名第一、釋出時間與唯一目標共同成立時前移一集。',
-      type: '最佳化',
-    },
-    '非番劇與合集安全退出': {
-      description: '獨立 PV/CM、MAD/AMV、遊戲影片、音樂包、公告、桌布與字型包可返回 non_anime；多番劇、多季和 S1+S2+OVA 合集返回 unsupported，不再強行匹配成一個番劇。',
-      type: '新增',
-    },
-    '釋出流程統一 matcher': {
-      description: '釋出頁、批次釋出、人工匹配與 API Key 釋出統一使用服務端 v3 matcher。未傳番劇 ID 時釋出 API 直接執行同一決策；呼叫方偽造的內部自動匹配結果會被丟棄，只有 decision.kind=auto 才會直接綁定。',
-      type: '最佳化',
-    },
-    '乾淨匹配索引': {
-      description: '生產 matcher 已切到 match_v3_20260716_2112，共 8,621 個候選番劇、223,778 條別名和 24 個 scoped bindings；34,083 條固定語料中，2024–2026 番劇自動匹配為 9,091 / 9,781（92.9455%），排除後續單獨處理合集的 VCB 後為 8,744 / 9,339（93.6289%）。TMDB/TVDB 不參與匹配。',
-      type: '資料',
-    },
-  }}
-/>
+### 新增
+
+- **RSS 輸出 `anibt:bgmId`**  
+  `/rss/magnets.xml`、`/rss/anime.xml`、`/rss/group/<slug>.xml` 的 anime 條目在 `xmlns:anibt` 下增加 `<anibt:bgmId>`（Bangumi subject id；已綁定才輸出）。`/rss/other/*` 不加。標準閱讀器可忽略該命名空間。
+
+- **非番劇與合集安全退出**  
+  獨立 PV/CM、MAD/AMV、遊戲影片、演唱會、真人劇、音樂專輯、舞台 / 朗讀劇、公告、桌布與字型包可返回 `non_anime`；單番劇單季合集仍可匹配，多番劇、真正多季和 S1+S2+OVA 合集返回 `unsupported`。
+
+- **字幕組項目學習**  
+  明確確認會按字幕組與項目指紋學習：第一次確認記錄 pending，第二個不同集數仍指向同一番劇後啟用，也可由 Web 人工選擇立即記住；衝突會暫停。自動 matcher 不反向訓練；active binding 仍必須通過候選投影、季度 / 年份 / 格式 / 集數 veto 與完整性檢查。
+
+### 最佳化
+
+- **種子匹配 v3 正式切流**  
+  Canonical 介面 hard cut 為 `POST /api/animes/torrent-match`，GET 返回 JSON 405，不保留 v2 DTO、快取或相容層。服務端分別解析釋出標題與 torrent internal name，生成多語 AST，並讓 exact、strict recall、fuzzy recall 獨立檢索；新增 Season N - EP、括號版本年份、混合腳本和跨季連續集數判斷。任何 overflow、cutoff、hydrate 或 generation/projection 不一致都會禁止自動綁定。詳見 [種子匹配 API](/docs/open-api/anime-torrent-match)。
+
+- **集數邊界與版本年收口**  
+  新增 bracket 裸數字上下文判斷：`[Title][24][1080p]` 的 24 作為集數，`[Title][1080p][24][AAC]` 的 24 保持幀率；`2024年版` / `(2024)` 必須精確命中候選首播年。上季官方計數多含一個 SP 時，單集邊界和精確整季範圍只在 family 完整、後季排名第一、釋出時間與唯一目標共同成立時前移一集。
+
+- **釋出流程統一 matcher**  
+  釋出頁、批次釋出、人工匹配與 API Key 釋出統一使用服務端 v3 matcher。未傳番劇 ID 時釋出 API 直接執行同一決策；呼叫方偽造的內部自動匹配結果會被丟棄，只有 `decision.kind=auto` 才會直接綁定。
+
+### 資料
+
+- **乾淨匹配索引**  
+  生產 matcher 已切到 `match_v3_20260716_2112`，共 8,621 個候選番劇、223,778 條別名和 24 個 scoped bindings；34,083 條固定語料中，2024–2026 番劇自動匹配為 9,091 / 9,781（92.9455%），排除後續單獨處理合集的 VCB 後為 8,744 / 9,339（93.6289%）。TMDB/TVDB 不參與匹配。
 
 ## 2026 年 7 月 14 日
 
-<TypeTable
-  type={{
-    '種子標題番劇匹配': {
-      description: '/api/animes/torrent-match 改用獨立 anime_match_aliases 索引，綜合中文、繁中、日文、羅馬字、英文、多語標題列表，以及 Season/Cour/Part/Sequence/Format 證據進行全域消歧；不再用舊 allTitles 文字分差授權自動綁定。長多語 exact 查詢改用請求體傳送，不再受 Typesense GET 查詢字串 4000 字元限制。',
-      type: '最佳化',
-    },
-    '可解釋的自動綁定契約': {
-      description: '匹配響應新增 decisionReason、exactAnimeCount、vetoCategory 和有界 evidenceSummary。呼叫方只有在 shouldAutoSelect=true 時才能自動採用 bestMatch；共享標題、結構衝突、弱證據或 exact overflow 會保留人工確認。',
-      type: '新增',
-    },
-    '匹配快取安全': {
-      description: '舊 GET 匹配介面曾使用 60 秒共享快取並停用 stale fallback；7 月 16 日 POST v3 hard cut 後，該 GET 介面、v2 DTO 與快取均已刪除，目前匹配響應固定 no-store。',
-      type: '最佳化',
-    },
-  }}
-/>
+### 新增
+
+- **可解釋的自動綁定契約**  
+  匹配響應新增 `decisionReason`、`exactAnimeCount`、`vetoCategory` 和有界 `evidenceSummary`。呼叫方只有在 `shouldAutoSelect=true` 時才能自動採用 `bestMatch`；共享標題、結構衝突、弱證據或 exact overflow 會保留人工確認。
+
+### 最佳化
+
+- **種子標題番劇匹配**  
+  `/api/animes/torrent-match` 改用獨立 `anime_match_aliases` 索引，綜合中文、繁中、日文、羅馬字、英文、多語標題列表，以及 Season/Cour/Part/Sequence/Format 證據進行全域消歧；不再用舊 `allTitles` 文字分差授權自動綁定。長多語 exact 查詢改用請求體傳送，不再受 Typesense GET 查詢字串 4000 字元限制。
+
+- **匹配快取安全**  
+  舊 GET 匹配介面曾使用 60 秒共享快取並停用 stale fallback；7 月 16 日 POST v3 hard cut 後，該 GET 介面、v2 DTO 與快取均已刪除，目前匹配響應固定 no-store。
 
 ## 2026 年 7 月 12 日
 
-<TypeTable
-  type={{
-    '釋出與上傳錯誤契約': {
-      description: '番劇與其他類資源釋出 API 的 JSON 磁力和 multipart 種子上傳失敗統一返回 ok=false 的錯誤 envelope，包含機器碼 code、安全提示 message、可選業務 reason、retryable、retryAfterMs、requestId 和 i18n 後設資料；X-Request-ID 可用於關聯服務端日誌。',
-      type: '最佳化',
-    },
-    '可操作的釋出狀態碼': {
-      description: '計劃部署期間暫停釋出交接改為 503 Service Unavailable，並返回 Retry-After、reason=DEPLOYMENT_IN_PROGRESS；重複釋出版本保留 409，並返回 reason=RELEASE_VERSION_EXISTS；寫入限流返回 429、reason=RATE_LIMITED 和退避時間。',
-      type: '最佳化',
-    },
-  }}
-/>
+### 最佳化
+
+- **釋出與上傳錯誤契約**  
+  番劇與其他類資源釋出 API 的 JSON 磁力和 multipart 種子上傳失敗統一返回 `ok=false` 的錯誤 envelope，包含機器碼 `code`、安全提示 `message`、可選業務 `reason`、`retryable`、`retryAfterMs`、`requestId` 和 i18n 後設資料；`X-Request-ID` 可用於關聯服務端日誌。
+
+- **可操作的釋出狀態碼**  
+  計劃部署期間暫停釋出交接改為 503 Service Unavailable，並返回 `Retry-After`、`reason=DEPLOYMENT_IN_PROGRESS`；重複釋出版本保留 409 與 `reason=RELEASE_VERSION_EXISTS`；寫入限流返回 429、`reason=RATE_LIMITED` 和退避時間。
 
 ## 2026 年 7 月 11 日
 
-<TypeTable
-  type={{
-    '釋出成功與公開可見性': {
-      description: '文件明確：釋出 API 的 200 OK 表示站內寫入已接受並可靠交接後臺任務，不等同於該 release 已同步出現在 RSS、搜尋、公開頁面、CDN 或外站。呼叫方應使用返回的 releaseId 驗證目標正文；HTTP 200、generatedAt、ETag 或快取命中不能單獨作為內容已更新的證明。',
-      type: '文件',
-    },
-    '公開快照有序釋出': {
-      description: 'magnets、公開 RSS、番劇/字幕組/資源詳情等公開快照改為不可變 R2 generation + PostgreSQL publication head。Web 只讀取並嚴格預熱 head 指向的同一 generation，Redis publication order / generation fence 會拒絕舊請求回寫，所有必要變體完成後才傳送 page-ready。更新或刪除番劇時繼續處理舊/新 BGM alias 與受影響 sitemap。',
-      type: '最佳化',
-    },
-    'Edge 清快取可靠性': {
-      description: 'CDN 清理改為持久化 URL 佇列與凍結 run/batch；token + generation lease 防止舊執行器誤確認，失敗可續跑，損壞狀態進入 quarantine 而不靜默丟棄。processed marker 保留 14 天；completed run 保留 14 天、quarantined run 保留 30 天，並使用有界清理。',
-      type: '最佳化',
-    },
-    '新鮮度運維門禁': {
-      description: '新增 snapshot queue/claim delay、publication pending/latency、head/watermark integrity、generation maintenance/GC 與 Edge D1 durable flush 指標、告警和預檢。queue age 高而 Redis warm latency 低時按排程/backlog 排查，禁止透過延長 TTL 掩蓋傳播缺口。',
-      type: '運維',
-    },
-  }}
-/>
+### 文件
+
+- **釋出成功與公開可見性**  
+  文件明確：釋出 API 的 200 OK 表示站內寫入已接受並可靠交接後臺任務，**不等同於**該 release 已同步出現在 RSS、搜尋、公開頁面、CDN 或外站。呼叫方應使用返回的 `releaseId` 驗證目標正文；HTTP 200、`generatedAt`、ETag 或快取命中不能單獨作為內容已更新的證明。
+
+### 最佳化
+
+- **公開快照有序釋出**  
+  magnets、公開 RSS、番劇 / 字幕組 / 資源詳情等公開快照改為不可變 R2 generation + PostgreSQL publication head。Web 只讀取並嚴格預熱 head 指向的同一 generation；Redis publication order / generation fence 會拒絕舊請求回寫，所有必要變體完成後才傳送 page-ready。更新或刪除番劇時繼續處理舊 / 新 BGM alias 與受影響 sitemap。
+
+- **Edge 清快取可靠性**  
+  CDN 清理改為持久化 URL 佇列與凍結 run/batch；token + generation lease 防止舊執行器誤確認，失敗可續跑，損壞狀態進入 quarantine 而不靜默丟棄。processed marker 保留 14 天；completed run 保留 14 天、quarantined run 保留 30 天。
+
+### 運維
+
+- **新鮮度運維門禁**  
+  新增 snapshot queue/claim delay、publication pending/latency、head/watermark integrity、generation maintenance/GC 與 Edge D1 durable flush 指標、告警和預檢。queue age 高而 Redis warm latency 低時按排程 / backlog 排查，禁止透過延長 TTL 掩蓋傳播缺口。
 
 ## 2026 年 7 月 7 日
 
-<TypeTable
-  type={{
-    '釋出 API 統一番劇 ID': {
-      description: '番劇資源釋出 API 新增 animeIdType + animeId 統一寫法，animeIdType 支援 bgm、anilist、mal、anidb；也支援 JSON 結構化 anime: { source, id }。歷史 bgmId 欄位保持相容。',
-      type: '新增',
-    },
-    '字幕組 API 示例': {
-      description: '字幕組 API 釋出頁、Nyaa 代發說明和 Open API 文件改用統一番劇 ID 示例，並補充 preview=true smoke test；外部 ID 對應關係以 bangumi-data 為準，未匹配或衝突時進入待匹配狀態。',
-      type: '文件',
-    },
-  }}
-/>
+### 新增
+
+- **釋出 API 統一番劇 ID**  
+  番劇資源釋出 API 新增 `animeIdType` + `animeId` 統一寫法，`animeIdType` 支援 `bgm`、`anilist`、`mal`、`anidb`；也支援 JSON 結構化 `anime: { source, id }`。歷史 `bgmId` 欄位保持相容。
+
+### 文件
+
+- **字幕組 API 示例**  
+  字幕組 API 釋出頁、Nyaa 代發說明和 Open API 文件改用統一番劇 ID 示例，並補充 `preview=true` smoke test；外部 ID 對應關係以 bangumi-data 為準，未匹配或衝突時進入待匹配狀態。
 
 ## 2026 年 7 月 6 日
 
-<TypeTable
-  type={{
-    '釋出語言代碼': {
-      description: '番劇資源釋出 API、預覽釋出、站內釋出預設值和 RSS language 過濾擴展為 CHS、CHT、JP、EN、KO、ES、PT、FR、DE、IT、RU、AR、HI、ID、MS、TH、VI、TL、TR、PL、UK；language 陣列不再限制最多 4 項，適合多語字幕包。',
-      type: '變更',
-    },
-    '番劇後台元資料清理': {
-      description: '番劇 banner 與分集元資料同步已停止；番劇詳情快照、Typesense 番劇文件和公開分集查詢不再輸出這些元資料。後台番劇管理頁移除 banner/分集編輯與同步入口，改為穩定列高的列表視圖；維護入口提供舊 animeEpisodes、animeSourceEpisodes、banner 欄位和 animeSyncMeta 舊欄位的分批清理。',
-      type: '變更',
-    },
-    '季度番劇標題查詢': {
-      description: '/api/seasons/anime 新增 query 參數（短別名 q），可按中文、繁中、羅馬字、英文、日文標題搜尋番劇；不傳 season 時搜尋全部公開番劇，傳 season 時限定到該季度，不能和 bgmId 同時使用。',
-      type: '新增',
-    },
-  }}
-/>
+### 新增
+
+- **釋出 API 外部番劇 ID**  
+  番劇資源釋出 API 開始支援用外部番劇 ID 識別資源；目前公開寫法統一為 `animeIdType` + `animeId`，對應關係以 bangumi-data 為準。若外部 ID 對應多個 BGM 條目或多個外部 ID 解析衝突，資源會進入待匹配狀態。
+
+- **季度番劇標題查詢**  
+  `/api/seasons/anime` 新增 `query` 參數（短別名 `q`），可按中文、繁中、羅馬字、英文、日文標題搜尋番劇；不傳 `season` 時搜尋全部公開番劇，傳 `season` 時限定到該季度，不能和 `bgmId` 同時使用。
+
+### 變更
+
+- **釋出語言代碼**  
+  番劇資源釋出 API、預覽釋出、站內釋出預設值和 RSS language 過濾擴展為 CHS、CHT、JP、EN、KO、ES、PT、FR、DE、IT、RU、AR、HI、ID、MS、TH、VI、TL、TR、PL、UK；`language` 陣列不再限制最多 4 項，適合多語字幕包。
+
+- **番劇後台元資料清理**  
+  番劇 banner 與分集元資料同步已停止；番劇詳情快照、Typesense 番劇文件和公開分集查詢不再輸出這些元資料。後台番劇管理頁移除 banner / 分集編輯與同步入口，改為穩定列高的列表視圖；維護入口提供舊 `animeEpisodes`、`animeSourceEpisodes`、banner 欄位和 `animeSyncMeta` 舊欄位的分批清理。
 
 ## 2026 年 7 月 5 日
 
-<TypeTable
-  type={{
-    '番劇詳情與訂閱預覽': {
-      description: '番劇詳情頁改為兩欄佈局，資源列表與分集列表使用統一資源列；訂閱彈窗會在調整字幕組、清晰度、字幕語言、字幕方式、封裝格式或自訂 Tag 時即時預覽目前番劇近期資源的命中情況，儲存後仍由個人訂閱 RSS 輸出最終結果。',
-      type: '新增',
-    },
-    '字幕組圖床': {
-      description: '新增 /groups/<slug>/image-host 圖床頁面；目前介面採用單入口上傳與下方圖片管理，不再使用頂部模式切換或兩欄上傳面板。支援選擇、拖曳和貼上圖片上傳，上傳成功後直接在頁面結果區生成 BBCode、HTML、Markdown 與直連。',
-      type: '新增',
-    },
-    '圖床複製與管理': {
-      description: '圖片管理改為小縮圖密集網格、懶載入和分頁載入，完整複製格式仍透過彈層開啟；站點管理員的 /admin/image-host 近期審查頁也改為密集縮圖視圖，可跨字幕組快速查看近期圖片並刪除敏感或違規內容。',
-      type: '新增',
-    },
-    '圖床權限與部署': {
-      description: '圖床僅字幕組成員可用，上傳前先校驗成員身份；刪除限上傳者、組 owner/admin 或站點管理員，並改為 Convex 軟刪除元資料後由 media worker 非同步刪除物件。服務端用 Bun 原生圖片流水線優先把靜態圖轉 WebP，動畫 GIF/WebP/APNG、SVG 或無法可靠轉碼的圖片保留原格式；部署文件補充專用物件桶、Bun.Image/Bun.S3Client 執行時門檻和 Web/worker 圖床環境變數。',
-      type: '文件',
-    },
-  }}
-/>
+### 新增
+
+- **番劇詳情與訂閱預覽**  
+  番劇詳情頁改為兩欄佈局，資源列表與分集列表使用統一資源列；訂閱彈窗會在調整字幕組、清晰度、字幕語言、字幕方式、封裝格式或自訂 Tag 時即時預覽目前番劇近期資源的命中情況，儲存後仍由個人訂閱 RSS 輸出最終結果。
+
+- **字幕組圖床**  
+  新增 `/groups/<slug>/image-host` 圖床頁面；單入口上傳 + 下方圖片管理。支援選擇、拖曳和貼上圖片上傳，成功後直接在頁面生成 BBCode、HTML、Markdown 與直連。詳見 [字幕組圖床](/docs/image-host)。
+
+- **圖床複製與管理**  
+  圖片管理改為小縮圖密集網格、懶載入和分頁載入，完整複製格式仍透過彈層開啟；站點管理員的 `/admin/image-host` 近期審查頁也改為密集縮圖視圖，可跨字幕組快速查看並刪除敏感或違規內容。
+
+### 文件
+
+- **圖床權限與部署**  
+  圖床僅字幕組成員可用，上傳前先校驗成員身份；刪除限上傳者、組 owner/admin 或站點管理員，並改為 Convex 軟刪除元資料後由 media worker 非同步刪除物件。服務端用 Bun 原生圖片流水線優先把靜態圖轉 WebP；動畫 GIF/WebP/APNG、SVG 或無法可靠轉碼的圖片保留原格式。部署文件補充專用物件桶、`Bun.Image`/`Bun.S3Client` 執行時門檻和 Web/worker 環境變數。
 
 ## 2026 年 7 月 4 日
 
-<TypeTable
-  type={{
-    '字幕組同步工作台': {
-      description: '/groups/<slug>/sync 改為按外部站點切換的工作台，左側選擇站點，中間配置憑據，右側查看該站點日誌，並提供開坑管理頁入口。',
-      type: '變更',
-    },
-    '同步日誌保留策略': {
-      description: '同步日誌展示最近 40 條，支援按狀態過濾，並按約 14 天保留自動清理；已刪除資源的日誌保留釋出 ID，但停用重試與重新同步。',
-      type: '變更',
-    },
-    '公開搜尋翻頁保護': {
-      description: '/magnets 頁碼和 /api/animes/search cursor 現在最多翻到 Typesense 第 100 頁；非法搜尋 cursor 返回 400，超大頁碼會規範化到第 100 頁，避免深分頁拖慢公開搜尋。',
-      type: '變更',
-    },
-    '季度番劇資源可用性': {
-      description: '/api/seasons/anime 的單個番劇條目新增 rssReleaseCount 與 hasRelease，用於判斷該番劇是否已有站內釋出資源；首頁週播卡片同步使用該狀態顯示「暫無種子」。',
-      type: '新增',
-    },
-    'RSS 瀏覽器展示': {
-      description: '所有 RSS 端點改為原生 XML 展示；瀏覽器直開時不再載入站點自訂 XSL/CSS，RSS 閱讀器和 BT 客戶端繼續使用標準 RSS 欄位。',
-      type: '變更',
-    },
-  }}
-/>
+### 新增
+
+- **季度番劇資源可用性**  
+  `/api/seasons/anime` 的單個番劇條目新增 `rssReleaseCount` 與 `hasRelease`，用於判斷該番劇是否已有站內釋出資源；首頁週播卡片同步使用該狀態顯示「暫無種子」。
+
+### 變更
+
+- **字幕組同步工作台**  
+  `/groups/<slug>/sync` 改為按外部站點切換的雙欄工作台：左側選擇站點並配置憑據，右側查看該站點日誌；開坑管理仍保留在專屬頁面。詳見 [站點同步](/docs/site-sync)。
+
+- **同步日誌保留策略**  
+  同步日誌展示最近 40 條，支援按狀態過濾，並按約 14 天保留自動清理；已刪除資源的日誌保留釋出 ID，但停用重試與重新同步。
+
+- **公開搜尋翻頁保護**  
+  `/magnets` 頁碼和 `/api/animes/search` cursor 現在最多翻到 Typesense 第 100 頁；非法搜尋 cursor 返回 400，超大頁碼會規範化到第 100 頁，避免深分頁拖慢公開搜尋。
+
+- **RSS 瀏覽器展示**  
+  所有 RSS 端點改為原生 XML 展示；瀏覽器直開時不再載入站點自訂 XSL/CSS，RSS 閱讀器和 BT 客戶端繼續使用標準 RSS 欄位。
+
+## 2026 年 6 月 30 日
+
+### 文件
+
+- **公開 JSON API 快取**  
+  更新 `/api/seasons/anime`、`/api/anime/groups`、`/api/subtitle-groups`、搜尋與 lookup 端點的 Cache-Control、SWR、stale-if-error 和 ETag 說明，明確瀏覽器端預設重新驗證、CDN 端共享快取。
+
+- **季度番劇排播狀態**  
+  為 `/api/seasons/anime` 文件補充 `scheduleStatus` 與 `scheduleSummary`，說明 `missing_source` 表示 Bangumi/BGMWiki/Typesense 源欄位缺失，不等同於本站快取未更新。
+
+- **公開 API 限流表**  
+  補全 `/api/animes/search`、`/api/animes/torrent-match`、`/api/anime/lookup`、`/api/mikan/group-lookup` 的預設 limit、快取和限流說明。
 
 ## 2026 年 6 月 27 日
 
-<TypeTable
-  type={{
-    '其他類 Nyaa 代發 API': {
-      description: '釋出其他類資源 API 現在支援和番劇釋出一致的 nyaa、nyaaCategory、nyaaComplete、nyaaRemake、nyaaDescription、nyaaInformation 參數。',
-      type: '新增',
-    },
-    'API 金鑰說明': {
-      description: '補充 API 金鑰頁面和 Open API 文件中的其他類資源 Nyaa 代發欄位、tracker 要求、multipart 範例和常用分類建議。',
-      type: '文件',
-    },
-  }}
-/>
+### 新增
+
+- **其他類 Nyaa 代發 API**  
+  釋出其他類資源 API 現在支援和番劇釋出一致的 `nyaa`、`nyaaCategory`、`nyaaComplete`、`nyaaRemake`、`nyaaDescription`、`nyaaInformation` 參數。詳見 [Nyaa 代發](/docs/nyaa-proxy)。
+
+### 文件
+
+- **API 金鑰說明**  
+  補充 API 金鑰頁面和 Open API 文件中的其他類資源 Nyaa 代發欄位、tracker 要求、multipart 範例和常用分類建議。
 
 ## 2026 年 6 月 13 日
 
-<TypeTable
-  type={{
-    '發布 API 參數說明': {
-      description: '補全番劇資源發布 API 的 language、subtitle、resolution、format、種子、磁力、tracker、預覽和 Nyaa 代發欄位說明。',
-      type: '文件',
-    },
-    'Nyaa 分類映射': {
-      description: '新增 Nyaa 全量分類代碼表，明確中文字幕動畫通常使用 1_3，並解釋 complete、remake、description、information 等代發參數。',
-      type: '文件',
-    },
-    '其他資源發布 API': {
-      description: '補全 manga、music、raw、stage 分類代碼、RSS 對應關係，以及 customTags、magnetLink、magnetBase64 等欄位填法。',
-      type: '文件',
-    },
-  }}
-/>
+### 文件
+
+- **釋出 API 參數說明**  
+  補全番劇資源釋出 API 的 language、subtitle、resolution、format、種子、磁力、tracker、預覽和 Nyaa 代發欄位說明。詳見 [釋出 API](/docs/open-api/releases-publish)。
+
+- **Nyaa 分類映射**  
+  新增 Nyaa 全量分類代碼表，明確中文動畫字幕通常使用 `1_3`，並解釋 complete、remake、description、information 等代發參數。
+
+- **其他資源釋出 API**  
+  補全 manga、music、raw、stage 分類代碼、RSS 對應關係，以及 `customTags`、`magnetLink`、`magnetBase64` 等欄位填法。詳見 [其他資源釋出](/docs/open-api/other-releases-publish)。
 
 ## 2026 年 5 月 26 日
 
-<TypeTable
-  type={{
-    '萌番組同步': {
-      description: '站點同步新增萌番組（bangumi.moe）配置與釋出同步支援。',
-      type: '新增',
-    },
-    '末日站同步': {
-      description: '站點同步新增末日站（ACGNX）UID 與 API Token 配置，支援把 AniBT 釋出同步過去。',
-      type: '新增',
-    },
-    'AniBT Wiki': {
-      description: '上線本 Wiki，整理字幕組入駐、站點同步、Tracker、Open API 與 LLM 對接文件。',
-      type: '上線',
-    },
-  }}
-/>
+### 新增
+
+- **萌番組同步**  
+  站點同步新增萌番組（Bangumi Moe）配置與釋出同步支援。詳見 [萌番組同步](/docs/site-sync/bangumi)。
+
+- **末日站同步**  
+  站點同步新增末日站（ACGNX）UID 與 API Token 配置，支援把 AniBT 釋出同步過去。詳見 [末日站同步](/docs/site-sync/acgnx)。
+
+### 上線
+
+- **AniBT Wiki**  
+  上線本 Wiki，整理字幕組入駐、站點同步、Tracker、Open API 與 LLM 對接文件。
