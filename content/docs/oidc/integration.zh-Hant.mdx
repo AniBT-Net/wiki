@@ -1,0 +1,164 @@
+---
+title: 第三方業務接入指南
+description: 使用 Authorization Code + PKCE S256 將 AniBT 登入接入 Web、BFF、桌面或行動應用程式。
+---
+
+本頁是框架無關的正式環境接入合同。優先使用成熟的 OpenID Connect 用戶端程式庫，並把 issuer 設定為 `https://oauth.anibt.net`；不要自行實作 JWT 驗簽、discovery 快取或 OAuth 參數編碼。
+
+## 端點
+
+| 名稱 | 網址 |
+| --- | --- |
+| Issuer | `https://oauth.anibt.net` |
+| Discovery | `https://oauth.anibt.net/.well-known/openid-configuration` |
+| Authorization | `https://oauth.anibt.net/oauth2/auth` |
+| Token | `https://oauth.anibt.net/oauth2/token` |
+| UserInfo | `https://oauth.anibt.net/userinfo` |
+| JWKS | `https://oauth.anibt.net/.well-known/jwks.json` |
+| End Session | `https://oauth.anibt.net/oauth2/sessions/logout` |
+| Token Revocation | `https://oauth.anibt.net/oauth2/revoke` |
+
+執行時應從 discovery 讀取端點和簽名能力，不要把 issuer 以外的中繼資料永久寫死。AniBT 目前 ID Token 使用 `RS256`，subject type 為 `pairwise`。
+
+## 1. 準備 Client
+
+從 [個人資料的 OAuth 應用程式頁](https://anibt.net/profile?tab=oauth-apps) 建立應用程式並登記精確 redirect URI。
+
+- Web / BFF：選擇 Web / BFF，等待應用程式可用後產生 Client secret。secret 只能保存在伺服器端。
+- 原生應用程式：選擇原生應用程式，不會產生 secret；使用系統瀏覽器和 claimed HTTPS 或 loopback HTTP redirect。
+- 瀏覽器純 SPA：不支援。請把 OAuth 回呼、code exchange 和 token 儲存放在 BFF。
+
+建議先從測試環境應用程式開始，完成全部驗證後再單獨建立正式環境應用程式。
+
+## 2. 發起授權請求
+
+每次登入都產生新的：
+
+- `state`：至少 128 bit 隨機值，綁定目前瀏覽器 session，並在回呼時以恆定時間比較；
+- `nonce`：至少 128 bit 隨機值，寫入授權請求並在 ID Token 中驗證；
+- `code_verifier`：43–128 個 RFC 7636 unreserved 字元；
+- `code_challenge`：`BASE64URL(SHA256(code_verifier))`，不帶 `=` padding。
+
+把 `state`、`nonce` 和 `code_verifier` 保存在伺服器端 session 或其他有完整性保護的短期儲存中。不要放入可被腳本讀取的長期 localStorage。
+
+授權請求範例：
+
+```text
+GET https://oauth.anibt.net/oauth2/auth
+  ?client_id=YOUR_CLIENT_ID
+  &response_type=code
+  &redirect_uri=https%3A%2F%2Fapp.example.com%2Fauth%2Fanibt%2Fcallback
+  &scope=openid%20profile%20email
+  &state=RANDOM_STATE
+  &nonce=RANDOM_NONCE
+  &code_challenge=BASE64URL_SHA256_VERIFIER
+  &code_challenge_method=S256
+```
+
+必須使用 `response_type=code` 和 `code_challenge_method=S256`。只有確實需要長期 session 時才申請 `offline_access`。
+
+## 3. 處理回呼
+
+回呼可能包含 `code`，也可能包含使用者拒絕或協定錯誤：
+
+1. 在讀取 `code` 前驗證 `state` 與目前 session 完全一致；
+2. 一次性消費保存的 `state`、`nonce` 和 `code_verifier`，防止重放；
+3. 驗證回呼中的 `redirect_uri` 對應目前發起登入的 URI；
+4. 如果收到 `error`，只向使用者顯示安全文案，不記錄完整回呼 URL；
+5. authorization code 只能使用一次，不要在網路錯誤後盲目重複交換。
+
+## 4. 交換 Token
+
+Web / BFF 使用 HTTP Basic 傳遞 Client ID 和 Client secret：
+
+```http
+POST /oauth2/token HTTP/1.1
+Host: oauth.anibt.net
+Authorization: Basic BASE64(CLIENT_ID:CLIENT_SECRET)
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&
+code=ONE_TIME_CODE&
+redirect_uri=https%3A%2F%2Fapp.example.com%2Fauth%2Fanibt%2Fcallback&
+code_verifier=ORIGINAL_CODE_VERIFIER
+```
+
+原生應用程式不傳送 Client secret，並在表單中傳送 `client_id`：
+
+```text
+grant_type=authorization_code
+code=ONE_TIME_CODE
+client_id=YOUR_CLIENT_ID
+redirect_uri=YOUR_EXACT_REDIRECT_URI
+code_verifier=ORIGINAL_CODE_VERIFIER
+```
+
+`redirect_uri` 必須與授權請求和 AniBT 應用程式設定中的值完全一致。token endpoint 必須由伺服器端或原生應用程式呼叫，不要把 Web / BFF secret 下發給瀏覽器。
+
+## 5. 驗證 ID Token
+
+使用 discovery 的 `jwks_uri` 驗證簽章，並至少檢查：
+
+- 簽名演算法是伺服器允許的演算法（目前為 `RS256`）；
+- `iss` 精確等於 `https://oauth.anibt.net`；
+- `aud` 包含目前 Client ID；多 audience 時按 OIDC 規則驗證 `azp`；
+- `exp` 尚未到期，`iat` 在合理時鐘偏差內；
+- `nonce` 與本次登入保存的值完全一致；
+- token 來自目前成功的 code exchange。
+
+使用 `sub` 作為 AniBT 登入的唯一外部帳號鍵。`sub` 是 pairwise 識別碼，不應與另一個 Client 取得的 `sub` 比較。不要使用信箱、名稱或頭像作為帳號主鍵。
+
+## 6. UserInfo 與 claims
+
+access token 目前是 opaque token。呼叫 UserInfo：
+
+```http
+GET /userinfo HTTP/1.1
+Host: oauth.anibt.net
+Authorization: Bearer ACCESS_TOKEN
+```
+
+只依賴已獲授權 scope 對應的標準 claims：
+
+- `openid`：`sub`；
+- `profile`：可能包含 `name`、`picture`；
+- `email`：可能包含 `email`、`email_verified`。
+
+claim 可能缺失，應用程式必須容忍。`.anibt.local` 合成信箱永遠不會返回。即使取得已驗證信箱，也不要用它自動合併其他登入方式的帳號。
+
+## 7. Refresh token
+
+只有使用者明確同意 `offline_access` 時才會取得 refresh token。刷新請求按 Client 類型使用與 token exchange 相同的驗證方式：
+
+```text
+grant_type=refresh_token
+refresh_token=CURRENT_REFRESH_TOKEN
+```
+
+每次成功刷新後，原子替換保存的 refresh token。AniBT 啟用 rotation 和 reuse protection；重複使用舊 refresh token 可能使整個 token family 失效。刷新請求逾時或結果不明確時，不要並行重試同一個 token。
+
+## 8. Logout 與撤銷
+
+RP-initiated logout 使用 discovery 中的 `end_session_endpoint`，通常傳送：
+
+- `id_token_hint`：目前 session 的 ID Token；
+- `post_logout_redirect_uri`：必須預先登記並精確比對；
+- `state`：用於驗證 logout 回呼。
+
+預設只結束 OIDC / RP session，不自動登出 AniBT 主站。應用程式 owner 也可以在 AniBT 應用程式詳情中「撤銷授權」，使已有 grants 和 token 失效。
+
+## 正式環境驗收清單
+
+- 正常 Code + PKCE S256 登入成功；
+- 錯誤 `state` 被拒絕；
+- 錯誤 `nonce` 被拒絕；
+- 錯誤 issuer、audience、簽章或過期 ID Token 被拒絕；
+- authorization code 不能重複使用；
+- Web secret 只存在於伺服器端；
+- `sub` 用作帳號鍵，信箱不用於自動合併；
+- 沒有 `email` scope 時不依賴信箱；
+- `offline_access` 明確取得同意並正確保存輪換後的 refresh token；
+- logout callback 驗證 `state`；
+- 日誌不包含 code、token、secret、cookie、完整回呼 URL 或 authorization header。
+
+需要給 AI 或程式碼生成工具提供更緊湊的合同，請使用 [AI / Agent 接入參考](/docs/oidc/ai-reference)。

@@ -1,0 +1,162 @@
+---
+title: AI / Agent 接入參考
+description: 可直接提供給 AI 程式設計工具的 AniBT OIDC 設定、實作約束、提示詞與驗收清單。
+---
+
+本頁是面向 AI 程式設計助手、Agent 和程式碼生成工具的緊湊合同。靜態 Markdown 網址為 [`/docs/oidc/ai-reference.md`](/docs/oidc/ai-reference.md)；完整接入說明見 [`/docs/oidc/integration.md`](/docs/oidc/integration.md)。
+
+## Canonical configuration
+
+```json
+{
+  "provider_id": "anibt",
+  "protocol": "openid-connect",
+  "issuer": "https://oauth.anibt.net",
+  "discovery_url": "https://oauth.anibt.net/.well-known/openid-configuration",
+  "authorization_endpoint": "https://oauth.anibt.net/oauth2/auth",
+  "token_endpoint": "https://oauth.anibt.net/oauth2/token",
+  "userinfo_endpoint": "https://oauth.anibt.net/userinfo",
+  "jwks_uri": "https://oauth.anibt.net/.well-known/jwks.json",
+  "end_session_endpoint": "https://oauth.anibt.net/oauth2/sessions/logout",
+  "revocation_endpoint": "https://oauth.anibt.net/oauth2/revoke",
+  "response_type": "code",
+  "grant_type": "authorization_code",
+  "pkce_method": "S256",
+  "subject_type": "pairwise",
+  "id_token_signing_alg": "RS256",
+  "self_service_scopes": [
+    "openid",
+    "profile",
+    "email",
+    "offline_access"
+  ],
+  "web_bff_token_endpoint_auth_method": "client_secret_basic",
+  "native_token_endpoint_auth_method": "none",
+  "dynamic_client_registration": false
+}
+```
+
+除 issuer 外，執行時優先從 discovery 取得端點和能力。上面的明確端點用於審查和故障排查，不代表可以跳過 discovery。
+
+## 不可違反的實作約束
+
+1. 僅使用 Authorization Code + PKCE S256；拒絕 implicit flow、password grant 和 `plain` PKCE。
+2. Web / BFF secret 只能存在於伺服器端 secret manager；不得進入瀏覽器、行動套件、公開變數、日誌或倉庫。
+3. 原生應用程式是 public client，永遠沒有 secret。
+4. 每次授權產生新的高熵 `state`、`nonce`、`code_verifier`，並一次性消費。
+5. 回呼先驗證 `state`，再交換 code；ID Token 必須驗證簽章、`iss`、`aud`、`exp` 和 `nonce`。
+6. 帳號唯一鍵只能使用 pairwise `sub`；不得用 email、name 或 picture 自動合併帳號。
+7. claims 可能缺失；任何 `.anibt.local` 信箱都不會返回。
+8. `offline_access` 需要明確 consent；每次刷新後原子保存新的 refresh token，禁止並行重用舊 token。
+9. redirect URI 和 post-logout URI 必須與 AniBT 中登記的字串完全一致。
+10. 不要嘗試 Dynamic Client Registration、Hydra Admin API、operator 或任何未公開管理端點。
+11. 不記錄 authorization code、access token、refresh token、ID Token、Client secret、cookie、完整回呼 URL 或 Authorization header。
+12. 網路結果不明確時，不要盲目重複 code exchange、secret rotation 或 refresh token 請求。
+
+## Client 類型選擇
+
+```text
+如果應用程式有安全的伺服器端或 BFF：
+  application_type = web_bff
+  token_endpoint_auth_method = client_secret_basic
+  redirect_uri = HTTPS
+  secret = server-only
+
+如果應用程式是桌面或行動原生應用程式：
+  application_type = native
+  token_endpoint_auth_method = none
+  redirect_uri = claimed HTTPS 或 loopback HTTP
+  secret = 不存在
+
+如果應用程式是瀏覽器純 SPA：
+  不支援；增加 BFF 後按 web_bff 接入
+```
+
+## 推薦給 AI 程式設計工具的提示詞
+
+複製下面內容，並補充你的框架、回呼網址和 session 儲存方案：
+
+```text
+為目前專案接入 AniBT OpenID Connect 登入。
+
+權威文件：
+- https://wiki.anibt.net/docs/oidc/integration.md
+- https://wiki.anibt.net/docs/oidc/ai-reference.md
+
+固定合同：
+- issuer: https://oauth.anibt.net
+- flow: Authorization Code
+- PKCE: S256，所有 Client 都必須使用
+- state 和 nonce 每次隨機產生、伺服器端保存、一次性驗證
+- Web/BFF 使用 client_secret_basic，secret 只能保存在伺服器端
+- Native 使用 token_endpoint_auth_method=none，永遠沒有 secret
+- 驗證 ID Token 簽章、iss、aud、exp、nonce
+- 使用 pairwise sub 作為唯一帳號鍵，禁止按 email 自動合併
+- claims 必須按可缺失處理；.anibt.local 信箱永遠不會返回
+- offline_access 需要明確 consent，並正確處理 refresh rotation/reuse protection
+- 所有 redirect URI 必須精確比對
+- 日誌不得包含 code、token、secret、cookie、完整 callback URL 或 Authorization header
+- 不使用 Dynamic Client Registration，不存取 Hydra Admin 或 AniBT 內部 operator
+
+請先檢查專案現有認證和 session 邊界，選擇成熟的 OIDC 程式庫；列出需要的伺服器端環境變數、精確 callback URL 和 logout URL；實作登入、callback、ID Token 驗證、UserInfo、refresh、logout 與錯誤處理；最後增加 state/nonce/PKCE/issuer/audience/code-reuse/refresh-rotation 的測試。不要把 secret 寫入前端變數。
+```
+
+## 環境變數模板
+
+變數名稱可按專案規範調整，但公開與私密邊界必須保持：
+
+```dotenv
+# 可公開設定
+ANIBT_OIDC_ISSUER=https://oauth.anibt.net
+ANIBT_OIDC_CLIENT_ID=從 AniBT 應用程式詳情複製
+ANIBT_OIDC_REDIRECT_URI=https://app.example.com/auth/anibt/callback
+ANIBT_OIDC_POST_LOGOUT_REDIRECT_URI=https://app.example.com/signed-out
+
+# 僅 Web / BFF 伺服器端；Native 不設定
+ANIBT_OIDC_CLIENT_SECRET=從 AniBT 一次性頁面複製到 secret manager
+```
+
+不要使用 `VITE_*`、`NEXT_PUBLIC_*`、`PUBLIC_*` 或其他會進入瀏覽器 bundle 的變數保存 Client secret。
+
+## 最小實作順序
+
+1. 透過 discovery 初始化 OIDC client。
+2. 建立 `/login/anibt`，產生並保存 `state`、`nonce`、PKCE verifier，然後重定向 authorization endpoint。
+3. 建立精確 callback route，驗證 `state`，一次性取出 verifier 並交換 code。
+4. 完整驗證 ID Token，使用 `(issuer, sub)` 建立或查找外部帳號綁定。
+5. 只按已授權 scope 讀取 claims；需要時呼叫 UserInfo。
+6. 把業務 session 與 provider token 分開保存，token 僅伺服器端可讀。
+7. 如申請 `offline_access`，實作原子 refresh rotation。
+8. 實作 RP logout，驗證 logout `state`。
+9. 增加安全日誌脫敏和協定測試。
+
+## AI 自檢輸出格式
+
+讓 AI 完成後提供以下證據，不要輸出 secret 或 token 值：
+
+```text
+OIDC library:
+Issuer/discovery source:
+Client type:
+Exact callback URL:
+Exact post-logout URL:
+Server-only secret storage:
+state validation test:
+nonce validation test:
+PKCE S256 test:
+ID Token signature/iss/aud/exp test:
+pairwise sub account-key check:
+synthetic email / missing-claim handling:
+refresh rotation/reuse test:
+logout state test:
+redaction test:
+known limitations:
+```
+
+## 文件抓取
+
+- 目前頁 Markdown：`https://wiki.anibt.net/docs/oidc/ai-reference.md`
+- 完整接入指南 Markdown：`https://wiki.anibt.net/docs/oidc/integration.md`
+- Wiki 文件索引：`https://wiki.anibt.net/llms.txt`
+- 全量簡體中文 Wiki：`https://wiki.anibt.net/llms-full.txt`
+- 全量英文 Wiki：`https://wiki.anibt.net/llms-full.en.txt`

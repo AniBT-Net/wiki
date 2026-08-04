@@ -1,0 +1,82 @@
+---
+title: OpenID Connect 概览与应用管理
+description: 在 AniBT 创建 OAuth 应用，并了解应用类型、字段、权限与生命周期。
+---
+
+AniBT 提供标准 OpenID Connect（OIDC）身份平台，第三方业务可以让用户使用 AniBT 账号登录。登录用户可在个人资料中创建和管理自己的 OAuth 应用；配置通过安全校验后会立即开始自动配置，不需要管理员审核。
+
+<Callout type="info">
+  Issuer：`https://oauth.anibt.net`<br />
+  Discovery：[`https://oauth.anibt.net/.well-known/openid-configuration`](https://oauth.anibt.net/.well-known/openid-configuration)<br />
+  应用管理：[AniBT 个人资料 → OAuth 应用](https://anibt.net/profile?tab=oauth-apps)
+</Callout>
+
+生产环境不开放 Dynamic Client Registration。Client 必须从 AniBT 个人资料创建，浏览器和业务服务器都不能访问 Hydra Admin API 或 AniBT 内部 operator。
+
+## 创建应用
+
+1. 登录 AniBT，打开个人资料中的“OAuth 应用”。
+2. 点击“新建 OAuth 应用”，在弹窗中填写标有“必填”的项目。
+3. 提交后应用直接进入“配置中”，完成后显示为“可用”。流程中没有申请审核、approve 或 reject 状态。
+4. 打开应用详情，复制 Client ID、issuer、discovery、回调地址和授权范围。
+5. Web / BFF 应用在变为“可用”后，再显式生成一次 Client secret。
+
+普通用户最多拥有 5 个未删除应用。测试环境和生产环境必须创建为两个独立应用。
+
+## 申请字段
+
+| 字段 | 是否必填 | 用途 |
+| --- | --- | --- |
+| 应用名称 | 必填 | 显示在用户授权页 |
+| 主页地址 | 必填 | 应用公开 HTTPS 主页，授权页会提供链接 |
+| 安全联系邮箱 | 必填 | 安全通知和异常联系，不公开显示 |
+| 环境 | 必填 | 测试环境或生产环境；两者必须分开 |
+| 应用类型 | 必填 | Web / BFF 或原生应用 |
+| 登录回调地址 | 必填 | 登录完成后的精确跳转地址，至少 1 个、最多 10 个 |
+| 应用说明 | 选填 | 填写后显示在用户授权页 |
+| 隐私政策地址 | 选填 | 填写后显示在用户授权页，必须是完整 HTTPS 地址 |
+| Logo 地址 | 选填 | 填写后显示在用户授权页，必须是完整 HTTPS 图片地址 |
+| 退出后回调地址 | 选填 | RP logout 完成后的精确跳转地址，最多 10 个 |
+
+所有 URI 都按完整字符串精确匹配，不允许通配符、URL 用户名密码或 fragment。编辑应用时不能切换环境或应用类型；如需切换，请创建新应用。
+
+## 应用类型
+
+| 类型 | Client 认证 | 回调地址 | 适用场景 |
+| --- | --- | --- | --- |
+| Web / BFF | confidential，`client_secret_basic` | 仅 HTTPS | 有服务端或 BFF，可以安全保存 secret |
+| 原生应用 | public，`none` | HTTPS claimed redirect 或本机回环 HTTP | 桌面或移动应用，永远没有 secret |
+
+浏览器纯 SPA 不受支持。网页前端必须通过服务端 BFF 完成 code exchange 和 token 保存。
+
+## 自助授权范围
+
+| Scope | 数据与规则 |
+| --- | --- |
+| `openid` | 必需；返回按 Client sector 隔离的 pairwise `sub` |
+| `profile` | 用户公开名称和头像 |
+| `email` | 需要用户明确同意；仅返回可公开的真实邮箱 |
+| `offline_access` | 需要用户明确同意；启用 refresh token rotation 与 reuse protection |
+
+`anibt:role` 和 `anibt:user_id` 不是自助授权范围，只能由具有 `oidc_clients.manage` 权限的管理员配置。第三方应用不得用邮箱自动合并账号；任何 `.anibt.local` 合成邮箱都不会进入 ID Token、UserInfo 或 access-token session。
+
+## Client secret
+
+原生应用永远没有 secret。Web / BFF 应用的 secret 规则如下：
+
+- 创建应用时只使用不可交付的内部 bootstrap secret；
+- 应用可用后，owner 必须显式点击生成或轮换；
+- 操作要求最近重新认证、CSRF 防护、限流和应用名称确认；
+- 新 secret 只在当前 HTTPS 响应中显示一次；
+- 当前为零重叠轮换，旧 secret 立即失效；
+- 如果响应丢失，系统不会自动重试或再次显示，只能再次显式轮换。
+
+请立即把 secret 保存到服务端 secret manager。不要放进浏览器包、移动应用、公开仓库、日志、分析平台或 Wiki。
+
+## 生命周期与安全操作
+
+应用可能显示“配置中、可用、更新中、已停用、删除中、错误、已删除”等技术状态。owner 可以编辑配置、停用、恢复、撤销全部授权、轮换 secret 或永久删除应用。
+
+如果应用或 owner 被停用、封禁或删除，AniBT 会拒绝新的授权，并通过持久化后台任务停用 Client、撤销相关会话。管理员可以直接处置滥用应用，但没有 approve / reject 工作流。
+
+下一步：阅读 [第三方业务接入指南](/docs/oidc/integration)。
