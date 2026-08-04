@@ -1,41 +1,63 @@
 ---
 title: 使用 AniBT 登入第三方應用
-description: 第三方應用透過標準 OpenID Connect 使用 AniBT 賬號登入。
+description: 建立 OAuth 應用，並透過標準 OpenID Connect 使用 AniBT 賬號登入。
 ---
 
-AniBT 已提供標準 OpenID Connect（OIDC）身份平台。經人工審核的第三方應用可以把使用者帶到 AniBT 完成註冊、登入與授權，再透過 Authorization Code 返回應用。
+AniBT 提供標準 OpenID Connect（OIDC）身份平台。已登入使用者可以在個人資料中自助建立和管理 OAuth 應用；合法提交會直接進入配置並自動生效，不需要管理員審核。
 
 <Callout type="info">
-  Issuer 是 `https://oauth.anibt.net`，discovery 地址是 [`https://oauth.anibt.net/.well-known/openid-configuration`](https://oauth.anibt.net/.well-known/openid-configuration)。生產環境不開放動態 Client 註冊；接入請聯絡 [support@anibt.net](mailto:support@anibt.net)。
+  Issuer 是 `https://oauth.anibt.net`，discovery 地址是 [`https://oauth.anibt.net/.well-known/openid-configuration`](https://oauth.anibt.net/.well-known/openid-configuration)。生產環境不開放 Dynamic Client Registration；請從 [個人資料的 OAuth 應用頁](https://anibt.net/profile?tab=oauth-apps) 建立 Client。
 </Callout>
 
-## 支援的流程
+## 建立應用
 
-- 僅支援 Authorization Code + PKCE S256；Web 應用必須使用後端/BFF，Native Client 不保存 secret。
-- Client 必須驗證 `state`、`nonce`、PKCE、ID token 簽章、issuer、audience 與到期時間。
-- callback 與 post-logout URI 必須逐字登記，不允許 wildcard；瀏覽器 SPA 不應直接持有長期 token。
-- access token 目前為 opaque；authorization code 最長 5 分鐘，access token 與 ID token 為 15 分鐘，refresh token 最長 30 天並啟用 rotation/reuse protection。
+1. 打開個人資料的「OAuth 應用」分頁，選擇「建立 OAuth 應用」。
+2. 填寫應用名稱、說明、首頁、隱私政策、聯絡郵箱、環境、應用類型、精確 callback / post-logout URI 與 scopes。
+3. 提交後應用會進入 `provisioning`，完成同步後變為 `active`。流程中沒有 `pending`、approve 或 reject 狀態。
+4. 在詳情頁複製 Client ID、issuer、discovery、callback、scopes 與接入資訊。
+
+每個普通使用者最多保留 5 個未刪除應用。每個應用最多登記 10 個 redirect URI 和 10 個 post-logout URI；staging 與 production 必須建立為不同應用。
+
+## 應用類型與 URI
+
+| 類型 | 要求 |
+| --- | --- |
+| Web / BFF | confidential Client；服務端使用 `client_secret_basic`；callback 必須是 HTTPS；必須使用 Authorization Code + PKCE S256 |
+| Native | public Client；永遠沒有 secret；必須使用 PKCE S256；首版僅接受 HTTPS claimed redirect 或 loopback HTTP |
+
+瀏覽器純 SPA 不受支援，請使用 BFF。所有 URI 都按完整字串精確匹配，不允許 wildcard、URL credentials 或 fragment。
 
 ## Scope 與 claims
 
-| Scope | 資料 |
+| Scope | 資料與規則 |
 | --- | --- |
-| `openid` | 必需；返回 pairwise `sub` |
-| `profile` | 審核後的暱稱、頭像與標準 profile claims |
-| `email` | 僅在 Client 獲批且賬號有可公開真實郵箱時返回 |
-| `offline_access` | 返回可輪換 refresh token，需要單獨審核與明確同意 |
-| `anibt:role` | 僅獲批第一方 Client 的 namespaced role claim |
-| `anibt:user_id` | 僅獲批第一方 Client 的 AniBT 內部 ID claim |
+| `openid` | 必需；返回按 Client sector 隔離的 pairwise `sub` |
+| `profile` | 暱稱、頭像與標準 profile claims |
+| `email` | 需要使用者明確同意；僅返回可公開的真實郵箱 |
+| `offline_access` | 需要使用者明確同意；返回啟用 rotation / reuse protection 的 refresh token |
 
-預設 `sub` 是按 Client sector 隔離的 pairwise identifier。應用不得用郵箱自動關聯賬號；AniBT 的 synthetic `.anibt.local` 郵箱永遠不會進入 ID token、UserInfo 或 access-token session。
+`anibt:role` 與 `anibt:user_id` 不是自助 scope，只能用於由 AniBT 管理員直接配置的受限第一方 Client。應用不得用郵箱自動關聯賬號；synthetic `.anibt.local` 郵箱永遠不會進入 ID token、UserInfo 或 access-token session。
 
-## 登入、同意與登出
+## Client secret
 
-使用者會在 `anibt.net` 完成現有郵箱密碼、GitHub、Google、Microsoft、Bangumi、KUNGal 登入或註冊。首次授權或 scope 擴大時會顯示 Client、用途和請求的資料；使用者可以拒絕。RP-initiated logout 預設只結束 Hydra/RP session，不會自動登出 AniBT 主站 session。
+Native Client 永遠沒有 secret。Web / BFF Client 變為 `active` 後，owner 可以在應用詳情頁明確產生 secret：
 
-賬號被刪除、停用、封禁或使用者主動斷開 OIDC 連線後，AniBT 會立即拒絕新的登入，並透過持久化撤銷任務清理 Hydra login/consent session。
+- 操作需要最近重新認證、CSRF 防護、限流與應用名稱確認；
+- 新 secret 只在目前 HTTPS response 顯示一次，不會進入頁面 SSR、日誌或應用記錄；
+- 目前輪換為零重疊，舊 secret 會立即失效；
+- 如果響應遺失，AniBT 不會自動重試或再次顯示明文，只能再次明確輪換。
 
-## Client 申請資料
+請立即把 secret 保存到服務端 secret manager，禁止放入瀏覽器套件、公開倉庫或客戶端日誌。
 
-申請時請提供業務/技術 owner、事故聯絡人、用途與隱私政策、Client 類型、精確 callback/logout URI、最小 scopes、PKCE/state/nonce/ID-token 驗證方案、secret manager 與輪換 owner。生產 Client 由宣告式 operator 建立、審計、暫停、恢復、輪換和撤銷；secret 只透過單獨安全渠道交付。
+## 接入流程
 
+- 僅支援 Authorization Code + PKCE S256。Client 必須驗證 `state`、`nonce`、PKCE、ID token 簽章、issuer、audience 與到期時間。
+- access token 目前為 opaque；authorization code 最長 5 分鐘，access token 與 ID token 為 15 分鐘，refresh token 最長 30 天。
+- 首次授權、scope 擴大、`email` 或 `offline_access` 請求會顯示應用資料、用途和資料範圍，使用者可以拒絕。
+- RP-initiated logout 預設結束 Hydra / RP session，不會自動登出 AniBT 主站 session。
+
+## 管理與撤銷
+
+owner 可以編輯資料、URI 和自助 scopes，也可以 suspend、resume、撤銷既有 grants、輪換 secret 或永久刪除應用。配置同步或漂移錯誤會在詳情頁顯示安全錯誤碼與可用的重試操作。
+
+應用或 owner 被停用、封禁或刪除時，AniBT 會拒絕新的授權並透過持久化任務停用 Client、撤銷相關 session。管理員可以直接處理濫用應用，但不存在 approve / reject 工作流。

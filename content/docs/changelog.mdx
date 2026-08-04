@@ -9,12 +9,19 @@ description: AniBT Wiki 与站点功能更新记录。
   日期按北京时间（UTC+8）。较新的更新在前。同一天内按 **新增 / 修复 / 安全 / 优化 / 变更 / 文档 / 运维 / 数据** 分组。
 </Callout>
 
+## 2026 年 8 月 4 日
+
+### 新增
+
+- **个人资料 OAuth 应用自助管理**
+  普通用户现在可在个人资料中直接创建和管理 OIDC OAuth 应用，无需管理员审核。支持 Web / BFF 与 Native Client、精确 callback / logout URI、自助 scopes、一次性零重叠 secret 轮换、suspend / resume、grant revoke 与删除；Dynamic Client Registration 继续关闭。详见 [使用 AniBT 登录第三方应用](/docs/oidc)。
+
 ## 2026 年 8 月 3 日
 
 ### 新增
 
 - **AniBT OpenID Connect 身份平台**  
-  上线 `oauth.anibt.net` 标准 OIDC issuer，支持 Authorization Code + PKCE S256、pairwise `sub`、显式 scope 同意、opaque access token、refresh rotation / reuse protection 与 RP logout。第三方 Client 需人工审核；synthetic 邮箱不会对外释放，账号安全撤销会持久化清理 Hydra session。详见 [使用 AniBT 登录第三方应用](/docs/oidc)。
+  上线 `oauth.anibt.net` 标准 OIDC issuer，支持 Authorization Code + PKCE S256、pairwise `sub`、显式 scope 同意、opaque access token、refresh rotation / reuse protection 与 RP logout。Dynamic Client Registration 保持关闭；synthetic 邮箱不会对外释放，账号安全撤销会持久化清理 Hydra session。详见 [使用 AniBT 登录第三方应用](/docs/oidc)。
 
 ## 2026 年 7 月 30 日
 

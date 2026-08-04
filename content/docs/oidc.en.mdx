@@ -1,41 +1,63 @@
 ---
 title: Sign in to third-party apps with AniBT
-description: Use AniBT accounts through the standard OpenID Connect platform.
+description: Create OAuth applications and use AniBT accounts through standard OpenID Connect.
 ---
 
-AniBT now provides a standard OpenID Connect (OIDC) identity platform. Approved third-party applications can send users to AniBT for registration, sign-in, and consent, then receive an Authorization Code callback.
+AniBT provides a standard OpenID Connect (OIDC) identity platform. Signed-in users can create and manage OAuth applications from their profile. A valid submission is provisioned automatically and does not require administrator approval.
 
 <Callout type="info">
-  The issuer is `https://oauth.anibt.net`; discovery is available at [`https://oauth.anibt.net/.well-known/openid-configuration`](https://oauth.anibt.net/.well-known/openid-configuration). Production dynamic client registration is disabled. Contact [support@anibt.net](mailto:support@anibt.net) for onboarding.
+  The issuer is `https://oauth.anibt.net`; discovery is available at [`https://oauth.anibt.net/.well-known/openid-configuration`](https://oauth.anibt.net/.well-known/openid-configuration). Production Dynamic Client Registration remains disabled. Create clients from [OAuth applications in your profile](https://anibt.net/profile?tab=oauth-apps).
 </Callout>
 
-## Supported flow
+## Create an application
 
-- Authorization Code with PKCE S256 only. Web apps must use a backend/BFF; native clients do not keep a secret.
-- Clients must validate `state`, `nonce`, PKCE, the ID-token signature, issuer, audience, and expiry.
-- Callback and post-logout URIs are exact and reviewed; wildcards are forbidden. Browser SPAs must not hold long-lived tokens directly.
-- Access tokens are opaque. Codes live for up to 5 minutes, access and ID tokens for 15 minutes, and rotating refresh tokens for up to 30 days with reuse protection.
+1. Open the “OAuth applications” profile tab and choose “Create OAuth application.”
+2. Enter the name, description, homepage, privacy policy, contact email, environment, application type, exact callback / post-logout URIs, and scopes.
+3. The application enters `provisioning` immediately and becomes `active` after synchronization. There is no `pending`, approve, or reject state.
+4. The detail page shows the Client ID, issuer, discovery URL, callbacks, scopes, and integration guidance.
+
+An ordinary user may keep up to five non-deleted applications. Each application accepts at most ten redirect URIs and ten post-logout URIs. Staging and production must use separate applications.
+
+## Application types and URIs
+
+| Type | Requirements |
+| --- | --- |
+| Web / BFF | Confidential client using server-side `client_secret_basic`; HTTPS callbacks; Authorization Code with PKCE S256 |
+| Native | Public client with no secret; PKCE S256; v1 accepts HTTPS claimed redirects or loopback HTTP only |
+
+Pure browser SPAs are not supported; use a BFF. Every URI is matched as an exact string. Wildcards, URL credentials, and fragments are rejected.
 
 ## Scopes and claims
 
-| Scope | Data |
+| Scope | Data and policy |
 | --- | --- |
-| `openid` | Required; returns a pairwise `sub` |
-| `profile` | Approved name, avatar, and standard profile claims |
-| `email` | Only for approved clients and a releasable real address |
-| `offline_access` | Rotating refresh token; requires separate review and explicit consent |
-| `anibt:role` | Namespaced role claim for approved first-party clients only |
-| `anibt:user_id` | Internal AniBT ID for approved first-party clients only |
+| `openid` | Required; returns a pairwise `sub` isolated by client sector |
+| `profile` | Name, avatar, and standard profile claims |
+| `email` | Requires explicit user consent and a releasable real address |
+| `offline_access` | Requires explicit user consent; returns a rotating refresh token with reuse protection |
 
-The default `sub` is pairwise and isolated by client sector. Applications must never auto-link by email. Synthetic `.anibt.local` addresses are never released in ID tokens, UserInfo, or access-token sessions.
+`anibt:role` and `anibt:user_id` are not self-service scopes. They are limited to restricted first-party clients configured directly by AniBT administrators. Applications must never auto-link by email. Synthetic `.anibt.local` addresses are never released in ID tokens, UserInfo, or access-token sessions.
 
-## Sign-in, consent, and logout
+## Client secrets
 
-Users complete AniBT's existing email/password, GitHub, Google, Microsoft, Bangumi, or KUNGal sign-in and registration on `anibt.net`. First authorization and scope expansion show the client, purpose, and requested data, and can be denied. RP-initiated logout ends the Hydra/RP session by default and does not automatically sign out of AniBT.
+Native clients never have a secret. After a Web / BFF client becomes `active`, its owner may explicitly generate a secret from the application detail page:
 
-Deleted, disabled, or banned accounts are rejected immediately. A user security disconnect also creates a durable task that revokes Hydra login and consent sessions.
+- the action requires recent authentication, CSRF protection, rate limiting, and application-name confirmation;
+- the new secret is shown once in the current HTTPS response and is not stored in SSR output, logs, or application records;
+- rotation has zero overlap, so the previous secret stops working immediately;
+- if the response is lost, AniBT does not retry or reveal the plaintext again; explicitly rotate once more.
 
-## Client application
+Store the value immediately in a server-side secret manager. Never place it in a browser bundle, public repository, or client logs.
 
-Provide business and technical owners, an incident contact, purpose and privacy policy, client type, exact callback/logout URIs, minimum scopes, PKCE/state/nonce/ID-token validation details, secret storage, and a rotation owner. Production clients are created and managed by a declarative operator; secrets are delivered only through a separate secure channel.
+## Integration flow
 
+- Authorization Code with PKCE S256 is the only supported flow. Validate `state`, `nonce`, PKCE, the ID-token signature, issuer, audience, and expiry.
+- Access tokens are opaque. Codes live for up to five minutes, access and ID tokens for 15 minutes, and refresh tokens for up to 30 days.
+- First authorization, scope expansion, `email`, and `offline_access` show the application, purpose, and requested data so the user can deny consent.
+- RP-initiated logout ends the Hydra / RP session by default and does not automatically sign out of AniBT.
+
+## Management and revocation
+
+Owners can edit metadata, URIs, and self-service scopes, or suspend, resume, revoke grants, rotate a secret, and permanently delete an application. Synchronization or drift failures expose a safe error code and any permitted retry action on the detail page.
+
+If an application or its owner is disabled, banned, or deleted, AniBT rejects new authorization and durably suspends the client and revokes related sessions. Administrators may act directly on abusive applications, but there is no approve / reject workflow.

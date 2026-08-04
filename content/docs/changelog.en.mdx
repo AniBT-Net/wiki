@@ -9,12 +9,19 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
 </Callout>
 
+## August 4, 2026
+
+### Added
+
+- **Self-service OAuth applications in profiles**
+  Ordinary users can now create and manage OIDC OAuth applications directly from their profile without administrator approval. The workflow supports Web / BFF and native clients, exact callback / logout URIs, self-service scopes, one-time zero-overlap secret rotation, suspend / resume, grant revocation, and deletion. Dynamic Client Registration remains disabled. See [Sign in to third-party apps with AniBT](/docs/oidc).
+
 ## August 3, 2026
 
 ### Added
 
 - **AniBT OpenID Connect identity platform**  
-  Launched the standard `oauth.anibt.net` OIDC issuer with Authorization Code + PKCE S256, pairwise `sub`, explicit scope consent, opaque access tokens, refresh rotation / reuse protection, and RP logout. Third-party clients require manual approval; synthetic email is never released, and account-security revocation durably clears Hydra sessions. See [Sign in to third-party apps with AniBT](/docs/oidc).
+  Launched the standard `oauth.anibt.net` OIDC issuer with Authorization Code + PKCE S256, pairwise `sub`, explicit scope consent, opaque access tokens, refresh rotation / reuse protection, and RP logout. Dynamic Client Registration remains disabled; synthetic email is never released, and account-security revocation durably clears Hydra sessions. See [Sign in to third-party apps with AniBT](/docs/oidc).
 
 ## July 30, 2026
 
