@@ -89,6 +89,8 @@ The TTLs above are fallback policies for shared caches, not timers that every pu
 
 Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds. Publish events invalidate the Redis family first, then purge every CDN query variant for the same `bgmId`, `groupSlug`, or category; TTL remains the fallback when the event path fails. Searches and empty results cache for 600 seconds at both edge and Redis; Redis keys contain only a SHA-256 of the normalized query.
 
+Entity CDN membership is now attached only after Web resolves the canonical owner for the final response. A resolved anime may belong to both the `bgmId` and `groupSlug` invalidation sets; a resolved group and an other-category request without `q` belong to their own sets. An unresolved-anime empty `200`, an unknown-group `404`, and other free-text search receive no false entity membership. Category/group tag purges therefore no longer evict searches or unknown objects, while a dual-owner anime still refreshes when either real owner changes. URLs, TTLs, ETags, and 304 semantics are unchanged.
+
 ### Canonical RSS URLs and error caching
 
 - URLs whose raw query pairs differ only in order return the same canonical `200`; the self URL, ETag, and cache identity still use the stable canonical order.

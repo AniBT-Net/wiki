@@ -89,6 +89,8 @@ Vary:             Accept-Encoding
 
 實體 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒。釋出事件先失效 Redis 家族，再按 `bgmId` / `groupSlug` / category 清除同一實體的全部 CDN 參數變體；TTL 繼續作為事件鏈路失敗時的兜底。搜尋與空結果在 edge/Redis 都快取 600 秒，Redis key 只保存規範化查詢的 SHA-256。
 
+實體 CDN membership 現在只在 Web 已確認 canonical owner 後隨最終響應附加：已解析的 anime 可同時屬於 `bgmId` 與 `groupSlug` 兩個失效集合，已解析的 group 與不帶 `q` 的 other category 各屬於自己的集合。anime 未解析 owner 的空 `200`、group 未知 owner 的 `404` 與 other free-text search 都不會獲得虛假實體 membership。因此 category/group tag purge 不再誤清搜尋或未知物件，dual-owner anime 仍可由任一真實 owner 變化精確重新整理。URL、TTL、ETag 與 304 契約沒有變化。
+
 ### RSS 規範 URL 與錯誤快取
 
 - 僅原始 query 參數對的順序不同、其餘位元組完全相同的 URL 會直接返回同一份規範 `200`；self URL、ETag 與快取身份仍使用穩定的規範順序。

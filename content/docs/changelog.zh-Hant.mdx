@@ -11,6 +11,11 @@ description: AniBT Wiki 與站點功能更新紀錄。
 
 ## 2026 年 8 月 6 日
 
+### 修正
+
+- **公開 RSS 實體失效只認權威 owner**
+  anime / group / other RSS 的 CDN membership 現在由 Web 在解析 canonical owner 後隨最終響應附加，舊的 URL-derived Cloudflare Response Rules 已退出。other free-text search、anime 未解析 owner 的空 `200` 與 group 未知 owner 的 `404` 不再被虛假實體標籤誤清；dual-owner anime 仍可由 `bgmId` 或 `groupSlug` 任一真實 owner 精確重新整理。URL、TTL、ETag 與 304 契約不變。
+
 ### 文件
 
 - **公開 RSS / catalog exact-body 條件請求契約上線**

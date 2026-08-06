@@ -11,6 +11,11 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 ## August 6, 2026
 
+### Fixed
+
+- **Public RSS entity invalidation now requires an authoritative owner**
+  CDN membership for anime / group / other RSS is now attached by Web only after resolving the canonical owner, and the old URL-derived Cloudflare Response Rules have been retired. Other free-text search, unresolved-anime empty `200`, and unknown-group `404` responses no longer receive false entity tags; a dual-owner anime still refreshes through either its real `bgmId` or `groupSlug`. URLs, TTLs, ETags, and 304 semantics are unchanged.
+
 ### Docs
 
 - **Exact-body conditional-request contract shipped for public RSS and catalog APIs**
