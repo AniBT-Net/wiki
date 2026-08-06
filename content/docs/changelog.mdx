@@ -13,8 +13,8 @@ description: AniBT Wiki 与站点功能更新记录。
 
 ### 文档
 
-- **公开 RSS / catalog 条件请求现状修正**
-  文档已按当前生产事实明确：anime / group / other / magnets RSS 的请求时间 `lastBuildDate`，以及 `/api/seasons/anime`、`/api/anime/groups` 的请求时间 `ts`，尚未完整进入现有 ETag / Last-Modified 校验器；相同校验器目前可能对应不同正文，`304` 不能单独证明内容逐字节未变。修复上线前，需要精确当前正文的客户端应省略条件请求头并直接校验返回内容。此条是现状更正，不表示服务端修复已经上线。
+- **公开 RSS / catalog exact-body 条件请求合同上线**
+  anime / group / other / magnets RSS 与 7 个 catalog API 现在从最终 JSON/XML UTF-8 bytes 计算 opaque SHA-256 weak ETag；GET、HEAD 与匹配 `If-None-Match` 的 304 共享同一缓存 representation。公开 RSS 已移除请求时间 `lastBuildDate`；`/api/seasons/anime`、`/api/anime/groups` 的 `ts` 改为缓存 representation materialization time，并进入正文与 ETag。当前这些端点省略 `Last-Modified`。anime 未解析 owner 仍可能空 `200`，group 未知 owner 仍 `404`；本次没有扩大另外 3 个 API 的 Cloudflare edge eligibility。
 
 ## 2026 年 8 月 4 日
 
@@ -50,7 +50,7 @@ description: AniBT Wiki 与站点功能更新记录。
 ### 修复
 
 - **公开 RSS 参数顺序与 CDN 缓存一致**  
-  仅原始 query 参数对顺序不同的 magnets、anime、group 与 other RSS 现在直接返回同一规范 200；self URL、ETag、Last-Modified 与缓存身份保持稳定。默认值、兼容别名、大小写 / 空白 / 编码差异仍返回 308；非法重复参数保持应用 400 + no-store，非法 limit 在生产边缘可先返回 Cloudflare 403。
+  仅原始 query 参数对顺序不同的 magnets、anime、group 与 other RSS 现在直接返回同一规范 200；self URL、ETag 与缓存身份保持稳定，当前公开 RSS 省略 Last-Modified。默认值、兼容别名、大小写 / 空白 / 编码差异仍返回 308；非法重复参数保持应用 400 + no-store，非法 limit 在生产边缘可先返回 Cloudflare 403。
 
 ### 安全
 

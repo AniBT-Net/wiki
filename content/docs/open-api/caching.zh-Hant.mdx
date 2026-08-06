@@ -3,10 +3,10 @@ title: HTTP 快取與 304
 description: 所有公開端點的 ETag、Cache-Control、stale-while-revalidate 行為詳解，配 Python 客戶端最小實現。
 ---
 
-AniBT 的公開 RSS 與 catalog API 會按各端點返回共享快取指令；其中多數端點也實作了 `If-None-Match` / `If-Modified-Since` 條件請求。
+AniBT 的公開 RSS 與 catalog API 會按各端點返回共享快取指令；已遷移端點統一實作 `If-None-Match`、GET、HEAD 與 304。
 
-<Callout type="warn">
-  當前生產存在已確認的 representation 校驗器缺陷：公開 anime/group/other/magnets RSS、`/api/seasons/anime` 與 `/api/anime/groups` 可能在 `ETag` / `Last-Modified` 不變時返回不同正文。受影響端點的 `304` 只能表示「當前服務端校驗器判定未變」，不能證明正文逐位元組未變。修復上線前，如業務必須取得精確當前正文，請不要傳送條件請求標頭，並直接校驗返回內容。
+<Callout type="info">
+  公開 anime/group/other/magnets RSS 與 7 個 catalog API 已使用 exact-body validator：ETag 的 SHA-256 digest 來自實際返回的最終 JSON/XML UTF-8 bytes。相同 ETag 現在綁定相同正文。這些端點目前沒有完整、秒級安全的更新時間證據，因此省略 `Last-Modified`；客戶端應優先使用 `If-None-Match`。
 </Callout>
 
 <Callout type="info">
@@ -91,31 +91,31 @@ Vary:             Accept-Encoding
 
 ### RSS 規範 URL 與錯誤快取
 
-- 僅原始 query 參數對的順序不同、其餘位元組完全相同的 URL 會直接返回同一份規範 `200`；self URL、ETag、Last-Modified 與快取身份仍使用穩定的規範順序。
+- 僅原始 query 參數對的順序不同、其餘位元組完全相同的 URL 會直接返回同一份規範 `200`；self URL、ETag 與快取身份仍使用穩定的規範順序。
 - 與預設值等價、使用相容別名，或需要大小寫/空白/編碼規範化的 URL 返回 `308`，`Cache-Control` 與 `CDN-Cache-Control` 均可快取 1 天。客戶端應跟隨永久重新導向並保存最終 URL。
 - 非法、重複、空或 `>100` 的 `limit`，以及重複/空/控制字元/超過 160 UTF-8 bytes 的 `q` 返回應用 `400 + no-store`；生產邊緣可能先返回 Cloudflare `403 + no-store`。
 - shape 合法但無法解析的 anime owner 當前可能返回可快取的空 `200`；未知 `/rss/group/<slug>.xml` owner 返回有界 `404`。不要把兩者視為同一個狀態契約。
 - 新的高基數搜尋 MISS 超出語義預算時返回 `429 + Retry-After`；快取 HIT 與已見穩定查詢不消耗新查詢預算。
 
-## 當前 ETag 形態（已知限制）
+## 當前 ETag 形態
 
-| 端點                                              | 公式                                                              |
-| ------------------------------------------------- | ----------------------------------------------------------------- |
-| `/rss/anime.xml` `/rss/group` `/rss/magnets.xml`  | `W/"r{itemCount}-{latestPublishedAtMs}-{canonicalUrlHash}"`       |
-| `/api/subtitle-groups`                            | `W/"sg{count}-{maxCreatedAt}-{sumTotalReleases}-{urlHash}"`       |
-| `/api/seasons/anime`                              | `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`    |
-| `/api/anime/groups`                               | `W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`                       |
-| `/api/bgm/search`                                 | `W/"bgm-web-{queryHash}-{count}-{lastMs}"`                        |
-| `/api/animes/search`                              | `W/"anime-search-web-{bodyHash}"`                                 |
-| `/api/anime/lookup`                               | `W/"anime-lookup-web-{bodyHash}"`                                 |
-| `/api/mikan/group-lookup`                         | `W/"mikan-group-lookup-web-{bodyHash}"`                           |
+公開 anime/group/other/magnets RSS，以及 `/api/subtitle-groups`、
+`/api/seasons/anime`、`/api/anime/groups`、`/api/bgm/search`、
+`/api/animes/search`、`/api/anime/lookup`、`/api/mikan/group-lookup` 統一返回：
 
-這些是當前實作形態，不是「ETag 完整覆蓋正文」的保證。RSS 的請求時間 `lastBuildDate`，以及兩個 JSON API 的請求時間 `ts`，都可能改變正文而不推進當前 ETag。
+```txt
+W/"anibt-sha256-{64 lowercase hex}"
+```
+
+這是 opaque validator；不要解析或依賴 digest 的內部格式。服務端從最終響應正文的 UTF-8
+bytes 計算 SHA-256，所以任意正文 byte 變化都會推進 ETag。公開 RSS 不再寫請求時間
+`lastBuildDate`；`/api/seasons/anime` 與 `/api/anime/groups` 的 `ts` 是快取 representation
+的 materialization time，並與正文一起進入 ETag。
 
 ## 驗證 304
 
-<Callout type="warn">
-  下列命令只能驗證服務端返回了 `304`，不能消除上面的當前校驗器缺陷。對受影響端點，不要把 `304` 單獨當作正文未變化的證據。
+<Callout type="info">
+  對上述 exact-body 端點，匹配 ETag 的 `304` 表示當前快取 representation 的正文 bytes 未變化。它不表示某個非同步釋出任務已把預期 release 寫入正文；釋出可見性仍應直接檢查目標內容。
 </Callout>
 
 ```bash title="curl 驗證"
@@ -129,7 +129,7 @@ curl -sI -H "If-None-Match: $ETAG" \
 
 ## 時間軸：max-age + s-maxage + SWR + 304 怎麼互動
 
-下面是標準 HTTP 快取的目標語義示例；只有當端點校驗器完整代表正文時，「ETag 相同 = 正文相同」才成立。當前受影響端點暫不滿足這個前提。
+下面是標準 HTTP 快取語義示例。上述 exact-body 端點的校驗器已完整代表正文，因此「ETag 相同 = 正文 bytes 相同」成立。
 
 很多人會問："`stale-while-revalidate=86400`（24 小時）是不是意味著我可能拿到 24 小時前的舊資料？"——**不會**。
 
@@ -202,11 +202,11 @@ curl -sSI 'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|etag|cache-control|cf-cache-status)'
 # HTTP/2 200
 # cache-control: public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400
-# etag: W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"
+# etag: W/"anibt-sha256-d9c23bc62fc466211c62562865ee60e9acbe5c4130c2ba61943c4cf57a309811"
 # cf-cache-status: MISS               ← 第一次穿透到 origin
 
 # Step 2: 立刻再來一次，帶條件請求
-ETAG='W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"'
+ETAG='W/"anibt-sha256-d9c23bc62fc466211c62562865ee60e9acbe5c4130c2ba61943c4cf57a309811"'
 curl -sSI -H "If-None-Match: $ETAG" \
   'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|cf-cache-status)'
@@ -229,20 +229,18 @@ curl -sSI -H "If-None-Match: $ETAG" \
 import requests, time
 
 URL = 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia,haruhana&language=CHS'
-state = {'etag': None, 'last_modified': None}
+state = {'etag': None}
 
 def poll():
     headers = {}
-    if state['etag']:          headers['If-None-Match']     = state['etag']
-    if state['last_modified']: headers['If-Modified-Since'] = state['last_modified']
+    if state['etag']: headers['If-None-Match'] = state['etag']
 
     r = requests.get(URL, headers=headers, timeout=10)
     if r.status_code == 304:
         print(f"[{time.strftime('%H:%M:%S')}] 304 not modified, body 0 bytes")
         return None  # 資料沒變，不用解析
     if r.status_code == 200:
-        state['etag']          = r.headers.get('ETag')
-        state['last_modified'] = r.headers.get('Last-Modified')
+        state['etag'] = r.headers.get('ETag')
         print(f"[{time.strftime('%H:%M:%S')}] 200 OK, body {len(r.content)} bytes, "
               f"cf-cache-status={r.headers.get('cf-cache-status')}")
         return r.content
@@ -260,6 +258,6 @@ while True:
 
 這套寫法滿足：
 
-- 對校驗器正確的端點，第一次響應快取 ETag 後可以用 304 顯著減少頻寬
+- 對這些 exact-body 端點，第一次響應快取 ETag 後可在正文未變化時用 304 顯著減少頻寬
 - CDN 給 `STALE` 時你也不知道（也不需要知道），使用者體驗完全相同
 - 觸發 429 自動按 `Retry-After` 退避

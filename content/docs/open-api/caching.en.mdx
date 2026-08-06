@@ -3,10 +3,10 @@ title: HTTP caching & 304
 description: ETag, Cache-Control, and stale-while-revalidate behaviour for every public endpoint, with a minimal Python client.
 ---
 
-AniBT public RSS and catalog APIs return endpoint-specific shared-cache directives, and most also implement `If-None-Match` / `If-Modified-Since` conditional requests.
+AniBT public RSS and catalog APIs return endpoint-specific shared-cache directives. Migrated endpoints share one `If-None-Match`, GET, HEAD, and 304 contract.
 
-<Callout type="warn">
-  Production currently has a confirmed representation-validator defect: public anime/group/other/magnets RSS, `/api/seasons/anime`, and `/api/anime/groups` can return different bodies while keeping the same `ETag` / `Last-Modified`. A `304` from an affected endpoint only means the current validator considered it unchanged; it does not prove byte-identical content. Until the fix is deployed, clients that require the exact current body should omit conditional headers and validate the returned content directly.
+<Callout type="info">
+  Public anime/group/other/magnets RSS and seven catalog APIs now use exact-body validators: the SHA-256 digest in the ETag comes from the final JSON/XML UTF-8 bytes actually returned. The same ETag therefore binds the same body. These endpoints currently omit `Last-Modified` because they do not have complete, second-safe modification-time evidence; prefer `If-None-Match`.
 </Callout>
 
 <Callout type="info">
@@ -91,31 +91,32 @@ Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds. P
 
 ### Canonical RSS URLs and error caching
 
-- URLs whose raw query pairs differ only in order return the same canonical `200`; the self URL, ETag, Last-Modified, and cache identity still use the stable canonical order.
+- URLs whose raw query pairs differ only in order return the same canonical `200`; the self URL, ETag, and cache identity still use the stable canonical order.
 - URLs equivalent to defaults, using compatibility aliases, or requiring case/whitespace/encoding normalization return `308`; both cache headers allow the redirect to be cached for one day. Clients should follow the permanent redirect and retain the final URL.
 - Invalid/repeated/empty/greater-than-100 `limit`, and repeated/empty/control-bearing/over-160-UTF-8-byte `q`, return application `400 + no-store`; the production edge may block first with Cloudflare `403 + no-store`.
 - A shape-valid but unresolved anime owner may currently return a cacheable empty `200`; an unknown `/rss/group/<slug>.xml` owner returns a bounded `404`. They are not the same status contract.
 - Excessive new high-cardinality search MISSes return `429 + Retry-After`; cache HITs and previously seen stable queries do not consume new-query budget.
 
-## Current ETag shapes (known limitation)
+## Current ETag shape
 
-| Endpoint                                            | Formula                                                            |
-| --------------------------------------------------- | ------------------------------------------------------------------ |
-| `/rss/anime.xml` `/rss/group` `/rss/magnets.xml`    | `W/"r{itemCount}-{latestPublishedAtMs}-{canonicalUrlHash}"`        |
-| `/api/subtitle-groups`                              | `W/"sg{count}-{maxCreatedAt}-{sumTotalReleases}-{urlHash}"`        |
-| `/api/seasons/anime`                                | `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`     |
-| `/api/anime/groups`                                 | `W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`                        |
-| `/api/bgm/search`                                   | `W/"bgm-web-{queryHash}-{count}-{lastMs}"`                         |
-| `/api/animes/search`                                | `W/"anime-search-web-{bodyHash}"`                                  |
-| `/api/anime/lookup`                                 | `W/"anime-lookup-web-{bodyHash}"`                                  |
-| `/api/mikan/group-lookup`                           | `W/"mikan-group-lookup-web-{bodyHash}"`                            |
+Public anime/group/other/magnets RSS and `/api/subtitle-groups`,
+`/api/seasons/anime`, `/api/anime/groups`, `/api/bgm/search`,
+`/api/animes/search`, `/api/anime/lookup`, and `/api/mikan/group-lookup` return:
 
-These are current implementation shapes, not a guarantee that the ETag covers every body byte. Request-time RSS `lastBuildDate` and the two JSON APIs' request-time `ts` can change the body without advancing the current ETag.
+```txt
+W/"anibt-sha256-{64 lowercase hex}"
+```
+
+Treat this as an opaque validator; do not parse or depend on the digest format.
+The server hashes the final response body's UTF-8 bytes, so any body-byte change
+advances the ETag. Public RSS no longer writes a request-time `lastBuildDate`.
+The `ts` field in `/api/seasons/anime` and `/api/anime/groups` is the cached
+representation materialization time and is included in the body and ETag.
 
 ## Verifying 304
 
-<Callout type="warn">
-  The command below only proves that the server returned `304`; it does not remove the current validator defect above. Do not use `304` alone as evidence of an unchanged body on affected endpoints.
+<Callout type="info">
+  For the exact-body endpoints above, a matching-ETag `304` means the current cached representation's body bytes are unchanged. It does not prove that an asynchronous publish has already inserted an expected release; verify publish visibility in the target body.
 </Callout>
 
 ```bash title="curl walk-through"
@@ -129,7 +130,7 @@ curl -sI -H "If-None-Match: $ETAG" \
 
 ## Timeline: how max-age + s-maxage + SWR + 304 interact
 
-The following is the intended standard HTTP-cache behaviour. “Same ETag means same body” is valid only when an endpoint's validator completely represents its response; the affected production endpoints currently do not meet that prerequisite.
+The following illustrates standard HTTP-cache behaviour. The exact-body endpoints above now have validators that completely represent the response, so “same ETag means the same body bytes” holds.
 
 People often ask, "Does `stale-while-revalidate=86400` (24 h) mean I might receive 24-hour-old data?" — **no, it does not**.
 
@@ -201,11 +202,11 @@ curl -sSI 'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|etag|cache-control|cf-cache-status)'
 # HTTP/2 200
 # cache-control: public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400
-# etag: W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"
+# etag: W/"anibt-sha256-d9c23bc62fc466211c62562865ee60e9acbe5c4130c2ba61943c4cf57a309811"
 # cf-cache-status: MISS               ← first request fell through to origin
 
 # Step 2: immediately repeat with a conditional request
-ETAG='W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"'
+ETAG='W/"anibt-sha256-d9c23bc62fc466211c62562865ee60e9acbe5c4130c2ba61943c4cf57a309811"'
 curl -sSI -H "If-None-Match: $ETAG" \
   'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|cf-cache-status)'
@@ -228,20 +229,18 @@ curl -sSI -H "If-None-Match: $ETAG" \
 import requests, time
 
 URL = 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia,haruhana&language=CHS'
-state = {'etag': None, 'last_modified': None}
+state = {'etag': None}
 
 def poll():
     headers = {}
-    if state['etag']:          headers['If-None-Match']     = state['etag']
-    if state['last_modified']: headers['If-Modified-Since'] = state['last_modified']
+    if state['etag']: headers['If-None-Match'] = state['etag']
 
     r = requests.get(URL, headers=headers, timeout=10)
     if r.status_code == 304:
         print(f"[{time.strftime('%H:%M:%S')}] 304 not modified, body 0 bytes")
         return None
     if r.status_code == 200:
-        state['etag']          = r.headers.get('ETag')
-        state['last_modified'] = r.headers.get('Last-Modified')
+        state['etag'] = r.headers.get('ETag')
         print(f"[{time.strftime('%H:%M:%S')}] 200 OK, body {len(r.content)} bytes, "
               f"cf-cache-status={r.headers.get('cf-cache-status')}")
         return r.content
@@ -258,6 +257,6 @@ while True:
 
 This loop:
 
-- Endpoints with correct validators can cache the first ETag and use 304 to reduce bandwidth substantially.
+- These exact-body endpoints can cache the first ETag and use 304 when the body is unchanged, substantially reducing bandwidth.
 - Treats `cf-cache-status: STALE` exactly like `HIT` (you neither know nor care).
 - Backs off automatically on 429 using `Retry-After`.

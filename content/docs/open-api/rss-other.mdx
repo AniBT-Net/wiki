@@ -116,7 +116,7 @@ https://anibt.net/rss/other/stage.xml
 
 ## 缓存与索引
 
-- RSS 响应当前实现 `ETag` / `If-None-Match`，但校验器没有覆盖全部 XML 字节，请求时间 `lastBuildDate` 也不进入 ETag；相同 ETag 仍可能对应不同正文，暂时不要把 `304` 当作 feed 未变化的完整证明。
+- RSS 响应从最终 XML UTF-8 bytes 计算 exact-body `W/"anibt-sha256-{...}"` ETag，并移除了请求时间 `lastBuildDate`；匹配 ETag 的 `304` 表示当前 feed bytes 未变化。当前省略 `Last-Modified`。
 - 无 `q` 的 latest/filter 变体为 `s-maxage=120`；带 `q` 的搜索（包括空结果）为 `s-maxage=600`；两类统一 `stale-while-revalidate=60`。
 - 分类发布变化会先失效 latest Redis 家族，再清除该 category 的全部 CDN 参数变体；搜索 Redis 身份仍按 600 秒 TTL 自主管理，因此这不是实时搜索 SLA。
 - 搜索缓存身份只保存规范化查询的 SHA-256。重复/空/控制字符 q、同时传 q+search 或超过 160 bytes 返回 `400 + no-store`。仅调整原始 query 参数对顺序会直接返回同一规范 `200`；默认值、兼容别名或其它字节级规范化仍返回可缓存一天的 `308`。

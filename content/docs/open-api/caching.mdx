@@ -3,10 +3,10 @@ title: HTTP 缓存与 304
 description: 所有公开端点的 ETag、Cache-Control、stale-while-revalidate 行为详解，配 Python 客户端最小实现。
 ---
 
-AniBT 的公开 RSS 与 catalog API 会按各端点返回共享缓存指令；其中多数端点也实现了 `If-None-Match` / `If-Modified-Since` 条件请求。
+AniBT 的公开 RSS 与 catalog API 会按各端点返回共享缓存指令；迁移端点统一实现 `If-None-Match`、GET、HEAD 与 304。
 
-<Callout type="warn">
-  当前生产存在已确认的 representation 校验器缺陷：公开 anime/group/other/magnets RSS、`/api/seasons/anime` 与 `/api/anime/groups` 可能在 `ETag` / `Last-Modified` 不变时返回不同正文。受影响端点的 `304` 只能表示“当前服务端校验器判定未变”，不能证明正文逐字节未变。修复上线前，如业务必须取得精确当前正文，请不要发送条件请求头，并直接校验返回内容。
+<Callout type="info">
+  公开 anime/group/other/magnets RSS 与 7 个 catalog API 已使用 exact-body validator：ETag 的 SHA-256 digest 来自实际返回的最终 JSON/XML UTF-8 bytes。相同 ETag 现在绑定相同正文。当前这些端点没有完整、秒级安全的更新时间证据，因此省略 `Last-Modified`，客户端应优先使用 `If-None-Match`。
 </Callout>
 
 <Callout type="info">
@@ -91,31 +91,31 @@ Vary:             Accept-Encoding
 
 ### RSS 规范 URL 与错误缓存
 
-- 仅原始 query 参数对的顺序不同、其余字节完全相同的 URL 会直接返回同一份规范 `200`；self URL、ETag、Last-Modified 与缓存身份仍使用稳定的规范顺序。
+- 仅原始 query 参数对的顺序不同、其余字节完全相同的 URL 会直接返回同一份规范 `200`；self URL、ETag 与缓存身份仍使用稳定的规范顺序。
 - 与默认值等价、使用兼容别名，或需要大小写/空白/编码规范化的 URL 返回 `308`，`Cache-Control` 与 `CDN-Cache-Control` 均可缓存 1 天。客户端应跟随永久重定向并保存最终 URL。
 - 非法、重复、空或 `>100` 的 `limit`，以及重复/空/控制字符/超过 160 UTF-8 bytes 的 `q` 返回应用 `400 + no-store`；生产边缘可能先返回 Cloudflare `403 + no-store`。
 - shape 合法但无法解析的 anime owner 当前可能返回可缓存的空 `200`；未知 `/rss/group/<slug>.xml` owner 返回有界 `404`。不要把两者视为同一个状态合同。
 - 新的高基数搜索 MISS 超出语义预算时返回 `429 + Retry-After`；缓存 HIT 与已见稳定查询不消耗新查询预算。
 
-## 当前 ETag 形态（已知限制）
+## 当前 ETag 形态
 
-| 端点                                              | 公式                                                              |
-| ------------------------------------------------- | ----------------------------------------------------------------- |
-| `/rss/anime.xml` `/rss/group` `/rss/magnets.xml`  | `W/"r{itemCount}-{latestPublishedAtMs}-{canonicalUrlHash}"`       |
-| `/api/subtitle-groups`                            | `W/"sg{count}-{maxCreatedAt}-{sumTotalReleases}-{urlHash}"`       |
-| `/api/seasons/anime`                              | `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`    |
-| `/api/anime/groups`                               | `W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`                       |
-| `/api/bgm/search`                                 | `W/"bgm-web-{queryHash}-{count}-{lastMs}"`                        |
-| `/api/animes/search`                              | `W/"anime-search-web-{bodyHash}"`                                 |
-| `/api/anime/lookup`                               | `W/"anime-lookup-web-{bodyHash}"`                                 |
-| `/api/mikan/group-lookup`                         | `W/"mikan-group-lookup-web-{bodyHash}"`                           |
+公开 anime/group/other/magnets RSS，以及 `/api/subtitle-groups`、
+`/api/seasons/anime`、`/api/anime/groups`、`/api/bgm/search`、
+`/api/animes/search`、`/api/anime/lookup`、`/api/mikan/group-lookup` 统一返回：
 
-这些是当前实现形态，不是“ETag 完整覆盖正文”的保证。RSS 的请求时间 `lastBuildDate`，以及两个 JSON API 的请求时间 `ts`，都可能改变正文而不推进当前 ETag。
+```txt
+W/"anibt-sha256-{64 lowercase hex}"
+```
+
+这个值是 opaque validator；不要解析或依赖 digest 的内部格式。服务端从最终响应正文的
+UTF-8 bytes 计算 SHA-256，所以任意正文 byte 变化都会推进 ETag。公开 RSS 不再写请求时间
+`lastBuildDate`；`/api/seasons/anime` 与 `/api/anime/groups` 的 `ts` 是缓存 representation
+的 materialization time，并与正文一起进入 ETag。
 
 ## 验证 304
 
-<Callout type="warn">
-  下列命令只能验证服务端返回了 `304`，不能消除上面的当前校验器缺陷。对受影响端点，不要把 `304` 单独当作正文未变化的证据。
+<Callout type="info">
+  对上述 exact-body 端点，匹配 ETag 的 `304` 表示当前缓存 representation 的正文 bytes 未变化。它不表示某个异步发布任务已经把预期 release 写入正文；发布可见性仍应直接检查目标内容。
 </Callout>
 
 ```bash title="curl 验证"
@@ -129,7 +129,7 @@ curl -sI -H "If-None-Match: $ETAG" \
 
 ## 时间轴：max-age + s-maxage + SWR + 304 怎么交互
 
-下面是标准 HTTP 缓存的目标语义示例；只有当端点校验器完整代表正文时，“ETag 相同 = 正文相同”才成立。当前受影响端点暂不满足这个前提。
+下面是标准 HTTP 缓存语义示例。上述 exact-body 端点的校验器已经完整代表正文，因此“ETag 相同 = 正文 bytes 相同”成立。
 
 很多人会问："`stale-while-revalidate=86400`（24 小时）是不是意味着我可能拿到 24 小时前的旧数据？"——**不会**。
 
@@ -202,11 +202,11 @@ curl -sSI 'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|etag|cache-control|cf-cache-status)'
 # HTTP/2 200
 # cache-control: public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400
-# etag: W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"
+# etag: W/"anibt-sha256-d9c23bc62fc466211c62562865ee60e9acbe5c4130c2ba61943c4cf57a309811"
 # cf-cache-status: MISS               ← 第一次穿透到 origin
 
 # Step 2: 立刻再来一次（仍在 max-age 内，但用 -H 强制触发条件请求）
-ETAG='W/"sa-web-2026-SUMMER-85-1782776047080-rzdksj"'
+ETAG='W/"anibt-sha256-d9c23bc62fc466211c62562865ee60e9acbe5c4130c2ba61943c4cf57a309811"'
 curl -sSI -H "If-None-Match: $ETAG" \
   'https://anibt.net/api/seasons/anime?season=2026-SUMMER' \
   | grep -iE '^(HTTP|cf-cache-status)'
@@ -229,20 +229,18 @@ curl -sSI -H "If-None-Match: $ETAG" \
 import requests, time
 
 URL = 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia,haruhana&language=CHS'
-state = {'etag': None, 'last_modified': None}
+state = {'etag': None}
 
 def poll():
     headers = {}
-    if state['etag']:          headers['If-None-Match']     = state['etag']
-    if state['last_modified']: headers['If-Modified-Since'] = state['last_modified']
+    if state['etag']: headers['If-None-Match'] = state['etag']
 
     r = requests.get(URL, headers=headers, timeout=10)
     if r.status_code == 304:
         print(f"[{time.strftime('%H:%M:%S')}] 304 not modified, body 0 bytes")
         return None  # 数据没变，不用解析
     if r.status_code == 200:
-        state['etag']          = r.headers.get('ETag')
-        state['last_modified'] = r.headers.get('Last-Modified')
+        state['etag'] = r.headers.get('ETag')
         print(f"[{time.strftime('%H:%M:%S')}] 200 OK, body {len(r.content)} bytes, "
               f"cf-cache-status={r.headers.get('cf-cache-status')}")
         return r.content
@@ -260,6 +258,6 @@ while True:
 
 这套写法满足：
 
-- 对校验器正确的端点，第一次响应缓存 ETag 后可以用 304 显著减少带宽
+- 对这些 exact-body 端点，第一次响应缓存 ETag 后可在正文未变化时用 304 显著减少带宽
 - CDN 给 `STALE` 时你也不知道（也不需要知道），用户体验完全相同
 - 触发 429 自动按 `Retry-After` 退避

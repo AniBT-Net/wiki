@@ -5,7 +5,7 @@ description: GET /rss/anime.xml —— 支援 bgmId、字幕組 slug 與多 Tag 
 
 `/rss/anime.xml` 是最靈活的訂閱端點：用 `bgmId` + `groupSlug` + 多個 Tag（`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`）任意組合訂閱一個番劇 / 字幕組 / 全站釋出。
 
-<Callout type="warn">
+<Callout type="info">
   必須給 `bgmId` 或 `groupSlug` **至少之一**。兩者都不傳會被拒絕。
 </Callout>
 
@@ -63,10 +63,10 @@ GET https://anibt.net/rss/anime.xml?<query>
   `limit` 重複、為空、含前導零、不是整數或大於 100 時，應用返回 `400 + no-store`；生產邊緣可能先返回 Cloudflare `403`。`limit=100` 等與預設值等價的寫法會 `308` 到規範 URL，跳轉可快取 1 天；客戶端應跟隨永久重新導向。
 </Callout>
 
-只調整原始 query 參數對順序、沒有改變任何參數位元組時，不再重新導向：請求直接返回同一份規範 `200`，`atom:link rel="self"`、ETag 與 Last-Modified 仍使用穩定規範 URL。
+只調整原始 query 參數對順序、沒有改變任何參數位元組時，不再重新導向：請求直接返回同一份規範 `200`，`atom:link rel="self"`、ETag 與快取身份仍使用穩定規範 URL；目前省略 `Last-Modified`。
 
 <Callout type="warn">
-  當前生產的公開 RSS 校驗器沒有覆蓋全部 XML 位元組，且每次 origin 構造正文都會寫入請求時間 `lastBuildDate`；因此相同 ETag / Last-Modified 仍可能對應不同正文，`304` 暫時不能單獨證明 feed 未變化。shape 合法但無法解析的 anime owner 還可能返回空 `200`，而未知 `/rss/group/<slug>.xml` 返回 `404`。
+  公開 RSS 現在從最終 XML UTF-8 bytes 計算 `W/"anibt-sha256-{...}"` ETag，並移除了請求時間 `lastBuildDate`。相同 ETag 綁定相同正文；匹配 ETag 的 `304` 表示目前 feed bytes 未變化。目前省略 `Last-Modified`。shape 合法但無法解析的 anime owner 仍可能返回空 `200`，而未知 `/rss/group/<slug>.xml` 仍返回 `404`。
 </Callout>
 
 ## 重複引數兩種寫法等價
@@ -134,7 +134,7 @@ GET https://anibt.net/rss/anime.xml?<query>
 | 僅 `bgmId`              | Typesense filter 約束番劇          |
 | 僅 `groupSlug`          | Typesense filter 約束字幕組        |
 
-解析度、語言、格式、字幕方式等 Tag 盡量下推到 Typesense filter；`episode` / `episodeKey` 等展示欄位只在 Web runtime 做小視窗後過濾。實體 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。釋出事件會先失效對應 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一實體的全部 CDN 參數變體；TTL 繼續作為事件鏈路失敗時的兜底，當前 ETag 限制以上方警告為準。
+解析度、語言、格式、字幕方式等 Tag 盡量下推到 Typesense filter；`episode` / `episodeKey` 等展示欄位只在 Web runtime 做小視窗後過濾。實體 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。釋出事件會先失效對應 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一實體的全部 CDN 參數變體；TTL 繼續作為事件鏈路失敗時的兜底，ETag 始終由快取後的最終 XML 正文決定。
 
 ## Mikan 參數相容
 

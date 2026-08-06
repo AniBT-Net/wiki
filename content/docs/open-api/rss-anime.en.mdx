@@ -5,7 +5,7 @@ description: GET /rss/anime.xml — the most flexible subscription endpoint. Com
 
 `/rss/anime.xml` is the most flexible subscription endpoint: combine `bgmId` + `groupSlug` + multiple tags (`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`) in any way to subscribe to a show, a group, or the whole site.
 
-<Callout type="warn">
+<Callout type="info">
   At least one of `bgmId` or `groupSlug` is required. Requests with neither are rejected.
 </Callout>
 
@@ -63,10 +63,10 @@ GET https://anibt.net/rss/anime.xml?<query>
   A repeated, empty, zero-padded, non-integer, or greater-than-100 `limit` returns application `400 + no-store`; the production edge may block it first with Cloudflare `403`. Canonically equivalent forms such as `limit=100` return a cacheable one-day `308` to the canonical URL. Clients must follow permanent redirects.
 </Callout>
 
-Reordering otherwise byte-identical raw query pairs no longer redirects: the request returns the same canonical `200`, while `atom:link rel="self"`, ETag, and Last-Modified continue to use the stable canonical URL.
+Reordering otherwise byte-identical raw query pairs no longer redirects: the request returns the same canonical `200`, while `atom:link rel="self"`, ETag, and cache identity continue to use the stable canonical URL; `Last-Modified` is currently omitted.
 
 <Callout type="warn">
-  The current public-RSS validator does not cover every XML byte, and each origin render writes a request-time `lastBuildDate`. The same ETag / Last-Modified can therefore identify different bodies, so `304` is not reliable proof that the feed is unchanged. A shape-valid but unresolved anime owner may also return an empty `200`, while an unknown `/rss/group/<slug>.xml` returns `404`.
+  Public RSS now computes a `W/"anibt-sha256-{...}"` ETag from the final XML UTF-8 bytes and no longer writes a request-time `lastBuildDate`. The same ETag binds the same body, so a matching-ETag `304` means the current feed bytes are unchanged. `Last-Modified` is currently omitted. A shape-valid but unresolved anime owner may still return an empty `200`, while an unknown `/rss/group/<slug>.xml` still returns `404`.
 </Callout>
 
 ## Two equivalent ways to repeat a parameter
@@ -134,7 +134,7 @@ The same `anibt:` fields are also emitted on [`/rss/magnets.xml`](/docs/open-api
 | `bgmId` only            | Typesense filter constrained by anime       |
 | `groupSlug` only        | Typesense filter constrained by group       |
 
-Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Entity RSS uses **900 seconds in Redis + 120 seconds at edge/CDN + 60 seconds stale-while-revalidate**. Publish events invalidate the matching Redis family first, then purge every CDN query variant for the same `bgmId` / `groupSlug`. TTL remains the fallback if the event path fails; the current ETag limitation is described in the warning above.
+Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Entity RSS uses **900 seconds in Redis + 120 seconds at edge/CDN + 60 seconds stale-while-revalidate**. Publish events invalidate the matching Redis family first, then purge every CDN query variant for the same `bgmId` / `groupSlug`. TTL remains the fallback if the event path fails; the ETag always derives from the final cached XML body.
 
 ## Mikan parameter compatibility
 

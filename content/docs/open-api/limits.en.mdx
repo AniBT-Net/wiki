@@ -151,7 +151,7 @@ Estimates assuming **1000 users polling every 15 minutes by default**:
 
 ## Mainstream RSS clients in practice
 
-Polling cadence and ETag/304 support vary widely. **The good news**: AniBT emits correct `ETag` + `Last-Modified` + `Cache-Control` for every request; standards-compliant clients pick this up automatically — **no configuration needed**.
+Polling cadence and ETag/304 support vary widely. **The good news**: AniBT public RSS emits an exact-body `ETag` plus `Cache-Control`; standards-compliant clients automatically use `If-None-Match` / 304 — **no configuration needed**. Public RSS currently omits `Last-Modified`.
 
 | Client                             | Default poll      | `If-None-Match` | Honours `max-age` | Notes                                            |
 | ---------------------------------- | ----------------- | --------------- | ----------------- | ------------------------------------------------ |

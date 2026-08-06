@@ -142,7 +142,7 @@ GET https://anibt.net/api/seasons/anime?season=2026夏&query=夏日口袋
 <TypeTable
   type={{
     'ts': {
-      description: 'Wall-clock time written whenever the origin actually renders the response (ms), not a data version. The current ETag / Last-Modified do not cover this field, so a different ts only proves a different origin render and cannot validate cache or representation correctness.',
+      description: 'Materialization time of the cached representation (ms). It stays stable while the same Redis representation is reused and is included in the final JSON body and exact-body ETag; it advances when a refreshed representation is created.',
       type: 'number',
     },
     'byWeekday': {
@@ -198,13 +198,13 @@ GET https://anibt.net/api/seasons/anime?season=2026夏&query=夏日口袋
 | ----------------- | ------------------------------------------------------------------------------------ |
 | Rate limit        | **30 requests / 60 s / IP** (shared with `/api/anime/groups`)                         |
 | `Cache-Control`   | `public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400` (**browser revalidates + CDN 10 min fresh + 24 h SWR/SIE**) |
-| Conditional req.  | `If-None-Match` (ETag like `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`), `If-Modified-Since` |
+| Conditional req.  | `If-None-Match` (opaque ETag like `W/"anibt-sha256-{64 lowercase hex}"`); `Last-Modified` is currently omitted |
 
-<Callout type="warn">
-  The current response body contains request-time `ts`, but the existing ETag / Last-Modified do not cover it. Two direct-origin requests can therefore return different bodies with the same validators. The `304` below demonstrates current conditional-request behaviour only; it does not prove byte-identical content.
+<Callout type="info">
+  `ts`, the final JSON bytes, and the ETag now belong to one cached representation: all three remain stable on a cache hit and advance together on refresh. A matching-ETag `304` therefore means the current body bytes are unchanged.
 </Callout>
 
-```bash title="Current conditional behaviour (known limitation)"
+```bash title="Conditional request"
 curl 'https://anibt.net/api/seasons/anime'
 curl 'https://anibt.net/api/seasons/anime?season=2026春'
 curl 'https://anibt.net/api/seasons/anime?bgmId=543360'
@@ -212,7 +212,7 @@ curl 'https://anibt.net/api/seasons/anime?query=Summer%20Pockets'
 
 ETAG=$(curl -sSI 'https://anibt.net/api/seasons/anime' | grep -i ^etag: | awk '{print $2}' | tr -d '\r')
 curl -i 'https://anibt.net/api/seasons/anime' -H "If-None-Match: $ETAG"
-# → may currently return HTTP/2 304; this is not proof of byte-identical content
+# → HTTP/2 304; the current cached representation body bytes are unchanged
 ```
 
 ## Per-show groups `/api/anime/groups`
@@ -274,7 +274,7 @@ GET https://anibt.net/api/anime/groups?bgmId=543360
 }
 ```
 
-- `ts`: wall-clock time written for each actual origin render, not a data version; the current ETag / Last-Modified do not cover it.
+- `ts`: materialization time of the cached representation; it stays stable in one cached value and is included in the exact-body ETag.
 - The list is sorted by `lastUpdatedAt` desc (most recently active first).
 - `items`: up to 30 latest releases for that group on that show, sorted by `publishedAt` desc. You can render a "show × group" resource panel directly without pulling RSS.
   - `magnet` may be `null` if only a torrent file exists.
@@ -305,8 +305,8 @@ curl 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub,kirara-
 | ----------------- | ---------------------------------------------------------------------------------- |
 | Rate limit        | **30 requests / 60 s / IP** (shared with `/api/seasons/anime`)                      |
 | `Cache-Control`   | `public, max-age=0, s-maxage=300, stale-while-revalidate=3600, stale-if-error=3600` (**browser revalidates + CDN 5 min fresh + 1 h SWR/SIE**) |
-| Conditional req.  | `If-None-Match` (`W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`), `If-Modified-Since`  |
+| Conditional req.  | `If-None-Match` (`W/"anibt-sha256-{64 lowercase hex}"`); `Last-Modified` is currently omitted |
 
-<Callout type="warn">
-  When release changes advance `count` / `lastUpdatedAt`, the current ETag normally advances too. Request-time `ts` is not covered, however, so the same ETag / Last-Modified can still identify different bodies and `304` is not proof of byte-identical content. Polling intervals shorter than 5 minutes are still discouraged.
+<Callout type="info">
+  `ts`, the groups/items body, and the ETag are generated as one cached representation; any body-byte change advances the ETag. Polling intervals shorter than five minutes are still discouraged.
 </Callout>

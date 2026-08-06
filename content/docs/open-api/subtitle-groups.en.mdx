@@ -85,7 +85,7 @@ Accept: application/json
 
 ## 304 support
 
-The ETag has the form `W/"sg{count}-{maxCreatedAt}-{releaseSum}-{urlHash}"`. Reissue the request with `If-None-Match` to receive 304.
+The ETag has the form `W/"anibt-sha256-{64 lowercase hex}"` and is computed from the final JSON UTF-8 bytes. Reissue the request with a matching `If-None-Match` to receive 304; `Last-Modified` is currently omitted.
 
 ```bash title="Verify 304"
 H=$(curl -sI "https://anibt.net/api/subtitle-groups")
@@ -116,6 +116,6 @@ Output:
 | ----------------- | -------------------------------------------------------------------- |
 | `Cache-Control`   | `public, max-age=0, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400` |
 | Rate limit        | Shares the 60-second window with RSS endpoints — see [Rate limits](/docs/open-api/limits) |
-| Conditional req.  | `If-None-Match`, `If-Modified-Since`                                 |
+| Conditional req.  | `If-None-Match`; `Last-Modified` is currently omitted                |
 
 Next: with the slug in hand, head to the [RSS main entry](/docs/open-api/rss-anime) to build subscription URLs.

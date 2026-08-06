@@ -13,8 +13,8 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 ### Docs
 
-- **Current conditional-request limits for public RSS and catalog APIs**
-  The documentation now reflects confirmed production behaviour: request-time `lastBuildDate` in anime / group / other / magnets RSS and request-time `ts` in `/api/seasons/anime` and `/api/anime/groups` are not fully represented by the current ETag / Last-Modified validators. The same validators can therefore identify different bodies, and `304` alone is not proof of byte-identical content. Until the server fix is deployed, clients that require the exact current body should omit conditional headers and validate the returned content directly. This is a current-state correction, not an announcement that the server fix is live.
+- **Exact-body conditional-request contract shipped for public RSS and catalog APIs**
+  Anime / group / other / magnets RSS and seven catalog APIs now compute an opaque SHA-256 weak ETag from the final JSON/XML UTF-8 bytes; GET, HEAD, and matching-`If-None-Match` 304 responses reuse one cached representation. Public RSS no longer writes a request-time `lastBuildDate`. The `ts` field in `/api/seasons/anime` and `/api/anime/groups` is now the cached representation materialization time and is included in the body and ETag. These endpoints currently omit `Last-Modified`. An unresolved anime owner may still return an empty `200`, an unknown group owner remains `404`, and the three other catalog APIs have not been added to Cloudflare edge eligibility.
 
 ## August 4, 2026
 
@@ -50,7 +50,7 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 ### Fixed
 
 - **Public RSS query order matches CDN cache identity**  
-  Magnets, anime, group, and other RSS URLs whose raw query pairs differ only in order now return the same canonical 200; self URL, ETag, Last-Modified, and cache identity remain stable. Defaults, compatibility aliases, and case / whitespace / encoding differences still return 308. Invalid duplicates remain application 400 + no-store, while invalid limit may be blocked first by production Cloudflare 403.
+  Magnets, anime, group, and other RSS URLs whose raw query pairs differ only in order now return the same canonical 200; self URL, ETag, and cache identity remain stable, while public RSS currently omits Last-Modified. Defaults, compatibility aliases, and case / whitespace / encoding differences still return 308. Invalid duplicates remain application 400 + no-store, while invalid limit may be blocked first by production Cloudflare 403.
 
 ### Security
 

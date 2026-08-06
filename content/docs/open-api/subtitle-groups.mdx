@@ -94,7 +94,7 @@ Accept: application/json
 
 ## 304 支持
 
-ETag 形如 `W/"sg{count}-{maxCreatedAt}-{releaseSum}-{urlHash}"`。再次请求带 `If-None-Match` 即拿 304。
+ETag 形如 `W/"anibt-sha256-{64 lowercase hex}"`，由最终 JSON UTF-8 bytes 计算。再次请求带匹配的 `If-None-Match` 即拿 304；当前省略 `Last-Modified`。
 
 ```bash title="验证 304"
 H=$(curl -sI "https://anibt.net/api/subtitle-groups")
@@ -125,6 +125,6 @@ curl -s https://anibt.net/api/subtitle-groups \
 | ------------ | --------------------------------------------------------- |
 | `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400` |
 | 速率限制     | 与 RSS 端点共用 60 秒窗口，详见 [限流与上限](/docs/open-api/limits) |
-| 条件请求     | 支持 `If-None-Match`、`If-Modified-Since`                  |
+| 条件请求     | 支持 `If-None-Match`；当前省略 `Last-Modified`             |
 
 下一步：拿到 slug 后，去[ RSS 主入口](/docs/open-api/rss-anime)拼订阅 URL。
