@@ -116,7 +116,7 @@ https://anibt.net/rss/other/stage.xml
 
 ## 快取與索引
 
-- RSS 回應支援 `ETag` / `If-None-Match`，未變更時返回 `304 Not Modified`。
+- RSS 回應當前實作 `ETag` / `If-None-Match`，但校驗器沒有覆蓋全部 XML 位元組，請求時間 `lastBuildDate` 也不進入 ETag；相同 ETag 仍可能對應不同正文，暫時不要把 `304` 當作 feed 未變化的完整證明。
 - 無 `q` 的 latest/filter 變體為 `s-maxage=120`；帶 `q` 的搜尋（包括空結果）為 `s-maxage=600`；兩類統一 `stale-while-revalidate=60`。
 - 分類釋出變化會先失效 latest Redis 家族，再清除該 category 的全部 CDN 參數變體；搜尋 Redis 身份仍按 600 秒 TTL 自主管理，因此這不是即時搜尋 SLA。
 - 搜尋快取身份只保存規範化查詢的 SHA-256。重複/空/控制字元 q、同時傳 q+search 或超過 160 bytes 返回 `400 + no-store`。僅調整原始 query 參數對順序會直接返回同一規範 `200`；預設值、相容別名或其它位元組級規範化仍返回可快取一天的 `308`。

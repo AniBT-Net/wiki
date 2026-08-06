@@ -142,7 +142,7 @@ GET https://anibt.net/api/seasons/anime?season=2026夏&query=夏日口袋
 <TypeTable
   type={{
     'ts': {
-      description: 'Server-side wall-clock time the response was emitted (ms). Two requests with the same ts came from CDN cache; different values mean origin was hit. Useful for verifying caching by eye.',
+      description: 'Wall-clock time written whenever the origin actually renders the response (ms), not a data version. The current ETag / Last-Modified do not cover this field, so a different ts only proves a different origin render and cannot validate cache or representation correctness.',
       type: 'number',
     },
     'byWeekday': {
@@ -200,7 +200,11 @@ GET https://anibt.net/api/seasons/anime?season=2026夏&query=夏日口袋
 | `Cache-Control`   | `public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400` (**browser revalidates + CDN 10 min fresh + 24 h SWR/SIE**) |
 | Conditional req.  | `If-None-Match` (ETag like `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`), `If-Modified-Since` |
 
-```bash title="Pull and 304"
+<Callout type="warn">
+  The current response body contains request-time `ts`, but the existing ETag / Last-Modified do not cover it. Two direct-origin requests can therefore return different bodies with the same validators. The `304` below demonstrates current conditional-request behaviour only; it does not prove byte-identical content.
+</Callout>
+
+```bash title="Current conditional behaviour (known limitation)"
 curl 'https://anibt.net/api/seasons/anime'
 curl 'https://anibt.net/api/seasons/anime?season=2026春'
 curl 'https://anibt.net/api/seasons/anime?bgmId=543360'
@@ -208,7 +212,7 @@ curl 'https://anibt.net/api/seasons/anime?query=Summer%20Pockets'
 
 ETAG=$(curl -sSI 'https://anibt.net/api/seasons/anime' | grep -i ^etag: | awk '{print $2}' | tr -d '\r')
 curl -i 'https://anibt.net/api/seasons/anime' -H "If-None-Match: $ETAG"
-# → HTTP/2 304
+# → may currently return HTTP/2 304; this is not proof of byte-identical content
 ```
 
 ## Per-show groups `/api/anime/groups`
@@ -270,7 +274,7 @@ GET https://anibt.net/api/anime/groups?bgmId=543360
 }
 ```
 
-- `ts`: same as `/api/seasons/anime` — wall-clock time, useful for verifying CDN caching.
+- `ts`: wall-clock time written for each actual origin render, not a data version; the current ETag / Last-Modified do not cover it.
 - The list is sorted by `lastUpdatedAt` desc (most recently active first).
 - `items`: up to 30 latest releases for that group on that show, sorted by `publishedAt` desc. You can render a "show × group" resource panel directly without pulling RSS.
   - `magnet` may be `null` if only a torrent file exists.
@@ -303,6 +307,6 @@ curl 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub,kirara-
 | `Cache-Control`   | `public, max-age=0, s-maxage=300, stale-while-revalidate=3600, stale-if-error=3600` (**browser revalidates + CDN 5 min fresh + 1 h SWR/SIE**) |
 | Conditional req.  | `If-None-Match` (`W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`), `If-Modified-Since`  |
 
-<Callout type="info">
-  When a group publishes a new release, `lastUpdatedAt` advances, the ETag changes, and the cache invalidates naturally. Polling intervals shorter than 5 minutes give you no extra benefit.
+<Callout type="warn">
+  When release changes advance `count` / `lastUpdatedAt`, the current ETag normally advances too. Request-time `ts` is not covered, however, so the same ETag / Last-Modified can still identify different bodies and `304` is not proof of byte-identical content. Polling intervals shorter than 5 minutes are still discouraged.
 </Callout>

@@ -9,6 +9,13 @@ description: AniBT Wiki 与站点功能更新记录。
   日期按北京时间（UTC+8）。较新的更新在前。同一天内按 **新增 / 修复 / 安全 / 优化 / 变更 / 文档 / 运维 / 数据** 分组。
 </Callout>
 
+## 2026 年 8 月 6 日
+
+### 文档
+
+- **公开 RSS / catalog 条件请求现状修正**
+  文档已按当前生产事实明确：anime / group / other / magnets RSS 的请求时间 `lastBuildDate`，以及 `/api/seasons/anime`、`/api/anime/groups` 的请求时间 `ts`，尚未完整进入现有 ETag / Last-Modified 校验器；相同校验器目前可能对应不同正文，`304` 不能单独证明内容逐字节未变。修复上线前，需要精确当前正文的客户端应省略条件请求头并直接校验返回内容。此条是现状更正，不表示服务端修复已经上线。
+
 ## 2026 年 8 月 4 日
 
 ### 新增

@@ -3,7 +3,11 @@ title: HTTP 快取與 304
 description: 所有公開端點的 ETag、Cache-Control、stale-while-revalidate 行為詳解，配 Python 客戶端最小實現。
 ---
 
-AniBT 所有公開端點（RSS + `/api/*`）都返回三層快取指令，並支援 `If-None-Match` / `If-Modified-Since` 條件請求。**配合標準 HTTP 客戶端無需任何配置即可生效。**
+AniBT 的公開 RSS 與 catalog API 會按各端點返回共享快取指令；其中多數端點也實作了 `If-None-Match` / `If-Modified-Since` 條件請求。
+
+<Callout type="warn">
+  當前生產存在已確認的 representation 校驗器缺陷：公開 anime/group/other/magnets RSS、`/api/seasons/anime` 與 `/api/anime/groups` 可能在 `ETag` / `Last-Modified` 不變時返回不同正文。受影響端點的 `304` 只能表示「當前服務端校驗器判定未變」，不能證明正文逐位元組未變。修復上線前，如業務必須取得精確當前正文，請不要傳送條件請求標頭，並直接校驗返回內容。
+</Callout>
 
 <Callout type="info">
   按 RFC 7232，`If-None-Match`（ETag）優先於 `If-Modified-Since`。如果你同時發了兩個頭，服務端只看 ETag。建議永遠用 ETag。
@@ -79,6 +83,10 @@ Vary:             Accept-Encoding
 | `/api/anime/lookup`              | 重新驗證 + ETag | 300s             | 300s                     |
 | `/api/mikan/group-lookup`        | 重新驗證 + ETag | 600s             | 3600s                    |
 
+<Callout type="info">
+  Cloudflare 當前只讓 `/api/seasons/anime`、`/api/subtitle-groups`、`/api/animes/search` 與 `/api/anime/groups` 進入共享 edge cache。`/api/bgm/search`、`/api/anime/lookup` 與 `/api/mikan/group-lookup` 雖然返回公開 origin 快取標頭，但當前仍是 `CF-Cache-Status: DYNAMIC`。
+</Callout>
+
 實體 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒。釋出事件先失效 Redis 家族，再按 `bgmId` / `groupSlug` / category 清除同一實體的全部 CDN 參數變體；TTL 繼續作為事件鏈路失敗時的兜底。搜尋與空結果在 edge/Redis 都快取 600 秒，Redis key 只保存規範化查詢的 SHA-256。
 
 ### RSS 規範 URL 與錯誤快取
@@ -86,10 +94,10 @@ Vary:             Accept-Encoding
 - 僅原始 query 參數對的順序不同、其餘位元組完全相同的 URL 會直接返回同一份規範 `200`；self URL、ETag、Last-Modified 與快取身份仍使用穩定的規範順序。
 - 與預設值等價、使用相容別名，或需要大小寫/空白/編碼規範化的 URL 返回 `308`，`Cache-Control` 與 `CDN-Cache-Control` 均可快取 1 天。客戶端應跟隨永久重新導向並保存最終 URL。
 - 非法、重複、空或 `>100` 的 `limit`，以及重複/空/控制字元/超過 160 UTF-8 bytes 的 `q` 返回應用 `400 + no-store`；生產邊緣可能先返回 Cloudflare `403 + no-store`。
-- 未知 anime/group 實體的 `404` 可共享快取 600 秒 + SWR 60 秒，避免不存在標識持續回源。
+- shape 合法但無法解析的 anime owner 當前可能返回可快取的空 `200`；未知 `/rss/group/<slug>.xml` owner 返回有界 `404`。不要把兩者視為同一個狀態契約。
 - 新的高基數搜尋 MISS 超出語義預算時返回 `429 + Retry-After`；快取 HIT 與已見穩定查詢不消耗新查詢預算。
 
-## ETag 計算公式
+## 當前 ETag 形態（已知限制）
 
 | 端點                                              | 公式                                                              |
 | ------------------------------------------------- | ----------------------------------------------------------------- |
@@ -102,9 +110,13 @@ Vary:             Accept-Encoding
 | `/api/anime/lookup`                               | `W/"anime-lookup-web-{bodyHash}"`                                 |
 | `/api/mikan/group-lookup`                         | `W/"mikan-group-lookup-web-{bodyHash}"`                           |
 
-公式確定性：同一查詢在資料未變時 ETag 完全相同，多副本部署也能命中。
+這些是當前實作形態，不是「ETag 完整覆蓋正文」的保證。RSS 的請求時間 `lastBuildDate`，以及兩個 JSON API 的請求時間 `ts`，都可能改變正文而不推進當前 ETag。
 
 ## 驗證 304
+
+<Callout type="warn">
+  下列命令只能驗證服務端返回了 `304`，不能消除上面的當前校驗器缺陷。對受影響端點，不要把 `304` 單獨當作正文未變化的證據。
+</Callout>
 
 ```bash title="curl 驗證"
 H=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia")
@@ -116,6 +128,8 @@ curl -sI -H "If-None-Match: $ETAG" \
 ```
 
 ## 時間軸：max-age + s-maxage + SWR + 304 怎麼互動
+
+下面是標準 HTTP 快取的目標語義示例；只有當端點校驗器完整代表正文時，「ETag 相同 = 正文相同」才成立。當前受影響端點暫不滿足這個前提。
 
 很多人會問："`stale-while-revalidate=86400`（24 小時）是不是意味著我可能拿到 24 小時前的舊資料？"——**不會**。
 
@@ -246,6 +260,6 @@ while True:
 
 這套寫法滿足：
 
-- 第一次響應快取 ETag → 之後每次走 304，**頻寬幾乎為零**
+- 對校驗器正確的端點，第一次響應快取 ETag 後可以用 304 顯著減少頻寬
 - CDN 給 `STALE` 時你也不知道（也不需要知道），使用者體驗完全相同
 - 觸發 429 自動按 `Retry-After` 退避

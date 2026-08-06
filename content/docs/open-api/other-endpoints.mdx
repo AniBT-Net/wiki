@@ -143,7 +143,7 @@ GET https://anibt.net/api/seasons/anime?season=2026夏&query=Summer%20Pockets
 <TypeTable
   type={{
     'ts': {
-      description: '服务端写出响应的墙钟时间（毫秒）。两次请求拿到相同 ts ⇒ 命中了 CDN 缓存；不同 ⇒ 触达了源站。可用来肉眼验证缓存。',
+      description: '服务端每次实际渲染响应时写入的墙钟时间（毫秒），不是数据版本。当前 ETag / Last-Modified 未覆盖该字段，因此不同 ts 只能说明发生了不同源站渲染，不能据此证明缓存或正文校验正确。',
       type: 'number',
     },
     'byWeekday': {
@@ -201,7 +201,11 @@ GET https://anibt.net/api/seasons/anime?season=2026夏&query=Summer%20Pockets
 | `Cache-Control`  | `public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400`（**浏览器重新验证 + CDN 10 分钟新鲜 + 24h SWR/SIE**） |
 | 条件请求         | `If-None-Match`（ETag 形如 `W/"sa-{year}-{SEASON}[-b{bgmId}]-{count}-{lastMs}-{urlHash}"`）、`If-Modified-Since` |
 
-```bash title="拉取与 304"
+<Callout type="warn">
+  当前响应正文包含请求时间 `ts`，但现有 ETag / Last-Modified 没有覆盖该字段。直接回源的两次请求可能在校验器相同时返回不同正文；下列 `304` 只展示当前条件请求行为，不能证明正文逐字节未变化。
+</Callout>
+
+```bash title="当前条件请求行为（已知限制）"
 curl 'https://anibt.net/api/seasons/anime'
 curl 'https://anibt.net/api/seasons/anime?season=2026春'
 curl 'https://anibt.net/api/seasons/anime?bgmId=543360'
@@ -209,7 +213,7 @@ curl 'https://anibt.net/api/seasons/anime?query=夏日口袋'
 
 ETAG=$(curl -sSI 'https://anibt.net/api/seasons/anime' | grep -i ^etag: | awk '{print $2}' | tr -d '\r')
 curl -i 'https://anibt.net/api/seasons/anime' -H "If-None-Match: $ETAG"
-# → HTTP/2 304
+# → 当前可能返回 HTTP/2 304；这不是正文逐字节相同的证明
 ```
 
 ## 单番剧字幕组 `/api/anime/groups`
@@ -273,6 +277,7 @@ GET https://anibt.net/api/anime/groups?bgmId=543360
 
 ### 字段
 
+- `ts` 是每次实际渲染响应时写入的墙钟时间，不是数据版本；当前 ETag / Last-Modified 未覆盖它。
 - `groups` 列表按 `lastUpdatedAt` 倒序（最近发过的排前面）。
 - `items`：该字幕组对该番剧最近发布的资源，**最多 30 条**，按 `publishedAt` desc。可直接渲染"番剧 × 字幕组"维度的资源面板，避免单独拉 RSS。
   - `magnet` 可能为 `null`（仅有种子文件、未生成磁力时）。
@@ -305,6 +310,6 @@ curl 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub,kirara-
 | `Cache-Control`  | `public, max-age=0, s-maxage=300, stale-while-revalidate=3600, stale-if-error=3600`（**浏览器重新验证 + CDN 5 分钟新鲜 + 1h SWR/SIE**） |
 | 条件请求         | `If-None-Match`（`W/"ag-{bgmId}-{count}-{lastMs}-{urlHash}"`）、`If-Modified-Since` |
 
-<Callout type="info">
-  当字幕组发新 release，`lastUpdatedAt` 跳动，ETag 失效，缓存自然刷新。轮询频率建议**不要短于 5 分钟**——更高频对你没有任何收益。
+<Callout type="warn">
+  release 变化使 `count` / `lastUpdatedAt` 推进时，当前 ETag 通常也会推进；但请求时间 `ts` 不在校验器中。因此相同 ETag / Last-Modified 仍可能对应不同正文，`304` 不能作为正文逐字节未变的证明。轮询频率仍建议不要短于 5 分钟。
 </Callout>

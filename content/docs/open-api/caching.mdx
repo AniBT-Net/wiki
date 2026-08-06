@@ -3,7 +3,11 @@ title: HTTP 缓存与 304
 description: 所有公开端点的 ETag、Cache-Control、stale-while-revalidate 行为详解，配 Python 客户端最小实现。
 ---
 
-AniBT 所有公开端点（RSS + `/api/*`）都返回三层缓存指令，并支持 `If-None-Match` / `If-Modified-Since` 条件请求。**配合标准 HTTP 客户端无需任何配置即可生效。**
+AniBT 的公开 RSS 与 catalog API 会按各端点返回共享缓存指令；其中多数端点也实现了 `If-None-Match` / `If-Modified-Since` 条件请求。
+
+<Callout type="warn">
+  当前生产存在已确认的 representation 校验器缺陷：公开 anime/group/other/magnets RSS、`/api/seasons/anime` 与 `/api/anime/groups` 可能在 `ETag` / `Last-Modified` 不变时返回不同正文。受影响端点的 `304` 只能表示“当前服务端校验器判定未变”，不能证明正文逐字节未变。修复上线前，如业务必须取得精确当前正文，请不要发送条件请求头，并直接校验返回内容。
+</Callout>
 
 <Callout type="info">
   按 RFC 7232，`If-None-Match`（ETag）优先于 `If-Modified-Since`。如果你同时发了两个头，服务端只看 ETag。建议永远用 ETag。
@@ -79,6 +83,10 @@ Vary:             Accept-Encoding
 | `/api/anime/lookup`              | 重新验证 + ETag | 300s             | 300s                     |
 | `/api/mikan/group-lookup`        | 重新验证 + ETag | 600s             | 3600s                    |
 
+<Callout type="info">
+  Cloudflare 当前只让 `/api/seasons/anime`、`/api/subtitle-groups`、`/api/animes/search` 与 `/api/anime/groups` 进入共享 edge cache。`/api/bgm/search`、`/api/anime/lookup` 与 `/api/mikan/group-lookup` 虽然返回公开 origin 缓存头，但当前仍是 `CF-Cache-Status: DYNAMIC`。
+</Callout>
+
 实体 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒。发布事件先失效 Redis 家族，再按 `bgmId` / `groupSlug` / category 清除同一实体的全部 CDN 参数变体；TTL 继续作为事件链路失败时的兜底。搜索与空结果在 edge/Redis 都缓存 600 秒，Redis key 只保存规范化查询的 SHA-256。
 
 ### RSS 规范 URL 与错误缓存
@@ -86,10 +94,10 @@ Vary:             Accept-Encoding
 - 仅原始 query 参数对的顺序不同、其余字节完全相同的 URL 会直接返回同一份规范 `200`；self URL、ETag、Last-Modified 与缓存身份仍使用稳定的规范顺序。
 - 与默认值等价、使用兼容别名，或需要大小写/空白/编码规范化的 URL 返回 `308`，`Cache-Control` 与 `CDN-Cache-Control` 均可缓存 1 天。客户端应跟随永久重定向并保存最终 URL。
 - 非法、重复、空或 `>100` 的 `limit`，以及重复/空/控制字符/超过 160 UTF-8 bytes 的 `q` 返回应用 `400 + no-store`；生产边缘可能先返回 Cloudflare `403 + no-store`。
-- 未知 anime/group 实体的 `404` 可共享缓存 600 秒 + SWR 60 秒，避免不存在标识持续回源。
+- shape 合法但无法解析的 anime owner 当前可能返回可缓存的空 `200`；未知 `/rss/group/<slug>.xml` owner 返回有界 `404`。不要把两者视为同一个状态合同。
 - 新的高基数搜索 MISS 超出语义预算时返回 `429 + Retry-After`；缓存 HIT 与已见稳定查询不消耗新查询预算。
 
-## ETag 计算公式
+## 当前 ETag 形态（已知限制）
 
 | 端点                                              | 公式                                                              |
 | ------------------------------------------------- | ----------------------------------------------------------------- |
@@ -102,9 +110,13 @@ Vary:             Accept-Encoding
 | `/api/anime/lookup`                               | `W/"anime-lookup-web-{bodyHash}"`                                 |
 | `/api/mikan/group-lookup`                         | `W/"mikan-group-lookup-web-{bodyHash}"`                           |
 
-公式确定性：同一查询在数据未变时 ETag 完全相同，多副本部署也能命中。
+这些是当前实现形态，不是“ETag 完整覆盖正文”的保证。RSS 的请求时间 `lastBuildDate`，以及两个 JSON API 的请求时间 `ts`，都可能改变正文而不推进当前 ETag。
 
 ## 验证 304
+
+<Callout type="warn">
+  下列命令只能验证服务端返回了 `304`，不能消除上面的当前校验器缺陷。对受影响端点，不要把 `304` 单独当作正文未变化的证据。
+</Callout>
 
 ```bash title="curl 验证"
 H=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia")
@@ -116,6 +128,8 @@ curl -sI -H "If-None-Match: $ETAG" \
 ```
 
 ## 时间轴：max-age + s-maxage + SWR + 304 怎么交互
+
+下面是标准 HTTP 缓存的目标语义示例；只有当端点校验器完整代表正文时，“ETag 相同 = 正文相同”才成立。当前受影响端点暂不满足这个前提。
 
 很多人会问："`stale-while-revalidate=86400`（24 小时）是不是意味着我可能拿到 24 小时前的旧数据？"——**不会**。
 
@@ -246,6 +260,6 @@ while True:
 
 这套写法满足：
 
-- 第一次响应缓存 ETag → 之后每次走 304，**带宽几乎为零**
+- 对校验器正确的端点，第一次响应缓存 ETag 后可以用 304 显著减少带宽
 - CDN 给 `STALE` 时你也不知道（也不需要知道），用户体验完全相同
 - 触发 429 自动按 `Retry-After` 退避

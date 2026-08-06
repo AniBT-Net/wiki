@@ -3,7 +3,11 @@ title: HTTP caching & 304
 description: ETag, Cache-Control, and stale-while-revalidate behaviour for every public endpoint, with a minimal Python client.
 ---
 
-Every public AniBT endpoint (RSS + `/api/*`) returns three layers of caching directives and supports `If-None-Match` / `If-Modified-Since` conditional requests. **Standard HTTP clients pick this up automatically.**
+AniBT public RSS and catalog APIs return endpoint-specific shared-cache directives, and most also implement `If-None-Match` / `If-Modified-Since` conditional requests.
+
+<Callout type="warn">
+  Production currently has a confirmed representation-validator defect: public anime/group/other/magnets RSS, `/api/seasons/anime`, and `/api/anime/groups` can return different bodies while keeping the same `ETag` / `Last-Modified`. A `304` from an affected endpoint only means the current validator considered it unchanged; it does not prove byte-identical content. Until the fix is deployed, clients that require the exact current body should omit conditional headers and validate the returned content directly.
+</Callout>
 
 <Callout type="info">
   Per RFC 7232, `If-None-Match` (ETag) takes precedence over `If-Modified-Since`. If you send both, the server only honours the ETag. Always use ETag.
@@ -79,6 +83,10 @@ The TTLs above are fallback policies for shared caches, not timers that every pu
 | `/api/anime/lookup`                | revalidate + ETag | 300s           | 300s                     |
 | `/api/mikan/group-lookup`          | revalidate + ETag | 600s           | 3600s                    |
 
+<Callout type="info">
+  Cloudflare currently admits only `/api/seasons/anime`, `/api/subtitle-groups`, `/api/animes/search`, and `/api/anime/groups` to shared edge caching. `/api/bgm/search`, `/api/anime/lookup`, and `/api/mikan/group-lookup` return public origin cache headers but remain `CF-Cache-Status: DYNAMIC`.
+</Callout>
+
 Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds. Publish events invalidate the Redis family first, then purge every CDN query variant for the same `bgmId`, `groupSlug`, or category; TTL remains the fallback when the event path fails. Searches and empty results cache for 600 seconds at both edge and Redis; Redis keys contain only a SHA-256 of the normalized query.
 
 ### Canonical RSS URLs and error caching
@@ -86,10 +94,10 @@ Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds. P
 - URLs whose raw query pairs differ only in order return the same canonical `200`; the self URL, ETag, Last-Modified, and cache identity still use the stable canonical order.
 - URLs equivalent to defaults, using compatibility aliases, or requiring case/whitespace/encoding normalization return `308`; both cache headers allow the redirect to be cached for one day. Clients should follow the permanent redirect and retain the final URL.
 - Invalid/repeated/empty/greater-than-100 `limit`, and repeated/empty/control-bearing/over-160-UTF-8-byte `q`, return application `400 + no-store`; the production edge may block first with Cloudflare `403 + no-store`.
-- Unknown anime/group entities return a share-cacheable `404` for 600 seconds + 60 seconds SWR, preventing repeated origin MISSes for nonexistent identities.
+- A shape-valid but unresolved anime owner may currently return a cacheable empty `200`; an unknown `/rss/group/<slug>.xml` owner returns a bounded `404`. They are not the same status contract.
 - Excessive new high-cardinality search MISSes return `429 + Retry-After`; cache HITs and previously seen stable queries do not consume new-query budget.
 
-## ETag formulas
+## Current ETag shapes (known limitation)
 
 | Endpoint                                            | Formula                                                            |
 | --------------------------------------------------- | ------------------------------------------------------------------ |
@@ -102,9 +110,13 @@ Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds. P
 | `/api/anime/lookup`                                 | `W/"anime-lookup-web-{bodyHash}"`                                  |
 | `/api/mikan/group-lookup`                           | `W/"mikan-group-lookup-web-{bodyHash}"`                            |
 
-These are deterministic: the same query yields the same ETag while the data is unchanged, so multi-replica deployments still hit consistently.
+These are current implementation shapes, not a guarantee that the ETag covers every body byte. Request-time RSS `lastBuildDate` and the two JSON APIs' request-time `ts` can change the body without advancing the current ETag.
 
 ## Verifying 304
+
+<Callout type="warn">
+  The command below only proves that the server returned `304`; it does not remove the current validator defect above. Do not use `304` alone as evidence of an unchanged body on affected endpoints.
+</Callout>
 
 ```bash title="curl walk-through"
 H=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia")
@@ -116,6 +128,8 @@ curl -sI -H "If-None-Match: $ETAG" \
 ```
 
 ## Timeline: how max-age + s-maxage + SWR + 304 interact
+
+The following is the intended standard HTTP-cache behaviour. “Same ETag means same body” is valid only when an endpoint's validator completely represents its response; the affected production endpoints currently do not meet that prerequisite.
 
 People often ask, "Does `stale-while-revalidate=86400` (24 h) mean I might receive 24-hour-old data?" — **no, it does not**.
 
@@ -244,6 +258,6 @@ while True:
 
 This loop:
 
-- Caches the ETag from the first response and rides 304 thereafter — **near-zero bandwidth**.
+- Endpoints with correct validators can cache the first ETag and use 304 to reduce bandwidth substantially.
 - Treats `cf-cache-status: STALE` exactly like `HIT` (you neither know nor care).
 - Backs off automatically on 429 using `Retry-After`.

@@ -116,7 +116,7 @@ Each `<item>` contains:
 
 ## Cache and indexing
 
-- Responses support `ETag` / `If-None-Match`; unchanged feeds return `304 Not Modified`.
+- Responses currently implement `ETag` / `If-None-Match`, but the validator does not cover every XML byte and request-time `lastBuildDate` is outside the ETag. The same ETag can still identify different bodies, so do not treat `304` as complete proof that the feed is unchanged.
 - Latest/filter variants without `q` use `s-maxage=120`; searches with `q`, including empty results, use `s-maxage=600`; both use `stale-while-revalidate=60`.
 - Category publish changes invalidate the latest Redis family first, then purge every CDN query variant for that category. Search Redis identities still keep their independent 600-second TTL, so this is not a real-time search SLA.
 - Search cache identities contain only a SHA-256 of the normalized query. Repeated/empty/control-bearing q, q+search together, or more than 160 UTF-8 bytes return `400 + no-store`. Reordering otherwise byte-identical raw query pairs returns the same canonical `200`; defaults, compatibility aliases, and other lexical normalization still return a cacheable one-day `308`.

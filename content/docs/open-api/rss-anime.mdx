@@ -65,6 +65,10 @@ GET https://anibt.net/rss/anime.xml?<query>
 
 只调整原始 query 参数对顺序、没有改变任何参数字节时，不再跳转：请求直接返回同一份规范 `200`，`atom:link rel="self"`、ETag 与 Last-Modified 仍使用稳定规范 URL。
 
+<Callout type="warn">
+  当前生产的公开 RSS 校验器没有覆盖全部 XML 字节，且每次 origin 构造正文都会写入请求时间 `lastBuildDate`；因此相同 ETag / Last-Modified 仍可能对应不同正文，`304` 暂时不能单独证明 feed 未变化。shape 合法但无法解析的 anime owner 还可能返回空 `200`，而未知 `/rss/group/<slug>.xml` 返回 `404`。
+</Callout>
+
 ## 重复参数两种写法等价
 
 ```txt title="标准重复 query（推荐）"
@@ -130,7 +134,7 @@ GET https://anibt.net/rss/anime.xml?<query>
 | 仅 `bgmId`              | Typesense filter 约束番剧          |
 | 仅 `groupSlug`          | Typesense filter 约束字幕组        |
 
-分辨率、语言、格式、字幕方式等 Tag 尽量下推到 Typesense filter；`episode` / `episodeKey` 等展示字段只在 Web runtime 做小窗口后过滤。实体 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。发布事件会先失效对应 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一实体的全部 CDN 参数变体；TTL 与 ETag 合同不变，并继续作为事件链路失败时的兜底。
+分辨率、语言、格式、字幕方式等 Tag 尽量下推到 Typesense filter；`episode` / `episodeKey` 等展示字段只在 Web runtime 做小窗口后过滤。实体 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。发布事件会先失效对应 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一实体的全部 CDN 参数变体；TTL 继续作为事件链路失败时的兜底，当前 ETag 限制以上方警告为准。
 
 ## Mikan 参数兼容
 

@@ -65,6 +65,10 @@ GET https://anibt.net/rss/anime.xml?<query>
 
 Reordering otherwise byte-identical raw query pairs no longer redirects: the request returns the same canonical `200`, while `atom:link rel="self"`, ETag, and Last-Modified continue to use the stable canonical URL.
 
+<Callout type="warn">
+  The current public-RSS validator does not cover every XML byte, and each origin render writes a request-time `lastBuildDate`. The same ETag / Last-Modified can therefore identify different bodies, so `304` is not reliable proof that the feed is unchanged. A shape-valid but unresolved anime owner may also return an empty `200`, while an unknown `/rss/group/<slug>.xml` returns `404`.
+</Callout>
+
 ## Two equivalent ways to repeat a parameter
 
 ```txt title="Standard repeated query (recommended)"
@@ -130,7 +134,7 @@ The same `anibt:` fields are also emitted on [`/rss/magnets.xml`](/docs/open-api
 | `bgmId` only            | Typesense filter constrained by anime       |
 | `groupSlug` only        | Typesense filter constrained by group       |
 
-Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Entity RSS uses **900 seconds in Redis + 120 seconds at edge/CDN + 60 seconds stale-while-revalidate**. Publish events invalidate the matching Redis family first, then purge every CDN query variant for the same `bgmId` / `groupSlug`. TTL and ETag semantics are unchanged and remain the fallback if the event path fails.
+Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Entity RSS uses **900 seconds in Redis + 120 seconds at edge/CDN + 60 seconds stale-while-revalidate**. Publish events invalidate the matching Redis family first, then purge every CDN query variant for the same `bgmId` / `groupSlug`. TTL remains the fallback if the event path fails; the current ETag limitation is described in the warning above.
 
 ## Mikan parameter compatibility
 

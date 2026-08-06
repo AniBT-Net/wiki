@@ -9,6 +9,13 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
 </Callout>
 
+## August 6, 2026
+
+### Docs
+
+- **Current conditional-request limits for public RSS and catalog APIs**
+  The documentation now reflects confirmed production behaviour: request-time `lastBuildDate` in anime / group / other / magnets RSS and request-time `ts` in `/api/seasons/anime` and `/api/anime/groups` are not fully represented by the current ETag / Last-Modified validators. The same validators can therefore identify different bodies, and `304` alone is not proof of byte-identical content. Until the server fix is deployed, clients that require the exact current body should omit conditional headers and validate the returned content directly. This is a current-state correction, not an announcement that the server fix is live.
+
 ## August 4, 2026
 
 ### Added
