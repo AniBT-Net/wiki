@@ -16,6 +16,11 @@ description: AniBT Wiki 与站点功能更新记录。
 - **公开 RSS 实体失效只认权威 owner**
   anime / group / other RSS 的 CDN membership 现在由 Web 在解析 canonical owner 后随最终响应附加，旧的 URL-derived Cloudflare Response Rules 已退出。other free-text search、anime 未解析 owner 的空 `200` 与 group 未知 owner 的 `404` 不再被虚假实体标签误清；dual-owner anime 仍可由 `bgmId` 或 `groupSlug` 任一真实 owner 精确刷新。URL、TTL、ETag 与 304 合同不变。
 
+### 优化
+
+- **公开 catalog API 分阶段进入 Cloudflare edge**
+  `/api/anime/lookup`、`/api/mikan/group-lookup` 与 `/api/bgm/search` 在 sealed representation、容量和滥用保护门通过后逐端点加入共享 edge cache。成功响应与 BGM 权威空结果可 `MISS → HIT`，GET、HEAD 与 304 共用 ETag；重复参数、未找到/冲突、上游、限流和服务器错误继续 `no-store`，不会扩大整个 `/api/*` 的缓存范围。查询参数顺序不改变缓存身份，Cookie 也不会造成公开对象碎片化。
+
 ### 文档
 
 - **公开 RSS / catalog exact-body 条件请求合同上线**

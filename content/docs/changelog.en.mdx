@@ -16,6 +16,11 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 - **Public RSS entity invalidation now requires an authoritative owner**
   CDN membership for anime / group / other RSS is now attached by Web only after resolving the canonical owner, and the old URL-derived Cloudflare Response Rules have been retired. Other free-text search, unresolved-anime empty `200`, and unknown-group `404` responses no longer receive false entity tags; a dual-owner anime still refreshes through either its real `bgmId` or `groupSlug`. URLs, TTLs, ETags, and 304 semantics are unchanged.
 
+### Improved
+
+- **Public catalog APIs are admitted to the Cloudflare edge in stages**
+  `/api/anime/lookup`, `/api/mikan/group-lookup`, and `/api/bgm/search` joined shared edge caching one endpoint at a time after the sealed-representation, capacity, and abuse-protection gates passed. Successful responses and BGM's authoritative empty result can go `MISS → HIT`, while GET, HEAD, and 304 reuse one ETag. Duplicate parameters, not-found/conflict, upstream, rate-limit, and server errors remain `no-store`; the change does not make the entire `/api/*` tree cacheable. Query order does not change cache identity, and cookies do not fragment public objects.
+
 ### Docs
 
 - **Exact-body conditional-request contract shipped for public RSS and catalog APIs**

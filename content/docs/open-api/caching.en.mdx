@@ -84,7 +84,7 @@ The TTLs above are fallback policies for shared caches, not timers that every pu
 | `/api/mikan/group-lookup`          | revalidate + ETag | 600s           | 3600s                    |
 
 <Callout type="info">
-  Cloudflare currently admits only `/api/seasons/anime`, `/api/subtitle-groups`, `/api/animes/search`, and `/api/anime/groups` to shared edge caching. `/api/bgm/search`, `/api/anime/lookup`, and `/api/mikan/group-lookup` return public origin cache headers but remain `CF-Cache-Status: DYNAMIC`.
+  Cloudflare now admits all seven exact catalog APIs to shared edge caching, including `/api/bgm/search`, `/api/anime/lookup`, and `/api/mikan/group-lookup`. Successful responses and BGM's authoritative empty result may go `MISS → HIT`; GET, HEAD, and matching `If-None-Match` 304 responses reuse one ETag. Duplicate singleton parameters, anime not-found/conflict, Mikan upstream failures, rate limits, and other errors remain `no-store` / `BYPASS` and are never cached. Query values remain part of the cache key while parameter order is ignored; cookies do not fragment public objects.
 </Callout>
 
 Entity RSS stays in Web Redis for 900 seconds while edge/CDN uses 120 seconds. Publish events invalidate the Redis family first, then purge every CDN query variant for the same `bgmId`, `groupSlug`, or category; TTL remains the fallback when the event path fails. Searches and empty results cache for 600 seconds at both edge and Redis; Redis keys contain only a SHA-256 of the normalized query.
