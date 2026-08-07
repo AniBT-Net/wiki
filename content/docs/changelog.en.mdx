@@ -9,6 +9,13 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
 </Callout>
 
+## August 7, 2026
+
+### Fixed
+
+- **Custom release-title template permissions and default state are now consistent**
+  Every subtitle-group member can read the group's custom release-title templates, while only the group owner and administrators can create, edit, reorder, or delete them. Deleting the active default now clears its reference and records the audit event in the same transaction, so configuration cannot point to a removed template. Template name/content limits and complete reorder validation are also enforced on the server.
+
 ## August 6, 2026
 
 ### Fixed
