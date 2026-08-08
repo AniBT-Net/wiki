@@ -1,12 +1,17 @@
 ---
 title: Subtitle group catalogue
-description: GET /api/subtitle-groups — public list of release groups; clients should call this once at startup to build a name → slug map before pulling RSS.
+description: GET /api/subtitle-groups — public group list; cache name → slug before building RSS URLs.
 ---
 
-`/api/subtitle-groups` returns the **slug, display name, total releases, and total animes** for every visible release group on the site. Third-party applications should call it once at startup, cache the response locally, and then move on to RSS.
+`/api/subtitle-groups` returns **slug, display name, release count, and anime count** for every visible group. Integrations should call it once at startup, cache the response locally, then build RSS URLs.
+
+## Preconditions
+
+- No authentication.
+- Prefer `Accept: application/json`.
 
 <Callout type="info">
-  The data changes very slowly, so almost every poll returns 304. With `If-None-Match`, the bandwidth cost is essentially zero.
+  The catalogue changes rarely, so most polls hit 304. With `If-None-Match`, bandwidth is negligible.
 </Callout>
 
 ## Request
@@ -16,7 +21,7 @@ GET https://anibt.net/api/subtitle-groups
 Accept: application/json
 ```
 
-## Response (excerpt)
+## Success response (excerpt)
 
 ```jsonc title="200 OK"
 {
@@ -39,45 +44,54 @@ Accept: application/json
       "totalReleases": 47,
       "totalAnimes": 12,
       "createdAt": 1772900000000
+    },
+    {
+      "slug": "kitauji-sub",
+      "name": "北宇治字幕组",
+      "organizationId": "org_aagmgM9i0ZyR",
+      "status": "ACTIVE",
+      "totalReleases": 6,
+      "totalAnimes": 2,
+      "createdAt": 1776618758015
     }
   ]
 }
 ```
 
-## Field reference
+## Fields
 
 <TypeTable
   type={{
     'slug': {
-      description: 'URL-safe stable identifier. Use this for the groupSlug parameter on every RSS endpoint.',
+      description: 'URL-safe stable id for every RSS groupSlug parameter.',
       type: 'string',
     },
     'name': {
-      description: 'Display name (any language; may be adjusted by operators).',
+      description: 'Display name (any language; may change over time).',
       type: 'string',
     },
     'organizationId': {
-      description: 'Internal id; third parties usually do not need it.',
+      description: 'Internal id; third parties usually ignore it.',
       type: 'string',
     },
     'status': {
-      description: 'ACTIVE / HIDDEN / etc. This endpoint only returns visible groups.',
+      description: 'ACTIVE / HIDDEN, etc. This endpoint only returns visible groups.',
       type: 'enum',
     },
     'totalReleases': {
-      description: 'Total number of releases by the group (aggregated, fresh to the second).',
+      description: 'Total releases for the group (aggregate; second-level freshness).',
       type: 'number',
     },
     'totalAnimes': {
-      description: 'Number of distinct shows the group has covered.',
+      description: 'Number of anime titles covered by the group.',
       type: 'number',
     },
     'website': {
-      description: 'Optional external homepage of the group.',
+      description: 'Optional external homepage.',
       type: 'string?',
     },
     'createdAt': {
-      description: 'Time the group was first ingested (ms).',
+      description: 'First insertion time (milliseconds).',
       type: 'number',
     },
   }}
@@ -85,7 +99,7 @@ Accept: application/json
 
 ## 304 support
 
-The ETag has the form `W/"anibt-sha256-{64 lowercase hex}"` and is computed from the final JSON UTF-8 bytes. Reissue the request with a matching `If-None-Match` to receive 304; `Last-Modified` is currently omitted.
+ETag looks like `W/"anibt-sha256-{64 lowercase hex}"` and is computed from the final JSON UTF-8 bytes. A matching `If-None-Match` returns 304. `Last-Modified` is currently omitted.
 
 ```bash title="Verify 304"
 H=$(curl -sI "https://anibt.net/api/subtitle-groups")
@@ -94,7 +108,7 @@ curl -sI -H "If-None-Match: $ETAG" "https://anibt.net/api/subtitle-groups" | hea
 # → HTTP/2 304
 ```
 
-## Practical: filter target groups with jq
+## Practice: pick target groups with jq
 
 ```bash title="Pick four groups"
 curl -s https://anibt.net/api/subtitle-groups \
@@ -110,12 +124,12 @@ Output:
 {"name":"拨雪寻春","slug":"haruhana"}
 ```
 
-## Caching & rate limiting
+## Caching & rate limits
 
-| Item              | Value                                                                |
-| ----------------- | -------------------------------------------------------------------- |
-| `Cache-Control`   | `public, max-age=0, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400` |
-| Rate limit        | Shares the 60-second window with RSS endpoints — see [Rate limits](/docs/open-api/limits) |
-| Conditional req.  | `If-None-Match`; `Last-Modified` is currently omitted                |
+| Item | Value |
+| ---- | ----- |
+| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400` |
+| Rate limit | Shared 60-second window with RSS endpoints; see [Rate limits & caps](/docs/open-api/limits) |
+| Conditional requests | `If-None-Match` supported; `Last-Modified` currently omitted |
 
-Next: with the slug in hand, head to the [RSS main entry](/docs/open-api/rss-anime) to build subscription URLs.
+Next: with slugs in hand, build feed URLs at [RSS main entry](/docs/open-api/rss-anime).

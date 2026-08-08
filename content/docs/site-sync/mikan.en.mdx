@@ -1,12 +1,12 @@
 ---
 title: Mikan Sync
-description: Fill in the API Token, publish group ID, and subgroup ID required by AniBT's Mikan sync.
+description: Fill in the API Token for Mikan sync; AniBT can auto-query the publish group and release group IDs.
 ---
 
-Mikan sync needs only the **API Token** — AniBT auto-queries the publish group and release group IDs from it.
+Mikan sync usually needs only the **API Token**. AniBT uses that token to auto-query the publish group and release group IDs.
 
 <Callout type="info">
-  Usually the **API Token alone** is enough; AniBT will fetch the IDs automatically. Manual lookup steps are at the bottom of this page for reference.
+  Usually the API Token alone is enough; AniBT fetches the IDs automatically. Manual lookup steps are at the bottom of this page for when auto-query fails.
 </Callout>
 
 ## Steps
@@ -15,7 +15,7 @@ Mikan sync needs only the **API Token** — AniBT auto-queries the publish group
   <Step>
     ### Find your API Token
 
-    On [https://mikanani.me](https://mikanani.me), sign in and click **Account Settings** at the top-right. Go to **Personal Center** → **Edit Profile** → find **API Token** under **Basic Profile**.
+    On [https://mikanani.me](https://mikanani.me), sign in and click **Account Settings** at the top-right. Go to **Personal Center** → **Edit Profile**, then find **API Token** under **Basic Profile**.
 
     <Callout type="info">
       If no token is visible, click **Generate** on the right.
@@ -33,7 +33,7 @@ Mikan sync needs only the **API Token** — AniBT auto-queries the publish group
   <Step>
     ### Auto-query the IDs
 
-    Click **【Query the ID of "XXXXXX" from Mikan】** — AniBT will fetch your **publish group ID** and **release group ID** automatically.
+    Click **【Query the ID of "XXXXXX" from Mikan】**. AniBT will fetch your **publish group ID** and **release group ID** automatically.
   </Step>
 </Steps>
 
@@ -54,7 +54,7 @@ Use these steps only when auto-query fails.
     ![Mikan publish group ID page](/images/site-sync/mikan-publish-group-id.webp)
   </Tab>
   <Tab value="Release Group ID">
-    Using LoliHouse as an example: open any anime list released under the LoliHouse identity, then click the **RSS icon** next to the subtitle group name. You'll get something like:
+    Using LoliHouse as an example: open any anime list released under the LoliHouse identity, then click the **RSS icon** next to the subtitle group name. You will get something like:
 
     ```txt title="RSS link"
     https://mikanani.me/RSS/Bangumi?bangumiId=3953&subgroupid=370

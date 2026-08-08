@@ -1,13 +1,14 @@
 ---
 title: RSS main entry
-description: GET /rss/anime.xml — the most flexible subscription endpoint. Combine bgmId, group slug, and multiple tags freely; Mikan-compatible.
+description: GET /rss/anime.xml — flexible anime RSS with bgmId, group slug, multi-tag filters, and Mikan-compatible aliases.
 ---
 
-`/rss/anime.xml` is the most flexible subscription endpoint: combine `bgmId` + `groupSlug` + multiple tags (`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`) in any way to subscribe to a show, a group, or the whole site.
+`/rss/anime.xml` is the most flexible subscription endpoint: combine `bgmId`, `groupSlug`, and tags (`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`) to follow one show, one group, or related site-wide releases.
 
-<Callout type="info">
-  At least one of `bgmId` or `groupSlug` is required. Requests with neither are rejected.
-</Callout>
+## Preconditions
+
+- No authentication.
+- Provide **at least one** of `bgmId` or `groupSlug`; omitting both is rejected.
 
 ## URL
 
@@ -24,7 +25,7 @@ GET https://anibt.net/rss/anime.xml?<query>
       type: 'integer',
     },
     'groupSlug': {
-      description: 'Release-group slug. Aliases: subgroupSlug, subgroupid (Mikan-compatible).',
+      description: 'Group slug. Aliases: subgroupSlug, subgroupid (Mikan-compatible).',
       type: 'string',
     },
     'resolution': {
@@ -44,15 +45,15 @@ GET https://anibt.net/rss/anime.xml?<query>
       type: 'enum[]',
     },
     'episode': {
-      description: 'Numeric episode (exact match, used for sorting and filtering).',
+      description: 'Numeric episode for exact match, sorting, and filtering.',
       type: 'integer',
     },
     'episodeKey': {
-      description: 'Display episode key, e.g. 01, 00-01, BATCH. String exact match.',
+      description: 'Display episode key such as 01, 00-01, BATCH. Exact string match.',
       type: 'string',
     },
     'limit': {
-      description: '1..100, default 100. Exactly one decimal integer without leading zeroes.',
+      description: '1..100, default 100. Single decimal integer without leading zeros.',
       type: 'integer',
       default: '100',
     },
@@ -60,35 +61,35 @@ GET https://anibt.net/rss/anime.xml?<query>
 />
 
 <Callout type="warn">
-  A repeated, empty, zero-padded, non-integer, or greater-than-100 `limit` returns application `400 + no-store`; the production edge may block it first with Cloudflare `403`. Canonically equivalent forms such as `limit=100` return a cacheable one-day `308` to the canonical URL. Clients must follow permanent redirects.
+  Duplicate, empty, zero-padded, non-integer, or `>100` `limit` values return application `400 + no-store`; production edge may respond with Cloudflare `403` first. Default-equivalent forms such as `limit=100` `308` to the canonical URL (cacheable for one day). Clients should follow permanent redirects.
 </Callout>
 
-Reordering otherwise byte-identical raw query pairs no longer redirects: the request returns the same canonical `200`, while `atom:link rel="self"`, ETag, and cache identity continue to use the stable canonical URL; `Last-Modified` is currently omitted.
+When only the original query-pair order changes and no parameter bytes differ, the response is the same canonical `200` without redirect; `atom:link rel="self"`, ETag, and cache identity still use the stable canonical URL. `Last-Modified` is currently omitted.
 
 <Callout type="warn">
-  Public RSS now computes a `W/"anibt-sha256-{...}"` ETag from the final XML UTF-8 bytes and no longer writes a request-time `lastBuildDate`. The same ETag binds the same body, so a matching-ETag `304` means the current feed bytes are unchanged. `Last-Modified` is currently omitted. A shape-valid but unresolved anime owner may still return an empty `200`, while an unknown `/rss/group/<slug>.xml` still returns `404`.
+  Public RSS computes `W/"anibt-sha256-{...}"` ETags from final XML UTF-8 bytes and no longer writes request-time `lastBuildDate`. Matching ETag ⇒ identical body; a matching-ETag `304` means current feed bytes are unchanged. `Last-Modified` is omitted. A well-shaped but unresolvable anime owner may still return an empty `200`; unknown `/rss/group/<slug>.xml` still returns `404`.
 </Callout>
 
-## Two equivalent ways to repeat a parameter
+## Two equivalent multi-value forms
 
-```txt title="Standard repeated query (recommended)"
+```txt title="Repeated query (preferred)"
 ?resolution=1080p&resolution=720p
 ```
 
-```txt title="Comma-separated (also accepted)"
+```txt title="Comma-separated (also supported)"
 ?resolution=1080p,720p
 ```
 
-## Response
+## Success response
 
-Returns native **RSS 2.0 + BEP 36** XML. Opening an RSS URL in a browser no longer loads AniBT custom XSL/CSS; the browser renders its default XML tree while RSS readers and BT clients keep consuming the standard fields.
+Returns native **RSS 2.0 + BEP 36** XML. Opening the URL in a browser shows the default XML tree (no site XSL/CSS). Readers and BitTorrent clients consume standard fields.
 
-Each `<item>` contains:
+Each `<item>` includes:
 
 <TypeTable
   type={{
     '<title>': {
-      description: 'Like [Group] Anime - EP05 [1080p] [CHS+JP] [MKV].',
+      description: 'e.g. [Group] Title - EP05 [1080p] [CHS+JP] [MKV].',
       type: 'string',
     },
     '<link>': {
@@ -100,7 +101,7 @@ Each `<item>` contains:
       type: 'string',
     },
     '<pubDate>': {
-      description: 'RFC 822.',
+      description: 'RFC 822 timestamp.',
       type: 'datetime',
     },
     '<description>': {
@@ -108,56 +109,56 @@ Each `<item>` contains:
       type: 'string',
     },
     '<enclosure>': {
-      description: 'BEP 36 magnet URL with type="application/x-bittorrent". Default trackers are appended automatically.',
+      description: 'BEP 36 magnet URL, type="application/x-bittorrent", with site default trackers appended.',
       type: 'magnet',
     },
     '<torrent xmlns="…">': {
-      description: 'BEP 36: infoHash / magnet (site default trackers included).',
+      description: 'BEP 36: infoHash / magnet (with site default trackers).',
       type: 'element',
     },
     '<anibt:bgmId>': {
-      description: 'Bangumi subject id. Declared under xmlns:anibt="https://anibt.net/xmlns/rss/1.0/". Present when the release is bound; omitted when unknown. Standard readers ignore the namespace.',
+      description: 'Bangumi subject id under xmlns:anibt="https://anibt.net/xmlns/rss/1.0/"; emitted when bound, omitted otherwise. Standard readers may ignore the namespace.',
       type: 'number',
     },
   }}
 />
 
-The same `anibt:` fields are also emitted on [`/rss/magnets.xml`](/docs/open-api/other-endpoints) and [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) anime items for cross-endpoint parsing. `/rss/other/*` does **not** emit `bgmId`.
+The same `anibt:` extension appears on anime items in [`/rss/magnets.xml`](/docs/open-api/other-endpoints) and [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints). `/rss/other/*` does not emit `bgmId`.
 
 ## Backend execution
 
-`/rss/anime.xml` is generated by the main Web runtime, not by a Convex RSS query fallback. The Web layer resolves `bgmId` / `groupSlug` through the Typesense `rss_resolvers` collection, then queries the Typesense `releases` collection:
+`/rss/anime.xml` is generated by the main-site Web runtime and does not fall back to Convex RSS queries. Web resolves `bgmId` / `groupSlug` via Typesense `rss_resolvers`, then queries the Typesense `releases` collection:
 
-| Provided                | Execution path                              |
-| ----------------------- | ------------------------------------------- |
-| `bgmId` + `groupSlug`   | Typesense filter constrained by anime and group |
-| `bgmId` only            | Typesense filter constrained by anime       |
-| `groupSlug` only        | Typesense filter constrained by group       |
+| Inputs | Execution |
+| ------ | --------- |
+| `bgmId` + `groupSlug` | Typesense filter on anime and group |
+| `bgmId` only | Typesense filter on anime |
+| `groupSlug` only | Typesense filter on group |
 
-Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Display fields such as `episode` / `episodeKey` are post-filtered in a small Web-runtime window. Entity RSS uses **900 seconds in Redis + 120 seconds at edge/CDN + 60 seconds stale-while-revalidate**. Publish events invalidate the matching Redis family first, then purge every CDN query variant for the same `bgmId` / `groupSlug`. When one anime resolves to both owners, both Redis families and both CDN variant sets refresh as one publication result rather than exposing a one-owner update. TTL remains the fallback if the event path fails; the ETag always derives from the final cached XML body.
+Resolution, language, format, and subtitle tags are pushed into Typesense when possible; display fields such as `episode` / `episodeKey` may use a small Web post-filter. Entity RSS uses **Redis 900 s + edge/CDN 120 s + 60 s stale-while-revalidate**. Publish events invalidate Redis families first, then purge every CDN query variant for the same entity by `bgmId` / `groupSlug`. When an anime resolves to two owners, both Redis families and CDN variants refresh as one publish result. TTL remains a fallback if the event path fails; ETag always comes from the final cached XML body.
 
 ## Mikan parameter compatibility
 
-Mikan-style parameters can switch host and keep working as-is:
+Mikan-style parameters work after host swap:
 
-<Tabs items={['Original Mikan link', 'Switch host only', 'Recommended']}>
-  <Tab value="Original Mikan link">
+<Tabs items={['Original Mikan URL', 'Host swap', 'Preferred form']}>
+  <Tab value="Original Mikan URL">
     ```txt
     https://mikanani.me/RSS/Bangumi?bangumiId=3921&subgroupid=615
     ```
   </Tab>
-  <Tab value="Switch host only">
+  <Tab value="Host swap">
     ```txt
     https://anibt.net/rss/anime.xml?bangumiId=3921&subgroupid=615
     ```
-    `bangumiId` and `subgroupid` are accepted as compatibility aliases.
+    `bangumiId` and `subgroupid` remain compatibility aliases.
   </Tab>
-  <Tab value="Recommended">
+  <Tab value="Preferred form">
     ```txt
     https://anibt.net/rss/anime.xml?bgmId=3921&groupSlug=<slug>
     ```
-    Use the canonical names in new code.
+    Use canonical names in new code.
   </Tab>
 </Tabs>
 
-Continue: see [Examples](/docs/open-api/examples) for eight typical query combinations.
+Continue: [Examples](/docs/open-api/examples) covers eight common query shapes.

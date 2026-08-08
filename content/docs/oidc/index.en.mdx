@@ -3,7 +3,7 @@ title: OpenID Connect overview and application management
 description: Create an AniBT OAuth application and understand its fields, client types, permissions, and lifecycle.
 ---
 
-AniBT provides a standard OpenID Connect (OIDC) identity platform so third-party services can sign users in with an AniBT account. Signed-in users create and manage their own OAuth applications from their profile. A configuration that passes security validation starts provisioning immediately; there is no administrator review.
+AniBT provides a standard OpenID Connect (OIDC) identity platform so third-party services can sign users in with an AniBT account. Signed-in users create and manage their own OAuth applications from their profile. When a configuration passes security validation, provisioning starts immediately; there is no administrator review.
 
 <Callout type="info">
   Issuer: `https://oauth.anibt.net`<br />
@@ -15,11 +15,33 @@ Dynamic Client Registration is disabled in production. Create clients from the A
 
 ## Create an application
 
-1. Sign in to AniBT and open “OAuth applications” in your profile.
-2. Select “New OAuth application” and complete every field marked Required in the dialog.
-3. The application enters Provisioning immediately and becomes Active after synchronization. There is no application-review, approve, or reject state.
-4. Open the application detail page and copy the Client ID, issuer, discovery URL, redirect URLs, and scopes.
-5. After a Web / BFF application becomes Active, explicitly generate its first Client secret.
+<Steps>
+  <Step>
+    ### Open OAuth applications
+
+    Sign in to AniBT, then open “OAuth applications” in your profile.
+  </Step>
+  <Step>
+    ### Complete required fields
+
+    Select “New OAuth application” and complete every field marked Required in the dialog.
+  </Step>
+  <Step>
+    ### Wait for automatic provisioning
+
+    The application enters Provisioning immediately and becomes Active after synchronization. There is no application-review, approve, or reject state.
+  </Step>
+  <Step>
+    ### Copy integration values
+
+    Open the application detail page and copy the Client ID, issuer, discovery URL, redirect URIs, and scopes.
+  </Step>
+  <Step>
+    ### Generate a Client secret (Web / BFF only)
+
+    After a Web / BFF application becomes Active, explicitly generate its first Client secret.
+  </Step>
+</Steps>
 
 An ordinary user can own up to five non-deleted applications. Staging and production must use separate applications.
 
@@ -32,17 +54,17 @@ An ordinary user can own up to five non-deleted applications. Staging and produc
 | Security contact email | Required | Security notices and incident contact; not displayed publicly |
 | Environment | Required | Staging or production; keep them separate |
 | Application type | Required | Web / BFF or Native |
-| Redirect URLs | Required | Exact post-login destinations; 1 to 10 |
+| Redirect URIs | Required | Exact post-login destinations; 1 to 10 |
 | Description | Optional | Shown on the consent screen when present |
 | Privacy policy URL | Optional | Shown on consent when present; exact HTTPS URL |
 | Logo URL | Optional | Shown on consent when present; exact HTTPS image URL |
-| Post-logout redirect URLs | Optional | Exact RP logout destinations; up to 10 |
+| Post-logout redirect URIs | Optional | Exact RP logout destinations; up to 10 |
 
 Every URI is matched as an exact string. Wildcards, URL credentials, and fragments are rejected. Environment and application type cannot be changed after creation; create another application instead.
 
 ## Client types
 
-| Type | Client authentication | Redirect URLs | Use case |
+| Type | Client authentication | Redirect URI | Use case |
 | --- | --- | --- | --- |
 | Web / BFF | Confidential, `client_secret_basic` | HTTPS only | A server or BFF can keep a secret securely |
 | Native | Public, `none` | Claimed HTTPS or loopback HTTP | Desktop or mobile applications; never has a secret |

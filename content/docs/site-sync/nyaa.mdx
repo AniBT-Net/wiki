@@ -1,6 +1,6 @@
 ---
 title: Nyaa 同步
-description: 在 AniBT 中填写 Nyaa 同步所需账号密码。
+description: 填写 Nyaa 同步所需的用户名和密码。
 ---
 
 Nyaa 同步使用 Nyaa 官方 `/api/upload` 接口。字幕组在 AniBT 中保存自己的 Nyaa 用户名和密码后，发布资源时由后台 worker 使用该账号同步到 Nyaa。
@@ -31,12 +31,12 @@ Nyaa 同步使用 Nyaa 官方 `/api/upload` 接口。字幕组在 AniBT 中保�
   <Step>
     ### 填写用户名和密码
 
-    输入 Nyaa 用户名和密码。保存后页面只会显示脱敏账号后缀，不会展示明文密码。
+    输入 Nyaa 用户名和密码。保存后，页面只会显示脱敏账号后缀，不会展示明文密码。
   </Step>
 
   <Step>
     ### 测试账号
 
-    点击 **测试账号**。测试会由后台 worker 调用 Nyaa API 做认证探测，不会上传真实资源。
+    点击 **测试账号**。测试由后台 worker 调用 Nyaa API 做认证探测，不会上传真实资源。
   </Step>
 </Steps>

@@ -3,7 +3,7 @@ title: Changelog
 description: Release notes for AniBT Wiki and documented AniBT features.
 ---
 
-This page records AniBT Wiki changes and feature updates that are directly covered by the documentation.
+Changelog for AniBT Wiki and site features that the docs cover. Entries are factual and verifiable only.
 
 <Callout type="info">
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
@@ -13,15 +13,15 @@ This page records AniBT Wiki changes and feature updates that are directly cover
 
 ### Fixed
 
-- **Public RSS refresh now follows one canonical policy**
-  An anime resolved to both `bgmId` and `groupSlug` now refreshes both Redis families and both CDN variant sets as one publication result, so clients cannot observe a one-owner-only update. Group creation, canonical-slug rename, and deletion converge old/new full paths and cached `404` state while routine publication stays owner-scoped. Other `groupId`-only filters follow category freshness, while free-text `q` / `search` remains independently TTL-owned for 600 seconds. URLs, XML fields, TTLs, ETags, and 304 semantics are unchanged.
+- **Public RSS refresh policy closed**
+  Anime resolved to both `bgmId` and `groupSlug` refreshes both Redis families and CDN variant sets as one publication result, so clients never observe a one-owner-only intermediate. Group creation, canonical-slug rename, and deletion converge old/new full paths and cached `404` state; routine publication stays owner-scoped. Other `groupId`-only filters follow category freshness; free-text `q` / `search` remains independently TTL-owned for 600 seconds. URLs, XML fields, TTLs, ETags, and 304 semantics are unchanged.
 
 ## August 7, 2026
 
 ### Fixed
 
-- **Custom release-title template permissions and default state are now consistent**
-  Every subtitle-group member can read the group's custom release-title templates, while only the group owner and administrators can create, edit, reorder, or delete them. Deleting the active default now clears its reference and records the audit event in the same transaction, so configuration cannot point to a removed template. Template name/content limits and complete reorder validation are also enforced on the server.
+- **Custom release-title template permissions and default state**
+  All group members can read custom release-title templates; create, edit, reorder, and delete stay limited to the group owner and administrators. Deleting the active default clears its reference and writes the audit event in the same transaction, so config cannot point at a removed template. Name/content length and reorder completeness are validated server-side.
 
 ## August 6, 2026
 

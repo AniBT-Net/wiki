@@ -1,16 +1,16 @@
 ---
 title: HTTP 缓存与 304
-description: 所有公开端点的 ETag、Cache-Control、stale-while-revalidate 行为详解，配 Python 客户端最小实现。
+description: 公开端点的 ETag、Cache-Control、stale-while-revalidate 行为，以及 Python 客户端最小实现。
 ---
 
-AniBT 的公开 RSS 与 catalog API 会按各端点返回共享缓存指令；迁移端点统一实现 `If-None-Match`、GET、HEAD 与 304。
+AniBT 的公开 RSS 与 catalog API 按各端点返回共享缓存指令；迁移端点统一实现 `If-None-Match`、GET、HEAD 与 304。
 
 <Callout type="info">
-  公开 anime/group/other/magnets RSS 与 7 个 catalog API 已使用 exact-body validator：ETag 的 SHA-256 digest 来自实际返回的最终 JSON/XML UTF-8 bytes。相同 ETag 现在绑定相同正文。当前这些端点没有完整、秒级安全的更新时间证据，因此省略 `Last-Modified`，客户端应优先使用 `If-None-Match`。
+  公开 anime/group/other/magnets RSS 与 7 个 catalog API 使用 exact-body validator：ETag 的 SHA-256 digest 来自实际返回的最终 JSON/XML UTF-8 bytes。相同 ETag 绑定相同正文。当前这些端点没有完整、秒级安全的更新时间证据，因此省略 `Last-Modified`；客户端应优先使用 `If-None-Match`。
 </Callout>
 
 <Callout type="info">
-  按 RFC 7232，`If-None-Match`（ETag）优先于 `If-Modified-Since`。如果你同时发了两个头，服务端只看 ETag。建议永远用 ETag。
+  按 RFC 7232，`If-None-Match`（ETag）优先于 `If-Modified-Since`。同时发送两个条件头时，服务端只看 ETag。应优先使用 ETag。
 </Callout>
 
 ## 响应头
@@ -54,7 +54,7 @@ Vary:             Accept-Encoding
 4. 只有所需 Redis 写入全部成功后才发布 page-ready。Edge 对这些 URL 保留刚预热的 origin 值，只执行 CDN purge；URL 队列、冻结 run / batch 和带 token + generation 的 lease 让失败或重启后的工作可以继续重试，而不是靠下一次发布碰巧补刷。
 
 <Callout type="warn">
-  这个链路保证的是**所选快照 generation 的发布顺序和缓存一致性**。它不把发布 API 变成同步可见性接口。`generatedAt` 只表示快照构建时间；HTTP 200、较新的时间戳或 `cf-cache-status: HIT` 都不能替代“响应正文里确实包含预期 `releaseId`”这一检查。
+  这个链路保证的是**所选快照 generation 的发布顺序和缓存一致性**。它不把发布 API 变成同步可见性接口。`generatedAt` 只表示快照构建时间；HTTP 200、较新的时间戳或 `cf-cache-status: HIT` 都不能替代「响应正文里确实包含预期 `releaseId`」这一检查。
 </Callout>
 
 ### 运维判定
@@ -133,11 +133,11 @@ curl -sI -H "If-None-Match: $ETAG" \
 
 下面是标准 HTTP 缓存语义示例。上述 exact-body 端点的校验器已经完整代表正文，因此“ETag 相同 = 正文 bytes 相同”成立。
 
-很多人会问："`stale-while-revalidate=86400`（24 小时）是不是意味着我可能拿到 24 小时前的旧数据？"——**不会**。
+常见误解：`stale-while-revalidate=86400`（24 小时）是否意味着可能拿到 24 小时前的旧数据？**不会**。
 
 ### 角色
 
-- **U**：你的 HTTP/RSS 客户端（浏览器 / NetNewsWire / Inoreader / 自建脚本）
+- **U**：HTTP/RSS 客户端（浏览器 / NetNewsWire / Inoreader / 自建脚本）
 - **CDN**：Cloudflare 边缘节点
 - **O**：origin（AniBT 服务器）
 
@@ -150,41 +150,41 @@ T=0s    U 第一次请求
         U 拿到 200 + body + ETag=A
         U 本地记录 ETag，但因 max-age=0，下次会重新验证
 
-T=60s   U 又来（轮询太勤）
-        U 带上 If-None-Match: A 发请求
+T=60s   U 再次请求（轮询偏勤）
+        U 带上 If-None-Match: A
         CDN 仍在 s-maxage=600 fresh 期，可直接用边缘缓存响应 304
         (origin 0 命中)
 
-T=700s  U 来
-        U 带上 If-None-Match: A 发请求
+T=700s  U 请求
+        U 带上 If-None-Match: A
         CDN s-maxage=600 已过期，但还在 swr=86400 内
         CDN 决策：立即把缓存里的旧版本（含 ETag=A）返回给 U；
                  同时异步发 1 个请求到 O 刷新
-        U 收到响应：服务器看 If-None-Match: A == 当前 ETag → 304 Not Modified
-        (用户感知：0 延迟拿到 304，知道数据没变 → 不用解析 XML)
+        U 收到响应：If-None-Match: A 与当前 ETag 匹配 → 304 Not Modified
+        (客户端感知：0 延迟拿到 304，数据未变 → 无需解析 XML)
 
         与此同时 CDN 异步回源：
           - 数据真没变 → O 直接返回 304 → CDN 把 fresh 期再续 600s
           - 数据有更新 → O 返回 200 + ETag=B + 新 body → CDN 替换缓存
 
-T=900s  U 来（下一次）
+T=900s  U 下一次请求
         U 带 If-None-Match: A
         CDN 已有新缓存（ETag=B 或仍是 A）
-        CDN 把 ETag=B 的 body 返回 → 但 U 的 If-None-Match 不匹配 → 200 + 新 body
+        CDN 返回 ETag=B 的 body → If-None-Match 不匹配 → 200 + 新 body
         U 拿到新数据
 ```
 
 ### `swr=86400` 的真正意义
 
 <Callout type="info">
-  **不是**"用户会被强制忍受 24 小时旧数据"——而是"如果 origin 当前不可用 / 回源慢，CDN **最多** 用 24 小时内的旧版本兜底，避免给用户报错"。
+  **不是**「客户端会被强制忍受 24 小时旧数据」——而是「若 origin 当前不可用或回源慢，CDN **最多**用 24 小时内的旧版本兜底，避免直接报错」。
 </Callout>
 
-只要 origin 健康，**你永远拿到不超过 `s-maxage`（这里是 10 分钟）旧的数据**：
+只要 origin 健康，客户端拿到的数据通常不会旧于 `s-maxage`（本例为 10 分钟）：
 
-- T=700s：CDN 立即吐 10 分钟前的版本（你大概率收到 304，无感）
-- T=700s 后几百毫秒：CDN 已经异步刷成最新版本
-- T=900s 你下一次来：直接拿最新
+- T=700s：CDN 立即返回约 10 分钟前的版本（条件请求下多为 304）
+- T=700s 后数百毫秒：CDN 异步刷新为最新版本
+- T=900s 下一次请求：直接拿到最新
 
 ## `cf-cache-status` 含义
 
@@ -260,6 +260,6 @@ while True:
 
 这套写法满足：
 
-- 对这些 exact-body 端点，第一次响应缓存 ETag 后可在正文未变化时用 304 显著减少带宽
-- CDN 给 `STALE` 时你也不知道（也不需要知道），用户体验完全相同
-- 触发 429 自动按 `Retry-After` 退避
+- 对这些 exact-body 端点，首次响应缓存 ETag 后，正文未变化时可走 304，显著减少带宽
+- CDN 返回 `STALE` 时客户端无需感知，体验与 HIT 相同
+- 触发 429 时按 `Retry-After` 自动退避

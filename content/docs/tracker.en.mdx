@@ -1,10 +1,9 @@
 ---
 title: Tracker
-description: AniBT's fixed tracker announce URL and whitelist policy.
+description: AniBT official Tracker fixed announce URL, whitelist rules, and closed endpoints.
 ---
 
-The AniBT tracker only serves torrents published on AniBT and admitted to its
-whitelist. Its public URL is fixed:
+The AniBT Tracker only serves torrents published on AniBT and admitted to its whitelist. The public announce URL is fixed:
 
 ```txt title="AniBT Tracker"
 https://tracker.anibt.net/announce
@@ -12,8 +11,8 @@ https://tracker.anibt.net/announce
 
 <Callout type="info">
   A public URL does not admit arbitrary torrents. Torrust checks the v1
-  `info_hash` against AniBT's append-only whitelist, and external hashes that
-  were not published on AniBT receive `not whitelisted`.
+  `info_hash` against AniBT's append-only whitelist. External hashes not
+  published on AniBT receive `not whitelisted`.
 </Callout>
 
 ## Publishing and downloading
@@ -24,12 +23,12 @@ https://tracker.anibt.net/announce
 - AniBT's `.torrent` download endpoint normalizes historical signed or duplicate
   AniBT tracker URLs to exactly one fixed URL without changing the infohash.
 - Other third-party trackers are preserved. Keeping one or two reliable public
-  trackers is still recommended so the swarm does not depend on one service.
+  trackers is still recommended so the swarm does not depend on a single service.
 - The generic remote-torrent proxy returns upstream torrent bytes unchanged and
   does not inject the AniBT tracker.
 
 Existing AniBT torrents can continue using the fixed `/announce` URL. No tracker
-replacement or data re-download is needed; tracker fields are outside the torrent
+replacement or data re-download is needed. Tracker fields sit outside the torrent
 `info` dictionary, so normalization preserves the infohash.
 
 ## Closed endpoints

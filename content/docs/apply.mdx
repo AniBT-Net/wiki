@@ -1,68 +1,71 @@
 ---
 title: 申请入驻
-description: 字幕组以邮件方式提交入驻申请，提供身份信息后由站务人工审核。
+description: 字幕组通过邮件提交入驻申请；站务人工核验身份后开通发布权限。
 ---
 
-AniBT 不开放自助注册发布权限。**字幕组**入驻请按下面流程发邮件申请，站务收到后人工审核。审核通过后我们会给你开通发布账号、配置字幕组信息，之后即可使用 [发布 API](/docs/open-api/releases-publish) 推送资源、并通过 [站点同步](/docs/site-sync) 把发布同步到其它 BT 站。
+AniBT 不提供自助开通发布权限。**字幕组**须按下列流程发邮件申请，由站务人工审核。通过后，会在已有普通账号上绑定字幕组身份并开通发布能力，之后可使用 [发布 API](/docs/open-api/releases-publish) 推送资源，并通过 [站点同步](/docs/site-sync) 同步到其它 BT 站。
 
-## 申请要求
+## 申请材料
 
 <Steps>
   <Step>
-    ### 用注册邮箱发送
-    请使用您在 AniBT 注册的邮箱发送申请邮件。我们会用这个邮箱来核对你确实是该账号本人，避免冒名申请。
+    ### 使用注册邮箱发送
 
-    还没注册？先阅读[账号、登录与会话](/docs/account-auth)，在站点 [anibt.net](https://anibt.net) 注册一个普通账号，再用同一个邮箱来发申请。
+    须使用在 AniBT 注册时填写的邮箱发送申请，用于核对申请人与账号持有人一致。
+
+    尚未注册时，先阅读[账号、登录与会话](/docs/account-auth)，在 [anibt.net](https://anibt.net) 注册普通账号，再用同一邮箱发申请。
   </Step>
   <Step>
     ### 字幕组基本信息
-    邮件正文请提供：
 
-    - **组名**：完整的字幕组名称。
-    - **slug**：字幕组的英文标识符，作为唯一 ID 使用，例如 `sakura-sub`。请尽量简短、稳定，开通后不易更改（它会出现在 [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) 等公开 URL 里）。
-    - **简要介绍**：一两段说明你们做什么类型的作品、活跃多久、目前的发布节奏。
-    - **联系方式**：Telegram、官网、Discord、Email 群组等任何可以反向联系到字幕组的渠道。
+    邮件正文需包含：
+
+    - **组名**：字幕组完整名称。
+    - **slug**：简短、稳定的英文标识，作为唯一 ID（例如 `sakura-sub`）。开通后不宜更改，会出现在 [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) 等公开 URL 中。
+    - **简要介绍**：一两段说明作品类型、活跃时长与当前发布节奏。
+    - **联系方式**：Telegram、官网、Discord、邮件群组等可反向联系到字幕组的渠道。
   </Step>
   <Step>
-    ### 身份验证信息
-    提供任意一项可证明身份的材料即可，**不需要全部**：
+    ### 身份证明（任选一项）
 
-    - 字幕组在 nyaa / 末日站 / Mikan / ACG.rip 等站点已使用的发布账号或邮箱（我们会比对）。
-    - 字幕组官方网站 / Telegram 频道 / Twitter 等公开渠道的管理员证明（例如临时在频道置顶一条声明）。
-    - 已在其它字幕组成员之间被广泛认可的身份证据。
+    提供下列材料之一即可，**不必全部提供**：
 
-    目的是确认你确实是这个字幕组的成员或负责人，而不是冒用他人名义注册 slug。
+    - 字幕组在 nyaa / 末日站 / Mikan / ACG.rip 等站点已使用的发布账号或邮箱（用于比对）。
+    - 官方网站 / Telegram 频道 / Twitter 等公开渠道的管理员证明（例如临时置顶一条声明）。
+    - 在既有字幕组成员中被广泛认可的其它身份证据。
+
+    目的是确认申请人代表该字幕组，避免冒用他人名义占用 slug。
   </Step>
 </Steps>
 
-## 发送至
+## 发送地址
 
 <Callout type="info">
-  邮件发送至 **[support@anibt.net](mailto:support@anibt.net)**，主题建议写 `字幕组入驻申请 - <组名>`。我们会尽快回复，通常在几个工作日以内。
+  发送至 **[support@anibt.net](mailto:support@anibt.net)**。主题建议写 `字幕组入驻申请 - <组名>`。通常在几个工作日内回复。
 </Callout>
 
-如果一周内没收到任何回复（含垃圾箱），可以再发一次或通过 [其他联系方式](/docs/contact) 提醒我们。
+若一周内未收到回复（请同时检查垃圾邮件箱），可再发一次，或通过 [其他联系方式](/docs/contact) 提醒站务。
 
 ## 审核通过后
 
-我们会回邮件确认开通，并在你的账号上：
+站务会邮件确认开通，并在账号上完成：
 
 - 绑定字幕组身份与 slug。
-- 开通 [发布 API](/docs/open-api/releases-publish) 的访问权限（生成 API Key）。
-- 你的字幕组会在站点列表与 [字幕组 RSS](/docs/open-api/other-endpoints) 中可见。
+- 开通 [发布 API](/docs/open-api/releases-publish) 访问权限（生成 API Key）。
+- 字幕组出现在站点列表与 [字幕组 RSS](/docs/open-api/other-endpoints) 中。
 
-接下来建议依次阅读：
+建议继续阅读：
 
 <Cards>
   <Card
     title="站点同步设置"
     href="/docs/site-sync"
-    description="把 AniBT 上的发布同步到 nyaa / 萌番组 / 末日站等。"
+    description="将 AniBT 上的发布同步到 nyaa / 萌番组 / 末日站等。"
   />
   <Card
     title="发布 API"
     href="/docs/open-api/releases-publish"
-    description="POST /api/releases/publish — 用 API 直接推送种子。"
+    description="POST /api/releases/publish — 以 API 推送种子。"
   />
   <Card
     title="Tracker 地址"

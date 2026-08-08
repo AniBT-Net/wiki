@@ -1,9 +1,9 @@
 ---
 title: Examples
-description: Typical RSS queries for bgmId=543360 plus the stable-receipt workflow for deleting an anime release.
+description: Typical RSS queries for bgmId=543360, plus delete-with-receipt polling for anime releases.
 ---
 
-The examples below all target `bgmId=543360` (*Kamiina Botan, Yoeru Sugata wa Yuri no Hana*). The four group slugs were validated against [`/api/subtitle-groups`](/docs/open-api/subtitle-groups):
+All examples use `bgmId=543360` (*Kamiina Botan, Yoeru Sugata wa Yuri no Hana*). The four group slugs below are validated via [`/api/subtitle-groups`](/docs/open-api/subtitle-groups):
 
 ```txt title="Target groups"
 kirara-fantasia   Kirara Fantasia
@@ -12,16 +12,16 @@ kitauji-sub       北宇治字幕组
 haruhana          拨雪寻春
 ```
 
-## 1. One group + one show (most common)
+## 1. One group × one show (most common)
 
-```txt title="One feed = one group × one show"
+```txt title="One feed = one group × one anime"
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=pre-s
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana
 ```
 
-## 2. Filter by resolution
+## 2. Resolution filter
 
 <Tabs items={['1080p only', '1080p or 4K']}>
   <Tab value="1080p only">
@@ -33,37 +33,37 @@ https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana
     ```txt
     https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p&resolution=4K
     ```
-    Repeated values mean OR.
+    Repeated parameters mean OR.
   </Tab>
 </Tabs>
 
-## 3. Language + subtitle method
+## 3. Language + subtitle type
 
-**Kitauji-sub**, simplified Chinese, external or internal subtitles:
+**北宇治字幕组**, Simplified Chinese, external or soft-internal subtitles:
 
 ```txt
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&language=CHS&subtitle=EXTERNAL&subtitle=INTERNAL
 ```
 
-## 4. Stacked filters
+## 4. Multiple filters stacked
 
-**Haruhana**, 1080p, MKV, simplified Chinese external subs, episode 5:
+**拨雪寻春**, 1080p, MKV, Simplified external, episode 5:
 
 ```txt
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana&resolution=1080p&format=MKV&language=CHS&subtitle=EXTERNAL&episode=5
 ```
 
-## 5. Aggregate one show across all groups
+## 5. Aggregate one show across groups
 
-All groups for 543360, 1080p simplified Chinese:
+All groups under 543360 at 1080p Simplified Chinese:
 
 ```txt
 https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
 ```
 
-## 6. All releases from one group (any show)
+## 6. Everything from one group (any show)
 
-Latest 50 from `Kirara Fantasia`. Two equivalent forms:
+Latest 50 from `Kirara Fantasia` — two equivalent forms:
 
 <Tabs items={['Main entry', 'Short link']}>
   <Tab value="Main entry">
@@ -75,31 +75,31 @@ Latest 50 from `Kirara Fantasia`. Two equivalent forms:
     ```txt
     https://anibt.net/rss/group/kirara-fantasia.xml
     ```
-    Shorter URL, easier to paste in READMEs and forums. See [Other endpoints](/docs/open-api/other-endpoints).
+    Shorter for README / forums. See [Other endpoints](/docs/open-api/other-endpoints).
   </Tab>
 </Tabs>
 
-## 7. Batches / specials
+## 7. Batch / specials
 
 ```txt
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
 ```
 
-## 8. High throughput (max out a single request)
+## 8. High-throughput pull (max page)
 
 ```txt
 https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=100
 ```
 
 <Callout type="info">
-  Every public RSS endpoint caps `limit` at **100**. Oversized, repeated, empty, zero-padded, or non-integer values are not truncated: the application returns 400 and the production edge may block them first with Cloudflare 403. See [Rate limits & caps](/docs/open-api/limits).
+  Public RSS `limit` is capped at **100**. Oversized, duplicate, empty, zero-padded, or non-integer values are not truncated: the app returns 400; production edge may return Cloudflare 403 first. See [Rate limits & caps](/docs/open-api/limits).
 </Callout>
 
-## 9. Delete an anime release and poll to completion
+## 9. Delete an anime release and poll completion
 
-The key must explicitly include `releases:delete`. After `202 Accepted`, poll the status route; acceptance does not mean every public surface has already been cleaned.
+The delete key must explicitly include `releases:delete`. After `202 Accepted`, poll the status endpoint — do not treat “accepted” as “every public surface is clean”.
 
-```bash title="DELETE + status polling"
+```bash title="DELETE + status poll"
 release_id='rel_example'
 base_url='https://anibt.net'
 
@@ -117,4 +117,4 @@ done
 jq . <<<"$response"
 ```
 
-Stop only at `completed`. For `failed`, retain the `operationId` and `X-Request-ID` and do not retry blindly. See [Delete an anime release](/docs/open-api/releases-delete) for the complete fields, status codes, and completion boundary.
+Stop only on terminal `completed`. On `failed`, keep `operationId` and `X-Request-ID` and stop blind retries. Full fields, status codes, and completion boundaries: [Delete an anime release](/docs/open-api/releases-delete).

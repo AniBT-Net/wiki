@@ -3,11 +3,12 @@ title: RSS 主入口
 description: GET /rss/anime.xml —— 支持 bgmId、字幕组 slug 与多 Tag 任意组合的 RSS 主入口，兼容 Mikan 链接。
 ---
 
-`/rss/anime.xml` 是最灵活的订阅端点：用 `bgmId` + `groupSlug` + 多个 Tag（`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`）任意组合订阅一个番剧 / 字幕组 / 全站发布。
+`/rss/anime.xml` 是最灵活的订阅端点：用 `bgmId` + `groupSlug` + 多个 Tag（`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`）任意组合，订阅一个番剧、一个字幕组或全站相关发布。
 
-<Callout type="info">
-  必须给 `bgmId` 或 `groupSlug` **至少之一**。两者都不传会被拒绝。
-</Callout>
+## 前置条件
+
+- 无需鉴权。
+- 必须提供 `bgmId` 或 `groupSlug` **至少之一**；两者都不传会被拒绝。
 
 ## URL
 
@@ -63,10 +64,10 @@ GET https://anibt.net/rss/anime.xml?<query>
   `limit` 重复、为空、含前导零、不是整数或大于 100 时，应用返回 `400 + no-store`；生产边缘可能先返回 Cloudflare `403`。`limit=100` 等与默认值等价的写法会 `308` 到规范 URL，跳转可缓存 1 天；客户端应跟随永久重定向。
 </Callout>
 
-只调整原始 query 参数对顺序、没有改变任何参数字节时，不再跳转：请求直接返回同一份规范 `200`，`atom:link rel="self"`、ETag 与缓存身份仍使用稳定规范 URL；当前省略 `Last-Modified`。
+只调整原始 query 参数对顺序、且未改变任何参数字节时，不再跳转：请求直接返回同一份规范 `200`，`atom:link rel="self"`、ETag 与缓存身份仍使用稳定规范 URL；当前省略 `Last-Modified`。
 
 <Callout type="warn">
-  公开 RSS 现在从最终 XML UTF-8 bytes 计算 `W/"anibt-sha256-{...}"` ETag，并移除了请求时间 `lastBuildDate`。相同 ETag 绑定相同正文；匹配 ETag 的 `304` 表示当前 feed bytes 未变化。当前省略 `Last-Modified`。shape 合法但无法解析的 anime owner 仍可能返回空 `200`，而未知 `/rss/group/<slug>.xml` 仍返回 `404`。
+  公开 RSS 从最终 XML UTF-8 bytes 计算 `W/"anibt-sha256-{...}"` ETag，并移除了请求时间 `lastBuildDate`。相同 ETag 绑定相同正文；匹配 ETag 的 `304` 表示当前 feed bytes 未变化。当前省略 `Last-Modified`。shape 合法但无法解析的 anime owner 仍可能返回空 `200`，而未知 `/rss/group/<slug>.xml` 仍返回 `404`。
 </Callout>
 
 ## 重复参数两种写法等价
@@ -79,9 +80,9 @@ GET https://anibt.net/rss/anime.xml?<query>
 ?resolution=1080p,720p
 ```
 
-## 响应
+## 成功响应
 
-返回 **RSS 2.0 + BEP 36** 原生 XML。浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，会使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端继续按标准字段消费。
+返回 **RSS 2.0 + BEP 36** 原生 XML。浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端按标准字段消费。
 
 每个 `<item>` 包含：
 
@@ -138,7 +139,7 @@ GET https://anibt.net/rss/anime.xml?<query>
 
 ## Mikan 参数兼容
 
-Mikan 风格参数可以直接换主机，参数原样工作：
+Mikan 风格参数可直接换主机，参数原样工作：
 
 <Tabs items={['原始 Mikan 链接', '直接换主机', '推荐写法']}>
   <Tab value="原始 Mikan 链接">
@@ -156,7 +157,7 @@ Mikan 风格参数可以直接换主机，参数原样工作：
     ```txt
     https://anibt.net/rss/anime.xml?bgmId=3921&groupSlug=<slug>
     ```
-    在新代码中使用规范名称。
+    新代码中使用规范名称。
   </Tab>
 </Tabs>
 

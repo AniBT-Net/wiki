@@ -3,10 +3,15 @@ title: Bangumi 搜索
 description: GET /api/bgm/search —— 公开搜索 Bangumi 番剧 ID，支持中 / 英 / 日 / 罗马音关键词。
 ---
 
-`/api/bgm/search` 是**公开**搜索端点，无需鉴权。用于把"用户输入的番剧名"映射成稳定的 Bangumi.tv subject id（`bgmId`），后续就能喂给 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或 [`/api/releases/publish`](/docs/open-api/releases-publish)。
+`/api/bgm/search` 是**公开**搜索端点，无需鉴权。用于把「用户输入的番剧名」映射为稳定的 Bangumi.tv subject id（`bgmId`），再交给 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或 [`/api/releases/publish`](/docs/open-api/releases-publish)。
+
+## 前置条件
+
+- 无需鉴权。
+- 查询目标须为站内已索引番剧；未收录作品需先完成站内番剧同步。
 
 <Callout type="info">
-  生产实现由主站 Web runtime 直接查询 AniBT 的 Typesense 番剧索引，不再通过 Convex HTTP action 透传 Bangumi 上游。结果覆盖站内已索引番剧；未收录作品需要先完成站内番剧同步。
+  生产实现由主站 Web runtime 直接查询 AniBT 的 Typesense 番剧索引，不再经 Convex HTTP action 透传 Bangumi 上游。
 </Callout>
 
 ## 请求
@@ -39,7 +44,7 @@ curl -s -G 'https://anibt.net/api/bgm/search' \
   }}
 />
 
-## 响应
+## 成功响应
 
 ```jsonc title="200 OK"
 {
@@ -119,9 +124,9 @@ echo "https://anibt.net/rss/anime.xml?bgmId=$BGM&resolution=1080p&language=CHS"
 ## 注意事项
 
 <Callout type="info">
-  搜索结果按文本相关度、热度与更新时间排序，**不**保证第一条就是最热门版本。如果番名容易撞车（例如有多季 / 同名作品），建议把 `limit` 设大一点，再人工挑选。
+  搜索结果按文本相关度、热度与更新时间排序，**不**保证第一条就是最热门版本。番名易撞车时（多季 / 同名作品），宜增大 `limit` 后人工挑选。
 </Callout>
 
 <Callout type="warn">
-  生产代码里建议把解析出的 `bgmId` 缓存到本地，不要每次发布或拉 RSS 前都查。
+  生产代码宜将解析出的 `bgmId` 缓存到本地，避免每次发布或拉 RSS 前都查询。
 </Callout>

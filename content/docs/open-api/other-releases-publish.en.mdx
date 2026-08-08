@@ -5,8 +5,14 @@ description: POST /api/other-releases/publish — publish manga, music, RAW, and
 
 `/api/other-releases/publish` is the write endpoint for **non-anime releases** from a release group. Use it for manga, music, RAW, and stage releases. It uses the same group API-key system and requires `releases:publish`; it does not require `bgmId` and stays separate from anime releases.
 
+## Preconditions
+
+- The group API key must explicitly include `releases:publish`.
+- Keys belong in server-side scripts or CI secrets; reset immediately if leaked.
+- `category` and `title` are required; provide at least one of `torrent`, `torrentStorageId`, `magnetLink`, or `magnetBase64`.
+
 <Callout type="warn">
-  This is a **write endpoint**. A leaked key lets others publish under your group name, so use it only from server-side scripts or CI secrets.
+  This is a **write endpoint**. A leaked key lets others publish under the group’s name.
 </Callout>
 
 ## URL

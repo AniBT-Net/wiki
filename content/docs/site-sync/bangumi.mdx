@@ -1,12 +1,12 @@
 ---
 title: 萌番组同步
-description: 在 AniBT 中填写萌番组同步所需 Cookie、发布身份名称和 Team ID。
+description: 填写萌番组同步所需的 Cookie、发布身份名称和 Team ID。
 ---
 
-萌番组（bangumi.moe）使用登录 Cookie 鉴权，需要从 DevTools 抓取登录请求里的 Cookie 整段复制。
+萌番组（bangumi.moe）使用登录 Cookie 鉴权。需要从 DevTools 抓取登录请求中的 Cookie，并整段复制到 AniBT。
 
 <Callout type="warn">
-  必须**先退出登录、清空 Network 后再重新登录**，才能抓到完整的登录 Cookie。
+  必须先退出登录、清空 Network，再重新登录，才能抓到完整的登录 Cookie。
 </Callout>
 
 ## 步骤一：开启 Network 录制
@@ -15,13 +15,13 @@ description: 在 AniBT 中填写萌番组同步所需 Cookie、发布身份名�
   <Step>
     ### 退出登录并刷新
 
-    打开 [https://bangumi.moe](https://bangumi.moe)，先 **退出登录** 然后 **刷新网页**。
+    打开 [https://bangumi.moe](https://bangumi.moe)，先 **退出登录**，再 **刷新网页**。
   </Step>
 
   <Step>
     ### 开启网络录制
 
-    按 <kbd>F12</kbd> 打开 DevTools，切到 **Network（网络）** 页。确认录制按钮为 **红色**（已开启录制）。
+    按 <kbd>F12</kbd> 打开 DevTools，切换到 **Network（网络）** 页。确认录制按钮为 **红色**（已开启录制）。
 
     ![DevTools Network 录制网络日志](/images/site-sync/bangumi-network-recording.webp)
   </Step>
@@ -39,18 +39,18 @@ description: 在 AniBT 中填写萌番组同步所需 Cookie、发布身份名�
   <Step>
     ### 找到 disqus 请求
 
-    在 **Network** 页中找到名为 **`disqus`** 的请求，点击它。
+    在 **Network** 页中找到名为 **`disqus`** 的请求，点击该请求。
 
     ![Network 中的 disqus 请求](/images/site-sync/bangumi-disqus-request.webp)
   </Step>
 
   <Step>
-    ### 复制 Request Headers 里的 Cookie
+    ### 复制 Request Headers 中的 Cookie
 
-    右侧切到 **Headers（标头）** 页，下拉找到 **Request Headers** → **Cookie**，全选这一长串。
+    在右侧切换到 **Headers（标头）** 页，下拉找到 **Request Headers** → **Cookie**，全选 Cookie 整段字符串。
 
     <Callout type="warn">
-      千万**不要选到下方** `priority` 的 `u=1, i`。
+      不要选中下方 `priority` 的 `u=1, i`。
     </Callout>
 
     ![复制 Request Headers 里的 Cookie](/images/site-sync/bangumi-cookie-header.webp)
@@ -59,7 +59,7 @@ description: 在 AniBT 中填写萌番组同步所需 Cookie、发布身份名�
   <Step>
     ### 粘贴到 AniBT 并保存
 
-    回到 AniBT 粘贴 Cookie，点击保存。
+    回到 AniBT，粘贴 Cookie，点击保存。
 
     ![在 AniBT 中粘贴 Cookie](/images/site-sync/bangumi-anibt-cookie-save.webp)
   </Step>
@@ -70,12 +70,12 @@ description: 在 AniBT 中填写萌番组同步所需 Cookie、发布身份名�
 <TypeTable
   type={{
     '发布身份名称': {
-      description: '你在萌番组的团队名（组名）。如未申请团队注册可留空。',
+      description: '在萌番组的团队名（组名）。未申请团队注册时可留空。',
       type: 'string',
       default: '可留空',
     },
     'Team ID': {
-      description: '可不填，留空也可以同步。',
+      description: '可不填；留空也可以同步。',
       type: 'string',
       default: '可留空',
     },
@@ -84,7 +84,7 @@ description: 在 AniBT 中填写萌番组同步所需 Cookie、发布身份名�
 
 ## 测试连接
 
-填写完后点击 **保存并测试连接**：
+填写完成后，点击 **保存并测试连接**：
 
 - **连接成功**：配置完成。
 - **连接失败**：检查 Cookie 是否复制完整、账号是否登录成功。

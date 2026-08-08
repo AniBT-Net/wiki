@@ -1,11 +1,16 @@
 ---
 title: 字幕組自身資訊
-description: GET /api/subtitle-groups/me —— 用 API Key 查詢當前字幕組、Key 識別、scope 與統計資料。
+description: GET /api/subtitle-groups/me —— 用 API Key 查詢目前字幕組、Key 標識、scope 與統計資料。
 ---
 
-`/api/subtitle-groups/me` 是**鑑權讀取**端點。帶上字幕組 API Key，返回該字幕組的基本資訊、目前 Key 的安全識別與 `scopes`，以及釋出數、覆蓋番劇數、成員數等統計資料。
+`/api/subtitle-groups/me` 是**鑑權讀取**端點。攜帶字幕組 API Key 後，返回該組的基本資訊、目前 Key 的安全標識與 `scopes`，以及釋出數、覆蓋番劇數、成員數等統計。
 
-適合用在：CI 啟動時列印目前使用哪把 Key、控制台 dashboard 展示字幕組狀態、自動化指令碼校驗字幕組身分，並在釋出或刪除前確認 Key 是否具有 `releases:publish` / `releases:delete`。
+典型用途：CI 啟動時確認目前 Key、控制台展示字幕組狀態、腳本在釋出或刪除前校驗是否具備 `releases:publish` / `releases:delete`。
+
+## 前置條件
+
+- 字幕組已開通 API Key。
+- 請求標頭攜帶 `Authorization: Bearer <KEY>` 或 `X-API-Key`。
 
 ## 請求
 
@@ -19,7 +24,7 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
   https://anibt.net/api/subtitle-groups/me
 ```
 
-## 響應
+## 成功回應
 
 ```jsonc title="200 OK"
 {
@@ -53,11 +58,11 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       type: 'string',
     },
     'name': {
-      description: '字幕組展示名（中英不限，可能隨運營調整）。',
+      description: '字幕組展示名（中英不限，可能隨營運調整）。',
       type: 'string',
     },
     'slug': {
-      description: 'URL 安全的穩定標識，與 /api/subtitle-groups 返回的 slug 完全一致，可直接餵給 /rss/anime.xml?groupSlug=…。',
+      description: 'URL 安全的穩定標識，與 /api/subtitle-groups 返回的 slug 完全一致，可直接用於 /rss/anime.xml?groupSlug=…。',
       type: 'string',
     },
     'description': {
@@ -69,7 +74,7 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       type: 'string?',
     },
     'stats.totalReleases': {
-      description: '總髮布數。',
+      description: '總釋出數。',
       type: 'number',
     },
     'stats.totalAnimes': {
@@ -77,11 +82,11 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       type: 'number',
     },
     'stats.memberCount': {
-      description: '當前活躍成員數。',
+      description: '目前活躍成員數。',
       type: 'number',
     },
     'status': {
-      description: 'active / hidden / banned 等。僅 active 狀態可釋出。',
+      description: 'active / hidden / banned 等。僅 active 可釋出。',
       type: 'enum',
     },
     'createdAt': {
@@ -89,15 +94,15 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       type: 'number',
     },
     'apiKeyId': {
-      description: '目前 API Key 的穩定識別；可用於日誌核對，不是完整密鑰。',
+      description: '目前 API Key 的穩定標識；可用於日誌核對，不是完整金鑰。',
       type: 'string',
     },
     'apiKeySuffix': {
-      description: '目前 Key 的安全尾碼，只用於人工識別，不能用於鑑權。',
+      description: '目前 Key 的安全尾綴，只用於人工識別，不能用於鑑權。',
       type: 'string',
     },
     'scopes': {
-      description: '目前 Key 的明確能力集合：releases:publish、releases:delete，至少包含一個且不會重複。',
+      description: '目前 Key 的顯式能力集合：releases:publish、releases:delete，至少包含一個且不會重複。',
       type: 'string[]',
     },
   }}
@@ -107,11 +112,11 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
 
 <Callout type="info">
   與 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 的核心差別：
-  - `/api/subtitle-groups`：**公開**，返回**所有**字幕組的精簡資訊，不需要鑑權。
-  - `/api/subtitle-groups/me`：**鑑權**，只返回**呼叫方**這一組的詳細資訊，附帶 `stats`、Key 識別與 `scopes`，以及內部 `_id`、`description`、`status`。
+  - `/api/subtitle-groups`：**公開**，返回**所有**可見字幕組的精簡資訊，無需鑑權。
+  - `/api/subtitle-groups/me`：**鑑權**，只返回**呼叫方**這一組的詳細資訊，附帶 `stats`、Key 標識、`scopes`，以及內部 `_id`、`description`、`status`。
 </Callout>
 
-## 錯誤響應
+## 失敗回應
 
 | HTTP | 原因 | 處理 |
 | ---- | ---- | ---- |

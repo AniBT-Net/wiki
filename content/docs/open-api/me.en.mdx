@@ -1,11 +1,16 @@
 ---
-title: Inspect your group
-description: GET /api/subtitle-groups/me — authenticated lookup of the calling group, key identity, scopes, and stats.
+title: Current group (me)
+description: GET /api/subtitle-groups/me — inspect the current group, key identity, scopes, and stats with an API key.
 ---
 
-`/api/subtitle-groups/me` is the **authenticated read** endpoint. With a group API key, it returns the group's basic info, the active key's safe identity and `scopes`, plus release, anime-coverage, and member statistics.
+`/api/subtitle-groups/me` is an **authenticated read** endpoint. With a subtitle-group API key, it returns the group profile, the current key’s safe identifiers and `scopes`, and stats such as release count, covered anime count, and member count.
 
-Use it for a CI identity banner, a dashboard widget, a group-binding sanity check, and a preflight that confirms `releases:publish` or `releases:delete` before a write.
+Typical uses: confirm which key a CI job is using, show group status on a dashboard, and verify `releases:publish` / `releases:delete` before publish or delete.
+
+## Preconditions
+
+- The group has an API key.
+- Send `Authorization: Bearer <KEY>` or `X-API-Key`.
 
 ## Request
 
@@ -14,12 +19,12 @@ GET https://anibt.net/api/subtitle-groups/me
 Authorization: Bearer <YOUR_API_KEY>
 ```
 
-```bash title="curl"
+```bash title="curl example"
 curl -H "Authorization: Bearer <YOUR_API_KEY>" \
   https://anibt.net/api/subtitle-groups/me
 ```
 
-## Response
+## Success response
 
 ```jsonc title="200 OK"
 {
@@ -44,28 +49,28 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
 }
 ```
 
-## Field reference
+## Fields
 
 <TypeTable
   type={{
     '_id': {
-      description: 'Internal primary key. Always use slug, never hard-code _id.',
+      description: 'Internal primary key. Third parties should always use slug; do not hard-code _id.',
       type: 'string',
     },
     'name': {
-      description: 'Display name of the group (operator-controlled, may change).',
+      description: 'Display name (any language; may change over time).',
       type: 'string',
     },
     'slug': {
-      description: 'URL-safe stable identifier. Identical to the slug in /api/subtitle-groups; pass directly to /rss/anime.xml?groupSlug=…',
+      description: 'URL-safe stable identifier, identical to /api/subtitle-groups, usable as /rss/anime.xml?groupSlug=….',
       type: 'string',
     },
     'description': {
-      description: 'Group description.',
+      description: 'Group bio.',
       type: 'string',
     },
     'website': {
-      description: 'External homepage of the group.',
+      description: 'External homepage.',
       type: 'string?',
     },
     'stats.totalReleases': {
@@ -73,47 +78,47 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       type: 'number',
     },
     'stats.totalAnimes': {
-      description: 'Number of distinct shows covered.',
+      description: 'Number of covered anime titles.',
       type: 'number',
     },
     'stats.memberCount': {
-      description: 'Active member count.',
+      description: 'Current active members.',
       type: 'number',
     },
     'status': {
-      description: 'active / hidden / banned … only "active" can publish.',
+      description: 'active / hidden / banned, etc. Only active groups may publish.',
       type: 'enum',
     },
     'createdAt': {
-      description: 'First-ingest timestamp (ms).',
+      description: 'First insertion time (milliseconds).',
       type: 'number',
     },
     'apiKeyId': {
-      description: 'Stable identifier of the active API key. Safe for log correlation; not the secret.',
+      description: 'Stable id of the current API key for log correlation; not the secret.',
       type: 'string',
     },
     'apiKeySuffix': {
-      description: 'Safe suffix for identifying the key. It cannot authenticate a request.',
+      description: 'Safe key suffix for human recognition; not usable for auth.',
       type: 'string',
     },
     'scopes': {
-      description: 'Explicit capabilities of the active key: releases:publish and/or releases:delete. Non-empty and unique.',
+      description: 'Explicit capabilities on this key: releases:publish and/or releases:delete; at least one, no duplicates.',
       type: 'string[]',
     },
   }}
 />
 
-## Relationship to the public catalogue
+## Relation to the public catalogue
 
 <Callout type="info">
-  Key differences from [`/api/subtitle-groups`](/docs/open-api/subtitle-groups):
-  - `/api/subtitle-groups`: **public**, returns the trimmed list of **all** groups, no auth.
-  - `/api/subtitle-groups/me`: **authenticated**, returns detailed info for the **caller's** group only — adds `stats`, key identity and `scopes`, plus internal `_id`, `description`, and `status`.
+  Compared with [`/api/subtitle-groups`](/docs/open-api/subtitle-groups):
+  - `/api/subtitle-groups`: **public**, returns a **slim** list of **all** visible groups, no auth.
+  - `/api/subtitle-groups/me`: **auth**, returns only the **caller’s** group in detail, with `stats`, key identity, `scopes`, and internal `_id` / `description` / `status`.
 </Callout>
 
-## Errors
+## Error responses
 
-| HTTP | Cause | Fix |
-| ---- | ----- | --- |
-| 401 | API key missing, malformed, invalid, or revoked | Use `Authorization: Bearer <KEY>` or `X-API-Key`; re-issue a revoked key |
-| 429 | Too many requests | Back off according to `Retry-After` |
+| HTTP | Cause | Action |
+| ---- | ----- | ------ |
+| 401 | Missing, malformed, invalid, or revoked API key | Use `Authorization: Bearer <KEY>` or `X-API-Key`; regenerate in the dashboard if revoked |
+| 429 | Too many requests | Back off per `Retry-After` |

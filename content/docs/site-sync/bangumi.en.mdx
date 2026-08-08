@@ -1,12 +1,12 @@
 ---
 title: Bangumi Moe Sync
-description: Fill in the Cookie, publisher identity, and Team ID required by AniBT's Bangumi Moe sync.
+description: Fill in the Cookie, publisher identity name, and Team ID required for Bangumi Moe sync.
 ---
 
-Bangumi Moe authenticates by login cookie. Capture it from DevTools while logging in.
+Bangumi Moe authenticates with a login Cookie. Capture the Cookie from the login request in DevTools and paste the full value into AniBT.
 
 <Callout type="warn">
-  You **must log out and clear Network first**, then log in again — otherwise the captured request won't carry a complete cookie.
+  You must log out and clear Network first, then log in again — otherwise the captured request will not carry a complete Cookie.
 </Callout>
 
 ## Step One: Start Network Recording
@@ -15,7 +15,7 @@ Bangumi Moe authenticates by login cookie. Capture it from DevTools while loggin
   <Step>
     ### Log out and refresh
 
-    Visit [https://bangumi.moe](https://bangumi.moe), **log out**, and **refresh** the page.
+    Visit [https://bangumi.moe](https://bangumi.moe), **log out**, then **refresh** the page.
   </Step>
 
   <Step>
@@ -47,10 +47,10 @@ Bangumi Moe authenticates by login cookie. Capture it from DevTools while loggin
   <Step>
     ### Copy the Cookie request header
 
-    On the right, switch to **Headers** and scroll down to **Request Headers** → **Cookie**. Select the entire long value.
+    On the right, switch to **Headers** and scroll down to **Request Headers** → **Cookie**. Select the entire Cookie string.
 
     <Callout type="warn">
-      Do **not** include the `priority` line below it (e.g. `u=1, i`).
+      Do not include the `priority` line below it (for example, `u=1, i`).
     </Callout>
 
     ![Copy the Cookie request header](/images/site-sync/bangumi-cookie-header.webp)
@@ -84,9 +84,9 @@ Bangumi Moe authenticates by login cookie. Capture it from DevTools while loggin
 
 ## Test the Connection
 
-After saving, click **Test Connection**:
+After filling in the fields, click **Save and test connection**:
 
 - **Success** — setup is complete.
-- **Failure** — re-check whether the Cookie was copied completely and that login succeeded.
+- **Failure** — check whether the Cookie was copied completely and that login succeeded.
 
 ![Successful connection test](/images/site-sync/bangumi-connection-success.webp)

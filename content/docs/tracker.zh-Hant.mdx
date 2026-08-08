@@ -1,31 +1,27 @@
 ---
 title: Tracker
-description: AniBT 官方 Tracker 固定 announce 地址與白名單規則。
+description: AniBT 官方 Tracker 的固定 announce 地址、白名單規則與已關閉入口。
 ---
 
-AniBT Tracker 只服務 AniBT 站內釋出並已加入白名單的種子。公開地址保持固定：
+AniBT Tracker 只服務已在 AniBT 釋出並加入白名單的種子。公開 announce 地址固定為：
 
 ```txt title="AniBT Tracker"
 https://tracker.anibt.net/announce
 ```
 
 <Callout type="info">
-  地址公開不代表任意種子都能使用。Tracker 最終依 v1 `info_hash` 檢查 AniBT 的
-  append-only 白名單；外部釋出且未被 AniBT 收錄的 hash 會返回 `not whitelisted`。
+  地址公開不代表任意種子可用。Tracker 按 v1 `info_hash` 對照 AniBT 的
+  append-only 白名單；未在 AniBT 收錄的外部 hash 會返回 `not whitelisted`。
 </Callout>
 
 ## 釋出與下載
 
-- 透過 AniBT 網頁或 [`/api/releases/publish`](/docs/open-api/releases-publish) 釋出時，
-  站點會自動把固定 Tracker 寫入 magnet。
-- 從 AniBT 的 `.torrent` 下載介面取得種子時，站點會在不改變 infohash 的前提下，
-  把歷史 signed/重複 AniBT 地址規範為唯一固定地址。
-- 其他第三方 tracker 會保留。建議種子仍包含 1–2 個可靠的公開 tracker，避免只依賴
-  單一服務。
+- 透過 AniBT 網頁或 [`/api/releases/publish`](/docs/open-api/releases-publish) 釋出時，站點會自動把固定 Tracker 寫入 magnet。
+- 從 AniBT 的 `.torrent` 下載介面取得種子時，在不改變 infohash 的前提下，會把歷史 signed / 重複的 AniBT 地址規範為唯一固定地址。
+- 其它第三方 tracker 會保留。仍建議種子包含 1–2 個可靠的公開 tracker，避免只依賴單一服務。
 - 通用 remote torrent 代理返回上游原始 torrent bytes，不注入 AniBT Tracker。
 
-既有 AniBT 種子仍可繼續使用固定 `/announce`，不需要更換地址或重新下載資料；
-Tracker 欄位位於 torrent `info` dictionary 之外，規範化不會改變 infohash。
+既有 AniBT 種子可繼續使用固定 `/announce`，無需更換地址或重新下載資料。Tracker 欄位位於 torrent `info` dictionary 之外，規範化不會改變 infohash。
 
 ## 已關閉的入口
 

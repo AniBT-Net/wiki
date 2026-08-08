@@ -5,12 +5,14 @@ description: DELETE /api/releases/{releaseId} and GET /api/releases/{releaseId}/
 
 `DELETE /api/releases/{releaseId}` deletes an AniBT anime release. `GET /api/releases/{releaseId}/deletion` reads the same operation's status. Both routes require a subtitle-group API key with the `releases:delete` scope.
 
+## Preconditions
+
+- The group API key must explicitly include `releases:delete`.
+- V1 supports anime release IDs (`rel_*`) only; other-release IDs (`orel_*`) are out of scope.
+- Keys are always bound to the issuing group and cannot delete across groups.
+
 <Callout type="warn">
   Deletion is destructive and asynchronous. `202 Accepted` means the operation was durably accepted. Only `state=completed` means AniBT-owned canonical data, public read models, caches, and objects passed the deletion barrier.
-</Callout>
-
-<Callout type="info">
-  V1 supports anime release IDs (`rel_*`) only. Other-release IDs (`orel_*`) are out of scope.
 </Callout>
 
 ## Endpoints

@@ -1,15 +1,16 @@
 ---
-title: Other release RSS
-description: GET /rss/other/<category>.xml — separate RSS feeds for manga, music, RAW, and stage releases; not mixed into the main RSS.
+title: Other-category RSS
+description: GET /rss/other/<category>.xml — independent feeds for manga, music, RAW, and stage; never mixed into anime RSS.
 ---
 
-`/rss/other/<category>.xml` exports dedicated RSS feeds for other release categories. The supported categories are `manga`, `music`, `raw`, and `stage`.
+`/rss/other/<category>.xml` serves independent feeds for non-anime releases. Supported categories: `manga`, `music`, `raw`, `stage`.
 
-<Callout type="warn">
-  Other releases are **not** mixed into `/rss/magnets.xml`, `/rss/anime.xml`, or anime detail RSS feeds. Subscribe to the category feeds on this page when you need them.
-</Callout>
+## Preconditions
 
-## URLs
+- No authentication.
+- Other-category items are **not** mixed into `/rss/magnets.xml`, `/rss/anime.xml`, or anime detail RSS; subscribe via these category paths.
+
+## URL
 
 ```txt title="Category RSS"
 https://anibt.net/rss/other/manga.xml
@@ -23,20 +24,20 @@ https://anibt.net/rss/other/stage.xml
 <TypeTable
   type={{
     'limit': {
-      description: 'Number of items, 1..100, default 100. Exactly one decimal integer without leading zeroes.',
+      description: 'Item count, 1..100, default 100. Single decimal integer without leading zeros.',
       type: 'integer',
       default: '100',
     },
     'q': {
-      description: 'Keyword search. Alias: search. NFKC-normalized, trimmed, internal whitespace collapsed, max 160 UTF-8 bytes.',
+      description: 'Keyword search. Alias: search. NFKC-normalized, trimmed, whitespace-collapsed, max 160 UTF-8 bytes.',
       type: 'string',
     },
     'search': {
-      description: 'Alias for q; q and search may contain only one value in total.',
+      description: 'Alias of q; only one q/search value total.',
       type: 'string',
     },
     'groupId': {
-      description: 'Release group organization ID. The groupId returned by the publish API can be used here.',
+      description: 'Organization id of a group. Publish API groupId values work here as filters.',
       type: 'string',
     },
     'sortField': {
@@ -56,13 +57,13 @@ https://anibt.net/rss/other/stage.xml
 
 <Steps>
   <Step>
-    ### Latest manga releases
+    ### Latest manga
     ```txt title="Manga"
     https://anibt.net/rss/other/manga.xml
     ```
   </Step>
   <Step>
-    ### Search music releases
+    ### Search music
     ```txt title="Music + keyword"
     https://anibt.net/rss/other/music.xml?q=FLAC&limit=50
     ```
@@ -75,52 +76,52 @@ https://anibt.net/rss/other/stage.xml
   </Step>
 </Steps>
 
-## Response
+## Success response
 
-Returns native standard RSS 2.0 XML. Opening an RSS URL in a browser no longer loads AniBT custom XSL/CSS; the browser renders its default XML tree while RSS readers and BT clients keep consuming the standard fields.
+Native RSS 2.0 XML. Browsers show the default XML tree (no site XSL/CSS). Readers and BitTorrent clients consume standard fields.
 
-Each `<item>` contains:
+Each `<item>` includes:
 
 <TypeTable
   type={{
     '<title>': {
-      description: 'Release title. If a group name is available, it is formatted as [Group] Title.',
+      description: 'Title; with a group name, rendered as [Group] Title.',
       type: 'string',
     },
     '<link>': {
-      description: 'Other release detail page (/other-release/<id>).',
+      description: 'Other-release detail page (/other-release/<id>).',
       type: 'url',
     },
     '<guid isPermaLink="false">': {
-      description: 'Stable other release id.',
+      description: 'Stable other-release id.',
       type: 'string',
     },
     '<pubDate>': {
-      description: 'RFC 822 datetime.',
+      description: 'RFC 822 timestamp.',
       type: 'datetime',
     },
     '<description>': {
-      description: 'CDATA with category, group, file size, download link, notes, and tags.',
+      description: 'CDATA with category, group, size, download links, notes, and tags.',
       type: 'string',
     },
     '<enclosure>': {
-      description: 'Torrent download URL with type="application/x-bittorrent". Present only for items with an uploaded torrent file.',
+      description: 'Torrent download URL, type="application/x-bittorrent". Only when a torrent file was uploaded.',
       type: 'url',
     },
     '<torrent>': {
-      description: 'Torrent metadata inside RSS; includes infoHash when a magnet is available.',
+      description: 'In-feed torrent metadata; includes infoHash when a magnet exists.',
       type: 'element',
     },
   }}
 />
 
-## Cache and indexing
+## Caching & indexing
 
-- Responses compute an exact-body `W/"anibt-sha256-{...}"` ETag from the final XML UTF-8 bytes and no longer write a request-time `lastBuildDate`. A matching-ETag `304` means the current feed bytes are unchanged. `Last-Modified` is currently omitted.
-- Latest/filter variants without `q` use `s-maxage=120`; searches with `q`, including empty results, use `s-maxage=600`; both use `stale-while-revalidate=60`.
-- Category publish changes invalidate the latest Redis family first, then purge every non-free-text CDN variant for that category, including URLs filtered only by `groupId`. Search identities with `q` / `search` keep their independent 600-second Redis and CDN TTL and are not evicted by unrelated category publication, so this is not a real-time search SLA.
-- Search cache identities contain only a SHA-256 of the normalized query. Repeated/empty/control-bearing q, q+search together, or more than 160 UTF-8 bytes return `400 + no-store`. Reordering otherwise byte-identical raw query pairs returns the same canonical `200`; defaults, compatibility aliases, and other lexical normalization still return a cacheable one-day `308`.
-- Only a new search MISS that passes both CDN and Redis consumes distinct-query/global-concurrency admission. Rejection returns `429 + Retry-After`; stable queries and cache HITs are not charged.
-- These RSS responses use a `noindex, follow` search engine policy so category feeds are not indexed.
+- Responses compute an exact-body `W/"anibt-sha256-{...}"` ETag from final XML UTF-8 bytes and omit request-time `lastBuildDate`. Matching-ETag `304` means current feed bytes are unchanged. `Last-Modified` is currently omitted.
+- latest/filter variants without `q` use `s-maxage=120`; searches with `q` (including empty results) use `s-maxage=600`; both use `stale-while-revalidate=60`.
+- Category publishes invalidate the latest Redis family first, then purge non-full-text CDN variants for that category (including `groupId`-only filters). Search Redis/CDN identities with `q` / `search` stay on a 600-second TTL and are not purged by unrelated category publishes — this is not a real-time search SLA.
+- Search cache identity stores only the SHA-256 of the normalized query. Duplicate/empty/control-character `q`, both `q` and `search`, or >160 bytes return `400 + no-store`. Reordering original query pairs returns the same canonical `200`; default/alias/byte-level normalization still returns a one-day-cacheable `308`.
+- Only true CDN/Redis search MISSes consume distinct-query and global concurrency budgets; over-budget returns `429 + Retry-After`. Stable queries and cache HITs do not.
+- Responses include `noindex, follow` so category feeds are not indexed by search engines.
 
-Continue: [Publish other releases](/docs/open-api/other-releases-publish). The anime RSS main entry is [RSS main entry](/docs/open-api/rss-anime).
+Continue: [Publish other releases](/docs/open-api/other-releases-publish); anime RSS at [RSS main entry](/docs/open-api/rss-anime).

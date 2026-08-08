@@ -3,7 +3,7 @@ title: LLM integration
 description: AniBT provides llms.txt, llms-full.txt, per-page Markdown endpoints, and HTTP Markdown content negotiation for LLM, Agent, and RAG clients.
 ---
 
-The Wiki exposes its full contents as LLM-friendly Markdown, and AniBT public HTML pages can be converted on request. You can pull either form into ChatGPT / Claude / Cursor / your own RAG pipeline as context.
+AniBT Wiki content is exposed as LLM-friendly Markdown. Public AniBT HTML pages can also be converted to Markdown on request. Use either form as context for ChatGPT / Claude / Cursor / custom RAG pipelines.
 
 ## Endpoints
 
@@ -16,22 +16,22 @@ The Wiki exposes its full contents as LLM-friendly Markdown, and AniBT public HT
   <Card
     title="/llms-full.txt"
     href="/llms-full.txt"
-    description="Every zh-CN page concatenated into one Markdown blob — drop the whole thing into a model."
+    description="Every zh-CN page concatenated into one Markdown file for one-shot LLM loading."
   />
   <Card
     title="/llms-full.en.txt"
     href="/llms-full.en.txt"
-    description="Same, but in English. Prefer this when feeding international LLMs."
+    description="Same content in English. Prefer this when feeding international models."
   />
   <Card
     title="<page>.md"
     href="/en/docs/open-api.md"
-    description="Append .md to any doc to get its raw Markdown. e.g. /en/docs/open-api.md"
+    description="Append .md to any doc path for raw Markdown, e.g. /en/docs/open-api.md."
   />
   <Card
     title="Accept: text/markdown"
     href="https://anibt.net/anime/638151"
-    description="Request any public HTML page as Markdown through real-time Cloudflare edge conversion."
+    description="Request any public HTML page as Markdown via Cloudflare edge conversion."
   />
 </Cards>
 
@@ -51,20 +51,20 @@ A successful response uses `Content-Type: text/markdown; charset=utf-8` and incl
 - `x-original-tokens`, the estimated token count of the original HTML.
 - `Content-Signal: ai-train=yes, search=yes, ai-input=yes`, the current policy for public content.
 
-Only HTML is converted. JSON APIs, RSS/XML, images, and R2 objects keep their native content types. Conversion removes scripts, styles, navigation, and other non-content elements, but pages that render multiple responsive DOM variants may still contain repeated sections. Prefer the static `.md` or `llms-full.*` endpoints above when ingesting Wiki documentation.
+Only HTML is converted. JSON APIs, RSS/XML, images, and R2 objects keep their native content types. Conversion removes scripts, styles, navigation, and other non-content elements. Pages that render multiple responsive DOM variants may still contain repeated sections. Prefer the static `.md` or `llms-full.*` endpoints above when ingesting Wiki documentation.
 
 ## Usage
 
 ### ChatGPT / Claude / Gemini chat UIs
 
-Just paste the URL:
+Paste the URL into the conversation:
 
 ```txt
-Use this document as the source for my next questions:
+Use this document as the source for follow-up questions:
 https://anibt.net/llms-full.en.txt
 ```
 
-The model will fetch and load the whole document as context. `llms-full.en.txt` is ~80 KB — well within any major model's window.
+The model fetches and loads the full document as context. `llms-full.en.txt` is about 80 KB — within common major-model context windows for a single load.
 
 ### Cursor / Continue / Cline (IDE agents)
 
@@ -74,7 +74,7 @@ Add the index as a custom doc source. Cursor's `@Docs` accepts:
 https://anibt.net/llms.txt
 ```
 
-It will expand the index and pull the per-page `.md` files on demand.
+It expands the index and pulls per-page `.md` files on demand.
 
 ### RAG / custom pipelines
 
@@ -90,10 +90,10 @@ for path in urls:
     if not path.startswith('/docs'):
         continue
     md = requests.get(f'{base}/en{path}.md').text
-    # → feed into your chunker / embedder
+    # → feed into chunker / embedder
 ```
 
-Swap `/en` for `/zh-Hant` for Traditional Chinese, or omit the prefix for the default zh-CN.
+Swap `/en` for `/zh-Hant` for Traditional Chinese, or omit the prefix for default zh-CN.
 
 ## Endpoint comparison
 
@@ -111,7 +111,7 @@ Swap `/en` for `/zh-Hant` for Traditional Chinese, or omit the prefix for the de
 
 ## Coverage
 
-The same pages you're reading now:
+`/llms.txt` and `/llms-full.*` cover the same Wiki pages currently published, including:
 
 - Site sync workflows
 - [Open API](/docs/open-api) (RSS / JSON / caching / limits / troubleshooting)
@@ -127,4 +127,4 @@ Markdown     https://anibt.net/en/docs/open-api/rss-anime.md
 
 ## License
 
-Content is licensed CC-BY-SA. When citing it from an LLM / Agent / RAG output, please **keep a link back to the original page**.
+Content is licensed CC-BY-SA. When citing it from an LLM / Agent / RAG output, **keep a link back to the original page**.

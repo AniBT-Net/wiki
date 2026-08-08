@@ -1,16 +1,16 @@
 ---
 title: Related projects
-description: Open-source projects in the AniBT orbit — FontInAss for subtitle font subsetting, AniBT-Speed for automated seeding.
+description: Open-source projects around AniBT — FontInAss for subtitle font subsetting, AniBT-Speed for automated seeding.
 ---
 
-AniBT is more than just a site. The projects below tackle two real pain points in fansub releases — **subtitle fonts being huge** and **seeding being patchy** — and pair naturally with the main site.
+The projects below relate to subtitle-group release workflows. They address **font size** and **seeding bandwidth**, and work alongside the AniBT main site.
 
 ## FontInAss
 
 <ProjectCard
   owner="Yuri-NagaSaki"
   repo="FontInAss"
-  description="Subtitle font subsetting & sharing tool: scans the characters used by an ASS / SRT, slices the original font down to the smallest usable subset, and bundles it for distribution. Output is typically 1–5% of the original font size."
+  description="Subtitle font subsetting and sharing: scans characters used by ASS / SRT, cuts the original font down to the smallest usable subset, and bundles it for distribution. Output is typically 1–5% of the original font size."
   links={[
     { label: 'Hosted at font.anibt.net', href: 'https://font.anibt.net' },
     { label: 'GitHub', href: 'https://github.com/Yuri-NagaSaki/FontInAss' },
@@ -19,22 +19,25 @@ AniBT is more than just a site. The projects below tackle two real pain points i
 
 **Why subset**
 
-CJK fonts are routinely 10–30 MB. For a 12-episode show, the bundled subtitle fonts can outweigh the video. Subsetting keeps only the glyphs your subtitle file actually uses — usually 100–500 KB. FontInAss turns that command-line dance into a visual workflow and **records which characters were dropped** so you can patch a font later if a new line shows up.
+CJK fonts are often 10–30 MB. For a 12-episode show, fully embedded subtitle fonts can outweigh the video. Subsetting keeps only the glyphs the subtitle file uses — commonly 100–500 KB. FontInAss turns the command-line workflow into a visual process and **records which characters were dropped** so fonts can be patched later.
 
 **Typical flow**
 
 <Steps>
   <Step>
-    ### Upload ASS / SRT and the source fonts
-    Multiple subtitles and fonts at once; `\fn` directives are auto-detected.
+    ### Upload ASS / SRT and source fonts
+
+    Multiple subtitles and fonts at once; `\fn` directives are detected automatically.
   </Step>
   <Step>
     ### Subset
-    The tool produces minimal `.ttf` / `.otf` for each font.
+
+    Produces minimal `.ttf` / `.otf` for each font.
   </Step>
   <Step>
     ### Embed in the release
-    Drop the subset fonts into a `Fonts/` folder and pack them with the subtitles inside the torrent. Players load them automatically — viewers don't need to install anything.
+
+    Place subset fonts in a `Fonts/` folder and pack them with the subtitles in the torrent. Players load them automatically; viewers do not need to install fonts.
   </Step>
 </Steps>
 
@@ -43,7 +46,7 @@ CJK fonts are routinely 10–30 MB. For a 12-episode show, the bundled subtitle 
 <ProjectCard
   owner="Yuri-NagaSaki"
   repo="AniBT-Speed"
-  description="Automated seeding & bandwidth-sharing for anime BT: pulls RSS, downloads new releases, and seeds long-term to add upload bandwidth for hot episodes."
+  description="Automated seeding and bandwidth sharing for anime BT: pulls RSS, downloads new releases, and seeds long-term to add upload bandwidth for popular episodes."
   links={[
     { label: 'GitHub', href: 'https://github.com/Yuri-NagaSaki/AniBT-Speed' },
   ]}
@@ -51,14 +54,14 @@ CJK fonts are routinely 10–30 MB. For a 12-episode show, the bundled subtitle 
 
 **What it solves**
 
-For the first few days after a release, demand spikes faster than upload bandwidth. AniBT-Speed runs as an **auto-seeder node**:
+In the first few days after a release, download demand often exceeds available upload bandwidth. AniBT-Speed runs as an **auto-seeder node**:
 
 - Subscribes to [`/rss/anime.xml`](/docs/open-api/rss-anime) or [`/rss/magnets.xml`](/docs/open-api/other-endpoints).
 - Auto-downloads new releases.
-- **Seeds long-term** — never silently deletes — so latecomers get bandwidth.
+- **Seeds long-term** without silently deleting, so later downloaders still get bandwidth.
 
-Aimed at hobbyists with spare bandwidth willing to contribute to the public seeding ecosystem.
+Intended for operators with spare bandwidth who want to contribute public seeding.
 
-## Got something to add?
+## Adding a project
 
-Built an AniBT-adjacent tool (script, client plugin, mirror, CLI, …)? Open a PR against the [wiki repo](https://github.com/AniBT-Net/wiki) to add it to this page.
+For AniBT-adjacent tools (scripts, client plugins, mirrors, CLIs, …), open a PR against the [wiki repo](https://github.com/AniBT-Net/wiki) to list them on this page.

@@ -3,14 +3,14 @@ title: 總覽
 description: AniBT 公開 RSS 與 JSON API 的設計邏輯、端點速查與第三方接入入口。
 ---
 
-AniBT 把公開讀取資料透過兩類端點暴露給第三方：用於訂閱的 **RSS** 和用於程式整合的 **JSON API**。公開讀取端點可匿名存取，並依各自快取契約支援 **HTTP 304 Not Modified**；釋出、刪除和身分檢查端點必須攜帶字幕組 API Key，回應不快取。
+AniBT 透過兩類公開端點對外暴露讀取資料：**RSS** 用於訂閱，**JSON API** 用於程式整合。公開讀取端點可匿名存取，並依各自快取契約支援 **HTTP 304 Not Modified**。釋出、刪除與身分檢查端點必須攜帶字幕組 API Key，回應不快取。
 
 <Callout type="info">
-  qBittorrent / Sonarr / FlexGet / Tiny Tiny RSS 等標準 RSS 客戶端**無需任何額外配置**，快取與條件請求在響應頭裡自動生效。
+  qBittorrent / Sonarr / FlexGet / Tiny Tiny RSS 等標準 RSS 客戶端無需額外設定；快取與條件請求由回應標頭自動生效。
 </Callout>
 
 <Callout type="warn">
-  公開 API 的生產 base URL 是 `https://anibt.net`。第三方整合請只使用本文檔列出的主站路徑。
+  公開 API 的生產 base URL 為 `https://anibt.net`。第三方整合應只使用本文檔列出的主站路徑。
 </Callout>
 
 ## 我想做……（速查）
@@ -27,7 +27,7 @@ AniBT 把公開讀取資料透過兩類端點暴露給第三方：用於訂閱�
     description="GET /rss/anime.xml?bgmId=<bgm>"
   />
   <Card
-    title="字幕組的全部發布"
+    title="字幕組的全部釋出"
     href="/docs/open-api/other-endpoints"
     description="GET /rss/group/<slug>.xml"
   />
@@ -85,7 +85,7 @@ AniBT 把公開讀取資料透過兩類端點暴露給第三方：用於訂閱�
 
 ## 設計邏輯
 
-整個體系按"職責分層"組織，便於第三方理解每個端點何時該用：
+整套介面按「職責分層」組織，便於按場景選擇端點：
 
 ```txt title="資料流"
 ┌────────────────────────────────────────────────────────────┐
@@ -96,7 +96,7 @@ AniBT 把公開讀取資料透過兩類端點暴露給第三方：用於訂閱�
 ┌────────────────────────────────────────────────────────────┐
 │  GET https://anibt.net/api/subtitle-groups                  │
 │  返回 [{slug, name, totalReleases, totalAnimes, ...}]        │
-│  → 把"展示名"或"使用者輸入"對映到穩定 slug                      │
+│  → 把「展示名」或「使用者輸入」對應到穩定 slug                      │
 └────────────────────────────────────────────────────────────┘
         │ ② 使用者訂閱時 / 每 N 分鐘：拉 RSS
         ▼
@@ -110,7 +110,7 @@ AniBT 把公開讀取資料透過兩類端點暴露給第三方：用於訂閱�
         ▼
 ┌────────────────────────────────────────────────────────────┐
 │  服務端用弱 ETag 快速比較：                                    │
-│   - 資料未變：304 Not Modified（空 body，幾十位元組）            │
+│   - 資料未變：304 Not Modified（空 body，幾十字節）            │
 │   - 資料變化：200 + 完整 RSS                                 │
 └────────────────────────────────────────────────────────────┘
 ```
@@ -120,7 +120,7 @@ AniBT 把公開讀取資料透過兩類端點暴露給第三方：用於訂閱�
 <TypeTable
   type={{
     'slug 優先於 name': {
-      description: '字幕組展示名可能調整（例如本地化），slug 一旦釋出儘量保持穩定。第三方應快取一份從 /api/subtitle-groups 拿到的 name → slug 對映，不要硬編碼 slug 到程式碼裡。',
+      description: '字幕組展示名可能調整（例如本地化），slug 一旦釋出儘量保持穩定。第三方應快取一份從 /api/subtitle-groups 拿到的 name → slug 對應，不要硬編碼 slug。',
       type: '約定',
     },
     'bgmId 優先於自然語言': {
@@ -132,7 +132,7 @@ AniBT 把公開讀取資料透過兩類端點暴露給第三方：用於訂閱�
       type: '設計',
     },
     'HTTP 快取優先': {
-      description: '同一查詢在預設 120 秒 RSS 快取視窗內只命中一次 origin；同一客戶端反覆輪詢走 304，幾乎零開銷。',
+      description: '同一查詢在預設 120 秒 RSS 快取視窗內只命中一次 origin；同一客戶端反覆輪詢走 304，開銷可忽略。',
       type: '設計',
     },
   }}
@@ -140,7 +140,7 @@ AniBT 把公開讀取資料透過兩類端點暴露給第三方：用於訂閱�
 
 ## 介面穩定性承諾
 
-- 路徑與查詢引數視為公開契約，**不會做不相容變更**；新增引數只會擴充套件。
+- 路徑與查詢參數視為公開契約，**不會做不相容變更**；新增參數只會擴展。
 - `slug` 一旦釋出也儘量保持穩定。
 - 內部主鍵（如 `organizationId`）不屬於公開契約，第三方一律使用 `slug`。
 

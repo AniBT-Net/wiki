@@ -3,13 +3,13 @@ title: 實戰示例
 description: 基於 bgmId=543360 的典型 RSS 查詢，以及帶穩定回執的番劇釋出刪除流程。
 ---
 
-下列示例都基於 `bgmId=543360`（《上伊那牡丹，酒醉身姿似百合花般》），4 個字幕組的 slug 已透過 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 校驗：
+下列示例均基於 `bgmId=543360`（《上伊那牡丹，酒醉身姿似百合花般》）。4 個字幕組的 slug 已透過 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 校驗：
 
 ```txt title="目標字幕組"
 kirara-fantasia   Kirara Fantasia
 pre-s             Prejudice-Studio
-kitauji-sub       北宇治字幕組
-haruhana          撥雪尋春
+kitauji-sub       北宇治字幕组
+haruhana          拨雪寻春
 ```
 
 ## 1. 單字幕組 + 番劇（最常用）
@@ -33,7 +33,7 @@ https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana
     ```txt
     https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p&resolution=4K
     ```
-    重複參數列示"或"。
+    重複參數表示「或」。
   </Tab>
 </Tabs>
 
@@ -47,7 +47,7 @@ https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&language=CHS&
 
 ## 4. 多過濾疊加
 
-**撥雪尋春**，1080p、MKV、簡體外掛、第 5 集：
+**拨雪寻春**，1080p、MKV、簡體外掛、第 5 集：
 
 ```txt
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana&resolution=1080p&format=MKV&language=CHS&subtitle=EXTERNAL&episode=5
@@ -61,7 +61,7 @@ https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana&resolution=1080p
 https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
 ```
 
-## 6. 字幕組的全部發布（不限番劇）
+## 6. 字幕組的全部釋出（不限番劇）
 
 `Kirara Fantasia` 最近 50 條，兩種寫法等價：
 
@@ -97,7 +97,7 @@ https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=100
 
 ## 9. 刪除番劇釋出並輪詢完成
 
-刪除 Key 必須明確包含 `releases:delete`。`202 Accepted` 後按狀態端點輪詢，不要把「請求已接受」誤判為「所有公開面已清理」。
+刪除 Key 必須顯式包含 `releases:delete`。`202 Accepted` 後按狀態端點輪詢，不要把「請求已接受」誤判為「所有公開面已清理」。
 
 ```bash title="DELETE + 狀態輪詢"
 release_id='rel_example'
@@ -117,4 +117,4 @@ done
 jq . <<<"$response"
 ```
 
-終態為 `completed` 時才停止；若為 `failed`，保存 `operationId` 與 `X-Request-ID` 並停止盲目重試。完整欄位、狀態碼和完成邊界見 [刪除番劇釋出](/docs/open-api/releases-delete)。
+終態為 `completed` 時才停止；若為 `failed`，儲存 `operationId` 與 `X-Request-ID` 並停止盲目重試。完整欄位、狀態碼和完成邊界見 [刪除番劇釋出](/docs/open-api/releases-delete)。

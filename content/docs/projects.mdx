@@ -1,40 +1,43 @@
 ---
 title: 相关项目
-description: AniBT 周边的开源项目 —— 字幕字体子集化的 FontInAss、自动做种分流的 AniBT-Speed。
+description: AniBT 周边开源项目：FontInAss（字幕字体子集化）与 AniBT-Speed（自动做种分流）。
 ---
 
-AniBT 不只是一个站。下面这些项目围绕"字幕组发布资源"这件事，分别解决**字体太大**和**做种分散**两个真实痛点，配合主站使用最顺手。
+下列项目与字幕组发布流程相关，分别处理**字体体积**与**做种带宽**两类问题，可与 AniBT 主站配合使用。
 
 ## FontInAss
 
 <ProjectCard
   owner="Yuri-NagaSaki"
   repo="FontInAss"
-  description="字幕字体子集化处理与分享工具：扫描 ASS / SRT 用到的字符，从原字体里裁出最小可用子集，打包随片分发，体积可压到原字体的 1–5%。"
+  description="字幕字体子集化与分享工具：扫描 ASS / SRT 实际用到的字符，从原字体裁出最小可用子集并随片分发，体积通常可压到原字体的 1–5%。"
   links={[
     { label: 'font.anibt.net 在线使用', href: 'https://font.anibt.net' },
     { label: 'GitHub 仓库', href: 'https://github.com/Yuri-NagaSaki/FontInAss' },
   ]}
 />
 
-**为什么需要子集化**
+**为何需要子集化**
 
-中日字体动辄 10–30 MB，一部 12 集的番压完字幕字体能比片源还大。子集化扫出 ASS 实际用到的字符，只保留这些字形，常见可压到 100–500 KB。FontInAss 把这一步从命令行批处理变成可视化流程，并且**记录哪些字符被裁掉**，方便后续追加补字。
+中日字体常见体积为 10–30 MB。一部 12 集的番若整包内嵌完整字体，字体体积可能超过片源。子集化只保留字幕实际用到的字形，输出常见为 100–500 KB。FontInAss 将命令行批处理改为可视化流程，并**记录被裁掉的字符**，便于后续补字。
 
 **典型流程**
 
 <Steps>
   <Step>
     ### 上传 ASS / SRT 与原字体
-    支持批量字幕、多字体；自动识别 `\fn` 字段。
+
+    支持批量字幕与多字体；自动识别 `\fn` 字段。
   </Step>
   <Step>
     ### 子集化
-    工具裁出每个字体的最小子集，输出 `.ttf` / `.otf`。
+
+    为每个字体生成最小子集，输出 `.ttf` / `.otf`。
   </Step>
   <Step>
     ### 内嵌发布
-    把子集字体放进 `Fonts/` 子目录，与字幕一起打进种子；播放器加载即可正确渲染，无需观众安装字体。
+
+    将子集字体放入 `Fonts/` 子目录，与字幕一并打进种子。播放器加载即可正确渲染，观众无需安装字体。
   </Step>
 </Steps>
 
@@ -43,22 +46,22 @@ AniBT 不只是一个站。下面这些项目围绕"字幕组发布资源"这件
 <ProjectCard
   owner="Yuri-NagaSaki"
   repo="AniBT-Speed"
-  description="动漫 BT 的自动做种 / 分流工具：拉取 RSS、自动下载、长期做种，给热门资源补充上传带宽。"
+  description="动漫 BT 自动做种 / 分流工具：拉取 RSS、自动下载、长期做种，为热门资源补充上传带宽。"
   links={[
     { label: 'GitHub 仓库', href: 'https://github.com/Yuri-NagaSaki/AniBT-Speed' },
   ]}
 />
 
-**它解决什么**
+**解决什么问题**
 
-字幕组发布后头几天的热度爆点，往往会出现"种子在但上传带宽不够"的现象。AniBT-Speed 是一个**自动做种节点**程序：
+字幕组发布后最初几天下载需求往往高于可用上传带宽。AniBT-Speed 作为**自动做种节点**：
 
 - 订阅 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或 [`/rss/magnets.xml`](/docs/open-api/other-endpoints)。
 - 自动下载新发布。
-- **长期做种**，不主动删除，给后来者提供上传带宽。
+- **长期做种**，不主动删除，为后续下载者提供上传带宽。
 
-适合手里有富余带宽的爱好者参与建设公共做种生态。
+适合有富余带宽、愿意参与公共做种的节点运行。
 
-## 想加一个项目？
+## 新增项目
 
-如果你做了 AniBT 周边工具（脚本、客户端插件、镜像、CLI 等），欢迎在 [wiki 仓库](https://github.com/AniBT-Net/wiki) 提 PR 把它加到这一页。
+若维护了 AniBT 周边工具（脚本、客户端插件、镜像、CLI 等），可在 [wiki 仓库](https://github.com/AniBT-Net/wiki) 提交 PR，将项目加入本页。

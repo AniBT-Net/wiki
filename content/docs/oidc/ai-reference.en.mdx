@@ -7,7 +7,7 @@ This page is a compact contract for AI coding assistants, agents, and code-gener
 
 ## Canonical configuration
 
-```json
+```json title="Canonical OIDC configuration"
 {
   "provider_id": "anibt",
   "protocol": "openid-connect",
@@ -48,14 +48,14 @@ At runtime, prefer discovery for endpoints and capabilities other than the fixed
 6. Use pairwise `sub` as the only account key. Never merge accounts automatically by email, name, or picture.
 7. Claims can be absent. Synthetic `.anibt.local` email is never returned.
 8. `offline_access` requires explicit consent. Atomically store every rotated refresh token; never reuse an older token concurrently.
-9. Redirect and post-logout URLs must exactly match the values registered in AniBT.
+9. Redirect and post-logout URIs must exactly match the values registered in AniBT.
 10. Do not attempt Dynamic Client Registration, Hydra Admin, the operator, or any unpublished management endpoint.
 11. Do not log authorization codes, access tokens, refresh tokens, ID Tokens, Client secrets, cookies, full callback URLs, or Authorization headers.
 12. Do not blindly repeat code exchange, secret rotation, or refresh requests after an ambiguous network result.
 
 ## Choose a client type
 
-```text
+```text title="Client type selection"
 If the application has a secure server or BFF:
   application_type = web_bff
   token_endpoint_auth_method = client_secret_basic
@@ -76,7 +76,7 @@ If it is a browser-only SPA:
 
 Copy this prompt and add your framework, callback URL, and session-store details:
 
-```text
+```text title="AI coding prompt"
 Integrate AniBT OpenID Connect sign-in into this project.
 
 Authoritative documentation:
@@ -96,7 +96,7 @@ Fixed contract:
 - use pairwise sub as the only account key; never auto-merge by email
 - treat claims as optional; .anibt.local email is never returned
 - offline_access needs explicit consent and correct refresh rotation/reuse handling
-- every redirect URL must match exactly
+- every redirect URI must match exactly
 - logs must contain no code, token, secret, cookie, full callback URL, or Authorization header
 - do not use Dynamic Client Registration, Hydra Admin, or AniBT's internal operator
 
@@ -107,7 +107,7 @@ First inspect the project's authentication and session boundaries and select a m
 
 Names may follow project conventions, but the public/private boundary is fixed:
 
-```dotenv
+```dotenv title="Environment variable template"
 # Public configuration
 ANIBT_OIDC_ISSUER=https://oauth.anibt.net
 ANIBT_OIDC_CLIENT_ID=copy from the AniBT application detail page
@@ -123,7 +123,7 @@ Never use `VITE_*`, `NEXT_PUBLIC_*`, `PUBLIC_*`, or another browser-exposed vari
 ## Minimum implementation order
 
 1. Initialize an OIDC client through discovery.
-2. Add `/login/anibt`: generate and store `state`, `nonce`, and the PKCE verifier, then redirect to authorization.
+2. Add `/login/anibt`: generate and store `state`, `nonce`, and the PKCE verifier, then redirect to the authorization endpoint.
 3. Add the exact callback route: validate `state`, consume the verifier once, and exchange the code.
 4. Fully validate the ID Token and bind the external account by `(issuer, sub)`.
 5. Read only claims covered by granted scopes; call UserInfo when needed.
@@ -136,7 +136,7 @@ Never use `VITE_*`, `NEXT_PUBLIC_*`, `PUBLIC_*`, or another browser-exposed vari
 
 Ask the AI to provide this evidence without printing secret or token values:
 
-```text
+```text title="AI self-review output"
 OIDC library:
 Issuer/discovery source:
 Client type:
@@ -164,6 +164,6 @@ known limitations:
 - Full Simplified Chinese Wiki: `https://wiki.anibt.net/llms-full.txt`
 - Full English Wiki: `https://wiki.anibt.net/llms-full.en.txt`
 
-```bash
+```bash title="Fetch Markdown"
 curl -H 'Accept: text/markdown' https://wiki.anibt.net/docs/oidc/ai-reference
 ```

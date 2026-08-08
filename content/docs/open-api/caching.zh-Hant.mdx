@@ -10,7 +10,7 @@ AniBT 的公開 RSS 與 catalog API 會按各端點返回共享快取指令；�
 </Callout>
 
 <Callout type="info">
-  按 RFC 7232，`If-None-Match`（ETag）優先於 `If-Modified-Since`。如果你同時發了兩個頭，服務端只看 ETag。建議永遠用 ETag。
+  按 RFC 7232，`If-None-Match`（ETag）優先於 `If-Modified-Since`。同時傳送兩個條件標頭時，服務端只看 ETag。應優先使用 ETag。
 </Callout>
 
 ## 響應頭
@@ -180,7 +180,7 @@ T=900s  U 來（下一次）
   **不是**"使用者會被強制忍受 24 小時舊資料"——而是"如果 origin 當前不可用 / 回源慢，CDN **最多** 用 24 小時內的舊版本兜底，避免給使用者報錯"。
 </Callout>
 
-只要 origin 健康，**你永遠拿到不超過 `s-maxage`（這裡是 10 分鐘）舊的資料**：
+只要 origin 健康，客戶端拿到的資料通常不會舊於 `s-maxage`（本例為 10 分鐘）：
 
 - T=700s：CDN 立即吐 10 分鐘前的版本（你大機率收到 304，無感）
 - T=700s 後幾百毫秒：CDN 已經非同步刷成最新版本
@@ -261,5 +261,5 @@ while True:
 這套寫法滿足：
 
 - 對這些 exact-body 端點，第一次響應快取 ETag 後可在正文未變化時用 304 顯著減少頻寬
-- CDN 給 `STALE` 時你也不知道（也不需要知道），使用者體驗完全相同
-- 觸發 429 自動按 `Retry-After` 退避
+- CDN 返回 `STALE` 時客戶端無需感知，體驗與 HIT 相同
+- 觸發 429 時按 `Retry-After` 自動退避

@@ -1,40 +1,43 @@
 ---
 title: 相關專案
-description: AniBT 周邊的開源專案 —— 字幕字型子集化的 FontInAss、自動做種分流的 AniBT-Speed。
+description: AniBT 周邊開源專案：FontInAss（字幕字型子集化）與 AniBT-Speed（自動做種分流）。
 ---
 
-AniBT 不只是一個站。下面這些專案圍繞"字幕組釋出資源"這件事，分別解決**字型太大**和**做種分散**兩個真實痛點，配合主站使用最順手。
+下列專案與字幕組釋出流程相關，分別處理**字型體積**與**做種頻寬**兩類問題，可與 AniBT 主站配合使用。
 
 ## FontInAss
 
 <ProjectCard
   owner="Yuri-NagaSaki"
   repo="FontInAss"
-  description="字幕字型子集化處理與分享工具：掃描 ASS / SRT 用到的字元，從原字型裡裁出最小可用子集，打包隨片分發，體積可壓到原字型的 1–5%。"
+  description="字幕字型子集化與分享工具：掃描 ASS / SRT 實際用到的字元，從原字型裁出最小可用子集並隨片分發，體積通常可壓到原字型的 1–5%。"
   links={[
     { label: 'font.anibt.net 線上使用', href: 'https://font.anibt.net' },
     { label: 'GitHub 倉庫', href: 'https://github.com/Yuri-NagaSaki/FontInAss' },
   ]}
 />
 
-**為什麼需要子集化**
+**為何需要子集化**
 
-中日字型動輒 10–30 MB，一部 12 集的番壓完字幕字型能比片源還大。子集化掃出 ASS 實際用到的字元，只保留這些字形，常見可壓到 100–500 KB。FontInAss 把這一步從命令列批處理變成視覺化流程，並且**記錄哪些字元被裁掉**，方便後續追加補字。
+中日字型常見體積為 10–30 MB。一部 12 集的番若整包內嵌完整字型，字型體積可能超過片源。子集化只保留字幕實際用到的字形，輸出常見為 100–500 KB。FontInAss 將命令列批處理改為視覺化流程，並**記錄被裁掉的字元**，便於後續補字。
 
 **典型流程**
 
 <Steps>
   <Step>
     ### 上傳 ASS / SRT 與原字型
-    支援批次字幕、多字型；自動識別 `\fn` 欄位。
+
+    支援批次字幕與多字型；自動識別 `\fn` 欄位。
   </Step>
   <Step>
     ### 子集化
-    工具裁出每個字型的最小子集，輸出 `.ttf` / `.otf`。
+
+    為每個字型生成最小子集，輸出 `.ttf` / `.otf`。
   </Step>
   <Step>
     ### 內嵌釋出
-    把子集字型放進 `Fonts/` 子目錄，與字幕一起打進種子；播放器載入即可正確渲染，無需觀眾安裝字型。
+
+    將子集字型放入 `Fonts/` 子目錄，與字幕一併打進種子。播放器載入即可正確渲染，觀眾無需安裝字型。
   </Step>
 </Steps>
 
@@ -43,22 +46,22 @@ AniBT 不只是一個站。下面這些專案圍繞"字幕組釋出資源"這件
 <ProjectCard
   owner="Yuri-NagaSaki"
   repo="AniBT-Speed"
-  description="動漫 BT 的自動做種 / 分流工具：拉取 RSS、自動下載、長期做種，給熱門資源補充上傳頻寬。"
+  description="動漫 BT 自動做種 / 分流工具：拉取 RSS、自動下載、長期做種，為熱門資源補充上傳頻寬。"
   links={[
     { label: 'GitHub 倉庫', href: 'https://github.com/Yuri-NagaSaki/AniBT-Speed' },
   ]}
 />
 
-**它解決什麼**
+**解決什麼問題**
 
-字幕組釋出後頭幾天的熱度爆點，往往會出現"種子在但上傳頻寬不夠"的現象。AniBT-Speed 是一個**自動做種節點**程式：
+字幕組釋出後最初幾天下載需求往往高於可用上傳頻寬。AniBT-Speed 作為**自動做種節點**：
 
 - 訂閱 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或 [`/rss/magnets.xml`](/docs/open-api/other-endpoints)。
-- 自動下載新發布。
-- **長期做種**，不主動刪除，給後來者提供上傳頻寬。
+- 自動下載新釋出。
+- **長期做種**，不主動刪除，為後續下載者提供上傳頻寬。
 
-適合手裡有富餘頻寬的愛好者參與建設公共做種生態。
+適合有富餘頻寬、願意參與公共做種的節點執行。
 
-## 想加一個專案？
+## 新增專案
 
-如果你做了 AniBT 周邊工具（指令碼、客戶端外掛、映象、CLI 等），歡迎在 [wiki 倉庫](https://github.com/AniBT-Net/wiki) 提 PR 把它加到這一頁。
+若維護了 AniBT 周邊工具（指令碼、客戶端外掛、映象、CLI 等），可在 [wiki 倉庫](https://github.com/AniBT-Net/wiki) 提交 PR，將專案加入本頁。

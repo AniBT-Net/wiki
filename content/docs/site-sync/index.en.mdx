@@ -1,6 +1,6 @@
 ---
 title: Site Sync
-description: Configure AniBT release sync for Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, and Nyaa.
+description: Sync AniBT releases to Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, and Nyaa.
 ---
 
 Site sync pushes a release you publish on AniBT to the external sites you have configured, reducing duplicate uploads and manual upkeep.
@@ -27,13 +27,13 @@ Site sync pushes a release you publish on AniBT to the external sites you have c
   <Step>
     ### Save and test the connection
 
-    Save the configuration in AniBT, then test the connection before publishing real releases.
+    Save the configuration in AniBT. Confirm the connection test succeeds before publishing real releases.
   </Step>
 </Steps>
 
 ## Dashboard Workbench
 
-The subtitle group dashboard at `/groups/<slug>/sync` is organized by external site: choose a target and configure its credentials on the left, then review that site's recent sync logs on the right. Multiple sites are not expanded at the same time, so settings and logs stay separated.
+The subtitle group dashboard path `/groups/<slug>/sync` is organized by external site: choose a target and configure its credentials on the left, then review that site's recent sync logs on the right. Only one site expands at a time, so settings and logs stay separated.
 
 Sync logs show the latest 40 entries only and can be filtered by all, success, failed, or pending. Logs are retained for about 14 days for short-term troubleshooting; older entries are cleaned automatically and should not be treated as a long-term audit trail. If the release has been deleted, the log still shows the release ID and deleted state, but retry and resync actions are disabled.
 
@@ -75,7 +75,7 @@ Claim status and cleanup live on the subtitle group's `/groups/<slug>/claims` pa
       type: 'API Token',
     },
     'Nyaa': {
-      description: 'Requires a Nyaa username and password; releases are uploaded through Nyaa API.',
+      description: 'Requires a Nyaa username and password; releases are uploaded through the Nyaa API.',
       type: 'username + password',
     },
   }}

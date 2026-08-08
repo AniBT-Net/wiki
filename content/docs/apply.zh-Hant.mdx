@@ -1,72 +1,75 @@
 ---
 title: 申請入駐
-description: 字幕組以郵件方式提交入駐申請，提供身份資訊後由站務人工審核。
+description: 字幕組透過郵件提交入駐申請；站務人工核驗身份後開通釋出權限。
 ---
 
-AniBT 不開放自助註冊釋出權限。**字幕組**入駐請按下面流程發郵件申請，站務收到後人工審核。審核透過後我們會給你開通釋出賬號、配置字幕組資訊，之後即可使用 [釋出 API](/docs/open-api/releases-publish) 推送資源、並透過 [站點同步](/docs/site-sync) 把釋出同步到其它 BT 站。
+AniBT 不提供自助開通釋出權限。**字幕組**須按下列流程發郵件申請，由站務人工審核。通過後，會在已有普通帳號上綁定字幕組身份並開通釋出能力，之後可使用 [釋出 API](/docs/open-api/releases-publish) 推送資源，並透過 [站點同步](/docs/site-sync) 同步到其它 BT 站。
 
-## 申請要求
+## 申請材料
 
 <Steps>
   <Step>
-    ### 用註冊郵箱傳送
-    請使用您在 AniBT 註冊的郵箱傳送申請郵件。我們會用這個郵箱來核對你確實是該賬號本人，避免冒名申請。
+    ### 使用註冊郵箱傳送
 
-    還沒註冊？先閱讀[賬號、登入與 session](/docs/account-auth)，在站點 [anibt.net](https://anibt.net) 註冊一個普通賬號，再用同一個郵箱來發申請。
+    須使用在 AniBT 註冊時填寫的郵箱傳送申請，用於核對申請人與帳號持有人一致。
+
+    尚未註冊時，先閱讀[帳號、登入與 session](/docs/account-auth)，在 [anibt.net](https://anibt.net) 註冊普通帳號，再用同一郵箱發申請。
   </Step>
   <Step>
     ### 字幕組基本資訊
-    郵件正文請提供：
 
-    - **組名**：完整的字幕組名稱。
-    - **slug**：字幕組的英文識別符號，作為唯一 ID 使用，例如 `sakura-sub`。請儘量簡短、穩定，開通後不易更改（它會出現在 [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) 等公開 URL 裡）。
-    - **簡要介紹**：一兩段說明你們做什麼型別的作品、活躍多久、目前的釋出節奏。
-    - **聯絡方式**：Telegram、官網、Discord、Email 群組等任何可以反向聯絡到字幕組的渠道。
+    郵件正文需包含：
+
+    - **組名**：字幕組完整名稱。
+    - **slug**：簡短、穩定的英文標識，作為唯一 ID（例如 `sakura-sub`）。開通後不宜更改，會出現在 [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) 等公開 URL 中。
+    - **簡要介紹**：一兩段說明作品類型、活躍時長與目前釋出節奏。
+    - **聯絡方式**：Telegram、官網、Discord、郵件群組等可反向聯絡到字幕組的渠道。
   </Step>
   <Step>
-    ### 身份驗證資訊
-    提供任意一項可證明身份的材料即可，**不需要全部**：
+    ### 身份證明（任選一項）
 
-    - 字幕組在 nyaa / 末日站 / Mikan / ACG.rip 等站點已使用的釋出賬號或郵箱（我們會比對）。
-    - 字幕組官方網站 / Telegram 頻道 / Twitter 等公開渠道的管理員證明（例如臨時在頻道置頂一條宣告）。
-    - 已在其它字幕組成員之間被廣泛認可的身份證據。
+    提供下列材料之一即可，**不必全部提供**：
 
-    目的是確認你確實是這個字幕組的成員或負責人，而不是冒用他人名義註冊 slug。
+    - 字幕組在 nyaa / 末日站 / Mikan / ACG.rip 等站點已使用的釋出帳號或郵箱（用於比對）。
+    - 官方網站 / Telegram 頻道 / Twitter 等公開渠道的管理員證明（例如臨時置頂一條宣告）。
+    - 在既有字幕組成員中被廣泛認可的其它身份證據。
+
+    目的是確認申請人代表該字幕組，避免冒用他人名義佔用 slug。
   </Step>
 </Steps>
 
-## 傳送至
+## 傳送地址
 
 <Callout type="info">
-  郵件傳送至 **[support@anibt.net](mailto:support@anibt.net)**，主題建議寫 `字幕組入駐申請 - <組名>`。我們會盡快回復，通常在幾個工作日以內。
+  傳送至 **[support@anibt.net](mailto:support@anibt.net)**。主題建議寫 `字幕組入駐申請 - <組名>`。通常在幾個工作日內回覆。
 </Callout>
 
-如果一週內沒收到任何回覆（含垃圾箱），可以再發一次或透過 [其他聯絡方式](/docs/contact) 提醒我們。
+若一週內未收到回覆（請同時檢查垃圾郵件箱），可再發一次，或透過 [其他聯絡方式](/docs/contact) 提醒站務。
 
-## 審核透過後
+## 審核通過後
 
-我們會回郵件確認開通，並在你的賬號上：
+站務會郵件確認開通，並在帳號上完成：
 
-- 繫結字幕組身份與 slug。
-- 開通 [釋出 API](/docs/open-api/releases-publish) 的訪問權限（生成 API Key）。
-- 你的字幕組會在站點列表與 [字幕組 RSS](/docs/open-api/other-endpoints) 中可見。
+- 綁定字幕組身份與 slug。
+- 開通 [釋出 API](/docs/open-api/releases-publish) 訪問權限（生成 API Key）。
+- 字幕組出現在站點列表與 [字幕組 RSS](/docs/open-api/other-endpoints) 中。
 
-接下來建議依次閱讀：
+建議繼續閱讀：
 
 <Cards>
   <Card
     title="站點同步設定"
     href="/docs/site-sync"
-    description="把 AniBT 上的釋出同步到 nyaa / 萌番組 / 末日站等。"
+    description="將 AniBT 上的釋出同步到 nyaa / 萌番組 / 末日站等。"
   />
   <Card
     title="釋出 API"
     href="/docs/open-api/releases-publish"
-    description="POST /api/releases/publish — 用 API 直接推送種子。"
+    description="POST /api/releases/publish — 以 API 推送種子。"
   />
   <Card
     title="Tracker 地址"
     href="/docs/tracker"
-    description="制種時使用的 announce URL。"
+    description="製種時使用的 announce URL。"
   />
 </Cards>

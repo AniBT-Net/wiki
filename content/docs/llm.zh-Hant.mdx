@@ -1,9 +1,9 @@
 ---
 title: LLM 對接
-description: AniBT 提供 llms.txt、llms-full.txt、每頁 Markdown 端點與 HTTP Markdown 內容協商，方便外部 LLM / Agent / RAG 系統讀取公開內容。
+description: AniBT 提供 llms.txt、llms-full.txt、每頁 Markdown 端點與 HTTP Markdown 內容協商，供 LLM / Agent / RAG 讀取公開內容。
 ---
 
-AniBT Wiki 內容全部對外暴露成 LLM 友好的 Markdown 資源，AniBT 公開 HTML 頁面也支援按請求即時轉換。你可以用 ChatGPT / Claude / Cursor / 自建 RAG 系統直接拉取內容當上下文。
+AniBT Wiki 以 LLM 友好的 Markdown 形式對外暴露；AniBT 公開 HTML 頁面也支援按請求即時轉換為 Markdown。可用於 ChatGPT / Claude / Cursor / 自建 RAG 等場景拉取上下文。
 
 ## 端點一覽
 
@@ -11,22 +11,22 @@ AniBT Wiki 內容全部對外暴露成 LLM 友好的 Markdown 資源，AniBT 公
   <Card
     title="/llms.txt"
     href="/llms.txt"
-    description="按 llmstxt.org 標準生成的索引：Wiki 標題 + 全部頁面的連結列表。"
+    description="按 llmstxt.org 標準生成的索引：Wiki 標題 + 全部頁面連結列表。"
   />
   <Card
     title="/llms-full.txt"
     href="/llms-full.txt"
-    description="把 zh-CN 全部頁面拼成一份 Markdown 大檔案，可一次性扔給 LLM。"
+    description="將 zh-CN 全部頁面拼成一份 Markdown 檔案，可一次性載入 LLM。"
   />
   <Card
     title="/llms-full.en.txt"
     href="/llms-full.en.txt"
-    description="同上，英文版。餵給國際模型時優先用這個。"
+    description="同上，英文版。向國際模型提供上下文時優先使用。"
   />
   <Card
     title="<page>.md"
     href="/zh-CN/docs/open-api.md"
-    description="任意一篇文件加 .md 字尾就能拿到它的純 Markdown 源，例：/zh-CN/docs/open-api.md"
+    description="任意文件路徑加 .md 字尾即可取得純 Markdown 源，例如 /zh-CN/docs/open-api.md。"
   />
   <Card
     title="Accept: text/markdown"
@@ -44,37 +44,37 @@ curl 'https://anibt.net/anime/638151' \
   -H 'Accept: text/markdown'
 ```
 
-成功響應會使用 `Content-Type: text/markdown; charset=utf-8`，並包含：
+成功響應使用 `Content-Type: text/markdown; charset=utf-8`，並包含：
 
 - `Vary: accept`：HTML 與 Markdown 使用不同快取變體。
 - `x-markdown-tokens`：轉換後 Markdown 的估算 token 數。
 - `x-original-tokens`：轉換前 HTML 的估算 token 數。
 - `Content-Signal: ai-train=yes, search=yes, ai-input=yes`：目前公開內容允許用於 AI 訓練、搜尋與 Agent 輸入。
 
-只會轉換 HTML。JSON API、RSS/XML、圖片與 R2 物件仍保持原本的內容類型。即時轉換會移除腳本、樣式、導覽等非正文內容，但頁面若同時渲染多套響應式 DOM，結果仍可能出現重複區塊；抓取 Wiki 文件時優先使用上面的靜態 `.md` 或 `llms-full.*` 端點。
+僅轉換 HTML。JSON API、RSS/XML、圖片與 R2 物件保持原內容類型。即時轉換會移除腳本、樣式、導覽等非正文內容；若頁面同時渲染多套響應式 DOM，結果仍可能出現重複區塊。抓取 Wiki 文件時優先使用上方靜態 `.md` 或 `llms-full.*` 端點。
 
 ## 用法示例
 
-### ChatGPT / Claude / Gemini 的 Web UI
+### ChatGPT / Claude / Gemini Web UI
 
-直接把 URL 貼進對話即可：
+將 URL 貼進對話即可：
 
 ```txt
-請基於這份文件回答我後續的問題：
+請基於這份文件回答後續問題：
 https://anibt.net/llms-full.en.txt
 ```
 
-模型會拉取並把整份文件進上下文。`llms-full.en.txt` ~80 KB，對主流大模型來說一次喂完沒問題。
+模型會拉取並將整份文件載入上下文。`llms-full.en.txt` 約 80 KB，主流大模型可一次完整載入。
 
 ### Cursor / Continue / Cline 等 IDE Agent
 
-把 `.md` 端點配成"自定義文件"。Cursor 的 `@Docs` 也吃這種格式：
+將 `.md` 端點設定為自訂文件。Cursor 的 `@Docs` 也支援該格式：
 
 ```txt
 https://anibt.net/llms.txt
 ```
 
-它會自動展開索引、按需抓取每篇 `.md`。
+Agent 會展開索引，並按需抓取每篇 `.md`。
 
 ### RAG / 自建 pipeline
 
@@ -90,35 +90,35 @@ for path in urls:
     if not path.startswith('/docs'):
         continue
     md = requests.get(f'{base}/zh-CN{path}.md').text
-    # → 喂進你的 chunker / embedder
+    # → 餵進 chunker / embedder
 ```
 
-如果你只關心英文，把語言段換成 `/en` 即可（預設 zh-CN 不帶字首，英文是 `/en`，繁體是 `/zh-Hant`）。
+僅需英文時將語言段換為 `/en`（預設 zh-CN 無前綴；英文為 `/en`，繁體為 `/zh-Hant`）。
 
 ## 端點對比
 
 | 端點                    | 內容                            | 推薦用途                          |
 | ----------------------- | ------------------------------- | --------------------------------- |
-| `/llms.txt`             | 站點目錄 + 連結（數 KB）         | 給 Agent 當 sitemap，按需抓取     |
-| `/llms-full.txt`        | 全部 zh-CN 內容（約 80 KB）     | 一次性喂中文 LLM                   |
-| `/llms-full.en.txt`     | 全部英文內容                    | 喂國際 LLM / 寫英文回答           |
+| `/llms.txt`             | 站點目錄 + 連結（數 KB）         | 給 Agent 作 sitemap，按需抓取     |
+| `/llms-full.txt`        | 全部 zh-CN 內容（約 80 KB）     | 一次性載入中文 LLM                |
+| `/llms-full.en.txt`     | 全部英文內容                    | 國際 LLM / 英文回答               |
 | `/<lang>/docs/<slug>.md`| 單頁源 Markdown                | 精準引用某一篇                    |
 | `Accept: text/markdown` | 任意公開 HTML 頁的即時轉換      | Agent 臨時抓取站點公開頁面         |
 
 <Callout type="info">
-  `llms.txt`、`llms-full.*` 與單頁 `.md` 是**純靜態產物**，快取 1 年（`Cache-Control: s-maxage=31536000`）。Wiki 更新發布後會重新構建，幾分鐘內端點跟著更新。`Accept: text/markdown` 即時轉換則沿用原 HTML 頁面的快取策略。
+  `llms.txt`、`llms-full.*` 與單頁 `.md` 為**純靜態產物**，快取 1 年（`Cache-Control: s-maxage=31536000`）。Wiki 更新發布後會重新構建，通常幾分鐘內端點隨之更新。`Accept: text/markdown` 即時轉換沿用原 HTML 頁面的快取策略。
 </Callout>
 
 ## 內容覆蓋
 
-`/llms.txt` 與 `/llms-full.*` 的來源就是你正在看的這份 Wiki：
+`/llms.txt` 與 `/llms-full.*` 的來源即本 Wiki，包括：
 
 - 站點同步流程
 - [公開 API](/docs/open-api)（RSS / JSON / 快取 / 限流 / 故障排查）
 - [Tracker 地址](/docs/tracker)
 - [相關專案](/docs/projects)
 
-任何一篇 Wiki 頁面都可以加 `.md` 拿到源。例如：
+任意 Wiki 頁面均可加 `.md` 取得源檔。例如：
 
 ```txt
 原始頁面     https://anibt.net/zh-CN/docs/open-api/rss-anime
@@ -127,4 +127,4 @@ Markdown 源  https://anibt.net/zh-CN/docs/open-api/rss-anime.md
 
 ## 協議與署名
 
-文件採用 CC-BY-SA。在 LLM / Agent / RAG 輸出裡引用時，**保留指向原頁面的連結**即可。
+文件採用 CC-BY-SA。在 LLM / Agent / RAG 輸出中引用時，**保留指向原頁面的連結**即可。

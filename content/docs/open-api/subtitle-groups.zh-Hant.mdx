@@ -1,12 +1,17 @@
 ---
 title: 字幕組目錄
-description: GET /api/subtitle-groups —— 公開字幕組列表，第三方應用拼 RSS 前先拉這一份做 name → slug 對映。
+description: GET /api/subtitle-groups —— 公開字幕組列表；拼 RSS 前先拉一份做 name → slug 對應。
 ---
 
-`/api/subtitle-groups` 返回站內所有可見字幕組的 **slug、展示名、釋出數與番劇數**。第三方應用應在啟動時呼叫一次，把響應快取到本地，再走 RSS。
+`/api/subtitle-groups` 返回站內所有可見字幕組的 **slug、展示名、釋出數與番劇數**。第三方應用宜在啟動時呼叫一次，將回應快取到本機後再拼 RSS。
+
+## 前置條件
+
+- 無需鑑權。
+- 建議請求時攜帶 `Accept: application/json`。
 
 <Callout type="info">
-  資料極少變化，幾乎全部命中 304。配合 `If-None-Match` 輪詢頻寬接近零。
+  資料極少變化，多數輪詢會命中 304。配合 `If-None-Match` 時頻寬接近可忽略。
 </Callout>
 
 ## 請求
@@ -16,7 +21,7 @@ GET https://anibt.net/api/subtitle-groups
 Accept: application/json
 ```
 
-## 響應（節選）
+## 成功回應（節選）
 
 ```jsonc title="200 OK"
 {
@@ -58,11 +63,11 @@ Accept: application/json
 <TypeTable
   type={{
     'slug': {
-      description: 'URL 安全的穩定標識，用於所有 RSS 端點的 groupSlug 引數。',
+      description: 'URL 安全的穩定標識，用於所有 RSS 端點的 groupSlug 參數。',
       type: 'string',
     },
     'name': {
-      description: '展示名（中英不限，可能隨運營調整）。',
+      description: '展示名（中英不限，可能隨營運調整）。',
       type: 'string',
     },
     'organizationId': {
@@ -70,11 +75,11 @@ Accept: application/json
       type: 'string',
     },
     'status': {
-      description: 'ACTIVE / HIDDEN 等；本介面只返回可見的。',
+      description: 'ACTIVE / HIDDEN 等；本介面只返回可見項。',
       type: 'enum',
     },
     'totalReleases': {
-      description: '字幕組總髮布數（聚合統計，秒級新鮮）。',
+      description: '字幕組總釋出數（聚合統計，秒級新鮮）。',
       type: 'number',
     },
     'totalAnimes': {
@@ -94,7 +99,7 @@ Accept: application/json
 
 ## 304 支援
 
-ETag 形如 `W/"anibt-sha256-{64 lowercase hex}"`，由最終 JSON UTF-8 bytes 計算。再次請求帶匹配的 `If-None-Match` 即拿 304；目前省略 `Last-Modified`。
+ETag 形如 `W/"anibt-sha256-{64 lowercase hex}"`，由最終 JSON UTF-8 bytes 計算。再次請求時帶上匹配的 `If-None-Match` 即返回 304；目前省略 `Last-Modified`。
 
 ```bash title="驗證 304"
 H=$(curl -sI "https://anibt.net/api/subtitle-groups")
@@ -107,7 +112,7 @@ curl -sI -H "If-None-Match: $ETAG" "https://anibt.net/api/subtitle-groups" | hea
 
 ```bash title="挑 4 個組"
 curl -s https://anibt.net/api/subtitle-groups \
-  | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕組|撥雪尋春")) | {name, slug}'
+  | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕组|拨雪寻春")) | {name, slug}'
 ```
 
 輸出：
@@ -115,16 +120,16 @@ curl -s https://anibt.net/api/subtitle-groups \
 ```json title="結果"
 {"name":"Kirara Fantasia","slug":"kirara-fantasia"}
 {"name":"Prejudice-Studio","slug":"pre-s"}
-{"name":"北宇治字幕組","slug":"kitauji-sub"}
-{"name":"撥雪尋春","slug":"haruhana"}
+{"name":"北宇治字幕组","slug":"kitauji-sub"}
+{"name":"拨雪寻春","slug":"haruhana"}
 ```
 
 ## 快取與限流
 
-| 專案         | 值                                                        |
+| 項目         | 值                                                        |
 | ------------ | --------------------------------------------------------- |
 | `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400` |
 | 速率限制     | 與 RSS 端點共用 60 秒視窗，詳見 [限流與上限](/docs/open-api/limits) |
 | 條件請求     | 支援 `If-None-Match`；目前省略 `Last-Modified`             |
 
-下一步：拿到 slug 後，去[ RSS 主入口](/docs/open-api/rss-anime)拼訂閱 URL。
+下一步：拿到 slug 後，去 [RSS 主入口](/docs/open-api/rss-anime) 拼訂閱 URL。

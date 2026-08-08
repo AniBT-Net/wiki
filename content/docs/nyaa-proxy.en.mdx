@@ -1,18 +1,18 @@
 ---
 title: Nyaa proxy publishing
-description: Allowlisted subtitle groups can ask AniBT to submit releases to Nyaa after publishing on the site.
+description: Allowlisted subtitle groups can ask AniBT to submit the same release to Nyaa when publishing on the site.
 ---
 
-Nyaa proxy publishing lets an allowlisted subtitle group submit a release to Nyaa while publishing it on AniBT.
+Nyaa proxy publishing is for allowlisted subtitle groups: when publishing a release on AniBT, the same release can also be submitted to Nyaa.
 
 The platform Nyaa account is maintained by admins in the backend. Groups only need allowlist approval and must provide a compliant torrent plus publish parameters.
 
 <Callout type="warn">
   <strong className="text-red-600 dark:text-red-400">Groups publishing supersampled or upscaled releases cannot apply for the allowlist.</strong>
 
-  You should have at least 10 cumulative releases on AniBT or other BT sites. If you have fewer than 10 releases but still want to publish to Nyaa, you may apply case by case, but the submitted release will go through manual review.
+  At least 10 cumulative releases on AniBT or other BT sites are required. With fewer than 10 releases, case-by-case applications are still possible, but the submitted release goes through manual review.
 
-  (*You must provide related images proving the release is self-made, plus screenshots of your BT publishing record.)
+  (*Provide images proving the release is self-made, plus screenshots of the BT publishing record.)
 </Callout>
 
 ## Requirements
@@ -20,7 +20,7 @@ The platform Nyaa account is maintained by admins in the backend. Groups only ne
 <TypeTable
   type={{
     'Group allowlist': {
-      description: 'An admin must add the subtitle group to the Nyaa proxy allowlist. Without allowlist access, the publish page will not show the proxy switch and API requests are rejected.',
+      description: 'An admin must add the subtitle group to the Nyaa proxy allowlist. Without allowlist access, the publish page does not show the proxy switch and API requests are rejected.',
       type: 'required',
     },
     'Nyaa tracker': {
@@ -32,17 +32,17 @@ The platform Nyaa account is maintained by admins in the backend. Groups only ne
       type: 'required',
     },
     'Nyaa description': {
-      description: 'By default, the Nyaa description inherits AniBT release notes. You can override it from the web form or API request.',
+      description: 'By default, the Nyaa description inherits AniBT release notes. Override it from the web form or API request when needed.',
       type: 'Markdown',
     },
   }}
 />
 
 <Callout type="warn">
-  Proxy publishing does not modify your torrent. Add `http://nyaa.tracker.wf:7777/announce` when creating the torrent, otherwise AniBT rejects the Nyaa submission before it is queued.
+  Proxy publishing does not modify the torrent. Add `http://nyaa.tracker.wf:7777/announce` when creating the torrent; otherwise AniBT rejects the Nyaa submission before it is queued.
 </Callout>
 
-Nyaa categories must be sent with the official Nyaa category codes. See [Nyaa proxy fields in Publish a release](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories) for the full category table, field aliases, and API parameter meanings.
+Nyaa categories must use official Nyaa category codes. See [Nyaa proxy fields in Publish a release](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories) for the full category table, field aliases, and API parameter meanings.
 
 ## Publish methods
 
@@ -107,7 +107,7 @@ Nyaa categories must be sent with the official Nyaa category codes. See [Nyaa pr
       -F 'nyaaDescription=Optional Markdown description for Nyaa'
     ```
 
-    See [Publish other releases](/en/docs/open-api/other-releases-publish#nyaa-proxy-publishing) for the full other release parameter list.
+    See [Publish other releases](/en/docs/open-api/other-releases-publish#nyaa-proxy-publishing) for the full other-release parameter list.
   </Tab>
 </Tabs>
 
@@ -116,7 +116,7 @@ Nyaa categories must be sent with the official Nyaa category codes. See [Nyaa pr
 <TypeTable
   type={{
     'Nyaa Sync': {
-      description: 'The group saves its own Nyaa username and password in site sync settings. After publishing, AniBT syncs through Nyaa API using that account.',
+      description: 'The group saves its own Nyaa username and password in site sync settings. After publishing, AniBT syncs through the Nyaa API using that account.',
       type: 'own account',
     },
     'Nyaa proxy publishing': {

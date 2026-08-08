@@ -5,12 +5,14 @@ description: DELETE /api/releases/{releaseId} 与 GET /api/releases/{releaseId}/
 
 `DELETE /api/releases/{releaseId}` 用于删除一个 AniBT 番剧发布；`GET /api/releases/{releaseId}/deletion` 用于查询同一删除操作的状态。两个端点都只接受字幕组 API Key，并要求 `releases:delete` scope。
 
+## 前置条件
+
+- 字幕组 API Key 已显式包含 `releases:delete`。
+- V1 只支持 `rel_*` 番剧发布；`orel_*` 其他类资源不在此接口范围内。
+- Key 永远绑定签发它的字幕组，不能跨组删除。
+
 <Callout type="warn">
   删除是破坏性异步操作。`202 Accepted` 只表示删除已被可靠接受；只有回执进入 `completed`，才表示 AniBT 自有的主记录、公开读模型、缓存和对象存储已经通过删除屏障。
-</Callout>
-
-<Callout type="info">
-  V1 只支持 `rel_*` 番剧发布。`orel_*` 其他类资源不在此接口范围内。
 </Callout>
 
 ## 端点
@@ -240,7 +242,7 @@ jq . <<<"$response"
 
 如果历史数据中同一个 torrent 或 MediaInfo 对象仍被另一条 live release 引用，删除会在 canonical mutation 前返回 `409 CONFLICT`，`reason=RELEASE_OBJECT_SHARED`；不会删除 release 或共享对象。
 
-## 错误响应
+## 失败响应
 
 | HTTP | `code` / 原因 | 处理 |
 | --- | --- | --- |
@@ -260,7 +262,7 @@ jq . <<<"$response"
 - 默认认证限流：`DELETE` 30 次 / 60 秒 / API Key；状态 `GET` 120 次 / 60 秒 / API Key。
 - 另有请求进入认证前的防滥用窗口；其细节不应用作客户端吞吐配额。
 - `429` 返回 `Retry-After`。
-- 成功和错误响应均为 `private, no-store`；不要缓存删除回执。
+- 成功与失败响应均为 `private, no-store`；不要缓存删除回执。
 - CORS 允许 `GET, DELETE, OPTIONS`，并暴露 `Location`、`Retry-After`、`WWW-Authenticate`、`X-Request-ID`。
 
 下一步：用 [`/api/subtitle-groups/me`](/docs/open-api/me) 检查 Key scope；发布接口见 [发布资源](/docs/open-api/releases-publish)。

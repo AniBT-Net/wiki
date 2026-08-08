@@ -1,6 +1,6 @@
 ---
 title: 除錯與常見問題
-description: 一行 curl 除錯 + RSS 接入常見問題解答。
+description: 一行 curl 除錯，以及 RSS 接入常見問題。
 ---
 
 ## 除錯快查
@@ -29,7 +29,7 @@ description: 一行 curl 除錯 + RSS 接入常見問題解答。
   <Tab value="查目標字幕組">
     ```bash title="按名字過濾"
     curl -s https://anibt.net/api/subtitle-groups \
-      | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕組|撥雪尋春")) | {name, slug}'
+      | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕组|拨雪寻春")) | {name, slug}'
     ```
   </Tab>
 </Tabs>
@@ -40,65 +40,63 @@ description: 一行 curl 除錯 + RSS 接入常見問題解答。
   <Accordion title="slug 和 organizationId 有什麼區別？">
     `slug` 是公開 URL 用的穩定字串；`organizationId` 是內部主鍵。**第三方一律用 `slug`。**
   </Accordion>
-  <Accordion title="為什麼我的 If-Modified-Since 沒生效？">
-    按 RFC 7232，**ETag（`If-None-Match`）優先**。如果你同時發了兩個頭，服務端只看 ETag。建議永遠用 ETag。
+  <Accordion title="為什麼 If-Modified-Since 沒生效？">
+    按 RFC 7232，**ETag（`If-None-Match`）優先**。同時傳送兩個條件標頭時，服務端只看 ETag。應優先使用 ETag。
   </Accordion>
   <Accordion title="為什麼 RSS 返回 308、400、403 或 429？">
-    僅原始 query 參數對順序不同會直接返回同一規範 `200`。`308` 表示仍有其它規範化差異，例如顯式 `limit=100`、相容別名、大小寫/空白/編碼變化；請跟隨重新導向並保存最終 URL。`400 + no-store` 表示參數違反公開契約：`limit` 必須是單個 `1..100` 整數；`q`/`search` 合計只能一個值，規範化後不能為空、不能含控制字元且最多 160 UTF-8 bytes。生產 Cloudflare 可能在應用前用 `403` 攔截非法 limit。`429` 只保護真正穿透快取的新高基數搜尋 MISS；按 `Retry-After` 退避即可。
+    僅原始 query 參數對順序不同會直接返回同一規範 `200`。`308` 表示存在其他規範化差異，例如顯式 `limit=100`、相容別名、大小寫/空白/編碼變化；應跟隨跳轉並儲存最終 URL。`400 + no-store` 表示參數違反公開契約：`limit` 必須是單個 `1..100` 整數；`q`/`search` 合計只能一個值，規範化後不能為空、不能含控制字元且最多 160 UTF-8 bytes。生產 Cloudflare 可能在應用前用 `403` 攔截非法 limit。`429` 只保護真正穿透快取的新高基數搜尋 MISS；按 `Retry-After` 退避即可。
   </Accordion>
   <Accordion title="episode=5 會匹配 episodeKey='05' 嗎？">
-    是的，二者都會過濾；但 `episode` 是數字精確匹配，`episodeKey` 是字串原樣匹配。合集請用 `episodeKey=BATCH`。
+    會。二者都會過濾；但 `episode` 是數字精確匹配，`episodeKey` 是字串原樣匹配。合集請用 `episodeKey=BATCH`。
   </Accordion>
-  <Accordion title="我想知道某個 release 的種子直鏈怎麼辦？">
-    RSS 裡 `<enclosure url>` 已經是可直接餵給 BT 客戶端的磁力 URL（帶預設 tracker），`<torrent>` 元素裡也帶 infoHash。
+  <Accordion title="如何取得某個 release 的種子直鏈？">
+    RSS 裡 `<enclosure url>` 已是可直接餵給 BT 客戶端的磁力 URL（帶預設 tracker），`<torrent>` 元素裡也帶 infoHash。
   </Accordion>
   <Accordion title="介面會變嗎？">
-    路徑、欄位和規範參數會保持穩定；但為保護公共服務，安全上限與非法輸入處理可能收緊並在 changelog 公告。客戶端應遵守目前文件、跟隨 308、處理 400/403/429，而不是依賴靜默截斷。`slug` 一旦釋出也儘量保持穩定。
+    路徑、欄位和規範參數會保持穩定；為保護公共服務，安全上限與非法輸入處理可能收緊並在 changelog 公告。客戶端應遵守目前文件、跟隨 308、處理 400/403/429，而不是依賴靜默截斷。`slug` 一旦釋出也儘量保持穩定。
   </Accordion>
-  <Accordion title="為什麼我配置了極嚴格的過濾後返回數量很少？">
-    `/rss/anime.xml` 現在由 Web runtime + Typesense 生成，解析度、語言、格式、字幕方式等 Tag 會盡量下推到 Typesense filter。極嚴格過濾時返回少通常表示真實匹配少；如果後過濾視窗不足以保證結果完整，服務端會返回 `503`，不會回退 Convex 掃庫。詳見 [限流與上限](/docs/open-api/limits)。
+  <Accordion title="為什麼設定了極嚴格的過濾後返回數量很少？">
+    `/rss/anime.xml` 由 Web runtime + Typesense 產生，解析度、語言、格式、字幕方式等 Tag 會儘量下推到 Typesense filter。極嚴格過濾時返回少通常說明真實匹配少；如果後過濾視窗不足以保證結果完整，服務端會返回 `503`，不會回退 Convex 掃庫。詳見 [限流與上限](/docs/open-api/limits)。
   </Accordion>
   <Accordion title="新發的種子多久能在 RSS 裡看到？">
-    釋出介面的 `200 OK` 表示寫入已接受，不是同步可見性確認。站點側重新整理由 Typesense 完成、不可變快照釋出、Redis 嚴格預熱和 Edge CDN purge 事件驅動，不需要等滿 120 秒 TTL；運維上，publication pending 超過 15 秒就進入告警檢查。你在 RSS 閱讀器裡實際看到的時間還要加上客戶端自己的 5–10 分鐘輪詢間隔。詳見 [HTTP 快取與 304](/docs/open-api/caching)。
+    釋出介面的 `200 OK` 表示寫入已接受，不是同步可見性確認。站點側重新整理由 Typesense 完成、不可變快照釋出、Redis 嚴格預熱和 Edge CDN purge 事件驅動，不需要等滿 120 秒 TTL；運維上，publication pending 超過 15 秒會進入告警檢查。閱讀器側實際看到的時間還要加上客戶端自己的 5–10 分鐘輪詢間隔。詳見 [HTTP 快取與 304](/docs/open-api/caching)。
   </Accordion>
   <Accordion title="為什麼 DELETE 返回 202，而不是立刻 200？">
-    `202 Accepted` 表示刪除已被可靠接受，但 Typesense、列表/RSS、Redis、Cloudflare 和 R2 的嚴格清理屏障仍在執行。保存 `operationId`，按 `Location` / `statusUrl` 請求 `GET /api/releases/{releaseId}/deletion`，並遵守 `Retry-After`。重複 DELETE 是冪等的，會返回同一回執；只有 `state=completed` 才表示 AniBT 自有公開面已完成不可見性證明。詳見 [刪除番劇釋出](/docs/open-api/releases-delete)。
+    `202 Accepted` 表示刪除已被可靠接受，但 Typesense、列表/RSS、Redis、Cloudflare 和 R2 的嚴格清理屏障仍在執行。儲存 `operationId`，按 `Location` / `statusUrl` 請求 `GET /api/releases/{releaseId}/deletion`，並遵守 `Retry-After`。重複 DELETE 是冪等的，會返回同一回執；只有 `state=completed` 才表示 AniBT 自有公開面已經完成不可見性證明。詳見 [刪除番劇釋出](/docs/open-api/releases-delete)。
   </Accordion>
-  <Accordion title="API Key 明明有效，為什麼刪除返回 403？">
-    刪除和狀態查詢都要求 `releases:delete`。scope 上線前建立的舊 Key 被安全遷移為僅 `releases:publish`，不會自動獲得刪除權。呼叫 [`GET /api/subtitle-groups/me`](/docs/open-api/me) 檢查 `scopes`，再建立或改用明確包含 `releases:delete` 的 Key。缺少 scope 會在資源查詢前返回 `403 INSUFFICIENT_SCOPE`；有 scope 但無權存取目標時，則與不存在資源一樣返回 404。
+  <Accordion title="API Key 有效，為什麼刪除返回 403？">
+    刪除和狀態查詢都要求 `releases:delete`。scope 上線前建立的舊 Key 被安全遷移為僅 `releases:publish`，不會自動獲得刪除權。呼叫 [`GET /api/subtitle-groups/me`](/docs/open-api/me) 檢查 `scopes`，再建立或改用顯式包含 `releases:delete` 的 Key。缺 scope 會在資源查詢前返回 `403 INSUFFICIENT_SCOPE`；有 scope 但無權存取目標時則與不存在資源一樣返回 404。
   </Accordion>
   <Accordion title="刪除 completed 後，外站、Tracker 和本機快取也會消失嗎？">
     不會全部消失。`completed` 覆蓋 AniBT 自有 canonical 記錄、詳情/種子讀取、Typesense 搜尋與列表、magnets、公開/訂閱 RSS、Redis、Cloudflare CDN 和捕獲的 R2 物件。它不召回已經開啟或被瀏覽器/RSS 客戶端快取的內容、已經下載的 torrent/magnet，不修改 Tracker swarm/白名單，也不撤回 Nyaa、Mikan、DMHY 等外站帖子；這些是獨立流程。
   </Accordion>
   <Accordion title="為什麼狀態碼、generatedAt 或 cf-cache-status 都正常，正文卻還是舊的？">
-    這些欄位只表示請求和某一層快取成功，不能證明觸發釋出的資源已經進入響應。請直接在詳情頁及對應 RSS / magnets 正文中檢查返回的 `releaseId`，並同時記錄 ETag / Last-Modified。運維側再對比 snapshot queue age、publication pending age 與 `snapshot_redis_warm.completed.latencyMs`：queue age 高但 warm latency 低，應該處理排程或 backlog，而不是加長 Redis TTL。不要等待下一次無關釋出「順便重新整理」。
+    這些欄位只說明請求和某一層快取成功，不能證明觸發釋出的資源已經進入回應。應直接在詳情頁及對應 RSS / magnets 正文中檢查返回的 `releaseId`，並同時記錄 ETag / Last-Modified。運維側再對比 snapshot queue age、publication pending age 與 `snapshot_redis_warm.completed.latencyMs`：queue age 高但 warm latency 低，應處理排程或 backlog，而不是加長 Redis TTL。不要等待下一次無關釋出「順便重新整理」。
   </Accordion>
 </Accordions>
 
 ## 接入 checklist
 
-最後過一遍：
-
 <Steps>
   <Step>
     ### 啟動時拉一次 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups)
-    本地快取 `name → slug` 對映，避免硬編碼 slug。
+    本機快取 `name → slug` 對應，避免硬編碼 slug。
   </Step>
   <Step>
     ### 用 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或短鏈訂閱
     優先 `bgmId + groupSlug` 組合；不需要過濾時用 `/rss/group/<slug>.xml`。
   </Step>
   <Step>
-    ### 永遠帶 If-None-Match
-    快取上次響應的 `ETag`，下次請求帶 `If-None-Match`，詳見 [HTTP 快取與 304](/docs/open-api/caching)。
+    ### 始終帶 If-None-Match
+    快取上次回應的 `ETag`，下次請求帶 `If-None-Match`，詳見 [HTTP 快取與 304](/docs/open-api/caching)。
   </Step>
   <Step>
-    ### 跟隨 308 並保存規範 URL
-    不要反覆請求會重新導向的舊參數形式；使用客戶端最終 URL 作為後續輪詢鍵。
+    ### 跟隨 308 並儲存規範 URL
+    不要反覆請求會跳轉的舊參數形式；使用客戶端最終 URL 作為後續輪詢鍵。
   </Step>
   <Step>
     ### 間隔 ≥ 5 分鐘
-    更短沒收益，且容易觸發 429。
+    更短沒有收益，且容易觸發 429。
   </Step>
   <Step>
     ### 見 429 用 Retry-After 退避

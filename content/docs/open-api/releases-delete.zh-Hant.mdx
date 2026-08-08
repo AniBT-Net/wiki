@@ -5,12 +5,14 @@ description: DELETE /api/releases/{releaseId} 與 GET /api/releases/{releaseId}/
 
 `DELETE /api/releases/{releaseId}` 用於刪除一個 AniBT 番劇釋出；`GET /api/releases/{releaseId}/deletion` 用於查詢同一刪除操作的狀態。兩個端點都只接受字幕組 API Key，並要求 `releases:delete` scope。
 
+## 前置條件
+
+- 字幕組 API Key 已顯式包含 `releases:delete`。
+- V1 只支援 `rel_*` 番劇釋出；`orel_*` 其他類資源不在此介面範圍內。
+- Key 永遠綁定簽發它的字幕組，不能跨組刪除。
+
 <Callout type="warn">
   刪除是破壞性非同步操作。`202 Accepted` 只表示刪除已被可靠接受；只有回執進入 `completed`，才表示 AniBT 自有的主記錄、公開讀取模型、快取和物件儲存已通過刪除屏障。
-</Callout>
-
-<Callout type="info">
-  V1 只支援 `rel_*` 番劇釋出。`orel_*` 其他類資源不在此介面範圍內。
 </Callout>
 
 ## 端點

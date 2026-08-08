@@ -1,12 +1,12 @@
 ---
 title: Mikan（蜜柑計畫）同步
-description: 在 AniBT 中填寫蜜柑計畫同步所需 API Token、字幕組 ID 和釋出組 ID。
+description: 填寫蜜柑計畫同步所需的 API Token；AniBT 可自動查詢字幕組 ID 與釋出組 ID。
 ---
 
-蜜柑計畫同步只需要 **API Token**，AniBT 會用它自動查詢字幕組 ID 與釋出組 ID。
+蜜柑計畫同步通常只需 **API Token**。AniBT 使用該 Token 自動查詢字幕組 ID 與釋出組 ID。
 
 <Callout type="info">
-  通常**只需 API Token** 即可——AniBT 會自動查詢 ID。本頁末尾給出手動取得 ID 的方法，僅供需要時參考。
+  通常只需填寫 API Token。AniBT 會自動查詢 ID。本頁末尾提供手動取得 ID 的方法，供自動查詢失敗時參考。
 </Callout>
 
 ## 操作步驟
@@ -18,14 +18,14 @@ description: 在 AniBT 中填寫蜜柑計畫同步所需 API Token、字幕組 I
     在 [https://mikanani.me](https://mikanani.me) 登入後，點選右上角 **帳號設定** → **個人中心** → **編輯資料**，在 **基本資料** 下找到 **API Token**。
 
     <Callout type="info">
-      如果沒有看到 API Token，點選右邊的 **生成**。
+      如果沒有看到 API Token，點選右側的 **生成**。
     </Callout>
   </Step>
 
   <Step>
     ### 在 AniBT 中儲存 Token
 
-    複製 API Token，貼上到 AniBT 的蜜柑計畫同步設定裡，點選 **儲存**。
+    複製 API Token，貼上到 AniBT 的蜜柑計畫同步設定中，點選 **儲存**。
 
     ![蜜柑計畫 API Token 與 ID 查詢](/images/site-sync/mikan-api-token.webp)
   </Step>
@@ -33,13 +33,13 @@ description: 在 AniBT 中填寫蜜柑計畫同步所需 API Token、字幕組 I
   <Step>
     ### 自動查詢 ID
 
-    點選 **【從蜜柑查詢「XXXXXX」的 ID】** 按鈕，AniBT 會自動取得你的 **字幕組 ID** 與 **釋出組 ID**。
+    點選 **【從蜜柑查詢「XXXXXX」的 ID】** 按鈕。AniBT 會自動取得 **字幕組 ID** 與 **釋出組 ID**。
   </Step>
 </Steps>
 
 ## 手動取得 ID（可選）
 
-僅當自動查詢無法識別時使用。
+僅在自動查詢無法識別時使用。
 
 <Tabs items={['字幕組 ID', '釋出組 ID']}>
   <Tab value="字幕組 ID">

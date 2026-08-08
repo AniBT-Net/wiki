@@ -3,15 +3,13 @@ title: 种子标题匹配番剧
 description: POST /api/animes/torrent-match —— 解析发布标题与种子内部名，并用可解释的多语言证据匹配站内番剧。
 ---
 
-`/api/animes/torrent-match` 默认是公开、无需鉴权的番剧识别端点；只有请求组内
-scoped binding 时需要登录。Canonical 接口是
-`POST` v3：它保留原始发布标题与 torrent internal name，先生成结构化 AST，再执行
-独立的 exact / strict recall / fuzzy recall 分支，最后返回可机器处理的自动、人工、
-非番剧、unsupported 或不可用决定。
+`/api/animes/torrent-match` 默认是公开、无需鉴权的番剧识别端点；仅在请求组内 scoped binding 时需要登录。Canonical 接口为 `POST` v3：保留原始发布标题与 torrent internal name，先生成结构化 AST，再执行独立的 exact / strict recall / fuzzy recall 分支，最后返回可机器处理的自动、人工、非番剧、unsupported 或不可用决定。
 
-<Callout type="info">
-  生产运行时只读取 AniBT 已入库的数据和内部 Typesense 索引，不抓取 Anime Garden、Nyaa、TMDB、TVDB 或其他外站，也不使用外站 `subjectId`。Anime Garden 只用于离线测试语料。
-</Callout>
+## 前置条件
+
+- 默认无需鉴权。
+- 传入 `groupId` 时必须携带登录会话，且当前用户属于该字幕组。
+- 生产运行时只读取 AniBT 已入库数据与内部 Typesense 索引，不抓取 Anime Garden、Nyaa、TMDB、TVDB 或其他外站，也不使用外站 `subjectId`。Anime Garden 仅用于离线测试语料。
 
 ## POST v3 请求
 
@@ -66,7 +64,7 @@ JSON
 只用于受控测试和运维，不公开返回完整标题切分细节。
 
 <Callout type="warn">
-  不要把调用方自己构造的“自动匹配结果”传给发布 API。`/api/releases/publish` 会丢弃调用方伪造的内部结果，并在没有显式番剧 ID 时直接运行同一套服务端 v3 matcher。
+  不要把调用方自行构造的「自动匹配结果」传给发布 API。`/api/releases/publish` 会丢弃调用方伪造的内部结果，并在没有显式番剧 ID 时直接运行同一套服务端 v3 matcher。
 </Callout>
 
 ## 匹配与自动授权边界
@@ -137,12 +135,12 @@ JSON
 }
 ```
 
-## 决策种类
+## 决策种类（成功响应内）
 
 | `decision.kind` | 调用方行为 |
 | --------------- | ---------- |
-| `auto` | 可以采用 `decision.animeId`；该 ID 也必须存在于 `candidates`。 |
-| `manual` | 展示 `candidates` 给用户确认，不得自动发布到某个番剧。 |
+| `auto` | 可采用 `decision.animeId`；该 ID 也必须存在于 `candidates`。 |
+| `manual` | 展示 `candidates` 供人工确认，不得自动绑定到某个番剧。 |
 | `none` | 没有候选，进入手动搜索或待匹配。 |
 | `non_anime` | 高置信非番剧内容，不进入番剧发布流程。 |
 | `unsupported` | 单番剧发布契约无法安全表达，例如多标题或多季合集。 |
@@ -166,7 +164,7 @@ JSON
   recall 或单一标题命中都不能代替 `decision.kind="auto"`。
 </Callout>
 
-## 限流和错误
+## 限流与失败响应
 
 | 项目 | POST v3 |
 | ---- | ------- |
@@ -179,7 +177,4 @@ JSON
 | 方法 | 只允许 `POST, OPTIONS`；GET 返回 JSON `405 METHOD_NOT_ALLOWED`，`Allow: POST, OPTIONS` |
 | CORS | `POST, OPTIONS` |
 
-发布端不必先单独调用本接口：未提供显式番剧 ID 时，
-[`/api/releases/publish`](/docs/open-api/releases-publish) 会在 Web 服务端直接运行同一
-matcher。只有 `auto` 会直接绑定；`manual / none / unavailable / unsupported / non_anime`
-都会保留待匹配或由调用方处理。
+发布端不必先单独调用本接口：未提供显式番剧 ID 时，[`/api/releases/publish`](/docs/open-api/releases-publish) 会在 Web 服务端直接运行同一 matcher。只有 `auto` 会直接绑定；`manual` / `none` / `unavailable` / `unsupported` / `non_anime` 都会保留待匹配或由调用方处理。

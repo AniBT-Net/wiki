@@ -1,12 +1,12 @@
 ---
 title: 站點同步
-description: 把 AniBT 釋出同步到萌番組、Mikan、動漫花園、末日站、ACG.rip 與 Nyaa 的配置入口。
+description: 將 AniBT 上的釋出同步到萌番組、Mikan、動漫花園、末日站、ACG.rip 與 Nyaa。
 ---
 
-站點同步會在你透過 AniBT 釋出資源後，把同一條釋出推送到已配置的外部站點，減少重複上傳與手動維護。
+站點同步會在 AniBT 完成釋出後，把同一條釋出推送到已配置的外部站點，減少重複上傳和手動維護。
 
 <Callout type="info">
-  使用前需要先完成 [申請入駐](/docs/apply)，並在 AniBT 後台進入字幕組的同步設定；每個外部站點都需要單獨儲存憑據。
+  使用前完成 [申請入駐](/docs/apply)，並在 AniBT 後台進入字幕組的同步設定。每個外部站點需單獨儲存憑據。
 </Callout>
 
 ## 配置流程
@@ -15,35 +15,35 @@ description: 把 AniBT 釋出同步到萌番組、Mikan、動漫花園、末日�
   <Step>
     ### 選擇要同步的站點
 
-    在 AniBT 字幕組後台開啟同步設定，先啟用你實際維護的外部站點。
+    在 AniBT 字幕組後台開啟同步設定，啟用實際維護的外部站點。
   </Step>
 
   <Step>
     ### 準備對應憑據
 
-    按下方速查表進入對應文件，複製 Cookie、API Token、UID 或帳號密碼等必需欄位。
+    按下方速查表開啟對應文件，複製 Cookie、API Token、UID 或帳號密碼等必需欄位。
   </Step>
 
   <Step>
     ### 儲存並測試連線
 
-    在 AniBT 中儲存配置後，優先點選測試連線；確認通過後再釋出正式資源。
+    在 AniBT 中儲存配置。確認測試連線通過後，再釋出正式資源。
   </Step>
 </Steps>
 
 ## 後台工作台
 
-字幕組後台的 `/groups/<slug>/sync` 按外部站點組織：左側選擇站點並配置憑據，右側查看該站點最近的同步日誌。多個站點不會同時展開，避免設定和日誌混在一起。
+字幕組後台路徑 `/groups/<slug>/sync` 按外部站點組織：左側選擇站點並配置憑據，右側查看該站點最近的同步日誌。同一時間只展開一個站點，避免設定與日誌混雜。
 
 同步日誌只展示最近 40 條，可按全部、成功、失敗、進行中過濾。日誌保留約 14 天，用於排查短期釋出問題；過期日誌會自動清理，不作為長期審計紀錄。資源已刪除時，日誌仍會顯示釋出 ID 和刪除狀態，但重試與重新同步入口會被停用。
 
 開坑狀態和清理入口在字幕組的 `/groups/<slug>/claims` 頁面。同步頁只負責外站配置、測試連線和釋出同步結果。
 
-## 選擇具體教程
+## 選擇具體教學
 
 <Cards>
   <Card title="萌番組同步" href="/docs/site-sync/bangumi" description="複製登入 Cookie、釋出身份名稱和 Team ID。" />
-  <Card title="Mikan 同步" href="/docs/site-sync/mikan" description="填寫 API Token，並讓 AniBT 自動查詢 ID。" />
+  <Card title="Mikan 同步" href="/docs/site-sync/mikan" description="填寫 API Token，並由 AniBT 自動查詢 ID。" />
   <Card title="動漫花園同步" href="/docs/site-sync/dmhy" description="填寫帳號、密碼和字幕組名稱。" />
   <Card title="末日站同步" href="/docs/site-sync/acgnx" description="複製 UID 與 API Token。" />
   <Card title="ACG.rip 同步" href="/docs/site-sync/acgrip" description="複製儀表板中的 API Token。" />
@@ -63,19 +63,19 @@ description: 把 AniBT 釋出同步到萌番組、Mikan、動漫花園、末日�
       type: 'API Token',
     },
     '動漫花園': {
-      description: '需要帳號、密碼和你在動漫花園使用的字幕組名稱。',
+      description: '需要帳號、密碼和在動漫花園使用的字幕組名稱。',
       type: '帳號密碼',
     },
     '末日站': {
-      description: '需要 UID 與 API Token，站名 ACGNX 在中文文件裡仍稱「末日站」。',
+      description: '需要 UID 與 API Token（站名 ACGNX 在中文文件中稱「末日站」）。',
       type: 'UID + API Token',
     },
     'ACG.rip': {
-      description: '只需要 API Token，複製時不要帶 `tpx://acg.rip/` 前綴。',
+      description: '只需要 API Token，複製時不要帶 `tpx://acg.rip/` 字首。',
       type: 'API Token',
     },
     'Nyaa': {
-      description: '需要 Nyaa 使用者名稱和密碼；發佈時透過 Nyaa API 上傳。',
+      description: '需要 Nyaa 使用者名稱和密碼；釋出時透過 Nyaa API 上傳。',
       type: '帳號密碼',
     },
   }}

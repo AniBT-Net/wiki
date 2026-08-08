@@ -3,7 +3,7 @@ title: 实战示例
 description: 基于 bgmId=543360 的典型 RSS 查询，以及带稳定回执的番剧发布删除流程。
 ---
 
-下列示例都基于 `bgmId=543360`（《上伊那牡丹，酒醉身姿似百合花般》），4 个字幕组的 slug 已通过 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 校验：
+下列示例均基于 `bgmId=543360`（《上伊那牡丹，酒醉身姿似百合花般》）。4 个字幕组的 slug 已通过 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 校验：
 
 ```txt title="目标字幕组"
 kirara-fantasia   Kirara Fantasia
@@ -33,7 +33,7 @@ https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana
     ```txt
     https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p&resolution=4K
     ```
-    重复参数表示"或"。
+    重复参数表示「或」。
   </Tab>
 </Tabs>
 
@@ -97,7 +97,7 @@ https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=100
 
 ## 9. 删除番剧发布并轮询完成
 
-删除 Key 必须显式包含 `releases:delete`。`202 Accepted` 后按状态端点轮询，不要把“请求已接受”误判为“所有公开面已清理”。
+删除 Key 必须显式包含 `releases:delete`。`202 Accepted` 后按状态端点轮询，不要把「请求已接受」误判为「所有公开面已清理」。
 
 ```bash title="DELETE + 状态轮询"
 release_id='rel_example'

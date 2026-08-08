@@ -1,18 +1,18 @@
 ---
 title: Nyaa 代发
-description: 由 AniBT 后台代为提交资源到 Nyaa 的白名单功能。
+description: 白名单字幕组可在 AniBT 发布时，由平台代为向 Nyaa 提交同一资源。
 ---
 
-Nyaa 代发用于让已开通白名单的字幕组，在本站发布资源时同步提交到 Nyaa。
+Nyaa 代发面向已加入白名单的字幕组：在 AniBT 发布资源时，可同步请求将同一条资源提交到 Nyaa。
 
-平台 Nyaa 账号由管理员在后台维护，字幕组只需要通过白名单并在发布时提交符合要求的种子和参数。
+平台 Nyaa 账号由管理员在后台维护。字幕组只需通过白名单，并在发布时提交符合要求的种子与参数。
 
 <Callout type="warn">
   <strong className="text-red-600 dark:text-red-400">发布超分资源者无法申请白名单。</strong>
 
-  本站或者其他BT站，需累计发布次数 10 次及以上；若您发布次数未满 10 次却想发布至 Nyaa，视情况也可以申请白名单，但发布内容将经过人工审核。
+  在本站或其它 BT 站累计发布次数须达到 10 次及以上。发布次数未满 10 次但希望发布至 Nyaa 时，可按情况单独申请白名单，提交内容将经过人工审核。
 
-  （*必须提交资源为本人自制的相关图片以及 BT 发布记录图片）
+  （*须提交资源为本人自制的相关图片，以及 BT 发布记录截图。）
 </Callout>
 
 ## 使用前提
@@ -20,7 +20,7 @@ Nyaa 代发用于让已开通白名单的字幕组，在本站发布资源时同
 <TypeTable
   type={{
     '字幕组白名单': {
-      description: '需要管理员在后台将字幕组加入 Nyaa 代发白名单。未加入白名单时，发布页面不会展示代发开关，API 请求也会被拒绝。',
+      description: '管理员须在后台将字幕组加入 Nyaa 代发白名单。未加入时，发布页面不展示代发开关，API 请求也会被拒绝。',
       type: 'required',
     },
     'Nyaa tracker': {
@@ -32,17 +32,17 @@ Nyaa 代发用于让已开通白名单的字幕组，在本站发布资源时同
       type: 'required',
     },
     'Nyaa 说明': {
-      description: '默认继承本站发布说明（notes）；也可以在网页发布或 API 请求中单独覆盖。',
+      description: '默认继承本站发布说明（notes）；也可在网页发布或 API 请求中单独覆盖。',
       type: 'markdown',
     },
   }}
 />
 
 <Callout type="warn">
-  代发不会替你修改种子。请在制种阶段就加入 `http://nyaa.tracker.wf:7777/announce`，否则本站会在提交前拒绝发布到 Nyaa。
+  代发不会修改种子内容。须在制种阶段加入 `http://nyaa.tracker.wf:7777/announce`，否则本站会在提交前拒绝发往 Nyaa。
 </Callout>
 
-Nyaa 分类代码必须按 Nyaa 官方代码填写。完整分类表、字段别名和 API 参数含义见 [发布资源 API 的 Nyaa 代发字段](/docs/open-api/releases-publish#nyaa-代发字段和分类)。
+Nyaa 分类须使用官方分类代码。完整分类表、字段别名与 API 参数含义见 [发布资源 API 的 Nyaa 代发字段](/docs/open-api/releases-publish#nyaa-代发字段和分类)。
 
 ## 发布方式
 
@@ -62,13 +62,13 @@ Nyaa 分类代码必须按 Nyaa 官方代码填写。完整分类表、字段别
       <Step>
         ### 打开字幕组发布页
 
-        进入 `/groups/<slug>/publish`。如果字幕组已加入白名单，页面会显示 **Nyaa 发布** 区块。
+        进入 `/groups/<slug>/publish`。字幕组已加入白名单时，页面会显示 **Nyaa 发布** 区块。
       </Step>
 
       <Step>
         ### 开启代发并选择分类
 
-        打开代发开关，选择 Nyaa 分类。说明可以继承本站 notes，也可以单独填写 Markdown。
+        打开代发开关，选择 Nyaa 分类。说明可继承本站 notes，也可单独填写 Markdown。
       </Step>
     </Steps>
   </Tab>
@@ -90,9 +90,9 @@ Nyaa 分类代码必须按 Nyaa 官方代码填写。完整分类表、字段别
       -F 'nyaaDescription=可选：覆盖提交到 Nyaa 的 Markdown 说明'
     ```
 
-    `nyaaDescription` 不传时，Nyaa 说明会继承本站发布说明 `notes`。`nyaaCategory` 的完整可选值见 [发布资源 API](/docs/open-api/releases-publish#nyaa-代发字段和分类)。
+    未传 `nyaaDescription` 时，Nyaa 说明继承本站发布说明 `notes`。`nyaaCategory` 完整可选值见 [发布资源 API](/docs/open-api/releases-publish#nyaa-代发字段和分类)。
 
-    其他类资源使用同一组参数，只是端点和基础字段不同：
+    其他类资源使用同一组参数，仅端点与基础字段不同：
 
     ```bash title="其他类资源 Nyaa 代发"
     curl -X POST 'https://anibt.net/api/other-releases/publish' \
@@ -107,7 +107,7 @@ Nyaa 分类代码必须按 Nyaa 官方代码填写。完整分类表、字段别
       -F 'nyaaDescription=可选：覆盖提交到 Nyaa 的 Markdown 说明'
     ```
 
-    其他类资源的完整参数见 [发布其他类资源 API](/docs/open-api/other-releases-publish#nyaa-代发)。
+    其他类资源完整参数见 [发布其他类资源 API](/docs/open-api/other-releases-publish#nyaa-代发)。
   </Tab>
 </Tabs>
 
@@ -120,7 +120,7 @@ Nyaa 分类代码必须按 Nyaa 官方代码填写。完整分类表、字段别
       type: '自备账号',
     },
     'Nyaa 代发': {
-      description: '字幕组申请白名单后，在发布时请求 AniBT 代为提交到 Nyaa。字幕组不需要维护平台 Nyaa 凭据，但必须遵守白名单和 tracker 要求。',
+      description: '字幕组通过白名单后，在发布时请求 AniBT 代为提交到 Nyaa。字幕组无需维护平台 Nyaa 凭据，但须遵守白名单与 tracker 要求。',
       type: '白名单',
     },
   }}
@@ -135,4 +135,4 @@ Nyaa 分类代码必须按 Nyaa 官方代码填写。完整分类表、字段别
 | 未选择 Nyaa 分类 | 在发布页或 API 参数中传入 `nyaaCategory`。 |
 | 提交的是 JSON 而不是 torrent 文件 | Nyaa 代发需要服务端校验实际 torrent bytes，请使用 multipart 上传 `.torrent`。 |
 
-更多接口字段见 [发布资源 API](/docs/open-api/releases-publish) 和 [发布其他类资源 API](/docs/open-api/other-releases-publish)，自备账号同步见 [Nyaa 同步](/docs/site-sync/nyaa)。
+接口字段详见 [发布资源 API](/docs/open-api/releases-publish) 与 [发布其他类资源 API](/docs/open-api/other-releases-publish)。自备账号同步见 [Nyaa 同步](/docs/site-sync/nyaa)。

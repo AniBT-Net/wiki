@@ -5,9 +5,10 @@ description: GET /rss/other/<category>.xml —— 漫画、音乐、RAW、舞台
 
 `/rss/other/<category>.xml` 输出其他类资源的独立 RSS。当前支持 `manga`、`music`、`raw`、`stage` 四个分类，对应漫画、音乐、RAW、舞台剧。
 
-<Callout type="warn">
-  其他类资源**不会**混入 `/rss/magnets.xml`、`/rss/anime.xml` 或番剧详情页 RSS。需要订阅这些资源时，请直接使用本页的分类 RSS。
-</Callout>
+## 前置条件
+
+- 无需鉴权。
+- 其他类资源**不会**混入 `/rss/magnets.xml`、`/rss/anime.xml` 或番剧详情页 RSS；订阅这些资源须使用本页的分类路径。
 
 ## URL
 
@@ -75,16 +76,16 @@ https://anibt.net/rss/other/stage.xml
   </Step>
 </Steps>
 
-## 响应
+## 成功响应
 
-返回标准 RSS 2.0 原生 XML。浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，会使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端继续按标准字段消费。
+返回标准 RSS 2.0 原生 XML。浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端按标准字段消费。
 
 每个 `<item>` 包含：
 
 <TypeTable
   type={{
     '<title>': {
-      description: '资源标题；如果有字幕组名，会显示为 [字幕组] 标题。',
+      description: '资源标题；若有字幕组名，显示为 [字幕组] 标题。',
       type: 'string',
     },
     '<link>': {
@@ -119,7 +120,7 @@ https://anibt.net/rss/other/stage.xml
 - RSS 响应从最终 XML UTF-8 bytes 计算 exact-body `W/"anibt-sha256-{...}"` ETag，并移除了请求时间 `lastBuildDate`；匹配 ETag 的 `304` 表示当前 feed bytes 未变化。当前省略 `Last-Modified`。
 - 无 `q` 的 latest/filter 变体为 `s-maxage=120`；带 `q` 的搜索（包括空结果）为 `s-maxage=600`；两类统一 `stale-while-revalidate=60`。
 - 分类发布变化会先失效 latest Redis 家族，再清除该 category 的全部非全文搜索 CDN 参数变体，包含只传 `groupId` 的过滤 URL；带 `q` / `search` 的搜索 Redis 与 CDN 身份仍按 600 秒 TTL 自主管理，不会被无关分类发布清除，因此这不是实时搜索 SLA。
-- 搜索缓存身份只保存规范化查询的 SHA-256。重复/空/控制字符 q、同时传 q+search 或超过 160 bytes 返回 `400 + no-store`。仅调整原始 query 参数对顺序会直接返回同一规范 `200`；默认值、兼容别名或其它字节级规范化仍返回可缓存一天的 `308`。
+- 搜索缓存身份只保存规范化查询的 SHA-256。重复/空/控制字符 q、同时传 q+search 或超过 160 bytes 返回 `400 + no-store`。仅调整原始 query 参数对顺序会直接返回同一规范 `200`；默认值、兼容别名或其他字节级规范化仍返回可缓存一天的 `308`。
 - 只有真正穿透 CDN/Redis 的新搜索 MISS 才受 distinct-query 与全站并发预算保护；超限返回 `429 + Retry-After`，稳定查询和缓存 HIT 不扣额度。
 - 这些 RSS 响应会带 `noindex, follow` 搜索引擎策略，避免分类 feed 被搜索引擎索引。
 

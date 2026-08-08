@@ -3,6 +3,8 @@ title: 限流與上限
 description: 各端點的 limit、候選掃描上限、速率限制、客戶端相容矩陣與延遲拆解。
 ---
 
+公開 RSS 與 catalog API 的條數上限、速率視窗、客戶端相容與端到端延遲說明。數字與狀態碼為公開契約，客戶端應嚴格遵守。
+
 ## 各端點的上限一覽
 
 | 端點                    | `limit` 預設 | `limit` 上限 | 後端候選掃描上限 | 速率限制（預設）   |
@@ -102,7 +104,7 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
 - CDN 內未過期 → **0 origin 請求**
 - CDN 過期但仍在 SWR 視窗 → 使用者拿舊版本（0 延遲），origin 收到 **1 個**非同步重新整理請求
 - 完全過期 → origin 收到 1 個同步請求（~50–200ms 回源）
-- 客戶端帶 `If-None-Match` → ETag 命中時 origin 僅返回 304（無 body，幾乎零開銷）
+- 客戶端帶 `If-None-Match` → ETag 命中時 origin 僅返回 304（無 body，開銷可忽略）
 
 各端點在 **1000 使用者、客戶端預設 15 分鐘輪詢** 假設下的預估負載：
 
@@ -128,7 +130,7 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
       type: '間隔',
     },
     '全站監控': {
-      description: '5–10 分鐘。配合 ETag/304 幾乎零成本。',
+      description: '5–10 分鐘。配合 ETag/304 開銷可忽略。',
       type: '間隔',
     },
     '複雜搜尋 (magnets.xml?q=…)': {
@@ -151,7 +153,7 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
 
 ## 主流 RSS 客戶端的實際行為
 
-不同客戶端預設的輪詢頻率、ETag/304 支援差異很大。**好訊息**：本站公開 RSS 返回 exact-body `ETag` + `Cache-Control`；符合 HTTP 標準的客戶端會自動使用 `If-None-Match` / 304，**你不用做任何配置**。目前公開 RSS 省略 `Last-Modified`。
+不同客戶端預設的輪詢頻率、ETag/304 支援差異很大。本站公開 RSS 返回 exact-body `ETag` + `Cache-Control`；符合 HTTP 標準的客戶端會自動使用 `If-None-Match` / 304，無需額外設定。目前公開 RSS 省略 `Last-Modified`。
 
 | 客戶端                              | 預設輪詢           | `If-None-Match` | 尊重 `Cache-Control: max-age` | 備註                                            |
 | ----------------------------------- | ------------------ | --------------- | ----------------------------- | ----------------------------------------------- |
@@ -161,7 +163,7 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
 | **FreshRSS**（自建）                | 使用者配置（預設 1h）| ✅              | ✅                            | 推薦配置 ≥ 15min                                |
 | **Tiny Tiny RSS**（自建）           | 使用者配置           | ✅              | ⚠ 部分版本無視                 | 建議手動設 ≥ 15min                              |
 | **Reeder**（macOS/iOS）             | 跟隨 Inoreader/Feedly | —            | —                             | 透傳第三方聚合服務                              |
-| **qBittorrent RSS 自動下載**         | **預設 30 分鐘**   | ❌（每次拉全量） | ❌                            | **對 origin 最不友好**，但配合 CDN 仍 OK         |
+| **qBittorrent RSS 自動下載**         | **預設 30 分鐘**   | ❌（每次拉全量） | ❌                            | 不傳送條件請求，origin 壓力依賴 CDN 合併         |
 | **Transmission + Flexget**          | 使用者配置           | ✅（Flexget 支援）| ✅                           | 推薦                                            |
 | **自建指令碼（Python `requests`）**    | 你寫多少就多少     | 取決於實現      | 取決於實現                    | 見 [Python 客戶端最小實現](/docs/open-api/caching#python-客戶端最小實現) |
 
@@ -218,5 +220,5 @@ T=120~300s 客戶端的下次輪詢週期（取決於客戶端）：
 3. **強制 origin 立即推送（不可行）**：HTTP RSS 是 pull 模型，沒辦法。
 
 <Callout type="info">
-  如果你需要**實時**（< 1 分鐘）通知，RSS 不是合適方案，應該用 webhook / Telegram bot / 站內推送。RSS 的設計目標就是"**最終一致 + 極低成本**"，5–30 分鐘的延遲是它的功能不是 bug。
+  若需要**即時**（&lt; 1 分鐘）通知，RSS 不合適，應改用 webhook / Telegram bot / 站內推送。RSS 的設計目標是「**最終一致 + 極低成本**」，5–30 分鐘延遲屬於預期行為。
 </Callout>

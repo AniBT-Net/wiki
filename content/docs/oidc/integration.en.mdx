@@ -22,11 +22,11 @@ Read endpoints and signing capabilities from discovery at runtime instead of per
 
 ## 1. Prepare the client
 
-Create an application from [OAuth applications in your profile](https://anibt.net/profile?tab=oauth-apps) and register exact redirect URLs.
+Create an application from [OAuth applications in your profile](https://anibt.net/profile?tab=oauth-apps) and register exact redirect URIs.
 
-- Web / BFF: choose Web / BFF, wait for Active, then generate a Client secret. Keep it server-side only.
-- Native: choose Native. It never receives a secret; use the system browser and a claimed HTTPS or loopback HTTP redirect.
-- Browser-only SPA: unsupported. Put the callback, code exchange, and token storage in a BFF.
+- If the application has a secure server or BFF: choose Web / BFF; after the application becomes Active, generate a Client secret and keep it server-side only.
+- If it is a desktop or mobile native application: choose Native; it never receives a secret—use the system browser and a claimed HTTPS or loopback HTTP redirect.
+- If it is a browser-only SPA: unsupported. Put the OAuth callback, code exchange, and token storage in a BFF.
 
 Start with a staging application. After completing every validation, create a separate production application.
 
@@ -43,7 +43,7 @@ Keep `state`, `nonce`, and `code_verifier` in a server-side session or another s
 
 Example authorization request:
 
-```text
+```text title="Authorization request"
 GET https://oauth.anibt.net/oauth2/auth
   ?client_id=YOUR_CLIENT_ID
   &response_type=code
@@ -61,7 +61,7 @@ Use `response_type=code` and `code_challenge_method=S256`. Request `offline_acce
 
 The callback can contain a `code` or a denial/protocol error:
 
-1. Validate that `state` exactly matches the current session before reading `code`.
+1. Before reading `code`, validate that `state` exactly matches the current session.
 2. Consume the stored `state`, `nonce`, and `code_verifier` once to prevent replay.
 3. Ensure the callback belongs to the redirect URI used to start this sign-in.
 4. If an `error` is returned, show a safe message and do not log the full callback URL.
@@ -69,9 +69,9 @@ The callback can contain a `code` or a denial/protocol error:
 
 ## 4. Exchange the code
 
-Web / BFF clients send Client ID and Client secret with HTTP Basic:
+For Web / BFF clients, send Client ID and Client secret with HTTP Basic:
 
-```http
+```http title="Web / BFF token exchange"
 POST /oauth2/token HTTP/1.1
 Host: oauth.anibt.net
 Authorization: Basic BASE64(CLIENT_ID:CLIENT_SECRET)
@@ -83,9 +83,9 @@ redirect_uri=https%3A%2F%2Fapp.example.com%2Fauth%2Fanibt%2Fcallback&
 code_verifier=ORIGINAL_CODE_VERIFIER
 ```
 
-Native clients do not send a Client secret and include `client_id` in the form:
+For native clients, do not send a Client secret and include `client_id` in the form:
 
-```text
+```text title="Native token exchange"
 grant_type=authorization_code
 code=ONE_TIME_CODE
 client_id=YOUR_CLIENT_ID
@@ -93,7 +93,7 @@ redirect_uri=YOUR_EXACT_REDIRECT_URI
 code_verifier=ORIGINAL_CODE_VERIFIER
 ```
 
-`redirect_uri` must exactly match the authorization request and registered AniBT application value. Call the token endpoint from the server or native app. Never deliver a Web / BFF secret to a browser.
+`redirect_uri` must exactly match the authorization request and the registered AniBT application value. Call the token endpoint from the server or native app. Never deliver a Web / BFF secret to a browser.
 
 ## 5. Validate the ID Token
 
@@ -112,7 +112,7 @@ Use `sub` as the sole external account key for AniBT sign-in. It is pairwise and
 
 Access tokens are currently opaque. Call UserInfo with:
 
-```http
+```http title="UserInfo request"
 GET /userinfo HTTP/1.1
 Host: oauth.anibt.net
 Authorization: Bearer ACCESS_TOKEN
@@ -130,7 +130,7 @@ Claims can be absent, and applications must tolerate that. Synthetic `.anibt.loc
 
 A refresh token is issued only after explicit consent to `offline_access`. Authenticate refresh requests the same way as the original token exchange for the client type:
 
-```text
+```text title="Refresh token request"
 grant_type=refresh_token
 refresh_token=CURRENT_REFRESH_TOKEN
 ```

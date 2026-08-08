@@ -3,9 +3,14 @@ title: 字幕组自身信息
 description: GET /api/subtitle-groups/me —— 用 API Key 查询当前字幕组、Key 标识、scope 与统计数据。
 ---
 
-`/api/subtitle-groups/me` 是**鉴权读取**端点。带上字幕组 API Key，返回该字幕组的基本信息、当前 Key 的安全标识与 `scopes`，以及发布数、覆盖番剧数、成员数等统计数据。
+`/api/subtitle-groups/me` 是**鉴权读取**端点。携带字幕组 API Key 后，返回该组的基本信息、当前 Key 的安全标识与 `scopes`，以及发布数、覆盖番剧数、成员数等统计。
 
-适合用在：CI 启动时打印当前用哪把 Key 跑、控制台 dashboard 展示字幕组当前状态、自动化脚本里校验字幕组身份，并在发布或删除前确认 Key 是否具有 `releases:publish` / `releases:delete`。
+典型用途：CI 启动时确认当前 Key、控制台展示字幕组状态、脚本在发布或删除前校验是否具备 `releases:publish` / `releases:delete`。
+
+## 前置条件
+
+- 字幕组已开通 API Key。
+- 请求头携带 `Authorization: Bearer <KEY>` 或 `X-API-Key`。
 
 ## 请求
 
@@ -19,7 +24,7 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
   https://anibt.net/api/subtitle-groups/me
 ```
 
-## 响应
+## 成功响应
 
 ```jsonc title="200 OK"
 {
@@ -57,7 +62,7 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       type: 'string',
     },
     'slug': {
-      description: 'URL 安全的稳定标识，与 /api/subtitle-groups 返回的 slug 完全一致，可直接喂给 /rss/anime.xml?groupSlug=…。',
+      description: 'URL 安全的稳定标识，与 /api/subtitle-groups 返回的 slug 完全一致，可直接用于 /rss/anime.xml?groupSlug=…。',
       type: 'string',
     },
     'description': {
@@ -81,7 +86,7 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
       type: 'number',
     },
     'status': {
-      description: 'active / hidden / banned 等。仅 active 状态可发布。',
+      description: 'active / hidden / banned 等。仅 active 可发布。',
       type: 'enum',
     },
     'createdAt': {
@@ -107,11 +112,11 @@ curl -H "Authorization: Bearer <YOUR_API_KEY>" \
 
 <Callout type="info">
   与 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 的核心差别：
-  - `/api/subtitle-groups`：**公开**，返回**所有**字幕组的精简信息，不需要鉴权。
-  - `/api/subtitle-groups/me`：**鉴权**，只返回**调用方**这一组的详细信息，附带 `stats`、Key 标识与 `scopes`，以及内部 `_id`、`description`、`status`。
+  - `/api/subtitle-groups`：**公开**，返回**所有**可见字幕组的精简信息，无需鉴权。
+  - `/api/subtitle-groups/me`：**鉴权**，只返回**调用方**这一组的详细信息，附带 `stats`、Key 标识、`scopes`，以及内部 `_id`、`description`、`status`。
 </Callout>
 
-## 错误响应
+## 失败响应
 
 | HTTP | 原因 | 处理 |
 | ---- | ---- | ---- |

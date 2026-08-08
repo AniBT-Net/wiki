@@ -5,9 +5,10 @@ description: GET /rss/other/<category>.xml —— 漫畫、音樂、RAW、舞台
 
 `/rss/other/<category>.xml` 輸出其他類資源的獨立 RSS。目前支援 `manga`、`music`、`raw`、`stage` 四個分類，對應漫畫、音樂、RAW、舞台劇。
 
-<Callout type="warn">
-  其他類資源**不會**混入 `/rss/magnets.xml`、`/rss/anime.xml` 或番劇詳情頁 RSS。需要訂閱這些資源時，請直接使用本頁的分類 RSS。
-</Callout>
+## 前置條件
+
+- 無需鑑權。
+- 其他類資源**不會**混入 `/rss/magnets.xml`、`/rss/anime.xml` 或番劇詳情頁 RSS；訂閱這些資源須使用本頁的分類路徑。
 
 ## URL
 
@@ -75,16 +76,16 @@ https://anibt.net/rss/other/stage.xml
   </Step>
 </Steps>
 
-## 回應
+## 成功回應
 
-返回標準 RSS 2.0 原生 XML。瀏覽器直開 RSS URL 時不載入站點自訂 XSL/CSS，會使用瀏覽器預設 XML 樹展示；RSS 閱讀器和 BT 客戶端繼續按標準欄位消費。
+返回標準 RSS 2.0 原生 XML。瀏覽器直開 RSS URL 時不載入站點自訂 XSL/CSS，使用瀏覽器預設 XML 樹展示；RSS 閱讀器和 BT 客戶端按標準欄位消費。
 
 每個 `<item>` 包含：
 
 <TypeTable
   type={{
     '<title>': {
-      description: '資源標題；如果有字幕組名，會顯示為 [字幕組] 標題。',
+      description: '資源標題；若有字幕組名，顯示為 [字幕組] 標題。',
       type: 'string',
     },
     '<link>': {
@@ -118,8 +119,8 @@ https://anibt.net/rss/other/stage.xml
 
 - RSS 回應從最終 XML UTF-8 bytes 計算 exact-body `W/"anibt-sha256-{...}"` ETag，並移除了請求時間 `lastBuildDate`；匹配 ETag 的 `304` 表示目前 feed bytes 未變化。目前省略 `Last-Modified`。
 - 無 `q` 的 latest/filter 變體為 `s-maxage=120`；帶 `q` 的搜尋（包括空結果）為 `s-maxage=600`；兩類統一 `stale-while-revalidate=60`。
-- 分類釋出變化會先失效 latest Redis 家族，再清除該 category 的全部非全文搜尋 CDN 參數變體，包含只傳 `groupId` 的過濾 URL；帶 `q` / `search` 的搜尋 Redis 與 CDN 身份仍按 600 秒 TTL 自主管理，不會被無關分類釋出清除，因此這不是即時搜尋 SLA。
-- 搜尋快取身份只保存規範化查詢的 SHA-256。重複/空/控制字元 q、同時傳 q+search 或超過 160 bytes 返回 `400 + no-store`。僅調整原始 query 參數對順序會直接返回同一規範 `200`；預設值、相容別名或其它位元組級規範化仍返回可快取一天的 `308`。
+- 分類釋出變化會先失效 latest Redis 家族，再清除該 category 的全部非全文搜尋 CDN 參數變體，包含只傳 `groupId` 的過濾 URL；帶 `q` / `search` 的搜尋 Redis 與 CDN 身分仍按 600 秒 TTL 自主管理，不會被無關分類釋出清除，因此這不是即時搜尋 SLA。
+- 搜尋快取身分只儲存規範化查詢的 SHA-256。重複/空/控制字元 q、同時傳 q+search 或超過 160 bytes 返回 `400 + no-store`。僅調整原始 query 參數對順序會直接返回同一規範 `200`；預設值、相容別名或其他位元組級規範化仍返回可快取一天的 `308`。
 - 只有真正穿透 CDN/Redis 的新搜尋 MISS 才受 distinct-query 與全站併發預算保護；超限返回 `429 + Retry-After`，穩定查詢和快取 HIT 不扣額度。
 - 這些 RSS 回應會帶 `noindex, follow` 搜尋引擎策略，避免分類 feed 被搜尋引擎索引。
 

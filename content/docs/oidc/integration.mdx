@@ -3,7 +3,7 @@ title: 第三方业务接入指南
 description: 使用 Authorization Code + PKCE S256 将 AniBT 登录接入 Web、BFF、桌面或移动应用。
 ---
 
-本页是框架无关的生产接入合同。优先使用成熟的 OpenID Connect 客户端库，并把 issuer 配置为 `https://oauth.anibt.net`；不要手写 JWT 验签、discovery 缓存或 OAuth 参数编码。
+本页是框架无关的生产接入合同。接入时优先使用成熟的 OpenID Connect 客户端库，并将 issuer 配置为 `https://oauth.anibt.net`；不要手写 JWT 验签、discovery 缓存或 OAuth 参数编码。
 
 ## 端点
 
@@ -18,32 +18,32 @@ description: 使用 Authorization Code + PKCE S256 将 AniBT 登录接入 Web、
 | End Session | `https://oauth.anibt.net/oauth2/sessions/logout` |
 | Token Revocation | `https://oauth.anibt.net/oauth2/revoke` |
 
-运行时应从 discovery 读取端点和签名能力，不要把除 issuer 之外的元数据永久写死。AniBT 当前 ID Token 使用 `RS256`，subject type 为 `pairwise`。
+运行时应从 discovery 读取端点与签名能力，不要把除 issuer 之外的元数据永久写死。AniBT 当前 ID Token 使用 `RS256`，subject type 为 `pairwise`。
 
 ## 1. 准备 Client
 
-从 [个人资料的 OAuth 应用页](https://anibt.net/profile?tab=oauth-apps) 创建应用并登记精确 redirect URI。
+先从 [个人资料的 OAuth 应用页](https://anibt.net/profile?tab=oauth-apps) 创建应用，并登记精确 redirect URI。
 
-- Web / BFF：选择 Web / BFF，等待应用可用后生成 Client secret。secret 只能保存在服务端。
-- 原生应用：选择原生应用，不会生成 secret；使用系统浏览器和 claimed HTTPS 或 loopback HTTP redirect。
-- 浏览器纯 SPA：不支持。请把 OAuth 回调、code exchange 和 token 存储放在 BFF。
+- 若应用有安全的服务端或 BFF：选择 Web / BFF；在应用变为「可用」后生成 Client secret，且 secret 只能保存在服务端。
+- 若应用为桌面或移动原生应用：选择原生应用；不会生成 secret，应使用系统浏览器与 claimed HTTPS 或 loopback HTTP redirect。
+- 若应用为浏览器纯 SPA：不受支持。请将 OAuth 回调、code exchange 与 token 存储放在 BFF。
 
-建议从测试环境应用开始，完成全部验证后再单独创建生产环境应用。
+建议先使用测试环境应用完成全部验证，再单独创建生产环境应用。
 
 ## 2. 发起授权请求
 
 每次登录都生成新的：
 
-- `state`：至少 128 bit 随机值，绑定当前浏览器会话并在回调时恒时比较；
+- `state`：至少 128 bit 随机值，绑定当前浏览器会话，并在回调时以恒定时间比较；
 - `nonce`：至少 128 bit 随机值，写入授权请求并在 ID Token 中验证；
 - `code_verifier`：43–128 个 RFC 7636 unreserved 字符；
 - `code_challenge`：`BASE64URL(SHA256(code_verifier))`，不带 `=` padding。
 
-把 `state`、`nonce` 和 `code_verifier` 保存在服务端会话或其他有完整性保护的短期存储中。不要放入可被脚本读取的长期 localStorage。
+在服务端会话或其他有完整性保护的短期存储中保存 `state`、`nonce` 与 `code_verifier`。不要放入可被脚本读取的长期 localStorage。
 
 授权请求示例：
 
-```text
+```text title="授权请求"
 GET https://oauth.anibt.net/oauth2/auth
   ?client_id=YOUR_CLIENT_ID
   &response_type=code
@@ -55,23 +55,23 @@ GET https://oauth.anibt.net/oauth2/auth
   &code_challenge_method=S256
 ```
 
-必须使用 `response_type=code` 和 `code_challenge_method=S256`。只有确实需要长期会话时才申请 `offline_access`。
+必须使用 `response_type=code` 与 `code_challenge_method=S256`。仅在确实需要长期会话时才申请 `offline_access`。
 
 ## 3. 处理回调
 
 回调可能包含 `code`，也可能包含用户拒绝或协议错误：
 
-1. 在读取 `code` 前验证 `state` 与当前会话完全一致；
-2. 一次性消费保存的 `state`、`nonce` 和 `code_verifier`，防止重放；
-3. 验证回调中的 `redirect_uri` 对应当前发起登录的 URI；
-4. 如果收到 `error`，只向用户展示安全文案，不记录完整回调 URL；
-5. authorization code 只能使用一次，不要在网络错误后盲目重复交换。
+1. 在读取 `code` 前，验证 `state` 与当前会话完全一致；
+2. 一次性消费已保存的 `state`、`nonce` 与 `code_verifier`，防止重放；
+3. 确认回调对应的 redirect URI 与本次发起登录所用 URI 一致；
+4. 若收到 `error`，只向用户展示安全文案，不记录完整回调 URL；
+5. authorization code 只能使用一次；在网络错误后不要盲目重复交换。
 
 ## 4. 交换 Token
 
-Web / BFF 使用 HTTP Basic 传递 Client ID 和 Client secret：
+对 Web / BFF Client，使用 HTTP Basic 传递 Client ID 与 Client secret：
 
-```http
+```http title="Web / BFF token 交换"
 POST /oauth2/token HTTP/1.1
 Host: oauth.anibt.net
 Authorization: Basic BASE64(CLIENT_ID:CLIENT_SECRET)
@@ -83,9 +83,9 @@ redirect_uri=https%3A%2F%2Fapp.example.com%2Fauth%2Fanibt%2Fcallback&
 code_verifier=ORIGINAL_CODE_VERIFIER
 ```
 
-原生应用不发送 Client secret，并在表单中发送 `client_id`：
+对原生应用，不发送 Client secret，并在表单中发送 `client_id`：
 
-```text
+```text title="原生应用 token 交换"
 grant_type=authorization_code
 code=ONE_TIME_CODE
 client_id=YOUR_CLIENT_ID
@@ -112,7 +112,7 @@ code_verifier=ORIGINAL_CODE_VERIFIER
 
 access token 当前是 opaque token。调用 UserInfo：
 
-```http
+```http title="UserInfo 请求"
 GET /userinfo HTTP/1.1
 Host: oauth.anibt.net
 Authorization: Bearer ACCESS_TOKEN
@@ -128,14 +128,14 @@ claim 可能缺失，应用必须容忍。`.anibt.local` 合成邮箱永远不�
 
 ## 7. Refresh token
 
-只有用户明确同意 `offline_access` 时才会获得 refresh token。刷新请求按 Client 类型使用与 token exchange 相同的认证方式：
+仅在用户明确同意 `offline_access` 时才会获得 refresh token。刷新请求按 Client 类型使用与 token exchange 相同的认证方式：
 
-```text
+```text title="refresh token 请求"
 grant_type=refresh_token
 refresh_token=CURRENT_REFRESH_TOKEN
 ```
 
-每次成功刷新后，原子替换保存的 refresh token。AniBT 启用 rotation 和 reuse protection；重复使用旧 refresh token 可能使整个 token family 失效。刷新请求超时或结果不明确时，不要并发重试同一个 token。
+每次成功刷新后，原子替换已保存的 refresh token。AniBT 启用 rotation 与 reuse protection；重复使用旧 refresh token 可能使整个 token family 失效。刷新请求超时或结果不明确时，不要并发重试同一个 token。
 
 ## 8. Logout 与撤销
 
@@ -145,7 +145,7 @@ RP-initiated logout 使用 discovery 中的 `end_session_endpoint`，通常发�
 - `post_logout_redirect_uri`：必须预先登记并精确匹配；
 - `state`：用于验证 logout 回调。
 
-默认只结束 OIDC / RP 会话，不自动退出 AniBT 主站。应用 owner 也可以在 AniBT 应用详情中“撤销授权”，使已有 grants 和 token 失效。
+默认只结束 OIDC / RP 会话，不自动退出 AniBT 主站。应用 owner 也可以在 AniBT 应用详情中「撤销授权」，使已有 grants 与 token 失效。
 
 ## 生产验收清单
 
@@ -161,4 +161,4 @@ RP-initiated logout 使用 discovery 中的 `end_session_endpoint`，通常发�
 - logout callback 验证 `state`；
 - 日志不包含 code、token、secret、cookie、完整回调 URL 或 authorization header。
 
-需要给 AI 或代码生成工具提供一个更紧凑的合同，请使用 [AI / Agent 接入参考](/docs/oidc/ai-reference)。
+需要给 AI 或代码生成工具提供更紧凑的合同，请使用 [AI / Agent 接入参考](/docs/oidc/ai-reference)。

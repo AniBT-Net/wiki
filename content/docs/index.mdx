@@ -1,50 +1,53 @@
 ---
 title: 开始使用
-description: AniBT 是一个面向动漫与字幕组的公共 BT 站。这份 Wiki 既写给字幕组，也写给只想拿数据 / 跟番的开发者和用户。
+description: AniBT Wiki 入口：字幕组发布流程，以及用户与开发者消费 RSS / JSON 数据的阅读路径。
 ---
 
-**AniBT** 是一个面向动漫的公共种子追踪器，专注服务动漫与字幕组。我们希望给字幕组一个可靠的发布平台，也让用户和工具更容易自动追到想看的内容。
+**AniBT** 是面向动漫的公共 BitTorrent 追踪器，主要服务字幕组发布与跟番消费。本 Wiki 覆盖站内发布、外站同步、公开 API、账号与周边工具；读者按用途选路径即可。
 
-这份 Wiki 按用途分两条主线：**字幕组发布资源** 和 **用户/开发者消费数据**。挑你属于的那一边读起。
+两条主线：
+
+- **字幕组**：申请入驻 → 配置站点同步 → 制种时使用官方 Tracker → 用 API 或网页发布。
+- **用户 / 开发者**：匿名使用 RSS 与 JSON；需要个人订阅或发布权限时再注册账号。
 
 ---
 
-## 我是字幕组，想发布资源
+## 字幕组：发布资源
 
-完整流程：申请入驻 → 配站点同步 → 制种用我们的 tracker → 用 API 发布。
+推荐顺序如下。
 
 <Cards>
   <Card
     title="① 申请入驻"
     href="/docs/apply"
-    description="发邮件给 support@anibt.net，提供身份信息后人工审核。"
+    description="向 support@anibt.net 发邮件，提交身份信息后人工审核。"
   />
   <Card
     title="② 站点同步"
     href="/docs/site-sync"
-    description="把 AniBT 发布自动同步到 nyaa、萌番组、末日站、Mikan、ACG.rip。"
+    description="将 AniBT 发布同步到 nyaa、萌番组、末日站、Mikan、ACG.rip 等。"
   />
   <Card
     title="③ Tracker 地址"
     href="/docs/tracker"
-    description="制种时把 https://tracker.anibt.net/announce 加进种子。"
+    description="制种时加入 https://tracker.anibt.net/announce。"
   />
   <Card
     title="④ 发布 API"
     href="/docs/open-api/releases-publish"
-    description="POST /api/releases/publish —— 直接用 API 推送资源，省去手动上传。"
+    description="POST /api/releases/publish —— 以 API 推送资源。"
   />
 </Cards>
 
-## 我只想跟番 / 拿数据
+## 用户 / 开发者：跟番与取数
 
-不需要账号也能用这些。RSS 适合丢进 BT 客户端订阅；JSON / 搜索适合自己写脚本。
+多数公开端点无需账号。RSS 适合接入 BT 客户端；JSON / 搜索适合脚本集成。
 
 <Cards>
   <Card
     title="账号、登录与会话"
     href="/docs/account-auth"
-    description="邮箱验证码注册、密码/第三方登录，以及恢复中不会被误判为退出。"
+    description="邮箱验证码注册、密码 / 第三方登录，以及会话恢复中的界面行为。"
   />
   <Card
     title="单番剧 RSS"
@@ -54,7 +57,7 @@ description: AniBT 是一个面向动漫与字幕组的公共 BT 站。这份 Wi
   <Card
     title="个人订阅 RSS（鉴权）"
     href="/docs/open-api/rss-subscriptions"
-    description="GET /rss/subscriptions.xml —— 把你在前端勾的全部订阅合成一份私人 feed。"
+    description="GET /rss/subscriptions.xml —— 将前端已选订阅合并为一份私人 feed。"
   />
   <Card
     title="字幕组 / 全站 / 季度"
@@ -64,25 +67,25 @@ description: AniBT 是一个面向动漫与字幕组的公共 BT 站。这份 Wi
   <Card
     title="集成示例"
     href="/docs/open-api/examples"
-    description="qBittorrent、Sonarr、自写脚本怎么接进来。"
+    description="qBittorrent、Sonarr 与自写脚本的接入方式。"
   />
 </Cards>
 
-## 我在做 AI / Agent / RAG
+## AI / Agent / RAG
 
-整份 Wiki 都对 LLM 友好暴露：
+Wiki 内容以 LLM 友好形式对外暴露：
 
 <Cards>
   <Card
     title="LLM 对接"
     href="/docs/llm"
-    description="/llms.txt、/llms-full.txt、每页 .md 端点 —— 给 ChatGPT / Cursor / 自建 RAG 用。"
+    description="/llms.txt、/llms-full.txt、每页 .md 端点 —— 供 ChatGPT / Cursor / 自建 RAG 使用。"
   />
 </Cards>
 
 ## 周边项目
 
-围绕 AniBT 的几个开源工具，配合主站使用：
+与 AniBT 主站配套的开源工具：
 
 <Cards>
   <Card
@@ -94,4 +97,4 @@ description: AniBT 是一个面向动漫与字幕组的公共 BT 站。这份 Wi
 
 ---
 
-找不到想要的？看 [联系方式](/docs/contact)，或者把问题发到 [support@anibt.net](mailto:support@anibt.net)。
+文档未覆盖的问题见 [联系方式](/docs/contact)，或发邮件至 [support@anibt.net](mailto:support@anibt.net)。

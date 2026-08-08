@@ -5,8 +5,14 @@ description: POST /api/releases/publish —— 字幕組用 API Key 釋出種子
 
 `/api/releases/publish` 是字幕組**寫入**番劇資源的端點。請求必須攜帶字幕組 API Key，正式釋出與 preview 都要求 `releases:publish` scope；支援 `application/json`（直接傳磁力連結）和 `multipart/form-data`（上傳種子檔案）兩種格式。
 
+## 前置條件
+
+- 字幕組 API Key 顯式包含 `releases:publish`。
+- 呼叫頻率與配額按字幕組維度獨立計數，與公開 RSS 的 IP 速率視窗不共享。
+- Key 洩露後應立即在後台重設。
+
 <Callout type="warn">
-  這是**寫入介面**，呼叫頻率與配額由字幕組維度獨立計數；與公開 RSS 的 IP 速率視窗不共享。Key 一旦洩露請立即在後臺重置。
+  這是**寫入介面**。Key 不要寫進客戶端程式碼、不要 commit 到倉庫、不要貼 issue；CI 必須用 secret 注入。
 </Callout>
 
 ## URL

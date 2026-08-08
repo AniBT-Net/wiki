@@ -3,14 +3,14 @@ title: 总览
 description: AniBT 公开 RSS 与 JSON API 的设计逻辑、端点速查与第三方接入入口。
 ---
 
-AniBT 把公开读取数据通过两类端点暴露给第三方：用于订阅的 **RSS** 和用于程序集成的 **JSON API**。公开读取端点可匿名访问，并按各自缓存合同支持 **HTTP 304 Not Modified**；发布、删除和身份检查端点必须携带字幕组 API Key，响应不缓存。
+AniBT 通过两类公开端点对外暴露读取数据：**RSS** 用于订阅，**JSON API** 用于程序集成。公开读取端点可匿名访问，并按各自缓存合同支持 **HTTP 304 Not Modified**。发布、删除与身份检查端点必须携带字幕组 API Key，响应不缓存。
 
 <Callout type="info">
-  qBittorrent / Sonarr / FlexGet / Tiny Tiny RSS 等标准 RSS 客户端**无需任何额外配置**，缓存与条件请求在响应头里自动生效。
+  qBittorrent / Sonarr / FlexGet / Tiny Tiny RSS 等标准 RSS 客户端无需额外配置；缓存与条件请求由响应头自动生效。
 </Callout>
 
 <Callout type="warn">
-  公开 API 的生产 base URL 是 `https://anibt.net`。第三方集成请只使用本文档列出的主站路径。
+  公开 API 的生产 base URL 为 `https://anibt.net`。第三方集成应只使用本文档列出的主站路径。
 </Callout>
 
 ## 我想做……（速查）
@@ -85,7 +85,7 @@ AniBT 把公开读取数据通过两类端点暴露给第三方：用于订阅�
 
 ## 设计逻辑
 
-整个体系按"职责分层"组织，便于第三方理解每个端点何时该用：
+整套接口按「职责分层」组织，便于按场景选择端点：
 
 ```txt title="数据流"
 ┌────────────────────────────────────────────────────────────┐
@@ -96,7 +96,7 @@ AniBT 把公开读取数据通过两类端点暴露给第三方：用于订阅�
 ┌────────────────────────────────────────────────────────────┐
 │  GET https://anibt.net/api/subtitle-groups                  │
 │  返回 [{slug, name, totalReleases, totalAnimes, ...}]        │
-│  → 把"展示名"或"用户输入"映射到稳定 slug                      │
+│  → 把「展示名」或「用户输入」映射到稳定 slug                      │
 └────────────────────────────────────────────────────────────┘
         │ ② 用户订阅时 / 每 N 分钟：拉 RSS
         ▼
@@ -120,11 +120,11 @@ AniBT 把公开读取数据通过两类端点暴露给第三方：用于订阅�
 <TypeTable
   type={{
     'slug 优先于 name': {
-      description: '字幕组展示名可能调整（例如本地化），slug 一旦发布尽量保持稳定。第三方应缓存一份从 /api/subtitle-groups 拿到的 name → slug 映射，不要硬编码 slug 到代码里。',
+      description: '字幕组展示名可能调整（例如本地化），slug 一旦发布尽量保持稳定。第三方应缓存一份从 /api/subtitle-groups 拿到的 name → slug 映射，不要硬编码 slug。',
       type: '约定',
     },
     'bgmId 优先于自然语言': {
-      description: '番剧名容易撞车，Bangumi.tv 的 subject id 是唯一权威。',
+      description: '番剧名容易撞车，Bangumi.tv 的 subject ID 是唯一权威。',
       type: '约定',
     },
     '过滤下推': {
@@ -132,7 +132,7 @@ AniBT 把公开读取数据通过两类端点暴露给第三方：用于订阅�
       type: '设计',
     },
     'HTTP 缓存优先': {
-      description: '同一查询在默认 120 秒 RSS 缓存窗口内只命中一次 origin；同一客户端反复轮询走 304，几乎零开销。',
+      description: '同一查询在默认 120 秒 RSS 缓存窗口内只命中一次 origin；同一客户端反复轮询走 304，开销可忽略。',
       type: '设计',
     },
   }}

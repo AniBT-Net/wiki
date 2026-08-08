@@ -1,12 +1,12 @@
 ---
 title: 萌番組同步
-description: 在 AniBT 中填寫萌番組同步所需 Cookie、釋出身份名稱和 Team ID。
+description: 填寫萌番組同步所需的 Cookie、釋出身份名稱和 Team ID。
 ---
 
-萌番組（bangumi.moe）使用登入 Cookie 鑑權，需要從 DevTools 抓取登入請求裡的 Cookie 整段複製。
+萌番組（bangumi.moe）使用登入 Cookie 鑑權。需要從 DevTools 抓取登入請求中的 Cookie，並整段複製到 AniBT。
 
 <Callout type="warn">
-  必須**先登出、清空 Network 後再重新登入**，才能抓到完整的登入 Cookie。
+  必須先登出、清空 Network，再重新登入，才能抓到完整的登入 Cookie。
 </Callout>
 
 ## 步驟一：開啟 Network 錄製
@@ -15,13 +15,13 @@ description: 在 AniBT 中填寫萌番組同步所需 Cookie、釋出身份名�
   <Step>
     ### 登出並重新整理
 
-    開啟 [https://bangumi.moe](https://bangumi.moe)，先 **登出** 然後 **重新整理網頁**。
+    開啟 [https://bangumi.moe](https://bangumi.moe)，先 **登出**，再 **重新整理網頁**。
   </Step>
 
   <Step>
     ### 開啟網路錄製
 
-    按 <kbd>F12</kbd> 開啟 DevTools，切到 **Network（網路）** 頁。確認錄製按鈕為 **紅色**（已開啟錄製）。
+    按 <kbd>F12</kbd> 開啟 DevTools，切換到 **Network（網路）** 頁。確認錄製按鈕為 **紅色**（已開啟錄製）。
 
     ![DevTools Network 錄製網路日誌](/images/site-sync/bangumi-network-recording.webp)
   </Step>
@@ -39,18 +39,18 @@ description: 在 AniBT 中填寫萌番組同步所需 Cookie、釋出身份名�
   <Step>
     ### 找到 disqus 請求
 
-    在 **Network** 頁中找到名為 **`disqus`** 的請求，點選它。
+    在 **Network** 頁中找到名為 **`disqus`** 的請求，點選該請求。
 
     ![Network 中的 disqus 請求](/images/site-sync/bangumi-disqus-request.webp)
   </Step>
 
   <Step>
-    ### 複製 Request Headers 裡的 Cookie
+    ### 複製 Request Headers 中的 Cookie
 
-    右側切到 **Headers（標頭）** 頁，下拉找到 **Request Headers** → **Cookie**，全選這一長串。
+    在右側切換到 **Headers（標頭）** 頁，下拉找到 **Request Headers** → **Cookie**，全選 Cookie 整段字串。
 
     <Callout type="warn">
-      千萬**不要選到下方** `priority` 的 `u=1, i`。
+      不要選中下方 `priority` 的 `u=1, i`。
     </Callout>
 
     ![複製 Request Headers 裡的 Cookie](/images/site-sync/bangumi-cookie-header.webp)
@@ -59,7 +59,7 @@ description: 在 AniBT 中填寫萌番組同步所需 Cookie、釋出身份名�
   <Step>
     ### 貼上到 AniBT 並儲存
 
-    回到 AniBT 貼上 Cookie，點選儲存。
+    回到 AniBT，貼上 Cookie，點選儲存。
 
     ![在 AniBT 中貼上 Cookie](/images/site-sync/bangumi-anibt-cookie-save.webp)
   </Step>
@@ -70,12 +70,12 @@ description: 在 AniBT 中填寫萌番組同步所需 Cookie、釋出身份名�
 <TypeTable
   type={{
     '釋出身份名稱': {
-      description: '你在萌番組的團隊名（組名）。如未申請團隊註冊可留空。',
+      description: '在萌番組的團隊名（組名）。未申請團隊註冊時可留空。',
       type: 'string',
       default: '可留空',
     },
     'Team ID': {
-      description: '可不填，留空也可以同步。',
+      description: '可不填；留空也可以同步。',
       type: 'string',
       default: '可留空',
     },
@@ -84,7 +84,7 @@ description: 在 AniBT 中填寫萌番組同步所需 Cookie、釋出身份名�
 
 ## 測試連線
 
-填寫完後點選 **儲存並測試連線**：
+填寫完成後，點選 **儲存並測試連線**：
 
 - **連線成功**：設定完成。
 - **連線失敗**：檢查 Cookie 是否複製完整、帳號是否登入成功。

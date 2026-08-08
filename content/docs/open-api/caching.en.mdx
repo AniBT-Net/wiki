@@ -10,7 +10,7 @@ AniBT public RSS and catalog APIs return endpoint-specific shared-cache directiv
 </Callout>
 
 <Callout type="info">
-  Per RFC 7232, `If-None-Match` (ETag) takes precedence over `If-Modified-Since`. If you send both, the server only honours the ETag. Always use ETag.
+  Per RFC 7232, `If-None-Match` (ETag) takes precedence over `If-Modified-Since`. When both condition headers are sent, the server only honours the ETag. Prefer ETag.
 </Callout>
 
 ## Response headers

@@ -3,6 +3,8 @@ title: Rate limits & caps
 description: Per-endpoint limits, scan caps, rate limiting, RSS-client compatibility matrix, and end-to-end latency breakdown.
 ---
 
+Item caps, rate windows, client compatibility, and end-to-end latency for public RSS and catalog APIs. Numbers and status codes are part of the public contract.
+
 ## Caps per endpoint
 
 | Endpoint                  | `limit` default | `limit` cap | Scan cap          | Rate limit (default)  |
@@ -102,7 +104,7 @@ User ──► Browser / RSS-client cache (max-age)
 - Inside CDN fresh window → **0 origin hits**
 - CDN expired but inside SWR → user gets stale (zero latency), origin sees **1** async refresh
 - Fully expired → origin sees one synchronous backfill (~50–200 ms)
-- Client sends `If-None-Match` → origin returns 304 (no body, near-zero cost) on hit
+- Client sends `If-None-Match` → origin returns 304 (no body; cost is negligible) on hit
 
 Estimates assuming **1000 users polling every 15 minutes by default**:
 
@@ -151,7 +153,7 @@ Estimates assuming **1000 users polling every 15 minutes by default**:
 
 ## Mainstream RSS clients in practice
 
-Polling cadence and ETag/304 support vary widely. **The good news**: AniBT public RSS emits an exact-body `ETag` plus `Cache-Control`; standards-compliant clients automatically use `If-None-Match` / 304 — **no configuration needed**. Public RSS currently omits `Last-Modified`.
+Polling cadence and ETag/304 support vary widely. AniBT public RSS emits an exact-body `ETag` plus `Cache-Control`; standards-compliant clients automatically use `If-None-Match` / 304 with no extra setup. Public RSS currently omits `Last-Modified`.
 
 | Client                             | Default poll      | `If-None-Match` | Honours `max-age` | Notes                                            |
 | ---------------------------------- | ----------------- | --------------- | ----------------- | ------------------------------------------------ |
@@ -161,7 +163,7 @@ Polling cadence and ETag/304 support vary widely. **The good news**: AniBT publi
 | **FreshRSS** (self-hosted)         | configurable (1h default) | ✅      | ✅                | Recommend ≥ 15 min                                |
 | **Tiny Tiny RSS** (self-hosted)    | configurable      | ✅              | ⚠ partial         | Recommend ≥ 15 min manually                       |
 | **Reeder** (macOS/iOS)             | follows Inoreader/Feedly | —        | —                 | Forwards via the cloud aggregator                 |
-| **qBittorrent RSS auto-download**  | **30 min default** | ❌            | ❌                | Worst for origin, but CDN smooths it out          |
+| **qBittorrent RSS auto-download**  | **30 min default** | ❌            | ❌                | No conditional requests; origin load depends on CDN coalescing |
 | **Transmission + Flexget**         | configurable      | ✅ (Flexget)    | ✅                | Recommended                                      |
 | **Custom Python `requests`**       | whatever you write | up to you      | up to you         | See the minimal client in [HTTP caching](/docs/open-api/caching) |
 
@@ -173,13 +175,13 @@ Polling cadence and ETag/304 support vary widely. **The good news**: AniBT publi
 
 **Tuning tips**:
 
-- Prefer Inoreader / Feedly / NetNewsWire iCloud sync — you share cache with other users.
-- For direct qBittorrent / Transmission pulls, set the rule interval to ≥ 15 min (the 30 min default is also fine).
-- Custom scripts must implement `If-None-Match` reuse, otherwise it's wasted bandwidth.
+- Prefer Inoreader / Feedly / NetNewsWire iCloud so many readers share one upstream pull.
+- For direct qBittorrent / Transmission pulls, set the rule interval to ≥ 15 min (the 30 min default is usually fine).
+- Custom scripts must reuse `If-None-Match`; otherwise every poll downloads a full body.
 
 ## End-to-end latency breakdown
 
-From "a group publishes a new release" to "the subscriber's RSS client surfaces it":
+From “a group publishes a new release” to “the subscriber’s RSS client surfaces it”:
 
 ```txt
 T=0       Group submits release to the AniBT Web API
@@ -190,10 +192,10 @@ T=0       Database is immediately readable (Convex strong consistency)
 
 T≤120s    Fallback CDN / Web Redis short-cache window when event purge is missed:
           requests are intercepted by CDN; users still see the old version
-          → this is the dominant source of perceived delay
+          → this is the dominant source of subscriber-side delay
 
 T=120s    CDN enters SWR window:
-          next user request triggers async refresh
+          the next request triggers async refresh
           origin returns the new data → CDN cache updates
 
 T=120~300s Next client poll cycle (depends on the client):
@@ -204,19 +206,19 @@ T=120~300s Next client poll cycle (depends on the client):
 
 **Median end-to-end latency by client config**:
 
-| Client config                             | Origin → user surface |
-| ----------------------------------------- | --------------------- |
-| Custom script, 5-min poll + ETag          | **3–5 minutes**       |
+| Client config                             | Origin → subscriber-visible |
+| ----------------------------------------- | --------------------------- |
+| Custom script, 5-min poll + ETag          | **3–5 minutes**             |
 | NetNewsWire default 1 h poll              | 30–35 min (client-bottlenecked) |
 | Inoreader cloud aggregation               | 15–30 min (Inoreader's own cadence is the bottleneck) |
-| qBittorrent default 30 min                | 15–30 min             |
+| qBittorrent default 30 min                | 15–30 min                   |
 
 ### Where to optimise
 
-1. **Shorten the client poll interval (highest impact)**: 1 h → 5 min cuts latency from 30 min to 5 min instantly.
-2. **Shorten `s-maxage` (lower impact)**: 300s → 60s costs 5× origin pressure for only ~4 min less latency.
+1. **Shorten the client poll interval (highest impact)**: 1 h → 5 min can cut latency from ~30 min to ~5 min.
+2. **Shorten `s-maxage` (lower impact)**: 300s → 60s multiplies origin pressure ~5× for only ~4 min less latency.
 3. **Force origin to push (impossible)**: HTTP RSS is pull-only.
 
 <Callout type="info">
-  If you need **real-time** notifications (< 1 minute), RSS is the wrong tool — use webhooks / Telegram bot / push. RSS is designed for "**eventually consistent + dirt cheap**", and 5–30 min latency is the feature, not the bug.
+  For **real-time** notifications (&lt; 1 minute), RSS is the wrong tool — use webhooks / Telegram bot / push. RSS targets “**eventually consistent + low cost**”; 5–30 min latency is expected behaviour.
 </Callout>

@@ -5,8 +5,14 @@ description: POST /api/releases/publish — the authenticated write endpoint gro
 
 `/api/releases/publish` is the group endpoint that **writes** anime releases. Send a subtitle-group API key; formal publish and preview both require the `releases:publish` scope. Both `application/json` (magnet link) and `multipart/form-data` (torrent upload) are supported.
 
+## Preconditions
+
+- The group API key must explicitly include `releases:publish`.
+- Rate limits and quotas are tracked per group, separate from the IP-based RSS rate window.
+- Rotate the key immediately if it leaks.
+
 <Callout type="warn">
-  This is a **write endpoint**: rate limits and quotas are tracked per group, separate from the IP-based RSS rate window. Rotate the key immediately if it leaks.
+  This is a **write endpoint**. Do not embed keys in client code, commit them to repos, or paste them into issues. CI must inject secrets.
 </Callout>
 
 ## URL

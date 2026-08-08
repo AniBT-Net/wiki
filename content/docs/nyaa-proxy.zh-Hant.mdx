@@ -1,18 +1,18 @@
 ---
 title: Nyaa 代發
-description: 由 AniBT 後臺代為提交資源到 Nyaa 的白名單功能。
+description: 白名單字幕組可在 AniBT 釋出時，由平台代為向 Nyaa 提交同一資源。
 ---
 
-Nyaa 代發用於讓已開通白名單的字幕組，在本站釋出資源時同步提交到 Nyaa。
+Nyaa 代發面向已加入白名單的字幕組：在 AniBT 釋出資源時，可同步請求將同一條資源提交到 Nyaa。
 
-平台 Nyaa 帳號由管理員在後臺維護，字幕組只需要通過白名單並在釋出時提交符合要求的種子和引數。
+平台 Nyaa 帳號由管理員在後台維護。字幕組只需通過白名單，並在釋出時提交符合要求的種子與參數。
 
 <Callout type="warn">
   <strong className="text-red-600 dark:text-red-400">發佈超分資源者無法申請白名單。</strong>
 
-  本站或者其他 BT 站，需累計發佈次數 10 次及以上；若您發佈次數未滿 10 次卻想發佈至 Nyaa，視情況也可以申請白名單，但發佈內容將經過人工審核。
+  在本站或其它 BT 站累計發佈次數須達到 10 次及以上。發佈次數未滿 10 次但希望發佈至 Nyaa 時，可按情況單獨申請白名單，提交內容將經過人工審核。
 
-  （*必須提交資源為本人自製的相關圖片以及 BT 發佈記錄圖片）
+  （*須提交資源為本人自製的相關圖片，以及 BT 發佈記錄截圖。）
 </Callout>
 
 ## 使用前提
@@ -20,29 +20,29 @@ Nyaa 代發用於讓已開通白名單的字幕組，在本站釋出資源時同
 <TypeTable
   type={{
     '字幕組白名單': {
-      description: '需要管理員在後臺將字幕組加入 Nyaa 代發白名單。未加入白名單時，釋出頁面不會展示代發開關，API 請求也會被拒絕。',
-      type: '必要',
+      description: '管理員須在後台將字幕組加入 Nyaa 代發白名單。未加入時，釋出頁面不展示代發開關，API 請求也會被拒絕。',
+      type: 'required',
     },
     'Nyaa tracker': {
       description: '提交的 .torrent 必須在 announce 或 announce-list 中包含 http://nyaa.tracker.wf:7777/announce。',
-      type: '必要',
+      type: 'required',
     },
     'Nyaa 分類': {
       description: '每次代發都必須選擇 Nyaa 分類，例如 1_3 = Anime - Non-English-translated。',
-      type: '必要',
+      type: 'required',
     },
     'Nyaa 說明': {
-      description: '預設繼承本站釋出說明（notes）；也可以在網頁釋出或 API 請求中單獨覆蓋。',
+      description: '預設繼承本站釋出說明（notes）；也可在網頁釋出或 API 請求中單獨覆蓋。',
       type: 'Markdown',
     },
   }}
 />
 
 <Callout type="warn">
-  代發不會替你修改種子。請在製種階段就加入 `http://nyaa.tracker.wf:7777/announce`，否則本站會在提交前拒絕發佈到 Nyaa。
+  代發不會修改種子內容。須在製種階段加入 `http://nyaa.tracker.wf:7777/announce`，否則本站會在提交前拒絕發往 Nyaa。
 </Callout>
 
-Nyaa 分類代碼必須按 Nyaa 官方代碼填寫。完整分類表、欄位別名和 API 引數含義見 [釋出資源 API 的 Nyaa 代發欄位](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類)。
+Nyaa 分類須使用官方分類代碼。完整分類表、欄位別名與 API 參數含義見 [釋出資源 API 的 Nyaa 代發欄位](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類)。
 
 ## 釋出方式
 
@@ -62,13 +62,13 @@ Nyaa 分類代碼必須按 Nyaa 官方代碼填寫。完整分類表、欄位別
       <Step>
         ### 開啟字幕組釋出頁
 
-        進入 `/groups/<slug>/publish`。如果字幕組已加入白名單，頁面會顯示 **Nyaa 發佈** 區塊。
+        進入 `/groups/<slug>/publish`。字幕組已加入白名單時，頁面會顯示 **Nyaa 發佈** 區塊。
       </Step>
 
       <Step>
         ### 開啟代發並選擇分類
 
-        開啟代發開關，選擇 Nyaa 分類。說明可以繼承本站 notes，也可以單獨填寫 Markdown。
+        開啟代發開關，選擇 Nyaa 分類。說明可繼承本站 notes，也可單獨填寫 Markdown。
       </Step>
     </Steps>
   </Tab>
@@ -90,9 +90,9 @@ Nyaa 分類代碼必須按 Nyaa 官方代碼填寫。完整分類表、欄位別
       -F 'nyaaDescription=可選：覆蓋提交到 Nyaa 的 Markdown 說明'
     ```
 
-    `nyaaDescription` 不傳時，Nyaa 說明會繼承本站釋出說明 `notes`。`nyaaCategory` 的完整可選值見 [釋出資源 API](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類)。
+    未傳 `nyaaDescription` 時，Nyaa 說明繼承本站釋出說明 `notes`。`nyaaCategory` 完整可選值見 [釋出資源 API](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類)。
 
-    其他類資源使用同一組參數，只是端點和基礎欄位不同：
+    其他類資源使用同一組參數，僅端點與基礎欄位不同：
 
     ```bash title="其他類資源 Nyaa 代發"
     curl -X POST 'https://anibt.net/api/other-releases/publish' \
@@ -107,7 +107,7 @@ Nyaa 分類代碼必須按 Nyaa 官方代碼填寫。完整分類表、欄位別
       -F 'nyaaDescription=可選：覆蓋提交到 Nyaa 的 Markdown 說明'
     ```
 
-    其他類資源的完整參數見 [釋出其他類資源 API](/zh-Hant/docs/open-api/other-releases-publish#nyaa-代發)。
+    其他類資源完整參數見 [釋出其他類資源 API](/zh-Hant/docs/open-api/other-releases-publish#nyaa-代發)。
   </Tab>
 </Tabs>
 
@@ -116,11 +116,11 @@ Nyaa 分類代碼必須按 Nyaa 官方代碼填寫。完整分類表、欄位別
 <TypeTable
   type={{
     'Nyaa 同步': {
-      description: '字幕組在站點同步設定中保存自己的 Nyaa 使用者名稱和密碼，釋出後使用該帳號透過 Nyaa API 同步。',
+      description: '字幕組在站點同步設定中儲存自己的 Nyaa 使用者名稱和密碼，釋出後使用該帳號透過 Nyaa API 同步。',
       type: '自備帳號',
     },
     'Nyaa 代發': {
-      description: '字幕組申請白名單後，在釋出時請求 AniBT 代為提交到 Nyaa。字幕組不需要維護平台 Nyaa 憑據，但必須遵守白名單和 tracker 要求。',
+      description: '字幕組通過白名單後，在釋出時請求 AniBT 代為提交到 Nyaa。字幕組無需維護平台 Nyaa 憑據，但須遵守白名單與 tracker 要求。',
       type: '白名單',
     },
   }}
@@ -132,7 +132,7 @@ Nyaa 分類代碼必須按 Nyaa 官方代碼填寫。完整分類表、欄位別
 | --- | --- |
 | 未加入白名單 | 聯絡管理員申請白名單，並按本頁要求提交釋出記錄證明。 |
 | 缺少 Nyaa tracker | 重新製作種子，加入 `http://nyaa.tracker.wf:7777/announce`。 |
-| 未選擇 Nyaa 分類 | 在釋出頁或 API 引數中傳入 `nyaaCategory`。 |
+| 未選擇 Nyaa 分類 | 在釋出頁或 API 參數中傳入 `nyaaCategory`。 |
 | 提交的是 JSON 而不是 torrent 檔案 | Nyaa 代發需要服務端校驗實際 torrent bytes，請使用 multipart 上傳 `.torrent`。 |
 
-更多介面欄位見 [釋出資源 API](/zh-Hant/docs/open-api/releases-publish) 和 [釋出其他類資源 API](/zh-Hant/docs/open-api/other-releases-publish)，自備帳號同步見 [Nyaa 同步](/zh-Hant/docs/site-sync/nyaa)。
+介面欄位詳見 [釋出資源 API](/zh-Hant/docs/open-api/releases-publish) 與 [釋出其他類資源 API](/zh-Hant/docs/open-api/other-releases-publish)。自備帳號同步見 [Nyaa 同步](/zh-Hant/docs/site-sync/nyaa)。

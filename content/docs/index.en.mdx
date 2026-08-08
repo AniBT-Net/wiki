@@ -1,33 +1,36 @@
 ---
 title: Getting started
-description: AniBT is a public anime BitTorrent tracker. This Wiki serves both subtitle groups publishing releases and developers / users consuming the data.
+description: AniBT Wiki entry point — publishing path for subtitle groups, and RSS / JSON consumption path for users and developers.
 ---
 
-**AniBT** is a public BitTorrent tracker built for anime, with subtitle groups at the centre. We aim to give fansub teams a reliable place to publish, and to make it easy for users and tools to track new releases automatically.
+**AniBT** is a public BitTorrent tracker focused on anime. It supports subtitle-group publishing and follow-show consumption. This Wiki covers on-site publishing, external site sync, public APIs, accounts, and adjacent tools. Pick a path by use case.
 
-This Wiki is split along two main use cases: **subtitle groups publishing releases** and **users / developers consuming the data**. Read whichever side fits you.
+Two main tracks:
+
+- **Subtitle groups**: apply for admission → configure site sync → use the official Tracker when packing torrents → publish via API or web UI.
+- **Users / developers**: use RSS and JSON anonymously; register only when personal subscriptions or publishing rights are needed.
 
 ---
 
-## I'm a subtitle group, I want to publish
+## Subtitle groups: publish releases
 
-Full path: apply → set up site sync → use our tracker when packing torrents → publish via API.
+Recommended order:
 
 <Cards>
   <Card
     title="① Apply for admission"
     href="/docs/apply"
-    description="Email support@anibt.net with identity info, reviewed manually."
+    description="Email support@anibt.net with identity information for manual review."
   />
   <Card
     title="② Site sync"
     href="/docs/site-sync"
-    description="Mirror releases out to nyaa, Bangumi, ACG.rip, Mikan, and others."
+    description="Mirror AniBT releases to nyaa, Bangumi, ACG.rip, Mikan, and others."
   />
   <Card
     title="③ Tracker URL"
     href="/docs/tracker"
-    description="Add https://tracker.anibt.net/announce to torrents you create."
+    description="Add https://tracker.anibt.net/announce when creating torrents."
   />
   <Card
     title="④ Release API"
@@ -36,15 +39,15 @@ Full path: apply → set up site sync → use our tracker when packing torrents 
   />
 </Cards>
 
-## I just want to follow shows / pull data
+## Users / developers: follow shows and pull data
 
-No account needed. RSS plugs into BT clients; JSON / search fits scripts.
+Most public endpoints need no account. RSS fits BT clients; JSON / search fits scripts.
 
 <Cards>
   <Card
     title="Accounts, sign-in, and sessions"
     href="/docs/account-auth"
-    description="Email-OTP registration, password/external sign-in, and session restoration without false logout."
+    description="Email-OTP registration, password / external sign-in, and UI behavior during session restoration."
   />
   <Card
     title="Per-show RSS"
@@ -54,7 +57,7 @@ No account needed. RSS plugs into BT clients; JSON / search fits scripts.
   <Card
     title="Personal subscriptions (auth)"
     href="/docs/open-api/rss-subscriptions"
-    description="GET /rss/subscriptions.xml — every selection from the My-subscriptions panel rolled into one private feed."
+    description="GET /rss/subscriptions.xml — selections from My subscriptions rolled into one private feed."
   />
   <Card
     title="Group / sitewide / season"
@@ -68,21 +71,21 @@ No account needed. RSS plugs into BT clients; JSON / search fits scripts.
   />
 </Cards>
 
-## I'm building AI / Agent / RAG
+## AI / Agent / RAG
 
-The Wiki ships LLM-friendly endpoints across the board:
+Wiki content is exposed in LLM-friendly forms:
 
 <Cards>
   <Card
     title="LLM integration"
     href="/docs/llm"
-    description="/llms.txt, /llms-full.txt, per-page .md — for ChatGPT / Cursor / your own RAG."
+    description="/llms.txt, /llms-full.txt, per-page .md — for ChatGPT / Cursor / custom RAG."
   />
 </Cards>
 
 ## Adjacent projects
 
-Open-source tools in the AniBT orbit:
+Open-source tools that pair with the AniBT main site:
 
 <Cards>
   <Card
@@ -94,4 +97,4 @@ Open-source tools in the AniBT orbit:
 
 ---
 
-Can't find what you need? See [Contact](/docs/contact), or just write to [support@anibt.net](mailto:support@anibt.net).
+If a topic is missing, see [Contact](/docs/contact) or write to [support@anibt.net](mailto:support@anibt.net).

@@ -1,19 +1,19 @@
 ---
 title: Debugging & FAQ
-description: One-line curl recipes for debugging plus the most common RSS-integration questions.
+description: One-line curl checks and common RSS integration issues.
 ---
 
-## Quick debug recipes
+## Quick debug
 
-<Tabs items={['Read RSS items', 'Verify 304', 'List all slugs', 'Pick target groups']}>
-  <Tab value="Read RSS items">
+<Tabs items={['Inspect RSS', 'Verify 304', 'List all slugs', 'Filter target groups']}>
+  <Tab value="Inspect RSS">
     ```bash title="First 3 items"
     curl -s 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&limit=3' \
       | grep -E '<title>|<pubDate>'
     ```
   </Tab>
   <Tab value="Verify 304">
-    ```bash title="ETag re-use"
+    ```bash title="Reuse ETag"
     H=$(curl -sI 'https://anibt.net/rss/anime.xml?bgmId=543360')
     echo "$H" | grep -iE 'etag|last-modified'
     ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
@@ -21,12 +21,12 @@ description: One-line curl recipes for debugging plus the most common RSS-integr
     ```
   </Tab>
   <Tab value="List all slugs">
-    ```bash title="Every group"
+    ```bash title="All groups"
     curl -s https://anibt.net/api/subtitle-groups \
       | jq '.data[] | {name, slug, totalReleases}'
     ```
   </Tab>
-  <Tab value="Pick target groups">
+  <Tab value="Filter target groups">
     ```bash title="Filter by name"
     curl -s https://anibt.net/api/subtitle-groups \
       | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕组|拨雪寻春")) | {name, slug}'
@@ -38,70 +38,68 @@ description: One-line curl recipes for debugging plus the most common RSS-integr
 
 <Accordions>
   <Accordion title="What is the difference between slug and organizationId?">
-    `slug` is the stable string used in public URLs; `organizationId` is the internal primary key. **Third parties should always use `slug`.**
+    `slug` is the stable public URL string; `organizationId` is an internal primary key. **Third parties always use `slug`.**
   </Accordion>
-  <Accordion title="Why is my If-Modified-Since not taking effect?">
-    Per RFC 7232, **ETag (`If-None-Match`) takes precedence**. If you send both, the server only honours the ETag. Always use ETag.
+  <Accordion title="Why does If-Modified-Since not work?">
+    Per RFC 7232, **ETag (`If-None-Match`) wins**. When both condition headers are sent, the server only looks at ETag. Prefer ETag.
   </Accordion>
-  <Accordion title="Why did RSS return 308, 400, 403, or 429?">
-    Reordering otherwise byte-identical raw query pairs returns the same canonical `200`. `308` means another canonicalization difference remains, such as explicit `limit=100`, a compatibility alias, or case/whitespace/encoding changes; follow it and retain the final URL. `400 + no-store` means the public contract was violated: `limit` is exactly one integer from `1..100`; `q`/`search` contain at most one value total and normalize to non-empty, control-free text of at most 160 UTF-8 bytes. Production Cloudflare may block an invalid limit first with `403`. `429` protects only new high-cardinality search MISSes that pass cache; back off using `Retry-After`.
+  <Accordion title="Why does RSS return 308, 400, 403, or 429?">
+    Reordering original query pairs alone still returns the same canonical `200`. `308` means other normalisation differences (explicit `limit=100`, compatibility aliases, case/whitespace/encoding). Follow the redirect and keep the final URL. `400 + no-store` means the public contract was violated: `limit` must be a single `1..100` integer; `q`/`search` allow only one value total after NFKC/trim/collapse, no control characters, max 160 UTF-8 bytes. Production Cloudflare may return `403` for illegal limits before the app. `429` only protects true cache-penetrating high-cardinality search MISSes — back off on `Retry-After`.
   </Accordion>
-  <Accordion title="Will episode=5 match episodeKey=&quot;05&quot;?">
-    Yes — both filters apply. `episode` does numeric exact match; `episodeKey` does string exact match. For batches use `episodeKey=BATCH`.
+  <Accordion title="Does episode=5 match episodeKey='05'?">
+    Yes, both filters apply, but `episode` is numeric exact match and `episodeKey` is string exact match. Use `episodeKey=BATCH` for batches.
   </Accordion>
-  <Accordion title="How do I get a direct torrent link from a release?">
-    The `<enclosure url>` in the RSS is already a magnet URL ready to feed to a BT client (default trackers appended). The `<torrent>` element exposes the infoHash as well.
+  <Accordion title="How do I get a direct torrent/magnet for a release?">
+    RSS `<enclosure url>` is already a magnet suitable for BitTorrent clients (with default trackers). The `<torrent>` element also carries infoHash.
   </Accordion>
   <Accordion title="Will the API change?">
-    Paths, fields, and canonical parameters are kept stable, but safety caps and invalid-input handling may tighten with a changelog notice to protect the public service. Clients should follow current docs, follow 308, and handle 400/403/429 instead of relying on silent truncation. `slug` values are intended to remain stable once published.
+    Paths, fields, and canonical parameters stay stable. Safety caps and illegal-input handling may tighten and will be announced in the changelog. Clients should follow current docs, honour 308, and handle 400/403/429 instead of relying on silent truncation. Published `slug` values stay as stable as practical.
   </Accordion>
-  <Accordion title="Why does a heavily-filtered query return so few items?">
-    `/rss/anime.xml` is now generated by the Web runtime + Typesense. Resolution, language, format, subtitle type, and similar tags are pushed into Typesense filters where possible. Very strict filters usually return few items because there are few true matches. If the Web post-filter window cannot guarantee completeness, the endpoint returns `503` instead of falling back to a Convex table scan. See [Rate limits & caps](/docs/open-api/limits).
+  <Accordion title="Why do very strict filters return so few items?">
+    `/rss/anime.xml` is built by Web runtime + Typesense; resolution/language/format/subtitle tags are pushed into Typesense when possible. Very few results usually means few real matches. If the post-filter window cannot guarantee completeness, the server returns `503` rather than falling back to a Convex scan. See [Rate limits & caps](/docs/open-api/limits).
   </Accordion>
-  <Accordion title="How long until a new release shows up in my RSS reader?">
-    A publish API `200 OK` means the write was accepted; it is not a synchronous visibility confirmation. Site-side refresh is event-driven through Typesense completion, immutable-snapshot publication, strict Redis warm, and Edge CDN purge, so it does not wait out the full 120-second TTL. Operationally, a publication pending for more than 15 seconds enters alert investigation. The time you observe in an RSS reader also includes the client's own 5–10 minute poll interval. See [HTTP caching & 304](/docs/open-api/caching).
+  <Accordion title="How soon does a new torrent appear in RSS?">
+    Publish `200 OK` means the write was accepted, not that visibility is synchronous. Site-side refresh is event-driven (Typesense, immutable snapshot publish, strict Redis warm, Edge CDN purge) and does not need to wait out the full 120 s TTL; ops alerts when publication pending exceeds 15 s. Reader-side latency also includes the client’s own 5–10 minute poll interval. See [HTTP caching & 304](/docs/open-api/caching).
   </Accordion>
-  <Accordion title="Why did DELETE return 202 instead of an immediate 200?">
-    `202 Accepted` means deletion was durably accepted while the strict Typesense, list/RSS, Redis, Cloudflare, and R2 cleanup barrier is still running. Retain `operationId`, follow `Location` / `statusUrl` with `GET /api/releases/{releaseId}/deletion`, and honour `Retry-After`. Repeating DELETE is idempotent and returns the same receipt. Only `state=completed` proves that AniBT-owned public visibility has been removed. See [Delete an anime release](/docs/open-api/releases-delete).
+  <Accordion title="Why does DELETE return 202 instead of immediate 200?">
+    `202 Accepted` means the deletion was durably accepted while Typesense, list/RSS, Redis, Cloudflare, and R2 cleanup barriers still run. Keep `operationId`, poll `GET /api/releases/{releaseId}/deletion` via `Location` / `statusUrl`, and honour `Retry-After`. Repeated DELETE is idempotent and returns the same receipt; only `state=completed` proves AniBT’s own public surfaces passed invisibility checks. See [Delete an anime release](/docs/open-api/releases-delete).
   </Accordion>
-  <Accordion title="Why does a valid API key receive 403 on deletion?">
-    Both deletion and status reads require `releases:delete`. Keys created before scopes were introduced were safely migrated to `releases:publish` only; deletion was not granted automatically. Inspect `scopes` through [`GET /api/subtitle-groups/me`](/docs/open-api/me), then create or use a key that explicitly includes `releases:delete`. Missing scope returns `403 INSUFFICIENT_SCOPE` before resource lookup; a scoped key without access receives the same 404 as a nonexistent release.
+  <Accordion title="The API key works, so why does delete return 403?">
+    Delete and status queries require `releases:delete`. Keys created before scopes shipped were safely migrated to `releases:publish` only. Call [`GET /api/subtitle-groups/me`](/docs/open-api/me) to inspect `scopes`, then create or switch to a key that includes `releases:delete`. Missing scope returns `403 INSUFFICIENT_SCOPE` before resource lookup; scoped-but-unauthorised targets are indistinguishable from missing resources (404).
   </Accordion>
-  <Accordion title="Does completed also remove external posts, tracker state, and local caches?">
-    No. `completed` covers AniBT-owned canonical data, detail/torrent reads, Typesense search and lists, magnets, public/subscription RSS, Redis, Cloudflare CDN, and captured R2 objects. It cannot recall a page already loaded or cached by a browser/RSS client, a downloaded torrent or magnet, tracker swarm/whitelist state, or posts on Nyaa, Mikan, DMHY, and other external sites. Those require separate workflows.
+  <Accordion title="After completed, do external sites, Tracker, and local caches also clear?">
+    Not all of them. `completed` covers AniBT’s own canonical records, detail/torrent reads, Typesense search and lists, magnets, public/subscription RSS, Redis, Cloudflare CDN, and captured R2 objects. It does not recall already-open pages or browser/reader caches, already-downloaded torrents/magnets, Tracker swarm/whitelist state, or external posts on Nyaa / Mikan / DMHY — those are separate workflows.
   </Accordion>
-  <Accordion title="Why are the status code, generatedAt, or cf-cache-status healthy while the body is still old?">
-    Those fields prove that the request and one cache layer succeeded; they do not prove that the release which triggered the work is present. Check the returned `releaseId` directly in the release page and relevant RSS / magnets body, and record ETag / Last-Modified as well. Operators should then compare snapshot queue age, publication pending age, and `snapshot_redis_warm.completed.latencyMs`: high queue age with low warm latency points to scheduling or backlog, not a Redis TTL problem. Do not wait for an unrelated later publish to refresh it by chance.
+  <Accordion title="Why do status, generatedAt, or cf-cache-status look fine while the body is still old?">
+    Those fields only prove the request and some cache layer succeeded, not that the triggering release is in the body. Inspect the returned `releaseId` on the detail page and the target RSS / magnets body, and record ETag / Last-Modified. On the ops side, compare snapshot queue age, publication pending age, and `snapshot_redis_warm.completed.latencyMs`: high queue age with low warm latency points to scheduling/backlog, not Redis TTL. Do not wait for an unrelated publish to “refresh by accident”.
   </Accordion>
 </Accordions>
 
 ## Integration checklist
 
-One last pass:
-
 <Steps>
   <Step>
-    ### Call [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) once at startup
-    Cache the `name → slug` map locally and never hard-code slugs.
+    ### Fetch [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) once at startup
+    Cache the `name → slug` map; do not hard-code slugs.
   </Step>
   <Step>
-    ### Subscribe via [`/rss/anime.xml`](/docs/open-api/rss-anime) or the short link
-    Prefer `bgmId + groupSlug` for filtered subscriptions; use `/rss/group/<slug>.xml` when no filter is needed.
+    ### Subscribe via [`/rss/anime.xml`](/docs/open-api/rss-anime) or short links
+    Prefer `bgmId + groupSlug`; use `/rss/group/<slug>.xml` when filters are not needed.
   </Step>
   <Step>
     ### Always send If-None-Match
-    Cache the previous response's `ETag` and replay it on the next poll. See [HTTP caching & 304](/docs/open-api/caching).
+    Cache the previous `ETag` and send `If-None-Match` on the next poll. See [HTTP caching & 304](/docs/open-api/caching).
   </Step>
   <Step>
-    ### Follow 308 and retain the canonical URL
-    Do not keep polling an old parameter form that redirects; use the client's final URL as the future polling key.
+    ### Follow 308 and store the canonical URL
+    Do not keep polling redirecting old parameter forms; use the client’s final URL as the poll key.
   </Step>
   <Step>
-    ### Keep the interval ≥ 5 minutes
-    Tighter polling has no upside and may trigger 429.
+    ### Interval ≥ 5 minutes
+    Shorter intervals buy little and risk 429.
   </Step>
   <Step>
-    ### Honour Retry-After on 429
+    ### On 429, back off with Retry-After
     Do not retry immediately.
   </Step>
 </Steps>

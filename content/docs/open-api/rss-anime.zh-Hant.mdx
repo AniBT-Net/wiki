@@ -3,11 +3,12 @@ title: RSS 主入口
 description: GET /rss/anime.xml —— 支援 bgmId、字幕組 slug 與多 Tag 任意組合的 RSS 主入口，相容 Mikan 連結。
 ---
 
-`/rss/anime.xml` 是最靈活的訂閱端點：用 `bgmId` + `groupSlug` + 多個 Tag（`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`）任意組合訂閱一個番劇 / 字幕組 / 全站釋出。
+`/rss/anime.xml` 是最靈活的訂閱端點：用 `bgmId` + `groupSlug` + 多個 Tag（`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`）任意組合，訂閱一個番劇、一個字幕組或全站相關釋出。
 
-<Callout type="info">
-  必須給 `bgmId` 或 `groupSlug` **至少之一**。兩者都不傳會被拒絕。
-</Callout>
+## 前置條件
+
+- 無需鑑權。
+- 必須提供 `bgmId` 或 `groupSlug` **至少之一**；兩者都不傳會被拒絕。
 
 ## URL
 
@@ -15,7 +16,7 @@ description: GET /rss/anime.xml —— 支援 bgmId、字幕組 slug 與多 Tag 
 GET https://anibt.net/rss/anime.xml?<query>
 ```
 
-## 查詢引數
+## 查詢參數
 
 <TypeTable
   type={{
@@ -63,15 +64,15 @@ GET https://anibt.net/rss/anime.xml?<query>
   `limit` 重複、為空、含前導零、不是整數或大於 100 時，應用返回 `400 + no-store`；生產邊緣可能先返回 Cloudflare `403`。`limit=100` 等與預設值等價的寫法會 `308` 到規範 URL，跳轉可快取 1 天；客戶端應跟隨永久重新導向。
 </Callout>
 
-只調整原始 query 參數對順序、沒有改變任何參數位元組時，不再重新導向：請求直接返回同一份規範 `200`，`atom:link rel="self"`、ETag 與快取身份仍使用穩定規範 URL；目前省略 `Last-Modified`。
+只調整原始 query 參數對順序、且未改變任何參數位元組時，不再跳轉：請求直接返回同一份規範 `200`，`atom:link rel="self"`、ETag 與快取身分仍使用穩定規範 URL；目前省略 `Last-Modified`。
 
 <Callout type="warn">
-  公開 RSS 現在從最終 XML UTF-8 bytes 計算 `W/"anibt-sha256-{...}"` ETag，並移除了請求時間 `lastBuildDate`。相同 ETag 綁定相同正文；匹配 ETag 的 `304` 表示目前 feed bytes 未變化。目前省略 `Last-Modified`。shape 合法但無法解析的 anime owner 仍可能返回空 `200`，而未知 `/rss/group/<slug>.xml` 仍返回 `404`。
+  公開 RSS 從最終 XML UTF-8 bytes 計算 `W/"anibt-sha256-{...}"` ETag，並移除了請求時間 `lastBuildDate`。相同 ETag 綁定相同正文；匹配 ETag 的 `304` 表示目前 feed bytes 未變化。目前省略 `Last-Modified`。shape 合法但無法解析的 anime owner 仍可能返回空 `200`，而未知 `/rss/group/<slug>.xml` 仍返回 `404`。
 </Callout>
 
-## 重複引數兩種寫法等價
+## 重複參數兩種寫法等價
 
-```txt title="標準重複 query（推薦）"
+```txt title="標準重複 query（建議）"
 ?resolution=1080p&resolution=720p
 ```
 
@@ -79,9 +80,9 @@ GET https://anibt.net/rss/anime.xml?<query>
 ?resolution=1080p,720p
 ```
 
-## 響應
+## 成功回應
 
-返回 **RSS 2.0 + BEP 36** 原生 XML。瀏覽器直開 RSS URL 時不載入站點自訂 XSL/CSS，會使用瀏覽器預設 XML 樹展示；RSS 閱讀器和 BT 客戶端繼續按標準欄位消費。
+返回 **RSS 2.0 + BEP 36** 原生 XML。瀏覽器直開 RSS URL 時不載入站點自訂 XSL/CSS，使用瀏覽器預設 XML 樹展示；RSS 閱讀器和 BT 客戶端按標準欄位消費。
 
 每個 `<item>` 包含：
 
@@ -126,7 +127,7 @@ GET https://anibt.net/rss/anime.xml?<query>
 
 ## 後端執行方式
 
-`/rss/anime.xml` 在主站 Web runtime 生成，不再回源 Convex RSS query。Web 層使用 Typesense 的 `rss_resolvers` collection 解析 `bgmId` / `groupSlug`，再查詢 Typesense `releases` collection：
+`/rss/anime.xml` 在主站 Web runtime 產生，不再回源 Convex RSS query。Web 層使用 Typesense 的 `rss_resolvers` collection 解析 `bgmId` / `groupSlug`，再查詢 Typesense `releases` collection：
 
 | 提供                    | 執行方式                         |
 | ----------------------- | -------------------------------- |
@@ -134,13 +135,13 @@ GET https://anibt.net/rss/anime.xml?<query>
 | 僅 `bgmId`              | Typesense filter 約束番劇          |
 | 僅 `groupSlug`          | Typesense filter 約束字幕組        |
 
-解析度、語言、格式、字幕方式等 Tag 盡量下推到 Typesense filter；`episode` / `episodeKey` 等展示欄位只在 Web runtime 做小視窗後過濾。實體 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。釋出事件會先失效對應 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一實體的全部 CDN 參數變體；當一個 anime 同時解析出兩個 owner 時，兩組 Redis 家族與 CDN 變體會作為同一個釋出結果一起重新整理，不會只更新其中一側。TTL 繼續作為事件鏈路失敗時的兜底，ETag 始終由快取後的最終 XML 正文決定。
+解析度、語言、格式、字幕方式等 Tag 儘量下推到 Typesense filter；`episode` / `episodeKey` 等展示欄位只在 Web runtime 做小視窗後過濾。實體 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。釋出事件會先失效對應 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一實體的全部 CDN 參數變體；當一個 anime 同時解析出兩個 owner 時，兩組 Redis 家族與 CDN 變體作為同一個釋出結果一起重新整理，不會只更新其中一側。TTL 繼續作為事件鏈路失敗時的兜底，ETag 始終由快取後的最終 XML 正文決定。
 
 ## Mikan 參數相容
 
-Mikan 風格參數可以直接換主機，參數原樣工作：
+Mikan 風格參數可直接換主機，參數原樣工作：
 
-<Tabs items={['原始 Mikan 連結', '直接換主機', '推薦寫法']}>
+<Tabs items={['原始 Mikan 連結', '直接換主機', '建議寫法']}>
   <Tab value="原始 Mikan 連結">
     ```txt
     https://mikanani.me/RSS/Bangumi?bangumiId=3921&subgroupid=615
@@ -152,11 +153,11 @@ Mikan 風格參數可以直接換主機，參數原樣工作：
     ```
     `bangumiId`、`subgroupid` 作為相容別名繼續工作。
   </Tab>
-  <Tab value="推薦寫法">
+  <Tab value="建議寫法">
     ```txt
     https://anibt.net/rss/anime.xml?bgmId=3921&groupSlug=<slug>
     ```
-    在新程式碼中使用規範名稱。
+    新程式碼中使用規範名稱。
   </Tab>
 </Tabs>
 

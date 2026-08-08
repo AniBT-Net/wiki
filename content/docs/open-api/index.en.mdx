@@ -6,7 +6,7 @@ description: Design overview, endpoint cheat sheet, and integration entry points
 AniBT exposes public read data through two kinds of endpoints: **RSS** for subscriptions and **JSON APIs** for programmatic integration. Public read routes are anonymous and support **HTTP 304 Not Modified** according to their cache contracts. Publishing, deletion, and identity routes require a subtitle-group API key and are not cacheable.
 
 <Callout type="info">
-  Standard RSS clients like qBittorrent, Sonarr, FlexGet, and Tiny Tiny RSS work **without any extra configuration** — caching and conditional requests are emitted in the response headers automatically.
+  Standard RSS clients such as qBittorrent, Sonarr, FlexGet, and Tiny Tiny RSS need no extra setup — caching and conditional requests are emitted in the response headers automatically.
 </Callout>
 
 <Callout type="warn">
@@ -85,7 +85,7 @@ AniBT exposes public read data through two kinds of endpoints: **RSS** for subsc
 
 ## Design overview
 
-The system is layered by responsibility so third parties can pick the right endpoint quickly:
+The system is layered by responsibility so integrators can pick the right endpoint quickly:
 
 ```txt title="Data flow"
 ┌────────────────────────────────────────────────────────────┐
@@ -96,7 +96,7 @@ The system is layered by responsibility so third parties can pick the right endp
 ┌────────────────────────────────────────────────────────────┐
 │  GET https://anibt.net/api/subtitle-groups                  │
 │  Returns [{slug, name, totalReleases, totalAnimes, ...}]     │
-│  → Map "display name" or "user input" to a stable slug       │
+│  → Map display name or user input to a stable slug           │
 └────────────────────────────────────────────────────────────┘
         │ ② When subscribing / every N minutes: pull RSS
         ▼
@@ -128,7 +128,7 @@ The system is layered by responsibility so third parties can pick the right endp
       type: 'convention',
     },
     'Filter pushdown': {
-      description: 'Anything pushable through query string is pushed from the Web runtime into Typesense filters; a few display fields use a bounded Web post-filter, so downstream clients do not parse the whole feed.',
+      description: 'Anything pushable through the query string is pushed from the Web runtime into Typesense filters; a few display fields use a bounded Web post-filter so downstream clients do not parse the whole feed.',
       type: 'design',
     },
     'HTTP cache first': {

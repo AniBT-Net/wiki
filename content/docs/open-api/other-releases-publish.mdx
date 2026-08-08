@@ -3,10 +3,16 @@ title: 发布其他类资源
 description: POST /api/other-releases/publish —— 字幕组用 API Key 发布漫画、音乐、RAW、舞台剧资源；不绑定 bgmId。
 ---
 
-`/api/other-releases/publish` 是字幕组发布**非番剧资源**的写入端点，适用于漫画、音乐、RAW、舞台剧。它使用同一套字幕组 API Key 鉴权，并要求 `releases:publish` scope；不需要 `bgmId`，也不会混入番剧发布列表。
+`/api/other-releases/publish` 是字幕组发布**非番剧资源**的写入端点，适用于漫画、音乐、RAW、舞台剧。使用同一套字幕组 API Key 鉴权，并要求 `releases:publish` scope；不需要 `bgmId`，也不会混入番剧发布列表。
+
+## 前置条件
+
+- 字幕组 API Key 显式包含 `releases:publish`。
+- Key 仅用于服务端脚本或 CI secret；泄露后可立即在后台重置。
+- `category` 与 `title` 必填；`torrent`、`torrentStorageId`、`magnetLink`、`magnetBase64` 至少提供一个。
 
 <Callout type="warn">
-  这是**写入接口**。Key 泄露会允许别人以你的字幕组名义发布其他类资源；请只在服务端脚本或 CI secret 中使用。
+  这是**写入接口**。Key 泄露后，他人可以该字幕组名义发布其他类资源。
 </Callout>
 
 ## URL
@@ -224,7 +230,7 @@ curl -X GET 'https://anibt.net/api/other-releases/publish' \
 
 用法与番剧发布 whoami 相同：正式写入前应确认字幕组身份，并检查 `scopes` 包含 `releases:publish`。GET whoami 本身不要求 publish scope。
 
-## 返回
+## 成功响应
 
 ```json title="成功响应"
 {
@@ -270,7 +276,7 @@ JSON 磁力发布和 multipart 种子上传使用同一种错误 envelope；字�
 
 部署期间暂停发布交接会返回 `503 Service Unavailable`，`code=PUBLIC_SNAPSHOT_ENQUEUE_PAUSED`、`reason=DEPLOYMENT_IN_PROGRESS`、`retryable=true`。写入限流会返回 `429 Too Many Requests`，`code=RATE_LIMIT_EXCEEDED`、`reason=RATE_LIMITED`、`retryable=true`。两者都应按 `Retry-After` / `retryAfterMs` 退避。
 
-## 常见错误
+## 失败响应
 
 | HTTP | 原因                                             | 处理                                                   |
 | ---- | ------------------------------------------------ | ------------------------------------------------------ |

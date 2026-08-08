@@ -1,12 +1,12 @@
 ---
 title: 站点同步
-description: 把 AniBT 发布同步到萌番组、Mikan、动漫花园、末日站、ACG.rip 与 Nyaa 的配置入口。
+description: 将 AniBT 上的发布同步到萌番组、Mikan、动漫花园、末日站、ACG.rip 与 Nyaa。
 ---
 
-站点同步会在你通过 AniBT 发布资源后，把同一条发布推送到已配置的外部站点，减少重复上传与手动维护。
+站点同步会在 AniBT 完成发布后，把同一条发布推送到已配置的外部站点，减少重复上传和手动维护。
 
 <Callout type="info">
-  使用前需要先完成 [申请入驻](/docs/apply)，并在 AniBT 后台进入字幕组的同步设置；每个外部站点都需要单独保存凭据。
+  使用前完成 [申请入驻](/docs/apply)，并在 AniBT 后台进入字幕组的同步设置。每个外部站点需单独保存凭据。
 </Callout>
 
 ## 配置流程
@@ -15,25 +15,25 @@ description: 把 AniBT 发布同步到萌番组、Mikan、动漫花园、末日�
   <Step>
     ### 选择要同步的站点
 
-    在 AniBT 字幕组后台打开同步设置，先启用你实际维护的外部站点。
+    在 AniBT 字幕组后台打开同步设置，启用实际维护的外部站点。
   </Step>
 
   <Step>
     ### 准备对应凭据
 
-    按下方速查表进入对应文档，复制 Cookie、API Token、UID 或账号密码等必需字段。
+    按下方速查表打开对应文档，复制 Cookie、API Token、UID 或账号密码等必需字段。
   </Step>
 
   <Step>
     ### 保存并测试连接
 
-    在 AniBT 中保存配置后，优先点击测试连接；确认通过后再发布正式资源。
+    在 AniBT 中保存配置。确认测试连接通过后，再发布正式资源。
   </Step>
 </Steps>
 
 ## 后台工作台
 
-字幕组后台的 `/groups/<slug>/sync` 按外部站点组织：左侧选择站点并配置凭据，右侧查看该站点最近的同步日志。多个站点不会同时展开，避免设置和日志混在一起。
+字幕组后台路径 `/groups/<slug>/sync` 按外部站点组织：左侧选择站点并配置凭据，右侧查看该站点最近的同步日志。同一时间只展开一个站点，避免设置与日志混杂。
 
 同步日志只展示最近 40 条，可按全部、成功、失败、进行中过滤。日志保留约 14 天，用于排查短期发布问题；过期日志会自动清理，不作为长期审计记录。资源已删除时，日志仍会显示发布 ID 和删除状态，但重试与重新同步入口会被禁用。
 
@@ -43,7 +43,7 @@ description: 把 AniBT 发布同步到萌番组、Mikan、动漫花园、末日�
 
 <Cards>
   <Card title="萌番组同步" href="/docs/site-sync/bangumi" description="复制登录 Cookie、发布身份名称和 Team ID。" />
-  <Card title="Mikan 同步" href="/docs/site-sync/mikan" description="填写 API Token，并让 AniBT 自动查询 ID。" />
+  <Card title="Mikan 同步" href="/docs/site-sync/mikan" description="填写 API Token，并由 AniBT 自动查询 ID。" />
   <Card title="动漫花园同步" href="/docs/site-sync/dmhy" description="填写账号、密码和字幕组名称。" />
   <Card title="末日站同步" href="/docs/site-sync/acgnx" description="复制 UID 与 API Token。" />
   <Card title="ACG.rip 同步" href="/docs/site-sync/acgrip" description="复制仪表盘中的 API Token。" />
@@ -63,11 +63,11 @@ description: 把 AniBT 发布同步到萌番组、Mikan、动漫花园、末日�
       type: 'API Token',
     },
     '动漫花园': {
-      description: '需要账号、密码和你在动漫花园使用的字幕组名称。',
+      description: '需要账号、密码和在动漫花园使用的字幕组名称。',
       type: '账号密码',
     },
     '末日站': {
-      description: '需要 UID 与 API Token，站名 ACGNX 在中文文档里仍称「末日站」。',
+      description: '需要 UID 与 API Token（站名 ACGNX 在中文文档中称「末日站」）。',
       type: 'UID + API Token',
     },
     'ACG.rip': {

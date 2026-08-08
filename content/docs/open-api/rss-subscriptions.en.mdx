@@ -1,17 +1,20 @@
 ---
 title: Personal subscription RSS
-description: GET /rss/subscriptions.xml — your "My subscriptions" panel rolled up into one personal RSS feed. Requires login.
+description: GET /rss/subscriptions.xml — one personalised feed from front-end “My subscriptions”. Requires auth.
 ---
 
-`/rss/subscriptions.xml` merges every show / release group / quality filter you have selected in the AniBT "My subscriptions" panel into **one** personal RSS feed — drop it into a BT client or RSS reader and you're done.
+`/rss/subscriptions.xml` **merges** every anime / group / filter selected under AniBT’s front-end “My subscriptions” into a single RSS feed for BitTorrent clients or readers.
 
-Unlike [`/rss/anime.xml`](/docs/open-api/rss-anime) and [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints), which are **public**, this feed is **per-user**, so it requires authentication.
+Unlike public feeds such as [`/rss/anime.xml`](/docs/open-api/rss-anime) and [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints), this is a **private** feed and therefore requires authentication.
+
+## Preconditions
+
+- Signed in to AniBT, or in possession of a personal subscription URL from the account dashboard (signed query params or token).
+- Subscriptions themselves are configured in the UI (anime, groups, resolution/language filters). This endpoint only **exports** the saved state as RSS.
 
 <Callout type="info">
-  The subscriptions themselves are configured in the web UI: pick shows, pick groups, set quality / language filters. This endpoint just **exports the current state** as RSS.
+  On the anime detail page, the subscribe dialog previews matches against recently loaded releases while filters change. Expected hits are advisory; items that appear in `/rss/subscriptions.xml` always follow the server-saved subscription config and later publishes.
 </Callout>
-
-When you subscribe from an anime detail page, the dialog previews matches against the recently loaded releases for that show. As you change groups, resolution, language, subtitle type, file format, or custom tags, you can see the expected matches before saving; the final items in `/rss/subscriptions.xml` still come from the saved server-side subscription and future releases.
 
 ## Request
 
@@ -19,31 +22,31 @@ When you subscribe from an anime detail page, the dialog previews matches agains
 GET https://anibt.net/rss/subscriptions.xml
 ```
 
-You must be **logged in** to access it:
+How to access:
 
-- In a browser: log in once and the link will download directly.
-- In a BT client / RSS reader: copy the personal subscription URL (with its signed parameters / token) from your account dashboard and paste the full URL into the client.
+- Browser: open the URL while signed in.
+- BitTorrent / RSS clients: copy the full personal subscription URL from the account dashboard into the client.
 
-The exact token / auth header format is whatever the user dashboard hands out; treat it as opaque and **don't hard-code** any specific URL shape into long-running scripts — copy the latest URL from the dashboard instead.
+Token generation and auth-header formats follow the site user centre and may change. **Do not hard-code** URL shapes into long-lived scripts — always copy the latest dashboard link.
 
 <Callout type="warn">
-  The URL embeds your identity. **Do not** post it in issues, screenshots, public repos, or chat groups. Reset it from the dashboard immediately if it leaks.
+  Subscription URLs usually embed user credentials. **Do not** paste them into issues, screenshots, public repos, or public chats. Reset immediately if leaked.
 </Callout>
 
-## Response
+## Success response
 
-Native standard RSS 2.0 XML, identical in shape to [`/rss/anime.xml`](/docs/open-api/rss-anime): each `<item>` is a single release with magnet `<enclosure>`, file size, group, episode, etc. The only difference is **which** items get included — that is decided by your subscriptions.
+Standard RSS 2.0 native XML with the same item shape as [`/rss/anime.xml`](/docs/open-api/rss-anime): each `<item>` is a release with magnet `<enclosure>`, size, group, episode, and so on. The only difference is which items are admitted — that is driven by the saved subscription config.
 
-Opening an RSS URL in a browser no longer loads AniBT custom XSL/CSS; the browser renders its default XML tree while RSS readers and BT clients keep consuming the standard fields.
+Browsers show the default XML tree (no site XSL/CSS). Readers and BitTorrent clients consume standard fields.
 
-```xml title="Excerpt"
+```xml title="Snippet"
 <rss version="2.0">
   <channel>
-    <title>AniBT - My subscriptions</title>
+    <title>AniBT - 我的订阅</title>
     <link>https://anibt.net/subscriptions</link>
-    <description>Merged from 12 subscription entries</description>
+    <description>由 12 个订阅条目合并生成</description>
     <item>
-      <title>[Group A] Show - 01 [1080p][CHS&JP].mkv</title>
+      <title>[字幕组A] 番名 - 01 [1080p][CHS&JP].mkv</title>
       <link>https://anibt.net/release/...</link>
       <pubDate>...</pubDate>
       <enclosure url="magnet:?xt=urn:btih:..." length="734003200" type="application/x-bittorrent" />
@@ -55,28 +58,28 @@ Opening an RSS URL in a browser no longer loads AniBT custom XSL/CSS; the browse
 
 ## Caching & latency
 
-- **Every response is non-cacheable publicly**: successful XML plus missing/invalid credentials, rate limits, and server errors all carry `Cache-Control: private, no-store`, `CDN-Cache-Control: no-store`, and `Cloudflare-CDN-Cache-Control: no-store`. Browsers and CDNs must not store or share this private content.
-- **Polling**: 5–10 minutes is plenty for BT clients. Per-user throttling is in place; faster polling will be rate-limited.
-- **No public validator**: this private feed does not return a public `ETag` or offer an `If-None-Match` / `304 Not Modified` contract. Clients should handle each successful poll as a complete private response.
+- **No shared caching on any response**: success XML and missing/invalid credential, rate-limit, or server-error responses all return `Cache-Control: private, no-store`, `CDN-Cache-Control: no-store`, and `Cloudflare-CDN-Cache-Control: no-store`. Browsers and CDNs must not store or share this private content.
+- **Poll interval**: 5–10 minutes is a good default for BitTorrent clients. The backend rate-limits per user; aggressive polling is throttled.
+- **No public validators**: this private feed does not expose a public `ETag` or an `If-None-Match` / `304 Not Modified` contract; treat every successful response as a full private payload.
 
-See [Caching](/docs/open-api/caching) and [Limits](/docs/open-api/limits) for details.
+See [HTTP caching & 304](/docs/open-api/caching) and [Rate limits & caps](/docs/open-api/limits).
 
-## Compared to public RSS
+## Compared with public RSS
 
-| Dimension     | `/rss/anime.xml` / `/rss/group/<slug>.xml` | `/rss/subscriptions.xml`                |
-| ------------- | ------------------------------------------ | --------------------------------------- |
-| Auth          | None                                       | Required (token or session cookie)      |
-| Source        | One show / one group                       | All your selections, merged             |
-| Cache         | Shared CDN                                 | Private, no shared CDN                  |
-| Best for      | Following one show / one group             | One feed for **everything** you watch   |
+| Dimension | `/rss/anime.xml` / `/rss/group/<slug>.xml` | `/rss/subscriptions.xml` |
+| --------- | ------------------------------------------ | ------------------------ |
+| Auth | None | Required (Bearer or Cookie) |
+| Content | One show / one group | Merged multi-subscription list |
+| Caching | Shared CDN | Private, not shared CDN |
+| Fit | Follow one title or one group | One feed for the full watch list |
 
-## Common errors
+## Error responses
 
-| HTTP | Cause                                            | Fix                                       |
-| ---- | ------------------------------------------------ | ----------------------------------------- |
-| 400  | Personal RSS key / token is missing              | Copy the complete subscription URL again from the dashboard |
-| 401  | Not logged in / credentials expired               | Log in again, or re-copy the URL from dashboard |
-| 403  | Credentials revoked / user banned                 | Contact site staff                         |
-| 429  | Polling too aggressively                          | Back off (≥ 5 min between polls)           |
+| HTTP | Cause | Action |
+| ---- | ----- | ------ |
+| 400 | Missing personal RSS key / token | Re-copy the full subscription URL from the account dashboard |
+| 401 | Not signed in / credential expired | Sign in again or re-issue the subscription URL |
+| 403 | Credential revoked / user banned | Contact site admins |
+| 429 | Polling too fast | Lengthen the interval (recommend ≥ 5 minutes) |
 
-Next: wiring it into a client → [Integration examples](/docs/open-api/examples). Following a public show → [`/rss/anime.xml`](/docs/open-api/rss-anime).
+Next: wire the URL into a client via [Examples](/docs/open-api/examples); public show feeds use [`/rss/anime.xml`](/docs/open-api/rss-anime).

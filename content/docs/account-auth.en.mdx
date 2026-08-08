@@ -1,12 +1,12 @@
 ---
 title: Accounts, sign-in, and sessions
-description: Register with an email OTP, sign in with a password or external provider, and understand AniBT session restoration.
+description: Email-OTP registration, password or external sign-in, and AniBT UI states during session restoration.
 ---
 
 AniBT user accounts support email-OTP registration, email/password sign-in, and the external providers currently shown on the sign-in page.
 
 <Callout type="info">
-  Register at [anibt.net/auth/sign-up](https://anibt.net/auth/sign-up) and sign in at [anibt.net/auth/sign-in](https://anibt.net/auth/sign-in). Publishing as a subtitle group still requires a separate [admission application](/docs/apply) after the normal account exists.
+  Register at [anibt.net/auth/sign-up](https://anibt.net/auth/sign-up). Sign in at [anibt.net/auth/sign-in](https://anibt.net/auth/sign-in). Publishing as a subtitle group still requires a separate [admission application](/docs/apply) after the normal account exists.
 </Callout>
 
 ## Register with an email OTP
@@ -14,24 +14,27 @@ AniBT user accounts support email-OTP registration, email/password sign-in, and 
 <Steps>
   <Step>
     ### Request a code
-    Enter your email address and complete the human-verification challenge. The code has six digits and expires after ten minutes. Resends are protected by a client cooldown and server-side rate limits.
 
-    To avoid exposing whether an address is registered, an existing address receives the same success response but no new registration code. Use sign-in or password reset for an existing account.
+    Enter an email address and complete human verification. The code has six digits and expires after ten minutes. Resends are protected by a client cooldown and server-side rate limits.
+
+    To avoid revealing whether an address is registered, an existing address receives the same success response but no new registration code. Use sign-in or password reset for an existing account.
   </Step>
   <Step>
     ### Verify the address
+
     Enter a display name, password, and code. Password format is checked before the code is consumed. A successful code is one-time use and creates a verified session.
   </Step>
   <Step>
     ### Finish attaching the password
-    AniBT attaches the password inside that new session. If the network response is lost or password attachment temporarily fails, retry on the same page; do not try to reuse the consumed code.
 
-    The unexpired registration state stays in the current tab. A full-page reload in the same browser can restore the authoritative session and continue password attachment. Until it finishes, do not switch email, private window, device, or tab.
+    AniBT attaches the password inside that new session. If the network response is lost or password attachment temporarily fails, retry on the same page; do not reuse the consumed code.
+
+    Unexpired registration state stays in the current tab. A full-page reload in the same browser can restore the authoritative session and continue password attachment. Until it finishes, do not switch email, private window, device, or tab.
   </Step>
 </Steps>
 
 <Callout type="warn">
-  OTP codes, CAPTCHA tickets, and OAuth callback state are one-time values. Never share them. Repeatedly refreshing an already-consumed external-login callback can be rejected by the security checks.
+  OTP codes, CAPTCHA tickets, and OAuth callback state are one-time values. Never share them. Repeatedly refreshing an already-consumed external-login callback can be rejected by security checks.
 </Callout>
 
 ## Sign-in and password recovery
@@ -48,9 +51,9 @@ AniBT user accounts support email-OTP registration, email/password sign-in, and 
   </Tab>
 </Tabs>
 
-## What session restoration looks like
+## UI states during session restoration
 
-Public pages remain cacheable and never embed a user session in shared HTML. The browser confirms the real token after load or when returning to the page, so the user control has three states:
+Public pages remain cacheable and never embed a user session in shared HTML. The browser confirms the real token after load or when returning to the page. The user control has three states:
 
 <TypeTable
   type={{
@@ -59,7 +62,7 @@ Public pages remain cacheable and never embed a user session in shared HTML. The
       type: 'Signed in',
     },
     restoring: {
-      description: 'A browser hint suggests a session, but the token request is pending or hit a temporary network/5xx failure. AniBT shows cached identity or a neutral control, never a clickable sign-in prompt.',
+      description: 'A browser hint suggests a session, but the token request is pending or hit a temporary network / 5xx failure. AniBT shows cached identity or a neutral control, never a clickable sign-in prompt.',
       type: 'Restoring',
     },
     anonymous: {
