@@ -21,3 +21,24 @@ After upload, these formats are available:
 <Callout type="info">
   Image Host is available only to members of that subtitle group. Path: group admin → **Image Host** (`/groups/<slug>/image-host`).
 </Callout>
+
+## Deleting an image
+
+The uploader, group owner/administrators, or a site administrator can delete an
+image. `DELETE /api/image-host/image?imageId=...` accepts the request with HTTP
+`202` and a stable `operationId`. Repeated requests for the same image reuse the
+same deletion operation instead of creating parallel deletion chains.
+
+The image is immediately hidden from active lists and the `/i/:shortCode`
+application lookup. The UI then reads
+`GET /api/image-host/image?operationId=...` for status:
+
+| Status | Meaning |
+| --- | --- |
+| `queued` | Accepted; background processing is deleting the object or waiting for Cloudflare cache convergence. |
+| `complete` | The AniBT R2 object is verified absent, and the short page plus `i.anibt.net` direct URL have converged in AniBT-controlled Cloudflare caches and return `404` / `410`. |
+| `failed` | The deletion operation reached a terminal failure; the UI displays the failure state. |
+
+<Callout type="warning">
+  `complete` does not mean every copy on the internet was erased. Separate accelerated links and their CDN, visitor browser caches, downstream proxies, search engines, and third-party reposts are outside the deletion completion scope.
+</Callout>

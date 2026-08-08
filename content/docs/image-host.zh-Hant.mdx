@@ -21,3 +21,22 @@ description: 在字幕組後台圖床模組上傳圖片，複製全球加速連�
 <Callout type="info">
   圖床僅對已加入該字幕組的成員開放。選單路徑：字幕組後台 → **圖床**（`/groups/<slug>/image-host`）。
 </Callout>
+
+## 刪除圖片
+
+上傳者、字幕組 owner / 管理員或站點管理員可以刪除圖片。刪除請求由
+`DELETE /api/image-host/image?imageId=...` 受理，並回傳 HTTP `202` 與穩定的
+`operationId`。同一張圖片的重複請求會重用同一個刪除 operation，不會建立平行刪除鏈路。
+
+圖片在請求受理後立即從活動清單和 `/i/:shortCode` 的站內查詢中隱藏。介面隨後透過
+`GET /api/image-host/image?operationId=...` 查詢狀態：
+
+| 狀態 | 含義 |
+| --- | --- |
+| `queued` | 已受理，後台正在刪除物件或等待 Cloudflare 快取收斂。 |
+| `complete` | AniBT R2 物件已驗證不存在；短連結頁面和 `i.anibt.net` 直連已在 AniBT 控制的 Cloudflare 快取中完成收斂，並回傳 `404` / `410`。 |
+| `failed` | 刪除 operation 已進入終態失敗，介面會顯示失敗狀態。 |
+
+<Callout type="warning">
+  `complete` 不表示所有網際網路副本都已抹除。獨立加速連結及其 CDN、訪客瀏覽器快取、下游代理、搜尋引擎和第三方轉載不屬於刪除完成範圍。
+</Callout>

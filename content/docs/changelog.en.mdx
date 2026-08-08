@@ -11,6 +11,11 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 
 ## August 8, 2026
 
+### Changed
+
+- **Subtitle-group image deletion now has a queryable strict lifecycle**
+  Deletion requests now return HTTP `202` with a stable operation, and repeated requests reuse the same deletion chain. The image is immediately hidden from active site reads while the UI distinguishes pending, complete, and failed states. `complete` appears only after the AniBT R2 object is verified absent and the short page plus `i.anibt.net` direct URL converge in AniBT-controlled Cloudflare caches and return `404` / `410`. Separate accelerated links, browser caches, and third-party copies are outside this completion scope. See [Image host](/docs/image-host).
+
 ### Fixed
 
 - **Public RSS refresh policy closed**
