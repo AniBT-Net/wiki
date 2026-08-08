@@ -87,9 +87,9 @@ Vary:             Accept-Encoding
   Cloudflare 現在已讓 7 個精確 catalog API（包括 `/api/bgm/search`、`/api/anime/lookup` 與 `/api/mikan/group-lookup`）進入共享 edge cache。成功響應與 BGM 的權威空結果可經歷 `MISS → HIT`；GET、HEAD 與匹配 `If-None-Match` 的 304 共用同一 ETag。重複 singleton 參數、anime 找不到/衝突、Mikan 上游失敗、限流及其他錯誤仍維持 `no-store` / `BYPASS`，不會被錯誤快取。查詢參數值仍保留在快取鍵中，只忽略參數順序；Cookie 不會切碎公開物件。
 </Callout>
 
-實體 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒。釋出事件先失效 Redis 家族，再按 `bgmId` / `groupSlug` / category 清除同一實體的全部 CDN 參數變體；TTL 繼續作為事件鏈路失敗時的兜底。搜尋與空結果在 edge/Redis 都快取 600 秒，Redis key 只保存規範化查詢的 SHA-256。
+實體 RSS 在 Web Redis 中保留 900 秒，edge/CDN 只保留 120 秒。釋出事件先失效 Redis 家族，再按 `bgmId` / `groupSlug` / category 清除同一實體的全部 CDN 參數變體；dual-owner anime 的兩組 owner 會作為一個釋出結果一起重新整理。字幕組 create / canonical rename / delete 還會收斂舊/新完整路徑及其負快取，而日常釋出保持 owner tag 範圍。other 的無全文搜尋與 `groupId`-only 變體跟隨 category 失效；帶 `q` / `search` 的搜尋與空結果在 edge/Redis 都按 600 秒 TTL 獨立管理，Redis key 只保存規範化查詢的 SHA-256。
 
-實體 CDN membership 現在只在 Web 已確認 canonical owner 後隨最終響應附加：已解析的 anime 可同時屬於 `bgmId` 與 `groupSlug` 兩個失效集合，已解析的 group 與不帶 `q` 的 other category 各屬於自己的集合。anime 未解析 owner 的空 `200`、group 未知 owner 的 `404` 與 other free-text search 都不會獲得虛假實體 membership。因此 category/group tag purge 不再誤清搜尋或未知物件，dual-owner anime 仍可由任一真實 owner 變化精確重新整理。URL、TTL、ETag 與 304 契約沒有變化。
+實體 CDN membership 現在只在 Web 已確認 canonical owner 後隨最終響應附加：已解析的 anime 可同時屬於 `bgmId` 與 `groupSlug` 兩個失效集合，已解析的 group 與不帶全文搜尋的 other category 各屬於自己的集合。anime 未解析 owner 的空 `200`、group 未知 owner 的 `404` 與 other free-text search 都不會獲得虛假實體 membership。因此 category/group tag purge 不再誤清搜尋或未知物件，dual-owner anime 也不會出現只重新整理一個 owner 的中間狀態。URL、TTL、ETag 與 304 契約沒有變化。
 
 ### RSS 規範 URL 與錯誤快取
 

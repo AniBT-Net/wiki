@@ -108,16 +108,16 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
 
 | 端点                                     | 客户端日请求量    | origin 真实回源（次/小时） | 备注                                          |
 | ---------------------------------------- | ----------------- | -------------------------- | --------------------------------------------- |
-| `/rss/anime.xml`（实体查询）              | 取决于实体 URL 数 | **每个热规范 URL ≤ ~30**   | edge 120s；Redis 900s，发布时精确失效已知 URL   |
-| `/rss/group/<slug>.xml`                  | 取决于 slug 数    | **每个热 slug ≤ ~30**      | edge 120s；相同 URL 的所有用户共享缓存          |
+| `/rss/anime.xml`（实体查询）              | 取决于实体 URL 数 | **每个热规范 URL ≤ ~30**   | edge 120s；Redis 900s；dual owner 同批刷新      |
+| `/rss/group/<slug>.xml`                  | 取决于 slug 数    | **每个热 slug ≤ ~30**      | edge 120s；生命周期收敛旧/新路径与负缓存         |
 | `/rss/magnets.xml`（无 `q`）              | —                 | **每个规范 URL ≤ ~30**     | latest/filter edge 120s                        |
-| `/rss/magnets.xml` / `/rss/other/*`（稳定 `q`） | —          | **每个规范查询 ≤ ~6**      | 搜索与空结果 edge/Redis 600s                   |
+| `/rss/magnets.xml` / `/rss/other/*`（稳定 `q`） | —          | **每个规范查询 ≤ ~6**      | 搜索与空结果 TTL-owned 600s，不跟随分类 purge   |
 | 高基数随机 `q`                            | —                 | **每个新查询最多一次 MISS 后受预算限制** | 120/10m、1000/day、全站 32 MISS 并发 lease |
 | `/api/subtitle-groups`                   | ~96k              | **~12**                    | 数据极少变化，几乎全 304                       |
 | `/api/seasons/anime`                     | ~48k              | **~6**                     | 季度数据周更，长缓存                           |
 | `/api/anime/groups`（按 bgmId）           | —                 | **~12 × 热门番剧数**        | 冷门番剧首次回源较多                          |
 
-**综合**：稳定轮询的 origin 成本按“规范 URL 数量”而不是用户数增长；同一查询由 Cloudflare/Redis 合并。随机不存在关键词不能依靠缓存共享，因此另用 distinct-query 预算和并发 lease 封顶；不要再用单一“1000 用户 = 固定回源数”估算高基数搜索。
+**综合**：稳定轮询的 origin 成本按“规范 URL 数量”而不是用户数增长；同一查询由 Cloudflare/Redis 合并。实体事件会让 dual-owner anime 的两个 owner 一起刷新，并让字幕组生命周期的旧/新路径及时收敛；other 的 `groupId`-only 过滤跟随分类刷新，但全文搜索继续按 TTL 管理。随机不存在关键词不能依靠缓存共享，因此另用 distinct-query 预算和并发 lease 封顶；不要再用单一“1000 用户 = 固定回源数”估算高基数搜索。
 
 ## 给客户端的轮询建议
 
@@ -185,7 +185,8 @@ description: 各端点的 limit、候选扫描上限、速率限制、客户端�
 T=0       字幕组提交 release 到 AniBT Web API
           (Web 解析请求体 / 种子，Convex mutation 写入 releases / files 表)
 T=0       数据库立即可读（Convex 强一致）
-          Web 写侧事件会触发外部 Worker 清 Redis RSS cache + purge CDN
+          Web 写侧事件会按已解析 owner 触发外部 Worker 清 Redis RSS cache + purge CDN；
+          dual-owner anime 同批刷新两侧，字幕组生命周期收敛旧/新路径，全文搜索不跟随分类 purge
 
 T≤120s    事件 purge 缺失时的兜底 CDN / Web Redis 短缓存窗口内：
           客户端请求被 CDN 拦截，仍拿旧版本

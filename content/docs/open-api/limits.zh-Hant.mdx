@@ -108,16 +108,16 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
 
 | 端點                                     | 客戶端日請求量    | origin 真實回源（次/小時） | 備註                                          |
 | ---------------------------------------- | ----------------- | -------------------------- | --------------------------------------------- |
-| `/rss/anime.xml`（實體查詢）              | 取決於實體 URL 數 | **每個熱規範 URL ≤ ~30**   | edge 120s；Redis 900s，釋出時精確失效已知 URL   |
-| `/rss/group/<slug>.xml`                  | 取決於 slug 數    | **每個熱 slug ≤ ~30**      | edge 120s；相同 URL 的所有使用者共享快取        |
+| `/rss/anime.xml`（實體查詢）              | 取決於實體 URL 數 | **每個熱規範 URL ≤ ~30**   | edge 120s；Redis 900s；dual owner 同批重新整理  |
+| `/rss/group/<slug>.xml`                  | 取決於 slug 數    | **每個熱 slug ≤ ~30**      | edge 120s；生命週期收斂舊/新路徑與負快取         |
 | `/rss/magnets.xml`（無 `q`）              | —                 | **每個規範 URL ≤ ~30**     | latest/filter edge 120s                        |
-| `/rss/magnets.xml` / `/rss/other/*`（穩定 `q`） | —          | **每個規範查詢 ≤ ~6**      | 搜尋與空結果 edge/Redis 600s                   |
+| `/rss/magnets.xml` / `/rss/other/*`（穩定 `q`） | —          | **每個規範查詢 ≤ ~6**      | 搜尋與空結果 TTL-owned 600s，不跟隨分類 purge   |
 | 高基數隨機 `q`                            | —                 | **每個新查詢最多一次 MISS 後受預算限制** | 120/10m、1000/day、全站 32 MISS 併發 lease |
 | `/api/subtitle-groups`                   | ~96k              | **~12**                    | 資料極少變化，幾乎全 304                       |
 | `/api/seasons/anime`                     | ~48k              | **~6**                     | 季度資料周更，長快取                           |
 | `/api/anime/groups`（按 bgmId）           | —                 | **~12 × 熱門番劇數**        | 冷門番劇首次回源較多                          |
 
-**綜合**：穩定輪詢的 origin 成本按「規範 URL 數量」而不是使用者數增長；同一查詢由 Cloudflare/Redis 合併。隨機不存在關鍵詞不能依靠快取共享，因此另用 distinct-query 預算和併發 lease 封頂；不要再用單一「1000 使用者 = 固定回源數」估算高基數搜尋。
+**綜合**：穩定輪詢的 origin 成本按「規範 URL 數量」而不是使用者數增長；同一查詢由 Cloudflare/Redis 合併。實體事件會讓 dual-owner anime 的兩個 owner 一起重新整理，並讓字幕組生命週期的舊/新路徑及時收斂；other 的 `groupId`-only 過濾跟隨分類重新整理，但全文搜尋繼續按 TTL 管理。隨機不存在關鍵詞不能依靠快取共享，因此另用 distinct-query 預算和併發 lease 封頂；不要再用單一「1000 使用者 = 固定回源數」估算高基數搜尋。
 
 ## 給客戶端的輪詢建議
 
@@ -185,7 +185,8 @@ description: 各端點的 limit、候選掃描上限、速率限制、客戶端�
 T=0       字幕組提交 release 到 AniBT Web API
           (Web 解析請求體 / 種子，Convex mutation 寫入 releases / files 表)
 T=0       資料庫立即可讀（Convex 強一致）
-          Web 寫側事件會觸發外部 Worker 清 Redis RSS cache + purge CDN
+          Web 寫側事件會按已解析 owner 觸發外部 Worker 清 Redis RSS cache + purge CDN；
+          dual-owner anime 同批重新整理兩側，字幕組生命週期收斂舊/新路徑，全文搜尋不跟隨分類 purge
 
 T≤120s    事件 purge 缺失時的兜底 CDN / Web Redis 短快取視窗內：
           客戶端請求被 CDN 攔截，仍拿舊版本

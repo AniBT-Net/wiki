@@ -118,7 +118,7 @@ https://anibt.net/rss/other/stage.xml
 
 - RSS 响应从最终 XML UTF-8 bytes 计算 exact-body `W/"anibt-sha256-{...}"` ETag，并移除了请求时间 `lastBuildDate`；匹配 ETag 的 `304` 表示当前 feed bytes 未变化。当前省略 `Last-Modified`。
 - 无 `q` 的 latest/filter 变体为 `s-maxage=120`；带 `q` 的搜索（包括空结果）为 `s-maxage=600`；两类统一 `stale-while-revalidate=60`。
-- 分类发布变化会先失效 latest Redis 家族，再清除该 category 的全部 CDN 参数变体；搜索 Redis 身份仍按 600 秒 TTL 自主管理，因此这不是实时搜索 SLA。
+- 分类发布变化会先失效 latest Redis 家族，再清除该 category 的全部非全文搜索 CDN 参数变体，包含只传 `groupId` 的过滤 URL；带 `q` / `search` 的搜索 Redis 与 CDN 身份仍按 600 秒 TTL 自主管理，不会被无关分类发布清除，因此这不是实时搜索 SLA。
 - 搜索缓存身份只保存规范化查询的 SHA-256。重复/空/控制字符 q、同时传 q+search 或超过 160 bytes 返回 `400 + no-store`。仅调整原始 query 参数对顺序会直接返回同一规范 `200`；默认值、兼容别名或其它字节级规范化仍返回可缓存一天的 `308`。
 - 只有真正穿透 CDN/Redis 的新搜索 MISS 才受 distinct-query 与全站并发预算保护；超限返回 `429 + Retry-After`，稳定查询和缓存 HIT 不扣额度。
 - 这些 RSS 响应会带 `noindex, follow` 搜索引擎策略，避免分类 feed 被搜索引擎索引。

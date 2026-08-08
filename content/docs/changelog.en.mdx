@@ -9,6 +9,13 @@ This page records AniBT Wiki changes and feature updates that are directly cover
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
 </Callout>
 
+## August 8, 2026
+
+### Fixed
+
+- **Public RSS refresh now follows one canonical policy**
+  An anime resolved to both `bgmId` and `groupSlug` now refreshes both Redis families and both CDN variant sets as one publication result, so clients cannot observe a one-owner-only update. Group creation, canonical-slug rename, and deletion converge old/new full paths and cached `404` state while routine publication stays owner-scoped. Other `groupId`-only filters follow category freshness, while free-text `q` / `search` remains independently TTL-owned for 600 seconds. URLs, XML fields, TTLs, ETags, and 304 semantics are unchanged.
+
 ## August 7, 2026
 
 ### Fixed

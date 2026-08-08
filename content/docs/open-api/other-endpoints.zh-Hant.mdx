@@ -31,6 +31,10 @@ https://anibt.net/rss/group/haruhana.xml
 
 條目與 [RSS 主入口](/docs/open-api/rss-anime) 一樣會輸出 AniBT 擴展欄位（含 `<anibt:bgmId>`，有綁定才出現）。
 
+<Callout type="info">
+  已知字幕組的日常釋出只重新整理該 owner 的 RSS 變體。字幕組建立、規範 slug 重新命名或刪除時，舊/新完整路徑及其有界 `404` 負快取會一起收斂；任意未知 slug 仍不會被當成可失效的 owner。正常事件鏈路無需等完整 TTL 才反映真實生命週期變更，但客戶端仍應保存重新命名後的最終 URL。
+</Callout>
+
 ## 全站磁力 `/rss/magnets.xml`
 
 適合"看看全站最近發了什麼"。

@@ -31,6 +31,10 @@ https://anibt.net/rss/group/haruhana.xml
 
 Items use the same AniBT extension fields as [the main RSS entry](/docs/open-api/rss-anime), including `<anibt:bgmId>` when the release is bound.
 
+<Callout type="info">
+  Routine publication refreshes only the known group's owner-scoped RSS variants. Group creation, canonical-slug rename, and deletion converge the old/new full paths together with their bounded cached `404` state; arbitrary unknown slugs are still not treated as invalidation owners. A healthy event path reflects a real lifecycle transition without waiting for the full TTL, but clients should still retain the final URL after a rename.
+</Callout>
+
 ## Site-wide magnets `/rss/magnets.xml`
 
 Good for "what's new across the whole site".

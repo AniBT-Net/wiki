@@ -118,7 +118,7 @@ Each `<item>` contains:
 
 - Responses compute an exact-body `W/"anibt-sha256-{...}"` ETag from the final XML UTF-8 bytes and no longer write a request-time `lastBuildDate`. A matching-ETag `304` means the current feed bytes are unchanged. `Last-Modified` is currently omitted.
 - Latest/filter variants without `q` use `s-maxage=120`; searches with `q`, including empty results, use `s-maxage=600`; both use `stale-while-revalidate=60`.
-- Category publish changes invalidate the latest Redis family first, then purge every CDN query variant for that category. Search Redis identities still keep their independent 600-second TTL, so this is not a real-time search SLA.
+- Category publish changes invalidate the latest Redis family first, then purge every non-free-text CDN variant for that category, including URLs filtered only by `groupId`. Search identities with `q` / `search` keep their independent 600-second Redis and CDN TTL and are not evicted by unrelated category publication, so this is not a real-time search SLA.
 - Search cache identities contain only a SHA-256 of the normalized query. Repeated/empty/control-bearing q, q+search together, or more than 160 UTF-8 bytes return `400 + no-store`. Reordering otherwise byte-identical raw query pairs returns the same canonical `200`; defaults, compatibility aliases, and other lexical normalization still return a cacheable one-day `308`.
 - Only a new search MISS that passes both CDN and Redis consumes distinct-query/global-concurrency admission. Rejection returns `429 + Retry-After`; stable queries and cache HITs are not charged.
 - These RSS responses use a `noindex, follow` search engine policy so category feeds are not indexed.

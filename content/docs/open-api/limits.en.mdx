@@ -108,16 +108,16 @@ Estimates assuming **1000 users polling every 15 minutes by default**:
 
 | Endpoint                                | Client req / day  | Origin backfill / hour       | Notes                                       |
 | --------------------------------------- | ----------------- | ---------------------------- | ------------------------------------------- |
-| `/rss/anime.xml` (entity query)         | depends on entity URLs | **≤ ~30 per hot canonical URL** | edge 120s; Redis 900s; known URLs invalidated on publish |
-| `/rss/group/<slug>.xml`                 | depends on slugs  | **≤ ~30 per hot slug**       | edge 120s; users of the same URL share cache |
+| `/rss/anime.xml` (entity query)         | depends on entity URLs | **≤ ~30 per hot canonical URL** | edge 120s; Redis 900s; both owners refresh in one batch |
+| `/rss/group/<slug>.xml`                 | depends on slugs  | **≤ ~30 per hot slug**       | edge 120s; lifecycle converges old/new paths and negative cache |
 | `/rss/magnets.xml` (without `q`)        | —                 | **≤ ~30 per canonical URL**  | latest/filter edge 120s                     |
-| `/rss/magnets.xml` / `/rss/other/*` (stable `q`) | —       | **≤ ~6 per canonical query** | search and empty results edge/Redis 600s    |
+| `/rss/magnets.xml` / `/rss/other/*` (stable `q`) | —       | **≤ ~6 per canonical query** | search/empty results are TTL-owned for 600s and ignore category purge |
 | High-cardinality random `q`             | —                 | **at most one MISS per new query before admission caps** | 120/10m, 1000/day, global 32-MISS lease |
 | `/api/subtitle-groups`                  | ~96k              | **~12**                      | data rarely changes; mostly 304             |
 | `/api/seasons/anime`                    | ~48k              | **~6**                       | season data is weekly + long cache          |
 | `/api/anime/groups` (per bgmId)         | —                 | **~12 × hot shows**          | cold shows take more first-time backfill    |
 
-**Overall**: stable polling scales with the number of canonical URLs, not the number of users; Cloudflare and Redis collapse identical requests. Random nonexistent terms do not share cache well, so they are bounded separately by distinct-query budgets and concurrency leases. Do not use a single fixed “1000 users = N origin requests” estimate for high-cardinality search traffic.
+**Overall**: stable polling scales with the number of canonical URLs, not the number of users; Cloudflare and Redis collapse identical requests. Entity events refresh both owners of a dual-owner anime and promptly converge old/new group lifecycle paths. Other `groupId`-only filters follow category freshness, while free-text search remains TTL-owned. Random nonexistent terms do not share cache well, so they are bounded separately by distinct-query budgets and concurrency leases. Do not use a single fixed “1000 users = N origin requests” estimate for high-cardinality search traffic.
 
 ## Recommended polling intervals
 
@@ -185,7 +185,8 @@ From "a group publishes a new release" to "the subscriber's RSS client surfaces 
 T=0       Group submits release to the AniBT Web API
           (Web parses the body / torrent, Convex mutation writes releases / files)
 T=0       Database is immediately readable (Convex strong consistency)
-          The write-side event lets the external Worker clear Web Redis RSS cache + purge CDN
+          The write-side event lets the external Worker clear Web Redis RSS cache + purge CDN by resolved owner;
+          dual-owner anime refreshes both sides together, group lifecycle converges old/new paths, and free-text search ignores category purge
 
 T≤120s    Fallback CDN / Web Redis short-cache window when event purge is missed:
           requests are intercepted by CDN; users still see the old version

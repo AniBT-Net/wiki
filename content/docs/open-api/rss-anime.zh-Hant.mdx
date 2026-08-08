@@ -134,7 +134,7 @@ GET https://anibt.net/rss/anime.xml?<query>
 | 僅 `bgmId`              | Typesense filter 約束番劇          |
 | 僅 `groupSlug`          | Typesense filter 約束字幕組        |
 
-解析度、語言、格式、字幕方式等 Tag 盡量下推到 Typesense filter；`episode` / `episodeKey` 等展示欄位只在 Web runtime 做小視窗後過濾。實體 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。釋出事件會先失效對應 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一實體的全部 CDN 參數變體；TTL 繼續作為事件鏈路失敗時的兜底，ETag 始終由快取後的最終 XML 正文決定。
+解析度、語言、格式、字幕方式等 Tag 盡量下推到 Typesense filter；`episode` / `episodeKey` 等展示欄位只在 Web runtime 做小視窗後過濾。實體 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。釋出事件會先失效對應 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一實體的全部 CDN 參數變體；當一個 anime 同時解析出兩個 owner 時，兩組 Redis 家族與 CDN 變體會作為同一個釋出結果一起重新整理，不會只更新其中一側。TTL 繼續作為事件鏈路失敗時的兜底，ETag 始終由快取後的最終 XML 正文決定。
 
 ## Mikan 參數相容
 
