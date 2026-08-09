@@ -9,6 +9,13 @@ AniBT Wiki 與站點功能的變更紀錄；僅收錄與文件直接相關、可
   日期按北京時間（UTC+8）。較新的更新在前。同一天內按 **新增 / 修復 / 安全 / 最佳化 / 變更 / 文件 / 運維 / 資料** 分組。
 </Callout>
 
+## 2026 年 8 月 9 日
+
+### 運維
+
+- **邊緣快取與 RSS 通知執行面遷移到私網 Bun/SQLite**
+  AniBT 已將快取失效、CDN warming 與 RSS→Telegram 排程從舊 Cloudflare Worker/D1/Queues 遷移到 Dokploy 管理的單一 Bun 服務。Convex 使用持久化 wake 重試，服務在回傳 `202` 前寫入 SQLite，並由互不阻塞的 intake/purge runner 恢復未完成工作。舊 Worker、D1、Queues/DLQs、Custom Domain 與專用 WAF 已退役。公開 RSS URL、XML 欄位、TTL、ETag、304 語義及使用者呼叫方式不變。
+
 ## 2026 年 8 月 8 日
 
 ### 變更

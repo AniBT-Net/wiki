@@ -9,6 +9,13 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
 </Callout>
 
+## August 9, 2026
+
+### Operations
+
+- **Edge cache and RSS notification execution moved to private Bun/SQLite**
+  AniBT moved cache invalidation, CDN warming, and RSS-to-Telegram scheduling from the former Cloudflare Worker/D1/Queues stack to a single Dokploy-managed Bun service. Convex now owns durable wake retries; the service commits each wake to SQLite before returning `202`, and isolated intake/purge runners recover unfinished work. The former Worker, D1 database, Queues/DLQs, Custom Domain, and dedicated WAF rule have been retired. Public RSS URLs, XML fields, TTLs, ETags, 304 semantics, and client usage are unchanged.
+
 ## August 8, 2026
 
 ### Changed
