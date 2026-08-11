@@ -97,7 +97,7 @@ https://anibt.net/rss/other/stage.xml
       type: 'string',
     },
     '<pubDate>': {
-      description: 'RFC 822 時間。',
+      description: 'RFC 822 時間；按 Asia/Shanghai 輸出，數字偏移固定為 +0800。',
       type: 'datetime',
     },
     '<description>': {
@@ -109,7 +109,7 @@ https://anibt.net/rss/other/stage.xml
       type: 'url',
     },
     '<torrent>': {
-      description: 'RSS 內的 torrent 元資訊；有 magnet 時會包含 infoHash。',
+      description: 'RSS 內的 torrent 元資訊；有 magnet 時會包含 infoHash，內嵌 <pubDate> 使用 RFC 3339，按 Asia/Shanghai 輸出為 +08:00。',
       type: 'element',
     },
   }}

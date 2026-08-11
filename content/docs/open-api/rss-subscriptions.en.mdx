@@ -39,6 +39,8 @@ Standard RSS 2.0 native XML with the same item shape as [`/rss/anime.xml`](/docs
 
 Browsers show the default XML tree (no site XSL/CSS). Readers and BitTorrent clients consume standard fields.
 
+The standard `<pubDate>` uses RFC 822 in `Asia/Shanghai` with the numeric offset fixed at `+0800`. The `<pubDate>` nested in torrent metadata uses RFC 3339 with `+08:00`.
+
 ```xml title="Snippet"
 <rss version="2.0">
   <channel>
@@ -48,7 +50,7 @@ Browsers show the default XML tree (no site XSL/CSS). Readers and BitTorrent cli
     <item>
       <title>[字幕组A] 番名 - 01 [1080p][CHS&JP].mkv</title>
       <link>https://anibt.net/release/...</link>
-      <pubDate>...</pubDate>
+      <pubDate>Tue, 11 Aug 2026 13:00:00 +0800</pubDate>
       <enclosure url="magnet:?xt=urn:btih:..." length="734003200" type="application/x-bittorrent" />
     </item>
     ...

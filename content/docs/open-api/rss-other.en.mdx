@@ -97,7 +97,7 @@ Each `<item>` includes:
       type: 'string',
     },
     '<pubDate>': {
-      description: 'RFC 822 timestamp.',
+      description: 'RFC 822 timestamp in Asia/Shanghai with the numeric offset fixed at +0800.',
       type: 'datetime',
     },
     '<description>': {
@@ -109,7 +109,7 @@ Each `<item>` includes:
       type: 'url',
     },
     '<torrent>': {
-      description: 'In-feed torrent metadata; includes infoHash when a magnet exists.',
+      description: 'In-feed torrent metadata; includes infoHash when a magnet exists, and its nested <pubDate> uses RFC 3339 in Asia/Shanghai with +08:00.',
       type: 'element',
     },
   }}

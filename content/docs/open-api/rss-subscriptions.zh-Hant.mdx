@@ -39,6 +39,8 @@ token 產生與鑑權標頭格式以站點使用者中心為準；營運策略�
 
 瀏覽器直開 RSS URL 時不載入站點自訂 XSL/CSS，使用瀏覽器預設 XML 樹展示；RSS 閱讀器和 BT 客戶端按標準欄位消費。
 
+標準 `<pubDate>` 使用 RFC 822，並按 `Asia/Shanghai` 輸出，數字偏移固定為 `+0800`；torrent 元資訊內嵌的 `<pubDate>` 使用 RFC 3339，偏移為 `+08:00`。
+
 ```xml title="片段"
 <rss version="2.0">
   <channel>
@@ -48,7 +50,7 @@ token 產生與鑑權標頭格式以站點使用者中心為準；營運策略�
     <item>
       <title>[字幕组A] 番名 - 01 [1080p][CHS&JP].mkv</title>
       <link>https://anibt.net/release/...</link>
-      <pubDate>...</pubDate>
+      <pubDate>Tue, 11 Aug 2026 13:00:00 +0800</pubDate>
       <enclosure url="magnet:?xt=urn:btih:..." length="734003200" type="application/x-bittorrent" />
     </item>
     ...

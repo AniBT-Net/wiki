@@ -101,7 +101,7 @@ GET https://anibt.net/rss/anime.xml?<query>
       type: 'string',
     },
     '<pubDate>': {
-      description: 'RFC 822 時間。',
+      description: 'RFC 822 時間；按 Asia/Shanghai 輸出，數字偏移固定為 +0800。',
       type: 'datetime',
     },
     '<description>': {
@@ -113,7 +113,7 @@ GET https://anibt.net/rss/anime.xml?<query>
       type: 'magnet',
     },
     '<torrent xmlns="…">': {
-      description: 'BEP 36：infoHash / magnet（含站點預設 tracker）。',
+      description: 'BEP 36：infoHash / magnet（含站點預設 tracker）；內嵌 <pubDate> 使用 RFC 3339，按 Asia/Shanghai 輸出為 +08:00。',
       type: 'element',
     },
     '<anibt:bgmId>': {

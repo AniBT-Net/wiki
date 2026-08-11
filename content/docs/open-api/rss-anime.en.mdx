@@ -101,7 +101,7 @@ Each `<item>` includes:
       type: 'string',
     },
     '<pubDate>': {
-      description: 'RFC 822 timestamp.',
+      description: 'RFC 822 timestamp in Asia/Shanghai with the numeric offset fixed at +0800.',
       type: 'datetime',
     },
     '<description>': {
@@ -113,7 +113,7 @@ Each `<item>` includes:
       type: 'magnet',
     },
     '<torrent xmlns="…">': {
-      description: 'BEP 36: infoHash / magnet (with site default trackers).',
+      description: 'BEP 36: infoHash / magnet (with site default trackers); its nested <pubDate> uses RFC 3339 in Asia/Shanghai with +08:00.',
       type: 'element',
     },
     '<anibt:bgmId>': {
