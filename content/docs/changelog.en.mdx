@@ -16,6 +16,9 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 - **Weekly timetable keeps next Thursday after the day rolls**
   Sync now fetches two official 7-day windows (14 days total). The page still shows seven days from today, but Thursday’s sync already includes the following Thursday (e.g. 08/20), so that day is no longer empty when Friday begins.
 
+- **Empty days inside a sealed window drop finished titles**
+  A successful 14-day official window covers every Shanghai date in that range: a day with zero events deletes the previous airing, so finished or officially stopped titles leave the timetable. Old slots are kept only when the whole sync fails and no window is written. Continue titles that span two seasons merge both `schedule[]` lists instead of dropping the later season’s dates.
+
 ### Changed
 
 - **Weekly timetable lives only on `/`; weekly `/seasonal` URLs redirect home**
@@ -31,7 +34,7 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 ### Fixed
 
 - **Public weekly timetable now uses real daily air times**
-  The `/` and `/seasonal` timetable now renders actual events from the bgm.wiki 7-day window. One title can appear on more than one date, with official times and episode numbers, instead of projecting last week’s slot by `+7` days. If a title is gone from a day that still has other events, it is removed that day. If a whole day arrives with zero events, the previous day is kept so a truncated fetch cannot wipe Monday–Wednesday.
+  The `/` and `/seasonal` timetable now renders actual events from the bgm.wiki window. One title can appear on more than one date, with official times and episode numbers, instead of projecting last week’s slot by `+7` days. If a title is gone from a day, it is removed that day.
 
 ## August 11, 2026
 
