@@ -110,7 +110,7 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 | `nyaaCategory` | `sitePublish.nyaa.category` | 启用代发时必填 | Nyaa 分类代码，必须使用 Nyaa 官方代码。完整代码表见 [发布资源 API](/docs/open-api/releases-publish#nyaa-代发字段和分类)。 |
 | `nyaaComplete` | `sitePublish.nyaa.complete` | 否 | 对应 Nyaa 的 Complete 标记；合集、全卷、全季等完整资源可设为 `true`。默认 `false`。 |
 | `nyaaRemake` | `sitePublish.nyaa.remake` | 否 | 对应 Nyaa 的 Remake 标记；重传、修复版、重制版按需要设为 `true`。默认 `false`。 |
-| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 说明，最多 20000 字符。不传时继承本站 `notes`。 |
+| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 说明，最多 20000 字符。不传时继承本站 `notes`，继承内容同样不能超过 20000 字符，否则返回校验错误。 |
 | `nyaaInformation` | `sitePublish.nyaa.information` | 否 | Nyaa information 字段，最多 500 字符，通常填写官网、字幕组页面、项目页或相关说明链接。 |
 
 ## 参数

@@ -32,7 +32,7 @@ Nyaa 代發面向已加入白名單的字幕組：在 AniBT 釋出資源時，�
       type: 'required',
     },
     'Nyaa 說明': {
-      description: '預設繼承本站釋出說明（notes）；也可在網頁釋出或 API 請求中單獨覆蓋。',
+      description: '預設繼承本站釋出說明（notes）；也可在網頁釋出或 API 請求中單獨覆蓋。提交到 Nyaa 的說明（含繼承 notes）最多 20000 字，超限會在釋出前拒絕。',
       type: 'Markdown',
     },
   }}
@@ -90,7 +90,7 @@ Nyaa 分類須使用官方分類代碼。完整分類表、欄位別名與 API �
       -F 'nyaaDescription=可選：覆蓋提交到 Nyaa 的 Markdown 說明'
     ```
 
-    未傳 `nyaaDescription` 時，Nyaa 說明繼承本站釋出說明 `notes`。`nyaaCategory` 完整可選值見 [釋出資源 API](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類)。
+    未傳 `nyaaDescription` 時，Nyaa 說明繼承本站釋出說明 `notes`。無論自訂還是繼承，提交到 Nyaa 的說明都不能超過 20000 字；本站 `notes` 仍可更長，但超限時須單獨填寫較短的 `nyaaDescription`。`nyaaCategory` 完整可選值見 [釋出資源 API](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類)。
 
     其他類資源使用同一組參數，僅端點與基礎欄位不同：
 
@@ -133,6 +133,7 @@ Nyaa 分類須使用官方分類代碼。完整分類表、欄位別名與 API �
 | 未加入白名單 | 聯絡管理員申請白名單，並按本頁要求提交釋出記錄證明。 |
 | 缺少 Nyaa tracker | 重新製作種子，加入 `http://nyaa.tracker.wf:7777/announce`。 |
 | 未選擇 Nyaa 分類 | 在釋出頁或 API 參數中傳入 `nyaaCategory`。 |
+| Nyaa 說明超過 20000 字 | 縮短本站簡介，或改用自訂 Nyaa 說明 / 傳入較短的 `nyaaDescription`。整段 MediaInfo 通常會超限。 |
 | 提交的是 JSON 而不是 torrent 檔案 | Nyaa 代發需要服務端校驗實際 torrent bytes，請使用 multipart 上傳 `.torrent`。 |
 
 介面欄位詳見 [釋出資源 API](/zh-Hant/docs/open-api/releases-publish) 與 [釋出其他類資源 API](/zh-Hant/docs/open-api/other-releases-publish)。自備帳號同步見 [Nyaa 同步](/zh-Hant/docs/site-sync/nyaa)。

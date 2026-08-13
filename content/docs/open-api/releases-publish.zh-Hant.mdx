@@ -210,7 +210,7 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
       default: 'false',
     },
     'nyaaDescription': {
-      description: '覆蓋提交到 Nyaa 的 Markdown 說明；不傳時使用本站 notes。',
+      description: '覆蓋提交到 Nyaa 的 Markdown 說明，最多 20000 字。不傳時使用本站 notes，繼承時同樣受 20000 字上限。',
       type: 'string',
     },
     'nyaaInformation': {
@@ -366,7 +366,7 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 | `nyaaCategory` | `sitePublish.nyaa.category` | 啟用代發時必填 | Nyaa 分類代碼，必須從下表選擇。普通中文動畫字幕常用 `1_3`。 |
 | `nyaaComplete` | `sitePublish.nyaa.complete` | 否 | 對應 Nyaa 的 Complete 標記；合集、全卷、全季等完整資源可設為 `true`。預設 `false`。 |
 | `nyaaRemake` | `sitePublish.nyaa.remake` | 否 | 對應 Nyaa 的 Remake 標記；重傳、修復版、重製版按需要設為 `true`。預設 `false`。 |
-| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 說明，最多 20000 字元。不傳時繼承本站 `notes`。 |
+| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 說明，最多 20000 字元。不傳時繼承本站 `notes`，繼承內容同樣不能超過 20000 字元，否則回傳校驗錯誤。 |
 | `nyaaInformation` | `sitePublish.nyaa.information` | 否 | Nyaa information 欄位，最多 500 字元，通常填寫官網、字幕組頁面、專案頁或相關說明連結。 |
 
 Nyaa 分類代碼必須原樣填寫：

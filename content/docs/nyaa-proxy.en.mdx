@@ -32,7 +32,7 @@ The platform Nyaa account is maintained by admins in the backend. Groups only ne
       type: 'required',
     },
     'Nyaa description': {
-      description: 'By default, the Nyaa description inherits AniBT release notes. Override it from the web form or API request when needed.',
+      description: 'By default, the Nyaa description inherits AniBT release notes. Override it from the web form or API request when needed. The description sent to Nyaa, including inherited notes, is limited to 20000 characters and is rejected before publish if it exceeds that limit.',
       type: 'Markdown',
     },
   }}
@@ -90,7 +90,7 @@ Nyaa categories must use official Nyaa category codes. See [Nyaa proxy fields in
       -F 'nyaaDescription=Optional Markdown description for Nyaa'
     ```
 
-    When `nyaaDescription` is omitted, the Nyaa description inherits AniBT `notes`. See [Publish a release](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories) for all accepted `nyaaCategory` values.
+    When `nyaaDescription` is omitted, the Nyaa description inherits AniBT `notes`. Custom and inherited descriptions are both limited to 20000 characters. AniBT `notes` may be longer, but a shorter `nyaaDescription` is required when inherited notes exceed the limit. See [Publish a release](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories) for all accepted `nyaaCategory` values.
 
     Other releases use the same parameters; only the endpoint and base fields differ:
 
@@ -133,6 +133,7 @@ Nyaa categories must use official Nyaa category codes. See [Nyaa proxy fields in
 | Group is not allowlisted | Contact an admin and apply with publishing-record evidence. |
 | Missing Nyaa tracker | Recreate the torrent with `http://nyaa.tracker.wf:7777/announce`. |
 | Nyaa category is missing | Pass `nyaaCategory` in the web form or API request. |
+| Nyaa description exceeds 20000 characters | Shorten the site notes, or send a shorter custom Nyaa description / `nyaaDescription`. Full MediaInfo dumps usually exceed the limit. |
 | JSON request instead of torrent upload | Nyaa proxy publishing requires server-side validation of actual torrent bytes. Use multipart and upload the `.torrent`. |
 
 For all API fields, see [Publish a release](/en/docs/open-api/releases-publish) and [Publish other releases](/en/docs/open-api/other-releases-publish). For own-account sync, see [Nyaa Sync](/en/docs/site-sync/nyaa).

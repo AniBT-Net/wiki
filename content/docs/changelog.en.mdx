@@ -11,6 +11,11 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 
 ## August 13, 2026
 
+### Changed
+
+- **Nyaa proxy descriptions now share a 20000-character limit**
+  Descriptions sent to Nyaa — both custom `nyaaDescription` and inherited AniBT `notes` — are limited to 20000 characters. The publish form blocks over-limit submissions and asks for a custom description; the API rejects them before enqueueing. AniBT `notes` themselves may still be longer. See [Nyaa proxy](/docs/nyaa-proxy).
+
 ### Fixed
 
 - **Public weekly timetable now uses real daily air times**

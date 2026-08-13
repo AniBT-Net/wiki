@@ -210,7 +210,7 @@ The public read path advances asynchronously. After the corresponding Typesense 
       default: 'false',
     },
     'nyaaDescription': {
-      description: 'Markdown description sent to Nyaa. When omitted, AniBT release notes are used.',
+      description: 'Markdown description sent to Nyaa, up to 20000 characters. When omitted, AniBT notes are used and the same 20000-character limit applies.',
       type: 'string',
     },
     'nyaaInformation': {
@@ -373,7 +373,7 @@ Structured fields such as `sitePublish.nyaa.enabled`, `sitePublish.nyaa.category
 | `nyaaCategory` | `sitePublish.nyaa.category` | Required when enabled | Nyaa category code. Pick one from the table below. Normal Chinese anime subtitles usually use `1_3`. |
 | `nyaaComplete` | `sitePublish.nyaa.complete` | No | Nyaa Complete flag. Use `true` for complete batches, full seasons, or full volumes. Defaults to `false`. |
 | `nyaaRemake` | `sitePublish.nyaa.remake` | No | Nyaa Remake flag. Use for re-uploads, fixes, or remakes when appropriate. Defaults to `false`. |
-| `nyaaDescription` | `sitePublish.nyaa.description` | No | Markdown description sent to Nyaa, up to 20000 characters. Falls back to AniBT `notes`. |
+| `nyaaDescription` | `sitePublish.nyaa.description` | No | Markdown description sent to Nyaa, up to 20000 characters. Falls back to AniBT `notes`; inherited notes have the same 20000-character limit and fail validation if exceeded. |
 | `nyaaInformation` | `sitePublish.nyaa.information` | No | Nyaa information field, up to 500 characters. Usually an official site, project page, group page, or related link. |
 
 Nyaa category codes must be sent exactly as shown:

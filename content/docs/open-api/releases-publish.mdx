@@ -210,7 +210,7 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
       default: 'false',
     },
     'nyaaDescription': {
-      description: '覆盖提交到 Nyaa 的 Markdown 说明；不传时使用本站 notes。',
+      description: '覆盖提交到 Nyaa 的 Markdown 说明，最多 20000 字符。不传时使用本站 notes，继承时同样受 20000 字上限。',
       type: 'string',
     },
     'nyaaInformation': {
@@ -366,7 +366,7 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 | `nyaaCategory` | `sitePublish.nyaa.category` | 启用代发时必填 | Nyaa 分类代码，必须从下表选择。普通中文动画字幕常用 `1_3`。 |
 | `nyaaComplete` | `sitePublish.nyaa.complete` | 否 | 对应 Nyaa 的 Complete 标记；合集、全卷、全季等完整资源可设为 `true`。默认 `false`。 |
 | `nyaaRemake` | `sitePublish.nyaa.remake` | 否 | 对应 Nyaa 的 Remake 标记；重传、修复版、重制版按需要设为 `true`。默认 `false`。 |
-| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 说明，最多 20000 字符。不传时继承本站 `notes`。 |
+| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 说明，最多 20000 字符。不传时继承本站 `notes`，继承内容同样不能超过 20000 字符，否则返回校验错误。 |
 | `nyaaInformation` | `sitePublish.nyaa.information` | 否 | Nyaa information 字段，最多 500 字符，通常填写官网、字幕组页面、项目页或相关说明链接。 |
 
 Nyaa 分类代码必须原样填写：

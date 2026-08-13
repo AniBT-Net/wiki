@@ -110,7 +110,7 @@ Aliases and structured JSON fields match anime publishing:
 | `nyaaCategory` | `sitePublish.nyaa.category` | Required when enabled | Nyaa category code. Use official Nyaa codes. See [Publish a release](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories) for the full table. |
 | `nyaaComplete` | `sitePublish.nyaa.complete` | No | Nyaa Complete flag. Use `true` for complete batches, full volumes, or full seasons. Defaults to `false`. |
 | `nyaaRemake` | `sitePublish.nyaa.remake` | No | Nyaa Remake flag. Use for re-uploads, fixes, or remakes when appropriate. Defaults to `false`. |
-| `nyaaDescription` | `sitePublish.nyaa.description` | No | Markdown description sent to Nyaa, up to 20000 characters. Falls back to AniBT `notes`. |
+| `nyaaDescription` | `sitePublish.nyaa.description` | No | Markdown description sent to Nyaa, up to 20000 characters. Falls back to AniBT `notes`; inherited notes have the same 20000-character limit and fail validation if exceeded. |
 | `nyaaInformation` | `sitePublish.nyaa.information` | No | Nyaa information field, up to 500 characters. Usually an official site, group page, project page, or related link. |
 
 ## Parameters
