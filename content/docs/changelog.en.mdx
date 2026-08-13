@@ -16,6 +16,11 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 - **Weekly timetable keeps next Thursday after the day rolls**
   Sync now fetches two official 7-day windows (14 days total). The page still shows seven days from today, but Thursday’s sync already includes the following Thursday (e.g. 08/20), so that day is no longer empty when Friday begins.
 
+### Changed
+
+- **Weekly timetable lives only on `/`; weekly `/seasonal` URLs redirect home**
+  Current-season weekly HTML is only `/`. `/seasonal` and `/seasonal?view=weekly` return 301 to `/`. The poster wall stays at `/seasonal?view=grid`.
+
 ## August 13, 2026
 
 ### Changed
