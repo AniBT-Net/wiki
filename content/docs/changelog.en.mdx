@@ -11,6 +11,16 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 
 ## August 14, 2026
 
+### Security
+
+- **TOTP / two-factor is not a product feature**
+  Sign-in stays email OTP, password, OAuth, and optional passkeys. `/auth/two-factor` returns 404. Account security has no “Enable 2FA” card.
+
+### Changed
+
+- **Public image proxies no longer transcode in the web process**
+  `/img/ext/*` and `/img/bgm/*` no longer fetch and convert with sharp on a cache miss. Unknown hosts still return 400. Existing variants redirect to the public WebP object.
+
 ### Fixed
 
 - **Weekly timetable keeps next Thursday after the day rolls**
