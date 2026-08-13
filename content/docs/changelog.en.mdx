@@ -9,6 +9,13 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
 </Callout>
 
+## August 13, 2026
+
+### Fixed
+
+- **Public weekly timetable now uses real daily air times**
+  The `/` and `/seasonal` timetable now renders actual events from the bgm.wiki 7-day window. One title can appear on more than one date, with official times and episode numbers, instead of projecting last week’s slot by `+7` days. If a title is gone from a day that still has other events, it is removed that day. If a whole day arrives with zero events, the previous day is kept so a truncated fetch cannot wipe Monday–Wednesday.
+
 ## August 11, 2026
 
 ### Fixed
