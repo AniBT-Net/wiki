@@ -3,7 +3,7 @@ title: RSS 主入口
 description: GET /rss/anime.xml —— 支持 bgmId、字幕组 slug 与多 Tag 任意组合的 RSS 主入口，兼容 Mikan 链接。
 ---
 
-`/rss/anime.xml` 是最灵活的订阅端点：用 `bgmId` + `groupSlug` + 多个 Tag（`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`）任意组合，订阅一个番剧、一个字幕组或全站相关发布。
+`/rss/anime.xml` 是最灵活的订阅端点：用 `bgmId` + `groupSlug` + 多个 Tag（`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`）任意组合，订阅一个番剧、一个字幕组或全站相关发布。搜索引擎不会抓 `/rss/`；订阅本身照常工作。
 
 ## 前置条件
 

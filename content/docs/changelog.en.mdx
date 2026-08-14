@@ -11,6 +11,11 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 
 ## August 14, 2026
 
+### Improved
+
+- **Public pages no longer hand torrent addresses to search engines**
+  `robots.txt` disallows `/release/`, `/other-release/`, `/magnets`, `/search`, `/rss/`, and `/api/`. The sitemap keeps home, groups, claims, friends, about, and anime pages from 1940 onward. Magnet listings, search, and release details send `noindex`. Indexable anime and group pages no longer emit `magnet:` or `/api/torrent/` links. RSS subscription URLs are unchanged; crawlers are told not to index them as web pages.
+
 ### Security
 
 - **TOTP / two-factor is not a product feature**
