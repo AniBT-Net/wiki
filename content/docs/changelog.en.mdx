@@ -13,6 +13,9 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 
 ### Fixed
 
+- **Inactive “Sync to platforms” action removed from group releases**
+  The per-release action menu no longer shows “Sync to platforms.” Only this inactive shortcut was removed; publishing-time platform sync, background retries, and other sync surfaces are unchanged.
+
 - **Claims covers stay on the site origin and no longer trip Mixed Content**
   `/claims` still uses `/img/bgm/subject/<id>/w*.webp`. A hit now returns WebP from the site; it no longer 302s to `r2.anibt.net/img_bgm/` or to an `http://` placeholder. A miss still enqueues background transcoding and relatively redirects to `/loading-v6-static.webp`. Homepage covers that already use public `anime_covers/` objects are unchanged.
 
