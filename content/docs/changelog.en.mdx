@@ -9,6 +9,13 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
 </Callout>
 
+## August 15, 2026
+
+### Fixed
+
+- **Claims covers stay on the site origin and no longer trip Mixed Content**
+  `/claims` still uses `/img/bgm/subject/<id>/w*.webp`. A hit now returns WebP from the site; it no longer 302s to `r2.anibt.net/img_bgm/` or to an `http://` placeholder. A miss still enqueues background transcoding and relatively redirects to `/loading-v6-static.webp`. Homepage covers that already use public `anime_covers/` objects are unchanged.
+
 ## August 14, 2026
 
 ### Improved
@@ -24,7 +31,7 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 ### Changed
 
 - **Public image proxies no longer transcode in the web process**
-  `/img/ext/*` and `/img/bgm/*` no longer fetch and convert with sharp on a cache miss. Unknown hosts still return 400. Existing variants redirect to the public WebP object.
+  `/img/ext/*` and `/img/bgm/*` no longer fetch and convert with sharp on a cache miss. Unknown hosts still return 400. Same-origin hit serving is described in the August 15 fix.
 
 ### Fixed
 
