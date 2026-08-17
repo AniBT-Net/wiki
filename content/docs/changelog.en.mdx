@@ -16,6 +16,11 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
 - **Collection, movie, and other categories added for other releases**
   The `/magnets` category filter and publish API now accept `collection`, `movie`, and `other`. Their feeds are `/rss/other/collection.xml`, `/rss/other/movie.xml`, and `/rss/other/other.xml`; an empty category still returns valid RSS. Telegram observes all seven other-release categories through the existing polling, deduplication, and send-budget path. Existing releases are not reclassified automatically.
 
+### Fixed
+
+- **Consistent path and resource-ID validation for public torrent downloads**
+  `/api/torrent/{rel_*}.torrent` and `/api/other-torrent/{orel_*}.torrent` now decode and validate the terminal ID at one shared boundary. A wrong resource type, extra path segment, encoded slash or backslash, malformed percent escape, or wrong suffix consistently returns HTTP 400 instead of entering divergent route branches or leaking an origin exception. A validly shaped ID that does not exist still returns 404. Requests rejected by the CDN before reaching the site continue to use the edge response.
+
 ## August 15, 2026
 
 ### Fixed

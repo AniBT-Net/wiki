@@ -16,6 +16,11 @@ AniBT Wiki 与站点功能的变更记录；仅收录与文档直接相关、可
 - **其他类资源新增合集、剧场版和其他三个分类**
   `/magnets` 分类筛选和发布接口现支持 `collection`、`movie`、`other`，对应合集、剧场版、其他。三个分类分别提供 `/rss/other/collection.xml`、`/rss/other/movie.xml`、`/rss/other/other.xml`；空分类也返回有效 RSS。Telegram 使用现有轮询、去重和发送预算订阅全部七个其他类分类。已有资源不会自动改类。
 
+### 修复
+
+- **公开种子下载统一校验路径和资源 ID**
+  `/api/torrent/{rel_*}.torrent` 与 `/api/other-torrent/{orel_*}.torrent` 现在由同一解析边界解码并校验末尾 ID。错误资源类型、额外路径段、编码后的斜杠或反斜杠、非法百分号编码和错误后缀会稳定返回 HTTP 400，不再进入分散的路由分支或泄漏源站异常；格式正确但不存在的 ID 仍返回 404。若请求在到站前被 CDN 拒绝，仍以边缘层响应为准。
+
 ## 2026 年 8 月 15 日
 
 ### 修复

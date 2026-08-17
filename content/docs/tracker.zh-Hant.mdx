@@ -23,6 +23,14 @@ https://tracker.anibt.net/announce
 
 既有 AniBT 種子可繼續使用固定 `/announce`，無需更換地址或重新下載資料。Tracker 欄位位於 torrent `info` dictionary 之外，規範化不會改變 infohash。
 
+### 公開種子下載地址
+
+- 番劇資源使用 `/api/torrent/{rel_*}.torrent`。
+- 其他類資源使用 `/api/other-torrent/{orel_*}.torrent`。
+- `GET` 與 `HEAD` 共用同一套路徑校驗。末尾 ID 只解碼一次，並且必須符合對應的公開 ID 類型；錯誤前綴、額外路徑段、編碼後的斜線或反斜線、非法百分號編碼和錯誤副檔名都會回傳標準 HTTP 400 JSON。格式正確但不存在的 ID 回傳 404。
+
+請求若在到達站點前已被 CDN 拒絕，回應格式和狀態碼由邊緣層決定。
+
 ## 已關閉的入口
 
 - `https://tracker.anibt.net/announce/v1/*`

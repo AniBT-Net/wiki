@@ -31,6 +31,19 @@ Existing AniBT torrents can continue using the fixed `/announce` URL. No tracker
 replacement or data re-download is needed. Tracker fields sit outside the torrent
 `info` dictionary, so normalization preserves the infohash.
 
+### Public torrent download URLs
+
+- Anime releases use `/api/torrent/{rel_*}.torrent`.
+- Other releases use `/api/other-torrent/{orel_*}.torrent`.
+- `GET` and `HEAD` share the same path validation. The terminal ID is decoded
+  exactly once and must match the corresponding public ID type. A wrong prefix,
+  extra path segment, encoded slash or backslash, malformed percent escape, or
+  wrong suffix returns the standard HTTP 400 JSON response. A syntactically valid
+  ID that does not exist returns 404.
+
+If the CDN rejects a request before it reaches the site, the edge controls the
+response format and status code.
+
 ## Closed endpoints
 
 - `https://tracker.anibt.net/announce/v1/*`
