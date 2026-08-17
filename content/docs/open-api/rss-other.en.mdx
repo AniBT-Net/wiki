@@ -1,9 +1,9 @@
 ---
 title: Other-category RSS
-description: GET /rss/other/<category>.xml — independent feeds for manga, music, RAW, and stage; never mixed into anime RSS.
+description: GET /rss/other/<category>.xml — independent feeds for all seven other-release categories; never mixed into anime RSS.
 ---
 
-`/rss/other/<category>.xml` serves independent feeds for non-anime releases. Supported categories: `manga`, `music`, `raw`, `stage`.
+`/rss/other/<category>.xml` serves independent feeds for other releases. Supported categories: `manga`, `music`, `raw`, `stage`, `collection`, `movie`, and `other`.
 
 ## Preconditions
 
@@ -17,7 +17,12 @@ https://anibt.net/rss/other/manga.xml
 https://anibt.net/rss/other/music.xml
 https://anibt.net/rss/other/raw.xml
 https://anibt.net/rss/other/stage.xml
+https://anibt.net/rss/other/collection.xml
+https://anibt.net/rss/other/movie.xml
+https://anibt.net/rss/other/other.xml
 ```
+
+When a category has no releases, its canonical URL still returns `200 application/xml` with a valid empty RSS channel rather than `404`.
 
 ## Query parameters
 

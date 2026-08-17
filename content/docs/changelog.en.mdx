@@ -9,6 +9,13 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
 </Callout>
 
+## August 17, 2026
+
+### Added
+
+- **Collection, movie, and other categories added for other releases**
+  The `/magnets` category filter and publish API now accept `collection`, `movie`, and `other`. Their feeds are `/rss/other/collection.xml`, `/rss/other/movie.xml`, and `/rss/other/other.xml`; an empty category still returns valid RSS. Telegram observes all seven other-release categories through the existing polling, deduplication, and send-budget path. Existing releases are not reclassified automatically.
+
 ## August 15, 2026
 
 ### Fixed

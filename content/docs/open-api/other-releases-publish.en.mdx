@@ -1,9 +1,9 @@
 ---
 title: Publish other releases
-description: POST /api/other-releases/publish — publish manga, music, RAW, and stage releases with a group API key; no bgmId required.
+description: POST /api/other-releases/publish — publish any of the seven other-release categories with a group API key; no bgmId required.
 ---
 
-`/api/other-releases/publish` is the write endpoint for **non-anime releases** from a release group. Use it for manga, music, RAW, and stage releases. It uses the same group API-key system and requires `releases:publish`; it does not require `bgmId` and stays separate from anime releases.
+`/api/other-releases/publish` is the write endpoint for **other releases** from a release group. Use it for manga, music, RAW, stage, collection, movie, and other releases. It uses the same group API-key system and requires `releases:publish`; it does not require `bgmId` and stays separate from anime releases.
 
 ## Preconditions
 
@@ -118,7 +118,7 @@ Aliases and structured JSON fields match anime publishing:
 <TypeTable
   type={{
     'category': {
-      description: 'Release category: manga / music / raw / stage. Send these English codes exactly.',
+      description: 'Release category: manga / music / raw / stage / collection / movie / other. Send these English codes exactly.',
       type: 'enum',
       required: true,
     },
@@ -190,6 +190,9 @@ Aliases and structured JSON fields match anime publishing:
 | `music` | Music | `/rss/other/music.xml` | OSTs, character songs, albums, singles, concert audio, drama CDs. |
 | `raw` | RAW | `/rss/other/raw.xml` | RAW resources, batches, or miscellaneous video sources not bound to a Bangumi anime entry. |
 | `stage` | Stage | `/rss/other/stage.xml` | Stage plays, musicals, and live-action stage-related resources. |
+| `collection` | Collection | `/rss/other/collection.xml` | Other releases published under the collection category; they are not converted into anime releases. |
+| `movie` | Movie | `/rss/other/movie.xml` | Other releases published under the movie category; no `bgmId` is required. |
+| `other` | Other | `/rss/other/other.xml` | Other releases that do not fit the preceding six categories. |
 
 ### Torrent, Magnet, Notes, Tags
 

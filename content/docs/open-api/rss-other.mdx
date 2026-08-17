@@ -1,9 +1,9 @@
 ---
 title: 其他类 RSS
-description: GET /rss/other/<category>.xml —— 漫画、音乐、RAW、舞台剧各自独立的 RSS，不混入主 RSS。
+description: GET /rss/other/<category>.xml —— 七个其他类分类各自独立的 RSS，不混入主 RSS。
 ---
 
-`/rss/other/<category>.xml` 输出其他类资源的独立 RSS。当前支持 `manga`、`music`、`raw`、`stage` 四个分类，对应漫画、音乐、RAW、舞台剧。
+`/rss/other/<category>.xml` 输出其他类资源的独立 RSS。当前支持七个分类：`manga`、`music`、`raw`、`stage`、`collection`、`movie`、`other`，对应漫画、音乐、RAW、舞台剧、合集、剧场版、其他。
 
 ## 前置条件
 
@@ -17,7 +17,12 @@ https://anibt.net/rss/other/manga.xml
 https://anibt.net/rss/other/music.xml
 https://anibt.net/rss/other/raw.xml
 https://anibt.net/rss/other/stage.xml
+https://anibt.net/rss/other/collection.xml
+https://anibt.net/rss/other/movie.xml
+https://anibt.net/rss/other/other.xml
 ```
+
+分类没有发布记录时，规范 URL 仍返回 `200 application/xml` 和有效的空 RSS channel，不返回 `404`。
 
 ## 查询参数
 

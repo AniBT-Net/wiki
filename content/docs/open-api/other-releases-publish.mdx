@@ -1,9 +1,9 @@
 ---
 title: 发布其他类资源
-description: POST /api/other-releases/publish —— 字幕组用 API Key 发布漫画、音乐、RAW、舞台剧资源；不绑定 bgmId。
+description: POST /api/other-releases/publish —— 字幕组用 API Key 发布七类其他资源；不绑定 bgmId。
 ---
 
-`/api/other-releases/publish` 是字幕组发布**非番剧资源**的写入端点，适用于漫画、音乐、RAW、舞台剧。使用同一套字幕组 API Key 鉴权，并要求 `releases:publish` scope；不需要 `bgmId`，也不会混入番剧发布列表。
+`/api/other-releases/publish` 是字幕组发布**其他类资源**的写入端点，适用于漫画、音乐、RAW、舞台剧、合集、剧场版和其他。使用同一套字幕组 API Key 鉴权，并要求 `releases:publish` scope；不需要 `bgmId`，也不会混入番剧发布列表。
 
 ## 前置条件
 
@@ -118,7 +118,7 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 <TypeTable
   type={{
     'category': {
-      description: '资源分类：manga / music / raw / stage。必须原样填写这些英文代码。',
+      description: '资源分类：manga / music / raw / stage / collection / movie / other。必须原样填写这些英文代码。',
       type: 'enum',
       required: true,
     },
@@ -188,8 +188,11 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 | ---- | -------- | -------- | ---------- |
 | `manga` | 漫画 | `/rss/other/manga.xml` | 漫画、轻小说、书籍、画册等非番剧文本/图像阅读资源。 |
 | `music` | 音乐 | `/rss/other/music.xml` | OST、角色歌、专辑、单曲、演唱会音源、广播剧音频。 |
-| `raw` | RAW | `/rss/other/raw.xml` | 不绑定 Bangumi 番剧条目的 RAW 资源、合集、杂项视频源。 |
+| `raw` | RAW | `/rss/other/raw.xml` | 不绑定 Bangumi 番剧条目的 RAW 资源或杂项视频源。 |
 | `stage` | 舞台剧 | `/rss/other/stage.xml` | 舞台剧、音乐剧、Live action 舞台相关资源。 |
+| `collection` | 合集 | `/rss/other/collection.xml` | 按合集分类发布的其他类资源；不会自动改成番剧发布。 |
+| `movie` | 剧场版 | `/rss/other/movie.xml` | 按剧场版分类发布的其他类资源；不需要 `bgmId`。 |
+| `other` | 其他 | `/rss/other/other.xml` | 无法归入前六个分类的其他类资源。 |
 
 ### 种子、磁力和说明字段
 
