@@ -34,7 +34,7 @@ description: 在字幕组后台图床模块上传图片，复制全球加速链�
 | 状态 | 含义 |
 | --- | --- |
 | `queued` | 已受理，后台正在删除对象或等待 Cloudflare 缓存收敛。 |
-| `complete` | AniBT R2 对象已验证不存在；短链接页面和 `i.anibt.net` 直链已在 AniBT 控制的 Cloudflare 缓存中完成收敛，并返回 `404` / `410`。 |
+| `complete` | AniBT R2 对象（含已持久化的图库缩略图）已验证不存在；短链接页面、`i.anibt.net` 直链以及（若存在）缩略图已在 AniBT 控制的 Cloudflare 缓存中完成收敛，并返回 `404` / `410`。 |
 | `failed` | 删除 operation 已进入终态失败，界面会显示失败状态。 |
 
 <Callout type="warning">

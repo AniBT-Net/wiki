@@ -9,6 +9,13 @@ Changelog for AniBT Wiki and site features that the docs cover. Entries are fact
   Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
 </Callout>
 
+## August 18, 2026
+
+### Fixed
+
+- **Image-host deletion now clears the library thumb Cloudflare cache**
+  Deleting an image that has a persisted library thumb now waits until the short page, `i.anibt.net` direct URL, and thumb all return `404` / `410` before `complete`. Earlier completions could leave the thumb cached after the page and original object were gone. Accelerated links, browser caches, and third-party copies remain outside this scope. See [Image host](/docs/image-host).
+
 ## August 17, 2026
 
 ### Added

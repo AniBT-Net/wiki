@@ -36,7 +36,7 @@ application lookup. The UI then reads
 | Status | Meaning |
 | --- | --- |
 | `queued` | Accepted; background processing is deleting the object or waiting for Cloudflare cache convergence. |
-| `complete` | The AniBT R2 object is verified absent, and the short page plus `i.anibt.net` direct URL have converged in AniBT-controlled Cloudflare caches and return `404` / `410`. |
+| `complete` | The AniBT R2 objects (including a persisted library thumb) are verified absent, and the short page, `i.anibt.net` direct URL, and persisted thumb have converged in AniBT-controlled Cloudflare caches and return `404` / `410`. |
 | `failed` | The deletion operation reached a terminal failure; the UI displays the failure state. |
 
 <Callout type="warning">
