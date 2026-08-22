@@ -21,7 +21,7 @@ Site sync pushes a release you publish on AniBT to the external sites you have c
   <Step>
     ### Prepare the matching credentials
 
-    Use the cheat sheet below to open the relevant guide and copy the required Cookie, API Token, UID, username, or password fields.
+    Use the cheat sheet below to open the relevant guide and prepare the required API Token, UID, or account credentials.
   </Step>
 
   <Step>
@@ -42,7 +42,7 @@ Claim status and cleanup live on the subtitle group's `/groups/<slug>/claims` pa
 ## Choose a Guide
 
 <Cards>
-  <Card title="Bangumi Moe Sync" href="/docs/site-sync/bangumi" description="Copy the login Cookie, publishing identity name, and Team ID." />
+  <Card title="Bangumi Moe Sync" href="/docs/site-sync/bangumi" description="Enter a username or email, password, and optional publishing identity." />
   <Card title="Mikan Sync" href="/docs/site-sync/mikan" description="Enter the API Token and let AniBT auto-query the IDs." />
   <Card title="DMHY Sync" href="/docs/site-sync/dmhy" description="Enter your username, password, and subtitle group name." />
   <Card title="ACGNX Sync" href="/docs/site-sync/acgnx" description="Copy the UID and API Token." />
@@ -55,8 +55,8 @@ Claim status and cleanup live on the subtitle group's `/groups/<slug>/claims` pa
 <TypeTable
   type={{
     'Bangumi Moe': {
-      description: 'Requires the login Cookie, publishing identity name, and Team ID; copy the Cookie from the Network request during a fresh login.',
-      type: 'Cookie',
+      description: 'Requires the username or email and password of an activated account. Publishing identity name and Team ID are optional. Old Cookie configuration is no longer valid.',
+      type: 'username + password',
     },
     'Mikan': {
       description: 'Usually only the API Token is required; AniBT can auto-query the publish group and release group IDs.',

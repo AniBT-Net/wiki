@@ -1,81 +1,61 @@
 ---
 title: 萌番组同步
-description: 填写萌番组同步所需的 Cookie、发布身份名称和 Team ID。
+description: 使用萌番组用户名或邮箱和密码配置发布同步。
 ---
 
-萌番组（bangumi.moe）使用登录 Cookie 鉴权。需要从 DevTools 抓取登录请求中的 Cookie，并整段复制到 AniBT。
+萌番组（bangumi.moe）同步使用账号密码登录。AniBT 会加密保存账密，并复用登录后生成的会话；会话失效时，后台会重新登录。
 
 <Callout type="warn">
-  必须先退出登录、清空 Network，再重新登录，才能抓到完整的登录 Cookie。
+  萌番组账号必须先完成邮箱激活。旧的浏览器 Cookie 配置已失效，仅配置 Cookie 的字幕组需要重新填写用户名和密码。
 </Callout>
 
-## 步骤一：开启 Network 录制
+## 配置账号
 
 <Steps>
   <Step>
-    ### 退出登录并刷新
+    ### 打开萌番组同步设置
 
-    打开 [https://bangumi.moe](https://bangumi.moe)，先 **退出登录**，再 **刷新网页**。
+    在 AniBT 字幕组后台打开 `/groups/<slug>/sync`，选择 **萌番组同步**。
   </Step>
 
   <Step>
-    ### 开启网络录制
+    ### 填写用户名和密码
 
-    按 <kbd>F12</kbd> 打开 DevTools，切换到 **Network（网络）** 页。确认录制按钮为 **红色**（已开启录制）。
-
-    ![DevTools Network 录制网络日志](/images/site-sync/bangumi-network-recording.webp)
+    启用萌番组同步。点击 **修改账密**，填写萌番组用户名或邮箱和密码。
   </Step>
 
   <Step>
-    ### 重新登录
+    ### 配置发布身份
 
-    输入账号密码，点击登录。
+    如需以萌番组 Team 身份发布，填写发布身份名称或 Team ID。使用个人身份发布时，两项都可留空。
+  </Step>
+
+  <Step>
+    ### 保存配置
+
+    点击 **保存**。修改用户名或密码后，AniBT 会清除旧会话，并在下次测试或发布时重新登录。
   </Step>
 </Steps>
 
-## 步骤二：复制 Cookie
-
-<Steps>
-  <Step>
-    ### 找到 disqus 请求
-
-    在 **Network** 页中找到名为 **`disqus`** 的请求，点击该请求。
-
-    ![Network 中的 disqus 请求](/images/site-sync/bangumi-disqus-request.webp)
-  </Step>
-
-  <Step>
-    ### 复制 Request Headers 中的 Cookie
-
-    在右侧切换到 **Headers（标头）** 页，下拉找到 **Request Headers** → **Cookie**，全选 Cookie 整段字符串。
-
-    <Callout type="warn">
-      不要选中下方 `priority` 的 `u=1, i`。
-    </Callout>
-
-    ![复制 Request Headers 里的 Cookie](/images/site-sync/bangumi-cookie-header.webp)
-  </Step>
-
-  <Step>
-    ### 粘贴到 AniBT 并保存
-
-    回到 AniBT，粘贴 Cookie，点击保存。
-
-    ![在 AniBT 中粘贴 Cookie](/images/site-sync/bangumi-anibt-cookie-save.webp)
-  </Step>
-</Steps>
-
-## 发布身份与 Team ID
+## 字段说明
 
 <TypeTable
   type={{
+    '用户名或邮箱': {
+      description: '萌番组登录用户名或邮箱。',
+      type: 'string',
+    },
+    '密码': {
+      description: '萌番组登录密码。账号必须已完成邮箱激活。',
+      type: 'string',
+    },
     '发布身份名称': {
-      description: '在萌番组的团队名（组名）。未申请团队注册时可留空。',
+      description: '萌番组 Team 名称。使用个人身份发布时留空。',
       type: 'string',
       default: '可留空',
     },
     'Team ID': {
-      description: '可不填；留空也可以同步。',
+      description: '固定使用指定 Team 时填写；优先于名称匹配。',
       type: 'string',
       default: '可留空',
     },
@@ -84,9 +64,9 @@ description: 填写萌番组同步所需的 Cookie、发布身份名称和 Team 
 
 ## 测试连接
 
-填写完成后，点击 **保存并测试连接**：
+保存账密后，点击 **测试连接**。
 
-- **连接成功**：配置完成。
-- **连接失败**：检查 Cookie 是否复制完整、账号是否登录成功。
-
-![测试连接成功](/images/site-sync/bangumi-connection-success.webp)
+- **连接成功**：账号已登录且可以访问萌番组发布功能。
+- **账号未激活**：先在萌番组完成邮箱激活，再重新测试。
+- **登录失败**：检查用户名或邮箱和密码。
+- **登录过于频繁**：等待一段时间后再测试，不要连续重复登录。
