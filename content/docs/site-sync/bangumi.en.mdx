@@ -1,81 +1,61 @@
 ---
 title: Bangumi Moe Sync
-description: Fill in the Cookie, publisher identity name, and Team ID required for Bangumi Moe sync.
+description: Configure release sync with a Bangumi Moe username or email and password.
 ---
 
-Bangumi Moe authenticates with a login Cookie. Capture the Cookie from the login request in DevTools and paste the full value into AniBT.
+Bangumi Moe sync signs in with an account password. AniBT stores the credentials encrypted and reuses the derived login session. The background worker signs in again after the session expires.
 
 <Callout type="warn">
-  You must log out and clear Network first, then log in again — otherwise the captured request will not carry a complete Cookie.
+  Activate the Bangumi Moe account by email before configuring sync. Pasted browser Cookies are no longer supported; groups that only had a Cookie configured must enter a username and password.
 </Callout>
 
-## Step One: Start Network Recording
+## Configure the Account
 
 <Steps>
   <Step>
-    ### Log out and refresh
+    ### Open Bangumi Moe sync settings
 
-    Visit [https://bangumi.moe](https://bangumi.moe), **log out**, then **refresh** the page.
+    Open `/groups/<slug>/sync` in the AniBT subtitle group dashboard and select **Bangumi Moe Sync**.
   </Step>
 
   <Step>
-    ### Enable network recording
+    ### Enter the username and password
 
-    Press <kbd>F12</kbd> to open DevTools and switch to **Network**. Confirm the recording button is **red** (recording is on).
-
-    ![DevTools Network recording](/images/site-sync/bangumi-network-recording.webp)
+    Enable Bangumi Moe sync. Select **Change credentials**, then enter the Bangumi Moe username or email and password.
   </Step>
 
   <Step>
-    ### Log in again
+    ### Configure the publishing identity
 
-    Enter your account and password, then sign in.
+    To publish through a Bangumi Moe Team, enter the publishing identity name or Team ID. Leave both fields empty to publish as the account itself.
+  </Step>
+
+  <Step>
+    ### Save the configuration
+
+    Select **Save**. Changing the username or password clears the previous session; AniBT signs in again during the next test or publish attempt.
   </Step>
 </Steps>
 
-## Step Two: Copy the Cookie
-
-<Steps>
-  <Step>
-    ### Locate the disqus request
-
-    In the **Network** panel, find and click the request named **`disqus`**.
-
-    ![The disqus request in Network](/images/site-sync/bangumi-disqus-request.webp)
-  </Step>
-
-  <Step>
-    ### Copy the Cookie request header
-
-    On the right, switch to **Headers** and scroll down to **Request Headers** → **Cookie**. Select the entire Cookie string.
-
-    <Callout type="warn">
-      Do not include the `priority` line below it (for example, `u=1, i`).
-    </Callout>
-
-    ![Copy the Cookie request header](/images/site-sync/bangumi-cookie-header.webp)
-  </Step>
-
-  <Step>
-    ### Paste in AniBT and save
-
-    Return to AniBT, paste the Cookie, and save.
-
-    ![Paste the Cookie in AniBT](/images/site-sync/bangumi-anibt-cookie-save.webp)
-  </Step>
-</Steps>
-
-## Publisher Identity & Team ID
+## Fields
 
 <TypeTable
   type={{
-    'Publisher Identity Name': {
-      description: 'Your team name on Bangumi Moe. Leave blank if you have no registered team.',
+    'Username or email': {
+      description: 'The username or email used to sign in to Bangumi Moe.',
+      type: 'string',
+    },
+    'Password': {
+      description: 'The Bangumi Moe password. The account must already be activated by email.',
+      type: 'string',
+    },
+    'Publishing Identity Name': {
+      description: 'The Bangumi Moe Team name. Leave empty to publish as the account itself.',
       type: 'string',
       default: 'optional',
     },
     'Team ID': {
-      description: 'Optional. Sync still works when left blank.',
+      description: 'Enter a Team ID to pin a specific Team. It takes priority over name matching.',
       type: 'string',
       default: 'optional',
     },
@@ -84,9 +64,9 @@ Bangumi Moe authenticates with a login Cookie. Capture the Cookie from the login
 
 ## Test the Connection
 
-After filling in the fields, click **Save and test connection**:
+After saving the credentials, select **Test Connection**.
 
-- **Success** — setup is complete.
-- **Failure** — check whether the Cookie was copied completely and that login succeeded.
-
-![Successful connection test](/images/site-sync/bangumi-connection-success.webp)
+- **Connection successful** — the account is signed in and can access the Bangumi Moe publishing feature.
+- **Account not activated** — activate the account by email on Bangumi Moe, then test again.
+- **Login failed** — check the username or email and password.
+- **Login too frequent** — wait before testing again instead of repeatedly signing in.

@@ -1,81 +1,61 @@
 ---
 title: 萌番組同步
-description: 填寫萌番組同步所需的 Cookie、釋出身份名稱和 Team ID。
+description: 使用萌番組使用者名稱或電子郵件和密碼配置釋出同步。
 ---
 
-萌番組（bangumi.moe）使用登入 Cookie 鑑權。需要從 DevTools 抓取登入請求中的 Cookie，並整段複製到 AniBT。
+萌番組（bangumi.moe）同步使用帳號密碼登入。AniBT 會加密儲存帳密，並重用登入後產生的工作階段；工作階段失效時，後台會重新登入。
 
 <Callout type="warn">
-  必須先登出、清空 Network，再重新登入，才能抓到完整的登入 Cookie。
+  萌番組帳號必須先完成電子郵件啟用。舊的瀏覽器 Cookie 配置已失效，僅配置 Cookie 的字幕組需要重新填寫使用者名稱和密碼。
 </Callout>
 
-## 步驟一：開啟 Network 錄製
+## 配置帳號
 
 <Steps>
   <Step>
-    ### 登出並重新整理
+    ### 開啟萌番組同步設定
 
-    開啟 [https://bangumi.moe](https://bangumi.moe)，先 **登出**，再 **重新整理網頁**。
+    在 AniBT 字幕組後台開啟 `/groups/<slug>/sync`，選擇 **萌番組同步**。
   </Step>
 
   <Step>
-    ### 開啟網路錄製
+    ### 填寫使用者名稱和密碼
 
-    按 <kbd>F12</kbd> 開啟 DevTools，切換到 **Network（網路）** 頁。確認錄製按鈕為 **紅色**（已開啟錄製）。
-
-    ![DevTools Network 錄製網路日誌](/images/site-sync/bangumi-network-recording.webp)
+    啟用萌番組同步。點選 **修改帳密**，填寫萌番組使用者名稱或電子郵件和密碼。
   </Step>
 
   <Step>
-    ### 重新登入
+    ### 配置釋出身份
 
-    輸入帳號密碼，點選登入。
+    如需以萌番組 Team 身份釋出，填寫釋出身份名稱或 Team ID。使用個人身份釋出時，兩項都可留空。
+  </Step>
+
+  <Step>
+    ### 儲存配置
+
+    點選 **儲存**。修改使用者名稱或密碼後，AniBT 會清除舊工作階段，並在下次測試或釋出時重新登入。
   </Step>
 </Steps>
 
-## 步驟二：複製 Cookie
-
-<Steps>
-  <Step>
-    ### 找到 disqus 請求
-
-    在 **Network** 頁中找到名為 **`disqus`** 的請求，點選該請求。
-
-    ![Network 中的 disqus 請求](/images/site-sync/bangumi-disqus-request.webp)
-  </Step>
-
-  <Step>
-    ### 複製 Request Headers 中的 Cookie
-
-    在右側切換到 **Headers（標頭）** 頁，下拉找到 **Request Headers** → **Cookie**，全選 Cookie 整段字串。
-
-    <Callout type="warn">
-      不要選中下方 `priority` 的 `u=1, i`。
-    </Callout>
-
-    ![複製 Request Headers 裡的 Cookie](/images/site-sync/bangumi-cookie-header.webp)
-  </Step>
-
-  <Step>
-    ### 貼上到 AniBT 並儲存
-
-    回到 AniBT，貼上 Cookie，點選儲存。
-
-    ![在 AniBT 中貼上 Cookie](/images/site-sync/bangumi-anibt-cookie-save.webp)
-  </Step>
-</Steps>
-
-## 釋出身份與 Team ID
+## 欄位說明
 
 <TypeTable
   type={{
+    '使用者名稱或電子郵件': {
+      description: '萌番組登入使用者名稱或電子郵件。',
+      type: 'string',
+    },
+    '密碼': {
+      description: '萌番組登入密碼。帳號必須已完成電子郵件啟用。',
+      type: 'string',
+    },
     '釋出身份名稱': {
-      description: '在萌番組的團隊名（組名）。未申請團隊註冊時可留空。',
+      description: '萌番組 Team 名稱。使用個人身份釋出時留空。',
       type: 'string',
       default: '可留空',
     },
     'Team ID': {
-      description: '可不填；留空也可以同步。',
+      description: '固定使用指定 Team 時填寫；優先於名稱匹配。',
       type: 'string',
       default: '可留空',
     },
@@ -84,9 +64,9 @@ description: 填寫萌番組同步所需的 Cookie、釋出身份名稱和 Team 
 
 ## 測試連線
 
-填寫完成後，點選 **儲存並測試連線**：
+儲存帳密後，點選 **測試連線**。
 
-- **連線成功**：設定完成。
-- **連線失敗**：檢查 Cookie 是否複製完整、帳號是否登入成功。
-
-![測試連線成功](/images/site-sync/bangumi-connection-success.webp)
+- **連線成功**：帳號已登入且可以存取萌番組釋出功能。
+- **帳號未啟用**：先在萌番組完成電子郵件啟用，再重新測試。
+- **登入失敗**：檢查使用者名稱或電子郵件和密碼。
+- **登入過於頻繁**：等待一段時間後再測試，不要連續重複登入。

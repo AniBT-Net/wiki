@@ -21,7 +21,7 @@ description: 将 AniBT 上的发布同步到萌番组、Mikan、动漫花园、�
   <Step>
     ### 准备对应凭据
 
-    按下方速查表打开对应文档，复制 Cookie、API Token、UID 或账号密码等必需字段。
+    按下方速查表打开对应文档，准备 API Token、UID 或账号密码等必需字段。
   </Step>
 
   <Step>
@@ -42,7 +42,7 @@ description: 将 AniBT 上的发布同步到萌番组、Mikan、动漫花园、�
 ## 选择具体教程
 
 <Cards>
-  <Card title="萌番组同步" href="/docs/site-sync/bangumi" description="复制登录 Cookie、发布身份名称和 Team ID。" />
+  <Card title="萌番组同步" href="/docs/site-sync/bangumi" description="填写用户名或邮箱、密码和可选发布身份。" />
   <Card title="Mikan 同步" href="/docs/site-sync/mikan" description="填写 API Token，并由 AniBT 自动查询 ID。" />
   <Card title="动漫花园同步" href="/docs/site-sync/dmhy" description="填写账号、密码和字幕组名称。" />
   <Card title="末日站同步" href="/docs/site-sync/acgnx" description="复制 UID 与 API Token。" />
@@ -55,8 +55,8 @@ description: 将 AniBT 上的发布同步到萌番组、Mikan、动漫花园、�
 <TypeTable
   type={{
     '萌番组': {
-      description: '需要登录 Cookie、发布身份名称和 Team ID；Cookie 必须从重新登录时的 Network 请求中复制。',
-      type: 'Cookie',
+      description: '需要已激活账号的用户名或邮箱和密码；发布身份名称与 Team ID 可留空。旧 Cookie 配置已失效。',
+      type: '账号密码',
     },
     'Mikan': {
       description: '通常只需要 API Token，AniBT 会自动查询字幕组 ID 与发布组 ID。',
