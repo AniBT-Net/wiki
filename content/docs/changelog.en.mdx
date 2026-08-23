@@ -1,500 +1,111 @@
 ---
 title: Changelog
-description: Release notes for AniBT Wiki and documented AniBT features.
+description: Feature changes. Dates are Beijing time (UTC+8).
 ---
 
-Changelog for AniBT Wiki and site features that the docs cover. Entries are factual and verifiable only.
-
-<Callout type="info">
-  Dates use Beijing time (UTC+8). Newer updates appear first. Entries on the same day are grouped by **Added / Fixed / Security / Improved / Changed / Docs / Operations / Data**.
-</Callout>
-
-## August 23, 2026
-
-### Docs
-
-- **Added an API reference page**
-  JSON and RSS contracts are listed as method, path, auth badge, parameter tables, and JSON responses. The existing per-endpoint guides remain. See [API reference](/docs/open-api/reference).
+Only user-visible feature changes are recorded. Newest first.
 
 ## August 22, 2026
 
-### Changed
-
-- **Bangumi Moe sync now signs in with account credentials**
-  Subtitle group settings no longer accept a pasted browser Cookie. Enter a Bangumi Moe username or email and password instead. Old Cookie-only configurations are invalid and must be replaced; the account must already be activated by email. AniBT stores the credentials encrypted, reuses the login session, and signs in again after the session expires. See [Bangumi Moe Sync](/docs/site-sync/bangumi).
-
-## August 19, 2026
-
-### Changed
-
-- **Narrow public pages use a dedicated top and bottom chrome, with Search as a primary tab**
-  Below 1024px, the public site uses its own mobile top and bottom bars instead of the desktop header plus an extra bar. The four primary tabs are Home, Seasonal, Search, and Profile; Claims moves to the footer. The search page does not auto-focus the keyboard. Anime and release detail keep a bottom action dock. The group workbench keeps Overview, Releases, and Publish as primary tabs, with the rest under More.
-
-## August 18, 2026
-
-### Fixed
-
-- **Image-host deletion now clears the library thumb Cloudflare cache**
-  Deleting an image that has a persisted library thumb now waits until the short page, `i.anibt.net` direct URL, and thumb all return `404` / `410` before `complete`. Earlier completions could leave the thumb cached after the page and original object were gone. Accelerated links, browser caches, and third-party copies remain outside this scope. See [Image host](/docs/image-host).
+- **Bangumi Moe sync now uses account credentials**
+  Browser Cookies are no longer used. Enter the username or email and password of an activated account. See [Bangumi Moe sync](/docs/site-sync/bangumi).
 
 ## August 17, 2026
 
-### Added
-
-- **Collection, movie, and other categories added for other releases**
-  The `/magnets` category filter and publish API now accept `collection`, `movie`, and `other`. Their feeds are `/rss/other/collection.xml`, `/rss/other/movie.xml`, and `/rss/other/other.xml`; an empty category still returns valid RSS. Telegram observes all seven other-release categories through the existing polling, deduplication, and send-budget path. Existing releases are not reclassified automatically.
-
-### Fixed
-
-- **Consistent path and resource-ID validation for public torrent downloads**
-  `/api/torrent/{rel_*}.torrent` and `/api/other-torrent/{orel_*}.torrent` now decode and validate the terminal ID at one shared boundary. A wrong resource type, extra path segment, encoded slash or backslash, malformed percent escape, or wrong suffix consistently returns HTTP 400 instead of entering divergent route branches or leaking an origin exception. A validly shaped ID that does not exist still returns 404. Requests rejected by the CDN before reaching the site continue to use the edge response.
-
-## August 15, 2026
-
-### Fixed
-
-- **Inactive “Sync to platforms” action removed from group releases**
-  The per-release action menu no longer shows “Sync to platforms.” Only this inactive shortcut was removed; publishing-time platform sync, background retries, and other sync surfaces are unchanged.
-
-- **Claims covers stay on the site origin and no longer trip Mixed Content**
-  `/claims` still uses `/img/bgm/subject/<id>/w*.webp`. A hit now returns WebP from the site; it no longer 302s to `r2.anibt.net/img_bgm/` or to an `http://` placeholder. A miss still enqueues background transcoding and relatively redirects to `/loading-v6-static.webp`. Homepage covers that already use public `anime_covers/` objects are unchanged.
+- **Other releases add collection, movie, and other**
+  Category codes `collection` / `movie` / `other`, mapped to `/rss/other/<category>.xml`. Existing releases are not reclassified.
 
 ## August 14, 2026
 
-### Improved
-
-- **Public pages no longer hand torrent addresses to search engines**
-  `robots.txt` disallows `/release/`, `/other-release/`, `/magnets`, `/search`, `/rss/`, and `/api/`. The sitemap keeps home, groups, claims, friends, about, and anime pages from 1940 onward. Magnet listings, search, and release details send `noindex`. Indexable anime and group pages no longer emit `magnet:` or `/api/torrent/` links. RSS subscription URLs are unchanged; crawlers are told not to index them as web pages.
-
-### Security
-
-- **TOTP / two-factor is not a product feature**
-  Sign-in stays email OTP, password, OAuth, and optional passkeys. `/auth/two-factor` returns 404. Account security has no “Enable 2FA” card.
-
-### Changed
-
-- **Public image proxies no longer transcode in the web process**
-  `/img/ext/*` and `/img/bgm/*` no longer fetch and convert with sharp on a cache miss. Unknown hosts still return 400. Same-origin hit serving is described in the August 15 fix.
-
-### Fixed
-
-- **Weekly timetable keeps next Thursday after the day rolls**
-  Sync now fetches two official 7-day windows (14 days total). The page still shows seven days from today, but Thursday’s sync already includes the following Thursday (e.g. 08/20), so that day is no longer empty when Friday begins.
-
-- **Empty days inside a sealed window drop finished titles**
-  A successful 14-day official window covers every Shanghai date in that range: a day with zero events deletes the previous airing, so finished or officially stopped titles leave the timetable. Old slots are kept only when the whole sync fails and no window is written. Continue titles that span two seasons merge both `schedule[]` lists instead of dropping the later season’s dates.
-
-### Changed
-
-- **Weekly timetable lives only on `/`; weekly `/seasonal` URLs redirect home**
-  Current-season weekly HTML is only `/`. `/seasonal` and `/seasonal?view=weekly` return 301 to `/`. The poster wall stays at `/seasonal?view=grid`.
+- **No TOTP**
+  Sign-in is email code, password, OAuth, and optional Passkey.
 
 ## August 13, 2026
 
-### Changed
-
-- **Nyaa proxy descriptions now share a 20000-character limit**
-  Descriptions sent to Nyaa — both custom `nyaaDescription` and inherited AniBT `notes` — are limited to 20000 characters. The publish form blocks over-limit submissions and asks for a custom description; the API rejects them before enqueueing. AniBT `notes` themselves may still be longer. See [Nyaa proxy](/docs/nyaa-proxy).
-
-### Fixed
-
-- **Public weekly timetable now uses real daily air times**
-  The `/` and `/seasonal` timetable now renders actual events from the bgm.wiki window. One title can appear on more than one date, with official times and episode numbers, instead of projecting last week’s slot by `+7` days. If a title is gone from a day, it is removed that day.
+- **Nyaa descriptions capped at 20000 characters**
+  Custom descriptions and inherited `notes` share this limit. Site `notes` may still be longer. See [Nyaa proxy](/docs/nyaa-proxy).
 
 ## August 11, 2026
 
-### Fixed
-
-- **RSS publication timestamps standardized on Asia/Shanghai**
-  Standard `<pubDate>` values in public anime, group, magnets, and other feeds plus personal subscription RSS now use RFC 822 with the explicit Asia/Shanghai offset `+0800`. The `<pubDate>` nested in torrent metadata uses RFC 3339 with `+08:00`. RSS URLs, TTLs, ETags, and 304 semantics are unchanged.
-
-## August 9, 2026
-
-### Operations
-
-- **Edge cache and RSS notification execution moved to private Bun/SQLite**
-  AniBT moved cache invalidation, CDN warming, and RSS-to-Telegram scheduling from the former Cloudflare Worker/D1/Queues stack to a single Dokploy-managed Bun service. Convex now owns durable wake retries; the service commits each wake to SQLite before returning `202`, and isolated intake/purge runners recover unfinished work. The former Worker, D1 database, Queues/DLQs, Custom Domain, and dedicated WAF rule have been retired. Public RSS URLs, XML fields, TTLs, ETags, 304 semantics, and client usage are unchanged.
+- **RSS `<pubDate>` uses Asia/Shanghai**
+  RFC 822 is `+0800`; the time embedded in the torrent is RFC 3339 `+08:00`.
 
 ## August 8, 2026
 
-### Changed
-
-- **Subtitle-group image deletion now has a queryable strict lifecycle**
-  Deletion requests now return HTTP `202` with a stable operation, and repeated requests reuse the same deletion chain. The image is immediately hidden from active site reads while the UI distinguishes pending, complete, and failed states. `complete` appears only after the AniBT R2 object is verified absent and the short page plus `i.anibt.net` direct URL converge in AniBT-controlled Cloudflare caches and return `404` / `410`. Separate accelerated links, browser caches, and third-party copies are outside this completion scope. See [Image host](/docs/image-host).
-
-### Fixed
-
-- **Public RSS refresh policy closed**
-  Anime resolved to both `bgmId` and `groupSlug` refreshes both Redis families and CDN variant sets as one publication result, so clients never observe a one-owner-only intermediate. Group creation, canonical-slug rename, and deletion converge old/new full paths and cached `404` state; routine publication stays owner-scoped. Other `groupId`-only filters follow category freshness; free-text `q` / `search` remains independently TTL-owned for 600 seconds. URLs, XML fields, TTLs, ETags, and 304 semantics are unchanged.
+- **Image-host deletion progress can be queried**
+  Deletion returns `202`. When complete, on-site links are `404` / `410`. Accelerated CDNs and browser caches are outside completion. See [Image host](/docs/image-host).
 
 ## August 7, 2026
 
-### Fixed
-
-- **Custom release-title template permissions and default state**
-  All group members can read custom release-title templates; create, edit, reorder, and delete stay limited to the group owner and administrators. Deleting the active default clears its reference and writes the audit event in the same transaction, so config cannot point at a removed template. Name/content length and reorder completeness are validated server-side.
-
-## August 6, 2026
-
-### Fixed
-
-- **Public RSS entity invalidation now requires an authoritative owner**
-  CDN membership for anime / group / other RSS is now attached by Web only after resolving the canonical owner, and the old URL-derived Cloudflare Response Rules have been retired. Other free-text search, unresolved-anime empty `200`, and unknown-group `404` responses no longer receive false entity tags; a dual-owner anime still refreshes through either its real `bgmId` or `groupSlug`. URLs, TTLs, ETags, and 304 semantics are unchanged.
-
-### Improved
-
-- **Public catalog APIs are admitted to the Cloudflare edge in stages**
-  `/api/anime/lookup`, `/api/mikan/group-lookup`, and `/api/bgm/search` joined shared edge caching one endpoint at a time after the sealed-representation, capacity, and abuse-protection gates passed. Successful responses and BGM's authoritative empty result can go `MISS → HIT`, while GET, HEAD, and 304 reuse one ETag. Duplicate parameters, not-found/conflict, upstream, rate-limit, and server errors remain `no-store`; the change does not make the entire `/api/*` tree cacheable. Query order does not change cache identity, and cookies do not fragment public objects.
-
-### Docs
-
-- **Exact-body conditional-request contract shipped for public RSS and catalog APIs**
-  Anime / group / other / magnets RSS and seven catalog APIs now compute an opaque SHA-256 weak ETag from the final JSON/XML UTF-8 bytes; GET, HEAD, and matching-`If-None-Match` 304 responses reuse one cached representation. Public RSS no longer writes a request-time `lastBuildDate`. The `ts` field in `/api/seasons/anime` and `/api/anime/groups` is now the cached representation materialization time and is included in the body and ETag. These endpoints currently omit `Last-Modified`. An unresolved anime owner may still return an empty `200`, an unknown group owner remains `404`, and the three other catalog APIs have not been added to Cloudflare edge eligibility.
-
-## August 4, 2026
-
-### Added
-
-- **Self-service OAuth applications in profiles**
-  Ordinary users can now create and manage OIDC OAuth applications in a responsive profile dialog without administrator approval or a standalone creation page. The workflow supports Web / BFF and native clients, exact redirect URLs, self-service scopes, one-time zero-overlap secret rotation, suspend / resume, grant revocation, and deletion. Dynamic Client Registration remains disabled. The standalone OIDC documentation module now includes the [overview and field reference](/docs/oidc), [third-party integration guide](/docs/oidc/integration), and [AI / Agent integration reference](/docs/oidc/ai-reference).
-
-## August 3, 2026
-
-### Added
-
-- **AniBT OpenID Connect identity platform**  
-  Launched the standard `oauth.anibt.net` OIDC issuer with Authorization Code + PKCE S256, pairwise `sub`, explicit scope consent, opaque access tokens, refresh rotation / reuse protection, and RP logout. Dynamic Client Registration remains disabled; synthetic email is never released, and account-security revocation durably clears Hydra sessions. See [Sign in to third-party apps with AniBT](/docs/oidc).
+- **Custom release title templates**
+  Group members can read them. Create, edit, and delete are limited to the owner / administrators.
 
 ## July 30, 2026
 
-### Security
-
-- **Plain-text MediaInfo migration**  
-  MediaInfo on release details is now UTF-8 plain text end to end: Web GET/HEAD responses use `text/plain` plus nosniff, and the page renders only text. Production agents now use `mediainfo --Output=Text` and require verified qBittorrent TLS certificates. Every historical `.html` reference and object was converted to readable text and removed with zero legacy residue.
-
-- **RSS output encoding hardening**  
-  Markdown links and image URLs in public RSS continue to use separate attribute encoding and safe protocol handling. This RSS boundary is independent from restoring raw HTML on release-detail pages.
-
-### Fixed
-
-- **Raw HTML restored in release notes**  
-  Anime and other-release notes, detail pages, and previews once again render Markdown plus raw HTML. Historical layouts using `details`/`summary`, tables, images, links, `div`/`span`/`font`, and inline style remain available. The page renderer applies no sanitizer; editing remains limited to subtitle-group members, administrators, and controlled publishing API keys.
+- **MediaInfo is plain text**
+- **Release notes restore Markdown + raw HTML** (the page does not sanitize)
 
 ## July 25, 2026
 
-### Fixed
-
-- **Public RSS query order matches CDN cache identity**  
-  Magnets, anime, group, and other RSS URLs whose raw query pairs differ only in order now return the same canonical 200; self URL, ETag, and cache identity remain stable, while public RSS currently omits Last-Modified. Defaults, compatibility aliases, and case / whitespace / encoding differences still return 308. Invalid duplicates remain application 400 + no-store, while invalid limit may be blocked first by production Cloudflare 403.
-
-### Security
-
-- **Private-cache contract for personal subscription RSS**  
-  Successful, missing/invalid credential, rate-limited, and server-error responses from `/rss/subscriptions.xml` now consistently carry `private, no-store` plus both CDN no-store headers. This private feed does not provide a public ETag or If-None-Match 304 contract.
-
-## July 24, 2026
-
-### Improved
-
-- **Immediate entity-RSS cache invalidation**  
-  After publish events invalidate the matching Redis family, public anime, group, and other-category RSS now purge every Cloudflare CDN query variant for the same `bgmId`, `groupSlug`, or category in one operation. URLs, TTLs, ETags, and 304 semantics are unchanged; magnets search and search Redis identities keep their existing TTL behavior.
+- **Personal subscription RSS is not stored in the shared cache**
+  `/rss/subscriptions.xml` is `private, no-store`.
 
 ## July 22, 2026
 
-### Added
-
-- **Anime release deletion API**  
-  Added `DELETE /api/releases/{releaseId}` and `GET /api/releases/{releaseId}/deletion`. V1 accepts `rel_*` only; DELETE rejects query parameters and request bodies, returns a stable `rdel_*` receipt, and uses 200/202 for completed/pending. `completed` is emitted only after absence is proven across canonical/detail/torrent reads, Typesense, magnets, public/subscription RSS, Redis, Cloudflare, and AniBT-owned R2 objects. External posts, tracker state, and client-cached content are explicit exclusions. See [Delete releases](/docs/open-api/releases-delete).
-
-### Security
-
-- **Subtitle-group API-key scopes**  
-  API keys now explicitly select at least one of `releases:publish` and `releases:delete`; existing keys were safely migrated to `releases:publish` only. Publishing requires `releases:publish`; deletion and status reads require `releases:delete`. `/api/subtitle-groups/me` and publish whoami now expose `apiKeyId`, `apiKeySuffix`, and `scopes`.
-
-- **Auth security and OAuth reliability**  
-  Better Auth is now 1.6.23. CAPTCHA tickets use exact path matching and atomic one-time consumption while registration/sign-in bypasses remain closed. KUNGal token exchange uses standard form encoding, and OTP, verification, reset, and welcome mail are durably queued instead of waiting on an external mail provider in the auth request.
-
-### Improved
-
-- **Registration and session restoration**  
-  Email registration now runs as send code → atomically verify and create a session → attach the password inside that session. Invalid password format does not consume the code; lost verify/password responses are retryable, and an unexpired flow survives a full-page reload. Public pages show sign-in only after the server explicitly confirms no session, so temporary network/5xx failures no longer create false logout.
-
-## July 21, 2026
-
-### Improved
-
-- **Image batch upload, latency, and progress**  
-  Upload preparation handles up to five images in one membership check and one control-plane transaction, while one batch GET and one Convex query now poll every active image together. The R2 PUT ETag travels with the worker job, and one If-Match conditional read replaces staging HEAD requests before and after the body read. Supported browsers pre-scale oversized static JPEG/PNG/WebP files only when the result is meaningfully smaller; animation, HEIC/HEIF, and other skipped formats still go through the worker. The per-image limit remains 10 MiB.
-
-## July 20, 2026
-
-### Improved
-
-- **Direct image upload and isolated transcoding**  
-  Subtitle-group image hosting now uploads browser bytes directly to staging R2. The main Web runtime only handles authorization, presigning, object verification, and status queries; it no longer reads image bytes or transcodes them. The shared Bun worker starts a short-lived child per image and uses native `Bun.Image` to write directly to `Bun.S3File`. Damaged or failed static-image transcodes fail explicitly, while animation and SVG remain preserved. See [Image host](/docs/image-host).
+- **Anime release deletion API**
+  `DELETE /api/releases/{releaseId}`, status `GET .../deletion`. `rel_*` only. See [API reference](/docs/open-api/reference).
+- **API Key scopes**
+  `releases:publish` / `releases:delete`. Old keys have publish only.
+- **Email registration verifies first, then sets the password**
 
 ## July 19, 2026
 
-### Fixed
-
-- **Fixed tracker URL restored**  
-  AniBT has restored `https://tracker.anibt.net/announce` with no signed dual path. Existing AniBT torrents need no URL replacement or data re-download. Magnets, RSS, and canonical `.torrent` downloads now contain exactly one fixed AniBT tracker while preserving the infohash. See [Tracker](/docs/tracker).
-
-### Security
-
-- **Tracker whitelist and edge protection**  
-  The fixed `/announce` endpoint still serves only v1 `info_hash` values admitted by AniBT; external hashes receive not whitelisted. Cloudflare retains 20-byte `info_hash`/`peer_id` validation and a basic burst limit. Public `/scrape`, `/api/*`, `/announce/v1/*`, and UDP remain closed.
+- **Tracker is fixed at** `https://tracker.anibt.net/announce`
+  Unlisted torrents receive `not whitelisted`. `/scrape` and UDP are closed. See [Tracker](/docs/tracker).
 
 ## July 18, 2026
 
-### Added
-
-- **Site-wide Markdown content negotiation**  
-  AniBT public HTML pages now support `Accept: text/markdown` through real-time Cloudflare edge conversion. `Vary: accept` keeps HTML and Markdown cache variants separate, token estimates are exposed, and JSON APIs, RSS/XML, images, and R2 objects keep their native formats. The current public Content-Signal is `ai-train=yes, search=yes, ai-input=yes`.
-
-### Fixed
-
-- **Stable search sorting with text queries**  
-  `/magnets` and `/rss/magnets.xml` no longer fail when a text search is combined with sort-by-size or sort-by-episode due to Typesense’s three-sort-field limit. Explicit sort order, publish time, and text-match priority are unchanged.
-
-- **Latin-diacritic title equivalence**  
-  Pure-Latin titles keep both the original diacritic token and a folded equivalent, such as Caraméliser / Carameliser; CJK and mixed-script text are not folded. If folding produces candidates from multiple anime, the matcher keeps all of them and fails closed instead of auto-binding the first result.
-
-- **Web manual-upload evidence loop**  
-  Web torrent upload now verifies group membership, parses the real `info.name`, and replays v3 server-side; callers cannot forge the project fingerprint. A matcher result that already selects the same anime does not train itself. Manual or different-target confirmation starts pending, a second distinct episode activates, repeated episodes do not increment, and conflicts suspend. Matcher outages, internal exceptions, and oversized `info.name` values do not block an already validated explicit selection and do not learn a binding.
-
-### Changed
-
-- **Strict public RSS request contract**  
-  Every public RSS endpoint now accepts exactly one `limit` from 1..100 (default 100); oversized, repeated, empty, zero-padded, or non-integer values are no longer silently truncated. `q`/`search` allow one value total with NFKC, trim, whitespace collapse, and a 160 UTF-8-byte cap. Canonical URLs return a one-day-cacheable 308; invalid input returns application 400 and may be blocked first by production Cloudflare 403.
-
-### Improved
-
-- **High-cardinality search MISS protection**  
-  Magnets/other searches and empty results cache for 600 seconds while latest/filter variants cache for 120 seconds. Stable queries and cache HITs do not consume new-query budget. New high-cardinality MISSes use 10-minute/24-hour distinct-query budgets and a global concurrency lease; rejection returns 429 + Retry-After. Redis keys and structured logs retain only query hashes, never raw search text.
-
-### Operations
-
-- **Indexer edge and origin hardening**  
-  Normal Jackett, Auto_Bangumi, and ani-rss requests remain compatible. Cloudflare blocks invalid limits at edge, dynamic origin protection remains 500 requests per 10 seconds, and publish invalidation now uses exact URLs instead of clearing every search variant. Front proxies add edge-bypass validation, privacy-safe sampled logs, and reliable rotation.
-
-### Data
-
-- **Matcher generation 2040**  
-  Production now uses `match_v3_20260718_2040` with 8,621 anime candidates, 223,792 aliases, and 168 scoped bindings. The fixed 34,083-item corpus has 28,559 automatic decisions (83.7925%); the 2024–2026 subset is 9,084 / 9,807 (92.6277%). Both Carameliser and Caraméliser now auto-match BGM 617123 in production.
+- **Public RSS `limit` is 1–100**; invalid values are no longer truncated.
+- **Public HTML supports** `Accept: text/markdown`.
 
 ## July 17, 2026
 
-### Added
-
-- **Publish API group whoami**  
-  `GET /api/releases/publish` and `GET /api/other-releases/publish` return the API key’s bound `groupId` / `groupName` / `groupSlug` / `apiKeySuffix` without writing. Formal publish and preview success responses also echo the same identity fields so automation can detect a wrong-group key before durable write.
-
-- **Official abbreviation alias proposal queue**  
-  Admins get `/admin/anime-alias-proposals`. An offline miner clusters latin abbreviation gaps from `low_evidence` failures; proposals must be approved before writing a manual alias and triggering projection sync. Rejected (animeId, normalizedAlias) pairs stay dead. Runtime thresholds are unchanged and nothing auto-writes aliases.
-
-### Fixed
-
-- **Block empty magnet-only formal publishes**  
-  When there is no torrent and `fileSize` cannot be resolved to >0 (including magnets without `xl=`), formal publish returns 422 / `reason=EMPTY_RELEASE_CONTENT`. Preview still allows 0 B so operators can check match status and group identity.
-
-### Improved
-
-- **Manual match project fan-out**  
-  When a fansub member or admin manually matches a pending release, “remember project” and “also match other pending releases in this project” default on. One confirmation activates the group + `projectFingerprint` scoped binding and retroactively matches up to 64 pending siblings with the same fingerprint. Never crosses groups.
+- **Publish whoami**: `GET /api/releases/publish` and `GET /api/other-releases/publish` do not write.
+- **A formal publish with no torrent and size 0 returns 422** `EMPTY_RELEASE_CONTENT`. Preview still allows it.
 
 ## July 16, 2026
 
-### Added
-
-- **RSS emits `anibt:bgmId`**  
-  `/rss/magnets.xml`, `/rss/anime.xml`, and `/rss/group/<slug>.xml` anime items now include `<anibt:bgmId>` (Bangumi subject id when bound) under `xmlns:anibt`. `/rss/other/*` does not. Standard readers can ignore the namespace.
-
-- **Safe non-anime and bundle exits**  
-  Standalone PV/CM, MAD/AMV, game videos, concerts, live-action, music albums, stage / reading productions, announcements, wallpapers, and font packages may return `non_anime`. Single-anime single-season packs can still match; multi-anime, true multi-season, and S1+S2+OVA bundles return `unsupported`.
-
-- **Subtitle-group project learning**  
-  Explicit confirmation learns per group and project fingerprint: the first confirmation records pending, a second distinct episode pointing at the same anime activates, and Web manual selection can remember immediately; conflicts suspend. The automatic matcher does not train in reverse; active bindings still must pass candidate projection, season/year/format/episode veto, and integrity checks.
-
-### Improved
-
-- **Torrent matcher v3 cutover**  
-  The canonical API is hard-cut to `POST /api/animes/torrent-match`. GET returns JSON 405, with no v2 DTO, cache, or compatibility layer. The server parses release title and torrent internal name independently, builds a multilingual AST, and separates exact, strict-recall, and fuzzy-recall retrieval. Season N - EP, bracket version years, mixed scripts, and cross-season continuous episodes are handled; any overflow, cutoff, missing hydration, or generation/projection mismatch blocks automatic binding. See [Torrent match API](/docs/open-api/anime-torrent-match).
-
-- **Episode-boundary and version-year closure**  
-  Bare numeric brackets are now contextual: 24 is an episode in `[Title][24][1080p]` and remains frame-rate metadata in `[Title][1080p][24][AAC]`. A `2024年版` / `(2024)` marker must match the candidate premiere year exactly. A one-episode special-count offset is repaired for a boundary episode or exact whole-season range only when family completion, later-season ranking, publication time, and a unique target all agree.
-
-- **One matcher across publishing**  
-  Publish UI, bulk publishing, manual matching, and API-key publishing now share the server-side v3 matcher. When no anime ID is supplied, the publish API runs the same decision directly; caller-forged internal match assertions are discarded, and only `decision.kind=auto` binds immediately.
-
-### Data
-
-- **Clean production match index**  
-  Production now uses `match_v3_20260716_2112` with 8,621 anime candidates, 223,778 aliases, and 24 scoped bindings. On the fixed 34,083-item corpus, 9,091 / 9,781 anime releases from 2024–2026 are automatic (92.9455%); excluding VCB bundles planned for separate handling, the result is 8,744 / 9,339 (93.6289%). TMDB/TVDB do not participate in matching.
-
-## July 14, 2026
-
-### Added
-
-- **Explainable auto-binding contract**  
-  Responses add `decisionReason`, `exactAnimeCount`, `vetoCategory`, and bounded `evidenceSummary`. Clients may automatically use `bestMatch` only when `shouldAutoSelect=true`; shared titles, modifier conflicts, weak evidence, and exact overflow remain manual.
-
-### Improved
-
-- **Torrent-title anime matching**  
-  `/api/animes/torrent-match` now uses the dedicated `anime_match_aliases` index to globally disambiguate Chinese, Traditional Chinese, Japanese, romaji, English, multilingual title lists, and Season/Cour/Part/Sequence/Format evidence. The old `allTitles` text-score margin no longer authorizes binding. Long multilingual exact queries now use a request body instead of the Typesense GET query string, avoiding the 4,000-character limit.
-
-- **Safer matcher caching**  
-  The retired GET matcher once used a 60-second shared cache with stale fallback disabled. The July 16 POST v3 hard cut removed that GET route, v2 DTO, and cache; current matcher responses are always no-store.
+- **RSS adds** `<anibt:bgmId>` (emitted only when bound). `/rss/other/*` does not.
+- **Torrent match is POST only** `/api/animes/torrent-match`. GET returns 405.
 
 ## July 12, 2026
 
-### Improved
-
-- **Publish and upload error contract**  
-  JSON magnet and multipart torrent failures on the anime and other-release publish APIs now share an `ok=false` error envelope with machine `code`, a safe `message`, optional `reason`, `retryable`, `retryAfterMs`, `requestId`, and i18n metadata. `X-Request-ID` can be used to correlate server logs.
-
-- **Actionable publish status codes**  
-  A planned deployment handoff pause now returns 503 Service Unavailable with `Retry-After` and `reason=DEPLOYMENT_IN_PROGRESS`. Duplicate release versions retain 409 with `reason=RELEASE_VERSION_EXISTS`. Write throttling returns 429 with `reason=RATE_LIMITED` and an explicit backoff delay.
-
-## July 11, 2026
-
-### Docs
-
-- **Publish success and public visibility**  
-  The documentation now clarifies that a publish API 200 OK means the AniBT write was accepted and downstream work was handed off reliably; it is **not** a synchronous guarantee that the release is already present in RSS, search, public pages, every CDN location, or an external site. Callers should verify the returned `releaseId` in the target body; HTTP 200, `generatedAt`, ETag, or a cache hit alone is not proof of updated content.
-
-### Improved
-
-- **Ordered public snapshot publication**  
-  Public magnets, RSS, anime/group/release-detail snapshots, and related pages now use immutable R2 generations plus PostgreSQL publication heads. Web reads and strictly warms only the generation selected by the head; Redis publication-order / generation fences reject stale writeback, and page-ready is emitted only after every required variant completes. Anime updates and deletes continue to handle old/new BGM aliases and affected sitemaps.
-
-- **Reliable Edge invalidation**  
-  CDN invalidation now uses a durable URL queue and frozen runs/batches. Token + generation-fenced leases prevent stale executors from acknowledging work; failures resume, corrupt state is quarantined rather than silently discarded, and bounded retention keeps processed markers for 14 days, completed runs for 14 days, and quarantined runs for 30 days.
-
-### Operations
-
-- **Freshness operations gate**  
-  Added metrics, alerts, and preflight checks for snapshot queue/claim delay, publication pending/latency, head/watermark integrity, generation maintenance/GC, and Edge D1 durable flush. High queue age with low Redis warm latency is treated as scheduling/backlog; extending TTLs is not an accepted workaround for propagation gaps.
+- **Publish errors use a unified JSON envelope**
+  503 during deployment, 409 for a duplicate version, 429 when rate-limited. Includes `Retry-After`.
 
 ## July 7, 2026
 
-### Added
-
-- **Unified anime IDs for publishing**  
-  The anime release publish API now supports `animeIdType` + `animeId`, where `animeIdType` can be `bgm`, `anilist`, `mal`, or `anidb`. JSON clients can also send `anime: { source, id }`. The historical `bgmId` field remains compatible.
-
-### Docs
-
-- **Group API examples**  
-  The group API publish page, Nyaa proxy guide, and Open API docs now use unified anime ID examples and include a `preview=true` smoke test; external ID mappings follow bangumi-data, and missing or conflicting mappings become pending releases.
+- **Publish anime IDs unified as** `animeIdType` + `animeId` (`bgm` / `anilist` / `mal` / `anidb`). `bgmId` remains compatible.
 
 ## July 6, 2026
 
-### Added
-
-- **External anime IDs for publishing**  
-  The anime release publish API now accepts external anime IDs; the public form is `animeIdType` + `animeId`, with mappings from bangumi-data. If an external ID maps to multiple BGM subjects or multiple external IDs conflict, the release enters pending match.
-
-- **Seasonal anime title query**  
-  `/api/seasons/anime` now accepts `query` (short alias: `q`) to search by Chinese, Traditional Chinese, romaji, English, and Japanese anime titles. Without `season` it searches all public anime; with `season` it is scoped to that season. It cannot be combined with `bgmId`.
-
-### Changed
-
-- **Release language codes**  
-  The anime release publish API, preview publish flow, group publish defaults, and RSS language filters now support CHS, CHT, JP, EN, KO, ES, PT, FR, DE, IT, RU, AR, HI, ID, MS, TH, VI, TL, TR, PL, and UK. The `language` array no longer has a 4-item limit, so multi-language subtitle packs can list every supported language.
-
-- **Anime admin metadata cleanup**  
-  Anime banner and episode metadata sync has been stopped. Anime detail snapshots, Typesense anime documents, and public episode metadata queries no longer expose those metadata rows. The admin anime page removes banner / episode edit and sync controls, uses a stable row-based list, and adds a maintenance path for batching cleanup of old `animeEpisodes`, `animeSourceEpisodes`, banner fields, and legacy `animeSyncMeta` fields.
+- **Publish language codes expanded**; `language` is no longer limited to 4 items.
+- **`/api/seasons/anime` adds `query`**
 
 ## July 5, 2026
 
-### Added
-
-- **Anime detail and subscription preview**  
-  Anime detail pages now use a two-column layout, and release / episode lists share a consistent release row. The subscribe dialog previews matches from the show’s recent releases as you adjust groups, resolution, language, subtitle type, file format, or custom tags; after saving, the personal subscription RSS still exports the final server-side subscription results.
-
-- **Subtitle group image host**  
-  Added `/groups/<slug>/image-host` with a single upload entry followed by image management. Supports choose, drop, and paste uploads, then shows BBCode, HTML, Markdown, and direct-link formats directly on the page. See [Image host](/docs/image-host).
-
-- **Image host copy and moderation**  
-  Image management now uses a dense small-thumbnail grid with lazy image loading and paginated loading, while the full copy-format set still opens in a dialog. The site-admin `/admin/image-host` review page uses the same dense thumbnail approach for scanning recent uploads across subtitle groups and deleting sensitive or policy-breaking images.
-
-### Docs
-
-- **Image host permissions and deployment**  
-  Image hosting is limited to subtitle group members and checks membership before reading the body. Delete permissions are limited to the uploader, group owner/admin, or site admin, and deletion now soft-deletes Convex metadata before a media worker asynchronously deletes the object. The Bun native image pipeline converts static images to WebP when possible, preserves animated GIF/WebP/APNG, SVG, and reliably unconvertible images in their original format. Docs now cover the dedicated object bucket, `Bun.Image`/`Bun.S3Client` runtime gate, and required Web/worker environment variables.
+- **Subtitle group image host**
+  `/groups/<slug>/image-host`. See [Image host](/docs/image-host).
 
 ## July 4, 2026
 
-### Added
-
-- **Seasonal release availability**  
-  `/api/seasons/anime` anime items now include `rssReleaseCount` and `hasRelease` so clients can tell whether a show already has AniBT releases. The home weekly cards use the same state to show “No torrents yet”.
-
-### Changed
-
-- **Group sync workbench**  
-  `/groups/<slug>/sync` now uses a two-column per-site workbench: pick a site and configure credentials on the left, view that site’s logs on the right; claim management stays on its own page. See [Site sync](/docs/site-sync).
-
-- **Sync log retention**  
-  Sync logs show the latest 40 entries, support status filtering, and are automatically cleaned after about 14 days. Deleted-release logs keep the release ID but disable retry and resync actions.
-
-- **Public search page guard**  
-  `/magnets` page numbers and `/api/animes/search` cursors now paginate at most 100 Typesense pages. Invalid search cursors return 400, while oversized page numbers normalize to page 100 to avoid slow deep pagination.
-
-- **RSS browser rendering**  
-  All RSS endpoints now render as native XML when opened in a browser. AniBT no longer attaches custom XSL/CSS; RSS readers and BT clients continue using the standard RSS fields.
-
-## June 30, 2026
-
-### Docs
-
-- **Public JSON API caching**  
-  Updated Cache-Control, SWR, stale-if-error, and ETag notes for `/api/seasons/anime`, `/api/anime/groups`, `/api/subtitle-groups`, search, and lookup endpoints, clarifying browser revalidation by default and shared CDN caching.
-
-- **Seasonal schedule status**  
-  Documented `scheduleStatus` and `scheduleSummary` for `/api/seasons/anime`: `missing_source` means Bangumi/BGMWiki/Typesense source fields are missing, not that AniBT cache is stale.
-
-- **Public API rate-limit table**  
-  Completed default limit, cache, and rate-limit notes for `/api/animes/search`, `/api/animes/torrent-match`, `/api/anime/lookup`, and `/api/mikan/group-lookup`.
+- **Seasonal anime adds** `rssReleaseCount` / `hasRelease`
+- **RSS opened in a browser is native XML**
 
 ## June 27, 2026
 
-### Added
-
-- **Other-release Nyaa proxy API**  
-  The other-release publish API now supports the same `nyaa`, `nyaaCategory`, `nyaaComplete`, `nyaaRemake`, `nyaaDescription`, and `nyaaInformation` parameters as anime publishing. See [Nyaa proxy](/docs/nyaa-proxy).
-
-### Docs
-
-- **API key guidance**  
-  Updated the API key page and Open API docs with other-release Nyaa proxy fields, tracker requirements, multipart examples, and common category suggestions.
-
-## June 13, 2026
-
-### Docs
-
-- **Publish API parameters**  
-  Expanded anime release publish API docs for language, subtitle, resolution, format, torrent, magnet, tracker, preview, and Nyaa proxy fields. See [Publish API](/docs/open-api/releases-publish).
-
-- **Nyaa category mapping**  
-  Added the full Nyaa category code table, clarified that Chinese anime subtitles usually use `1_3`, and documented complete, remake, description, and information proxy parameters.
-
-- **Other-release publish API**  
-  Documented manga, music, raw, and stage category codes, RSS mapping, and field usage for `customTags`, `magnetLink`, and `magnetBase64`. See [Other-release publish](/docs/open-api/other-releases-publish).
+- **Other releases support Nyaa proxy publishing**
 
 ## May 26, 2026
 
-### Added
-
-- **Bangumi Moe sync**  
-  Added configuration and release sync support for Bangumi Moe. See [Bangumi Moe sync](/docs/site-sync/bangumi).
-
-- **ACGNX sync**  
-  Added UID and API Token configuration for ACGNX sync, so AniBT releases can be mirrored there. See [ACGNX sync](/docs/site-sync/acgnx).
-
-### Launched
-
-- **AniBT Wiki**  
-  Launched this Wiki with documentation for subtitle group admission, site sync, Tracker usage, Open API, and LLM integration.
+- **Site sync adds Bangumi Moe and ACGNX**

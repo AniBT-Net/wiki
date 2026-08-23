@@ -1,41 +1,21 @@
 ---
 title: Tracker
-description: AniBT 官方 Tracker 的固定 announce 地址、白名单规则与已关闭入口。
+description: 制种时使用的 AniBT announce 地址。
 ---
 
-AniBT Tracker 只服务已在 AniBT 发布并加入白名单的种子。公开 announce 地址固定为：
+只接受已在 AniBT 发布的种子。
 
-```txt title="AniBT Tracker"
+```txt
 https://tracker.anibt.net/announce
 ```
 
-<Callout type="info">
-  地址公开不代表任意种子可用。Tracker 按 v1 `info_hash` 对照 AniBT 的
-  append-only 白名单；未在 AniBT 收录的外部 hash 会返回 `not whitelisted`。
-</Callout>
+制种时加入该地址。站内发布会把它写入 magnet。未在本站发布的种子会返回 `not whitelisted`。
 
-## 发布与下载
+下载 `.torrent`：
 
-- 通过 AniBT 网页或 [`/api/releases/publish`](/docs/open-api/releases-publish) 发布时，站点会自动把固定 Tracker 写入 magnet。
-- 从 AniBT 的 `.torrent` 下载接口取得种子时，在不改变 infohash 的前提下，会把历史 signed / 重复的 AniBT 地址规范为唯一固定地址。
-- 其它第三方 tracker 会保留。仍建议种子包含 1–2 个可靠的公开 tracker，避免只依赖单一服务。
-- 通用 remote torrent 代理返回上游原始 torrent bytes，不注入 AniBT Tracker。
+| 类型 | 路径 |
+| --- | --- |
+| 番剧 | `/api/torrent/{rel_*}.torrent` |
+| 其他类 | `/api/other-torrent/{orel_*}.torrent` |
 
-既有 AniBT 种子可继续使用固定 `/announce`，无需更换地址或重新下载数据。Tracker 字段位于 torrent `info` dictionary 之外，规范化不会改变 infohash。
-
-### 公开种子下载地址
-
-- 番剧资源使用 `/api/torrent/{rel_*}.torrent`。
-- 其他类资源使用 `/api/other-torrent/{orel_*}.torrent`。
-- `GET` 与 `HEAD` 共用同一套路径校验。末尾 ID 只解码一次，并且必须符合对应的公开 ID 类型；错误前缀、额外路径段、编码后的斜杠或反斜杠、非法百分号编码和错误后缀都会返回标准 HTTP 400 JSON。格式正确但不存在的 ID 返回 404。
-
-请求若在到达站点前已被 CDN 拒绝，响应格式和状态码由边缘层决定。
-
-## 已关闭的入口
-
-- `https://tracker.anibt.net/announce/v1/*`
-- `https://tracker.anibt.net/scrape`
-- 公网 `/api/*`
-- UDP announce
-
-Tracker 统计通过站内服务访问 Tailscale-only 管理 API，不依赖公网 scrape。
+已关闭：`/scrape`、UDP、`/announce/v1/*`。

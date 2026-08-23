@@ -1,105 +1,61 @@
 ---
 title: 實戰示例
-description: 基於 bgmId=543360 的典型 RSS 查詢，以及帶穩定回執的番劇釋出刪除流程。
+description: qBittorrent / Sonarr / curl 接入 RSS。
 ---
 
-下列示例均基於 `bgmId=543360`（《上伊那牡丹，酒醉身姿似百合花般》）。4 個字幕組的 slug 已透過 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 校驗：
+把 RSS URL 貼進客戶端即可，無需額外設定。輪詢間隔 ≥ 5 分鐘。
 
-```txt title="目標字幕組"
-kirara-fantasia   Kirara Fantasia
-pre-s             Prejudice-Studio
-kitauji-sub       北宇治字幕组
-haruhana          拨雪寻春
-```
+<Callout type="info">
+  公開 RSS `limit` 上限 **100**。省略 `limit` 即拉滿。slug 從 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 取。
+</Callout>
 
-## 1. 單字幕組 + 番劇（最常用）
+## RSS URL
 
-```txt title="一個 RSS = 一個組 × 一個番劇"
+下列基於 `bgmId=543360`。slug：`kirara-fantasia`、`pre-s`、`kitauji-sub`、`haruhana`。
+
+```txt title="一組 × 一部"
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=pre-s
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana
 ```
 
-## 2. 加解析度
+```txt title="1080p 或 4K"
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p&resolution=4K
+```
 
-<Tabs items={['只要 1080p', '1080p 或 4K']}>
-  <Tab value="只要 1080p">
-    ```txt
-    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p
-    ```
-  </Tab>
-  <Tab value="1080p 或 4K">
-    ```txt
-    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p&resolution=4K
-    ```
-    重複參數表示「或」。
-  </Tab>
-</Tabs>
-
-## 3. 字幕語言 + 字幕方式組合
-
-**北宇治字幕組**，簡體中文，外掛或內封字幕：
-
-```txt
+```txt title="語言 + 字幕方式"
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&language=CHS&subtitle=EXTERNAL&subtitle=INTERNAL
 ```
 
-## 4. 多過濾疊加
-
-**拨雪寻春**，1080p、MKV、簡體外掛、第 5 集：
-
-```txt
+```txt title="多過濾疊加"
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana&resolution=1080p&format=MKV&language=CHS&subtitle=EXTERNAL&episode=5
 ```
 
-## 5. 跨字幕組聚合一個番劇
-
-543360 下**所有字幕組**的 1080p 簡中：
-
-```txt
+```txt title="跨組聚合一部"
 https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
 ```
 
-## 6. 字幕組的全部釋出（不限番劇）
+```txt title="一個組的全部（兩種寫法等價）"
+https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia
+https://anibt.net/rss/group/kirara-fantasia.xml
+```
 
-`Kirara Fantasia` 最近 50 條，兩種寫法等價：
-
-<Tabs items={['主入口寫法', '短鏈寫法']}>
-  <Tab value="主入口寫法">
-    ```txt
-    https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=50
-    ```
-  </Tab>
-  <Tab value="短鏈寫法">
-    ```txt
-    https://anibt.net/rss/group/kirara-fantasia.xml
-    ```
-    更短，適合貼 README / 論壇。詳見 [其他端點](/docs/open-api/other-endpoints)。
-  </Tab>
-</Tabs>
-
-## 7. 合集 / 特典
-
-```txt
+```txt title="合集"
 https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
 ```
 
-## 8. 高吞吐場景（一次性拉滿）
+## qBittorrent / Sonarr / FlexGet
 
-```txt
-https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia&limit=100
+訂閱 URL 直接貼上。qBittorrent 預設 30 分鐘輪詢可用；它不傳送 `If-None-Match`，每次拉全量。自建指令碼必須帶 `If-None-Match`。
+
+## curl
+
+```bash title="If-None-Match"
+H=$(curl -sI 'https://anibt.net/rss/anime.xml?bgmId=543360')
+ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+curl -sI -H "If-None-Match: $ETAG" \
+  'https://anibt.net/rss/anime.xml?bgmId=543360'
 ```
 
-<Callout type="info">
-  所有公開 RSS 的 `limit` 上限都是 **100**。超過上限、重複、為空、含前導零或非整數時不會截斷：應用返回 400，生產邊緣可能先返回 Cloudflare 403。詳見 [限流與上限](/docs/open-api/limits)。
-</Callout>
-
-## 9. 刪除番劇釋出並輪詢完成
-
-刪除 Key 必須顯式包含 `releases:delete`。`202 Accepted` 後按狀態端點輪詢，不要把「請求已接受」誤判為「所有公開面已清理」。
-
-```bash title="DELETE + 狀態輪詢"
+```bash title="DELETE + 輪詢"
 release_id='rel_example'
 base_url='https://anibt.net'
 
@@ -117,4 +73,4 @@ done
 jq . <<<"$response"
 ```
 
-終態為 `completed` 時才停止；若為 `failed`，儲存 `operationId` 與 `X-Request-ID` 並停止盲目重試。完整欄位、狀態碼和完成邊界見 [刪除番劇釋出](/docs/open-api/releases-delete)。
+刪除 Key 必須含 `releases:delete`。終態為 `completed` 才停止。

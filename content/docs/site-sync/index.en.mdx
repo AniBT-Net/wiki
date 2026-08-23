@@ -1,82 +1,21 @@
 ---
-title: Site Sync
-description: Sync AniBT releases to Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, and Nyaa.
+title: Site sync
+description: After publishing, sync to Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, and Nyaa.
 ---
 
-Site sync pushes a release you publish on AniBT to the external sites you have configured, reducing duplicate uploads and manual upkeep.
+In the group admin at `/groups/<slug>/sync`, save credentials per site. Each site is configured separately. [Apply for admission](/docs/apply) first.
 
-<Callout type="info">
-  Complete [Apply for admission](/docs/apply) first, then open your subtitle group's sync settings in AniBT. Each external site stores its own credentials.
-</Callout>
+1. Enable the sites to sync.
+2. Enter credentials.
+3. Publish real releases only after the connection test succeeds.
 
-## Setup Flow
+| Site | Credentials |
+| --- | --- |
+| [Bangumi Moe](/docs/site-sync/bangumi) | Username or email and password of an activated account. Old Cookies no longer work |
+| [Mikan](/docs/site-sync/mikan) | API Token |
+| [DMHY](/docs/site-sync/dmhy) | Account, password, subtitle group name |
+| [ACGNX](/docs/site-sync/acgnx) | UID and API Token |
+| [ACG.rip](/docs/site-sync/acgrip) | API Token, without the `tpx://acg.rip/` prefix |
+| [Nyaa](/docs/site-sync/nyaa) | Username and password |
 
-<Steps>
-  <Step>
-    ### Choose the sites to sync
-
-    Open the sync settings in the AniBT subtitle group dashboard and enable the external sites you actually maintain.
-  </Step>
-
-  <Step>
-    ### Prepare the matching credentials
-
-    Use the cheat sheet below to open the relevant guide and prepare the required API Token, UID, or account credentials.
-  </Step>
-
-  <Step>
-    ### Save and test the connection
-
-    Save the configuration in AniBT. Confirm the connection test succeeds before publishing real releases.
-  </Step>
-</Steps>
-
-## Dashboard Workbench
-
-The subtitle group dashboard path `/groups/<slug>/sync` is organized by external site: choose a target and configure its credentials on the left, then review that site's recent sync logs on the right. Only one site expands at a time, so settings and logs stay separated.
-
-Sync logs show the latest 40 entries only and can be filtered by all, success, failed, or pending. Logs are retained for about 14 days for short-term troubleshooting; older entries are cleaned automatically and should not be treated as a long-term audit trail. If the release has been deleted, the log still shows the release ID and deleted state, but retry and resync actions are disabled.
-
-Claim status and cleanup live on the subtitle group's `/groups/<slug>/claims` page. The sync page is only for external-site configuration, connection tests, and release sync results.
-
-## Choose a Guide
-
-<Cards>
-  <Card title="Bangumi Moe Sync" href="/docs/site-sync/bangumi" description="Enter a username or email, password, and optional publishing identity." />
-  <Card title="Mikan Sync" href="/docs/site-sync/mikan" description="Enter the API Token and let AniBT auto-query the IDs." />
-  <Card title="DMHY Sync" href="/docs/site-sync/dmhy" description="Enter your username, password, and subtitle group name." />
-  <Card title="ACGNX Sync" href="/docs/site-sync/acgnx" description="Copy the UID and API Token." />
-  <Card title="ACG.rip Sync" href="/docs/site-sync/acgrip" description="Copy the API Token from the dashboard." />
-  <Card title="Nyaa Sync" href="/docs/site-sync/nyaa" description="Enter the Nyaa username and password." />
-</Cards>
-
-## Credential Cheat Sheet
-
-<TypeTable
-  type={{
-    'Bangumi Moe': {
-      description: 'Requires the username or email and password of an activated account. Publishing identity name and Team ID are optional. Old Cookie configuration is no longer valid.',
-      type: 'username + password',
-    },
-    'Mikan': {
-      description: 'Usually only the API Token is required; AniBT can auto-query the publish group and release group IDs.',
-      type: 'API Token',
-    },
-    'DMHY': {
-      description: 'Requires your username, password, and the subtitle group name you use on DMHY.',
-      type: 'username + password',
-    },
-    'ACGNX': {
-      description: 'Requires UID and API Token from the account API settings page.',
-      type: 'UID + API Token',
-    },
-    'ACG.rip': {
-      description: 'Requires only the API Token; do not include the `tpx://acg.rip/` prefix.',
-      type: 'API Token',
-    },
-    'Nyaa': {
-      description: 'Requires a Nyaa username and password; releases are uploaded through the Nyaa API.',
-      type: 'username + password',
-    },
-  }}
-/>
+Claims are on `/groups/<slug>/claims`, not the sync page.

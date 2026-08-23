@@ -1,293 +1,63 @@
 ---
 title: Publish other releases
-description: POST /api/other-releases/publish — publish any of the seven other-release categories with a group API key; no bgmId required.
+description: POST /api/other-releases/publish — publish any of the seven other categories; no bgmId.
 ---
 
-`/api/other-releases/publish` is the write endpoint for **other releases** from a release group. Use it for manga, music, RAW, stage, collection, movie, and other releases. It uses the same group API-key system and requires `releases:publish`; it does not require `bgmId` and stays separate from anime releases.
+Manga, music, RAW, stage, collection, movie, other. Requires `releases:publish`. Not mixed into anime lists.
 
-## Preconditions
-
-- The group API key must explicitly include `releases:publish`.
-- Keys belong in server-side scripts or CI secrets; reset immediately if leaked.
-- `category` and `title` are required; provide at least one of `torrent`, `torrentStorageId`, `magnetLink`, or `magnetBase64`.
+<ApiEndpoint method="POST" path="/api/other-releases/publish" auth="auth · releases:publish">
+`category` and `title` required; at least one of `torrent` / `torrentStorageId` / `magnetLink` / `magnetBase64`.
+</ApiEndpoint>
 
 <Callout type="warn">
-  This is a **write endpoint**. A leaked key lets others publish under the group’s name.
+  Do not put the key in clients, git, or issues. HTML in `notes` is rendered as-is.
 </Callout>
 
-## URL
-
-```http title="HTTP"
-POST https://anibt.net/api/other-releases/publish
-Authorization: Bearer <YOUR_API_KEY>
-```
-
-`X-API-Key: <YOUR_API_KEY>` is also accepted, but `Authorization: Bearer` is recommended for consistency.
-
-## Two request shapes
-
-<Tabs items={['multipart/form-data (recommended)', 'application/json']}>
-  <Tab value="multipart/form-data (recommended)">
-    Upload a `.torrent` file. The backend extracts the magnet, title, file size, and trackers automatically. Sending `category` and `title` explicitly is still recommended. Nyaa proxy publishing also requires this request shape.
-
-    ```bash title="Upload an other release torrent"
-    curl -X POST 'https://anibt.net/api/other-releases/publish' \
-      -H 'Authorization: Bearer <YOUR_API_KEY>' \
-      -F 'category=manga' \
-      -F 'title=Example Manga Vol.01' \
-      -F 'customTags=digital,english' \
-      -F 'notes=Release notes support Markdown and raw HTML.' \
-      -F 'nyaa=true' \
-      -F 'nyaaCategory=3_2' \
-      -F 'nyaaComplete=false' \
-      -F 'nyaaRemake=false' \
-      -F 'nyaaDescription=Optional Markdown description for Nyaa' \
-      -F 'torrent=@/path/to/release.torrent'
-    ```
-
-    `customTags` / `tags` are comma-separated in forms. `trackers` may be newline-separated or a JSON array string.
-  </Tab>
-  <Tab value="application/json">
-    Send a magnet directly when your automation already has one and does not upload a torrent file.
-
-    ```bash title="JSON body"
-    curl -X POST 'https://anibt.net/api/other-releases/publish' \
-      -H 'Authorization: Bearer <YOUR_API_KEY>' \
-      -H 'Content-Type: application/json' \
-      --data @- <<'JSON'
-    {
-      "category": "music",
-      "title": "Example Album FLAC",
-      "magnetLink": "magnet:?xt=urn:btih:...",
-      "fileSize": 734003200,
-      "customTags": ["FLAC", "BK"],
-      "notes": "**Lossless audio**, BK included."
-    }
-    JSON
-    ```
-
-    `magnetBase64` is also accepted; it can contain either the raw magnet or a Base64-encoded magnet.
-  </Tab>
-</Tabs>
-
-## Nyaa proxy publishing
-
-The other release publish API accepts the same Nyaa proxy parameters as [`/api/releases/publish`](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories). When enabled, the release is written to AniBT first, then a background `release_sync` job submits it to Nyaa.
-
-<Callout type="warn">
-  Nyaa proxy publishing is only available to allowlisted groups and must use `multipart/form-data` with a `.torrent` upload. The torrent's `announce` or `announce-list` must include `http://nyaa.tracker.wf:7777/announce`, otherwise the request is rejected.
-</Callout>
-
-Common category examples:
-
-| Content | Suggested `nyaaCategory` | Nyaa category |
-| ------- | ------------------------ | ------------- |
-| Translated manga / light novels | `3_2` | Literature - Non-English-translated |
-| Lossless music / BK | `2_1` | Audio - Lossless |
-| RAW or live-action video | `4_4` | Live Action - Raw |
-| Content that is still anime RAW | `1_4` | Anime - Raw |
-
-```bash title="Other release + Nyaa proxy publishing"
-curl -X POST 'https://anibt.net/api/other-releases/publish' \
-  -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  -F 'category=manga' \
-  -F 'title=Example Manga Vol.01' \
-  -F 'notes=Release notes support Markdown and raw HTML.' \
-  -F 'torrent=@/path/to/release.torrent' \
-  -F 'nyaa=true' \
-  -F 'nyaaCategory=3_2' \
-  -F 'nyaaComplete=false' \
-  -F 'nyaaRemake=false' \
-  -F 'nyaaDescription=Optional Markdown description for Nyaa' \
-  -F 'nyaaInformation=https://anibt.net/group/example'
-```
-
-Aliases and structured JSON fields match anime publishing:
-
-| Form alias | Structured field | Required | Meaning |
-| ---------- | ---------------- | -------- | ------- |
-| `nyaa` / `publishToNyaa` | `sitePublish.nyaa.enabled` | No | Set to `true` to request Nyaa proxy publishing. Passing other Nyaa fields such as `nyaaCategory` also implies enabled. |
-| `nyaaCategory` | `sitePublish.nyaa.category` | Required when enabled | Nyaa category code. Use official Nyaa codes. See [Publish a release](/en/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories) for the full table. |
-| `nyaaComplete` | `sitePublish.nyaa.complete` | No | Nyaa Complete flag. Use `true` for complete batches, full volumes, or full seasons. Defaults to `false`. |
-| `nyaaRemake` | `sitePublish.nyaa.remake` | No | Nyaa Remake flag. Use for re-uploads, fixes, or remakes when appropriate. Defaults to `false`. |
-| `nyaaDescription` | `sitePublish.nyaa.description` | No | Markdown description sent to Nyaa, up to 20000 characters. Falls back to AniBT `notes`; inherited notes have the same 20000-character limit and fail validation if exceeded. |
-| `nyaaInformation` | `sitePublish.nyaa.information` | No | Nyaa information field, up to 500 characters. Usually an official site, group page, project page, or related link. |
-
-## Parameters
-
-<TypeTable
-  type={{
-    'category': {
-      description: 'Release category: manga / music / raw / stage / collection / movie / other. Send these English codes exactly.',
-      type: 'enum',
-      required: true,
-    },
-    'title': {
-      description: 'Release title, up to 500 characters. Used on detail pages and RSS item titles.',
-      type: 'string',
-      required: true,
-    },
-    'torrent': {
-      description: 'Torrent file for multipart requests. When present, it is uploaded to public R2 and used to extract magnet, file size, and trackers.',
-      type: 'file',
-    },
-    'magnetLink': {
-      description: 'Raw magnet link. It can be sent together with torrent; trackers are merged and deduplicated. Field alias magnet is also accepted.',
-      type: 'string',
-    },
-    'magnetBase64': {
-      description: 'Raw magnet or Base64-encoded magnet. Use either this or magnetLink.',
-      type: 'string',
-    },
-    'torrentStorageId': {
-      description: 'Public storage key of an already uploaded torrent file, mainly for internal automation.',
-      type: 'string',
-    },
-    'fileSize': {
-      description: 'File size in bytes. It can be inferred from the torrent or from a magnet xl parameter. Formal magnet-only publishes require fileSize > 0; otherwise reason=EMPTY_RELEASE_CONTENT.',
-      type: 'number',
-    },
-    'trackers': {
-      description: 'Extra tracker list. Use an array in JSON or newline-separated text in forms. Merged and de-duplicated with trackers already in the magnet/torrent.',
-      type: 'string[]',
-    },
-    'notes': {
-      description: 'Detail-page notes support Markdown and raw HTML, up to 50000 characters. HTML is rendered directly without a sanitizer or HTML/CSS allowlist.',
-      type: 'string',
-    },
-    'descriptionMarkdown': {
-      description: 'Compatibility alias for notes with the same Markdown + raw HTML rendering behavior. content / description / intro are also accepted as description text.',
-      type: 'string',
-    },
-    'customTags': {
-      description: 'Custom tags, up to 20 values, each up to 80 characters. In forms, use comma-separated text.',
-      type: 'string[]',
-    },
-    'tags': {
-      description: 'Compatibility alias for customTags.',
-      type: 'string[]',
-    },
-  }}
-/>
-
-<Callout type="warn">
-  Raw HTML in `notes` is rendered directly on other-release detail pages. No sanitizer or tag, attribute, or CSS allowlist is applied. Only trusted subtitle-group members, administrators, or controlled publishing API keys should write this field.
-</Callout>
-
-<Callout type="info">
-  `category` and `title` are required. At least one of `torrent`, `torrentStorageId`, `magnetLink`, or `magnetBase64` must be provided.
-</Callout>
-
-## Value Reference
-
-### Category Codes
-
-`category` is not a display label. Send the English code exactly:
-
-| Code | Page category | RSS path | Use when |
-| ---- | ------------- | -------- | -------- |
-| `manga` | Manga | `/rss/other/manga.xml` | Manga, light novels, books, artbooks, and other reading/image resources not tied to an anime entry. |
-| `music` | Music | `/rss/other/music.xml` | OSTs, character songs, albums, singles, concert audio, drama CDs. |
-| `raw` | RAW | `/rss/other/raw.xml` | RAW resources, batches, or miscellaneous video sources not bound to a Bangumi anime entry. |
-| `stage` | Stage | `/rss/other/stage.xml` | Stage plays, musicals, and live-action stage-related resources. |
-| `collection` | Collection | `/rss/other/collection.xml` | Other releases published under the collection category; they are not converted into anime releases. |
-| `movie` | Movie | `/rss/other/movie.xml` | Other releases published under the movie category; no `bgmId` is required. |
-| `other` | Other | `/rss/other/other.xml` | Other releases that do not fit the preceding six categories. |
-
-### Torrent, Magnet, Notes, Tags
-
-| Field | How to fill it | Meaning |
-| ----- | -------------- | ------- |
-| `torrent` | multipart file field, `-F 'torrent=@release.torrent'` | Recommended. The server stores the torrent and extracts magnet, file size, and trackers. |
-| `magnetLink` | Raw `magnet:?xt=urn:btih:...` | Accepted in JSON or multipart. Form field `magnet` is a compatibility alias. |
-| `magnetBase64` | Raw magnet or Base64-encoded magnet | Alternative to `magnetLink`; usually unnecessary when `torrent` is uploaded. |
-| `torrentStorageId` | Existing public torrent key | Internal automation use. Normal clients should not construct this manually. |
-| `fileSize` | Byte count, e.g. `734003200` | Auto-extracted from torrent uploads; can also be inferred from magnet `xl=`. Formal magnet-only without size > 0 returns 422 / `EMPTY_RELEASE_CONTENT`. |
-| `trackers` | JSON array or multipart newline-separated text | Additional trackers. Do not send multiple URLs as a comma string; commas are for `customTags`. |
-| `notes` | Markdown + raw HTML | Rendered directly on the detail page. The RSS description is produced by a separate RSS converter and is not the page DOM. |
-| `descriptionMarkdown` | Markdown + raw HTML | Compatibility alias for `notes`. `content`, `description`, and `intro` are also accepted as note aliases. |
-| `customTags` | JSON array or multipart comma-separated text | Up to 20 tags, each up to 80 characters. Example: `FLAC,BK,self-purchased`. |
-| `tags` | Same as `customTags` | Compatibility alias for `customTags`. |
+Full fields: [API reference](/docs/open-api/reference). Nyaa category codes: [Publish a release](/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories).
 
 ## Whoami
 
-```bash
+GET the same path. Does not write. `kind` is `other`.
+
+```bash title="whoami"
 curl -X GET 'https://anibt.net/api/other-releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>'
 ```
 
-```json title="Whoami response"
-{
-  "ok": true,
-  "result": {
-    "groupId": "org_xxxxxxxx",
-    "groupName": "Example Group",
-    "groupSlug": "example",
-    "apiKeyId": "sgak_xxxxxxxx",
-    "apiKeySuffix": "5c5d6fcd",
-    "scopes": ["releases:publish"],
-    "kind": "other"
-  }
-}
+## Publish
+
+```bash title="Upload torrent"
+curl -X POST 'https://anibt.net/api/other-releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -F 'category=manga' \
+  -F 'title=Example Manga Vol.01' \
+  -F 'customTags=电子版,中文' \
+  -F 'torrent=@/path/to/release.torrent'
 ```
 
-Use it like the anime whoami: assert the group identity and confirm that `scopes` contains `releases:publish` before writing. GET whoami itself does not require publish scope.
+| Code | RSS |
+| --- | --- |
+| `manga` | `/rss/other/manga.xml` |
+| `music` | `/rss/other/music.xml` |
+| `raw` | `/rss/other/raw.xml` |
+| `stage` | `/rss/other/stage.xml` |
+| `collection` | `/rss/other/collection.xml` |
+| `movie` | `/rss/other/movie.xml` |
+| `other` | `/rss/other/other.xml` |
 
-## Response
+- `title` max 500 characters.
+- `customTags` max 20, each max 80 characters. Alias `tags`.
+- Without a torrent, live publish needs `fileSize > 0`, else `422` / `EMPTY_RELEASE_CONTENT`.
+- Nyaa proxy rules match anime publish: allowlist, multipart, Nyaa tracker. Translated manga usually `3_2`, lossless music `2_1`, RAW / live capture `4_4`, anime RAW `1_4`.
 
-```json title="Success response"
-{
-  "ok": true,
-  "result": {
-    "releaseId": "orel_DYXiEZs5KMep",
-    "groupId": "org_xxx",
-    "groupName": "Example Group",
-    "groupSlug": "example",
-    "apiKeyId": "sgak_xxx",
-    "apiKeySuffix": "ab12cd34",
-    "category": "manga",
-    "fileSize": 734003200,
-    "createdTorrentFileKey": "torrent/..."
-  }
-}
-```
+Detail page: `https://anibt.net/other-release/<releaseId>`.
 
-Build the detail page from `releaseId`: `https://anibt.net/other-release/<releaseId>`. After publishing, the matching category RSS will include the item. See [Other release RSS](/docs/open-api/rss-other).
+## Failures
 
-## Unified error response
-
-JSON magnet publishing and multipart torrent uploads use the same error envelope. Field semantics match the [anime release publish API](/en/docs/open-api/releases-publish#unified-error-response):
-
-```json title="Error response"
-{
-  "ok": false,
-  "error": {
-    "code": "PUBLIC_SNAPSHOT_ENQUEUE_PAUSED",
-    "message": "System deployment in progress. Please retry shortly.",
-    "reason": "DEPLOYMENT_IN_PROGRESS",
-    "retryable": true,
-    "retryAfterMs": 15000,
-    "requestId": "req-example-123",
-    "i18n": {
-      "key": "error_deployment_in_progress"
-    }
-  }
-}
-```
-
-`code` and `message` support machine branching and a safe fallback message; `reason` provides a more specific business cause; `retryable` / `retryAfterMs` indicate whether and when to retry; `requestId` matches the `X-Request-ID` response header; and `i18n.key` (plus optional `i18n.params`) supports localized UI messages. `reason`, retry metadata, and `i18n` are present only when applicable. When `retryAfterMs` is present, the response also includes a `Retry-After` header rounded up to seconds.
-
-A deployment handoff pause returns `503 Service Unavailable` with `code=PUBLIC_SNAPSHOT_ENQUEUE_PAUSED`, `reason=DEPLOYMENT_IN_PROGRESS`, and `retryable=true`. A write rate limit returns `429 Too Many Requests` with `code=RATE_LIMIT_EXCEEDED`, `reason=RATE_LIMITED`, and `retryable=true`. Back off according to `Retry-After` / `retryAfterMs` in either case.
-
-## Common errors
-
-| HTTP | Cause                                                   | Fix                                                           |
-| ---- | ------------------------------------------------------- | ------------------------------------------------------------- |
-| 400  | Missing `category` / `title`, or no torrent / magnet source | Fill required fields; ensure `category` is one of the four allowed values |
-| 401  | API key missing, invalid, or revoked                       | Check Bearer / `X-API-Key`; re-issue an invalid key           |
-| 403  | `INSUFFICIENT_SCOPE`; key lacks `releases:publish`         | Create or use a key that includes `releases:publish`          |
-| 404  | `torrentStorageId` points to a missing file              | Upload with multipart, or verify the file key belongs to the group |
-| 429  | `reason=RATE_LIMITED`; write rate too high               | Back off using `Retry-After` / `retryAfterMs`                  |
-| 503  | `reason=DEPLOYMENT_IN_PROGRESS`; deployment in progress  | Wait for `Retry-After` / `retryAfterMs`, then retry            |
-
-Next: subscribe to category RSS via [`/rss/other/<category>.xml`](/docs/open-api/rss-other). Anime releases still use [`/api/releases/publish`](/docs/open-api/releases-publish).
+| HTTP | What to do |
+| --- | --- |
+| 400 | Fill `category` / `title` / torrent or magnet |
+| 401 | Check Bearer / `X-API-Key` |
+| 403 | Use a key with `releases:publish` |
+| 404 | `torrentStorageId` missing; upload via multipart |
+| 429 / 503 | Back off with `Retry-After` |

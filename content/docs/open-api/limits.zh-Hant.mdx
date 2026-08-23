@@ -1,224 +1,45 @@
 ---
 title: 限流與上限
-description: 各端點的 limit、候選掃描上限、速率限制、客戶端相容矩陣與延遲拆解。
+description: 各端點的 limit 與速率視窗。
 ---
 
-公開 RSS 與 catalog API 的條數上限、速率視窗、客戶端相容與端到端延遲說明。數字與狀態碼為公開契約，客戶端應嚴格遵守。
+數字與狀態碼是公開契約。超限回傳 `429`，按 `Retry-After` 退避。
 
-## 各端點的上限一覽
+## 各端點
 
-| 端點                    | `limit` 預設 | `limit` 上限 | 後端候選掃描上限 | 速率限制（預設）   |
-| ----------------------- | ------------ | ------------ | ---------------- | ------------------ |
-| `/rss/anime.xml`        | **100**      | **100**      | Typesense filter | 120 次 / 60 秒 / IP |
-| `/rss/group/<slug>.xml` | 100          | **100**      | —                | 120 次 / 60 秒 / IP |
-| `/rss/magnets.xml`      | 100          | **100**      | —                | 120 次 / 60 秒 / IP |
-| `/rss/other/<category>.xml` | 100      | **100**      | Typesense filter | 120 次 / 60 秒 / IP |
-| `/api/bgm/search`       | 5            | **25**       | Typesense search | 60 次 / 60 秒 / IP  |
-| `/api/animes/search`    | 24           | **50**       | Typesense search | 120 次 / 60 秒 / IP |
-| `/api/animes/torrent-match` | 10       | **50**       | Typesense search | 180 次 / 60 秒 / IP |
-| `/api/anime/lookup`     | —            | —            | Convex lookup    | 60 次 / 60 秒 / IP  |
-| `/api/mikan/group-lookup` | —          | —            | Mikan upstream + Redis | 60 次 / 60 秒 / IP |
-| `/api/subtitle-groups`  | —            | 全量返回     | —                | 60 次 / 60 秒 / IP  |
-| `/api/seasons/anime`    | —            | —            | —                | 30 次 / 60 秒 / IP  |
-| `/api/anime/groups`     | —            | —            | —                | 30 次 / 60 秒 / IP  |
-| `DELETE /api/releases/{releaseId}` | — | — | 刪除回執與完成屏障 | 30 次 / 60 秒 / API Key |
-| `GET /api/releases/{releaseId}/deletion` | — | — | 刪除狀態回執 | 120 次 / 60 秒 / API Key |
+| 端點 | `limit` 預設 | `limit` 上限 | 速率限制（預設） |
+| --- | --- | --- | --- |
+| `/rss/anime.xml` | **100** | **100** | 120 次 / 60 秒 / IP |
+| `/rss/group/<slug>.xml` | 100 | **100** | 120 次 / 60 秒 / IP |
+| `/rss/magnets.xml` | 100 | **100** | 120 次 / 60 秒 / IP |
+| `/rss/other/<category>.xml` | 100 | **100** | 120 次 / 60 秒 / IP |
+| `/api/bgm/search` | 5 | **25** | 60 次 / 60 秒 / IP |
+| `/api/animes/search` | 24 | **50** | 120 次 / 60 秒 / IP |
+| `/api/animes/torrent-match` | 10 | **50** | 180 次 / 60 秒 / IP |
+| `/api/anime/lookup` | — | — | 60 次 / 60 秒 / IP |
+| `/api/mikan/group-lookup` | — | — | 60 次 / 60 秒 / IP |
+| `/api/subtitle-groups` | — | 全量回傳 | 60 次 / 60 秒 / IP |
+| `/api/seasons/anime` | — | — | 30 次 / 60 秒 / IP |
+| `/api/anime/groups` | — | — | 30 次 / 60 秒 / IP |
+| `DELETE /api/releases/{releaseId}` | — | — | 30 次 / 60 秒 / API Key |
+| `GET /api/releases/{releaseId}/deletion` | — | — | 120 次 / 60 秒 / API Key |
 
-刪除端點另有認證前防濫用視窗。`pending` 回執裡的 `retryAfterMs` / `Retry-After` 是狀態輪詢建議；真正觸發速率限制時返回 `429 RATE_LIMIT_EXCEEDED`，同樣必須按 `Retry-After` 退避。詳見 [刪除番劇釋出](/docs/open-api/releases-delete)。
-
-<Callout type="warn">
-  **公開 RSS 的 `limit` 是嚴格契約**：只接受一個 `1..100` 的十進位整數，不能重複、為空、含前導零或小數。非法值在應用返回 `400 + no-store`，生產邊緣可能先返回 Cloudflare `403`；不再靜默截斷。預設就是 100，建議省略 `limit=100`，否則會收到可快取一天的規範化 `308`。
-</Callout>
-
-<Callout type="info">
-  `/rss/magnets.xml` 與 `/rss/other/*` 的 `q`/`search` 合計只能出現一個值。搜尋詞會做 NFKC、trim、連續空白折疊，UTF-8 最多 160 bytes。只有真正穿透 CDN/Redis 的**新搜尋 MISS**才計入 120 個新查詢/10 分鐘、1000 個新查詢/24 小時的 subject 預算以及全站 32 個 MISS 併發 lease；穩定查詢、空結果複查和快取 HIT 不扣額度。超限返回 `429 + Retry-After`。
-</Callout>
-
-### 公開搜尋翻頁深度
-
-公開搜尋和磁力列表使用 Typesense 頁碼分頁，服務端最多讀取 **100 頁**：
-
-- `/magnets?page=<n>` 會把頁碼規範化到 `1–100`；例如 `?page=10000` 會重定向到 `?page=100`。
-- `/api/animes/search` 的 `cursor` 只接受 `ts_page:<頁碼>`。非法前綴會返回 `400 VALIDATION_ERROR`；超大頁碼會被規範化到第 100 頁並返回空頁或最後一頁結果。
-- `limit` 與頁碼上限是兩個獨立保護：`limit` 控制單頁大小，`cursor` / `page` 控制最多翻到第幾頁。
-
-### 過濾模型（`/rss/anime.xml`）
-
-`/rss/anime.xml` 由主站 Web runtime 查詢 Typesense release index。`bgmId`、`groupSlug`、`resolution`、`language`、`subtitle`、`format` 等過濾會盡量下推到 Typesense；`episode` / `episodeKey` 這類展示欄位可能在 Web runtime 做小窗口後過濾。不會回源 Convex 掃庫。
-
-極冷門組合如果疊加過多過濾，可能返回少於 `limit` 條；這是索引窗口和效能保護的結果。需要更多歷史資料時，優先放寬過濾或按字幕組短鏈輪詢。
-
-## 正確使用上限
-
-<Tabs items={['客戶端層面', '服務端層面（自部署）', '觸發 429']}>
-  <Tab value="客戶端層面">
-    1. **預設就拉滿 100 條**：省略 `limit` 即可；只有需要更小響應時才顯式傳 `1..99`。
-    2. **用 304 替代輪詢**：每次請求帶 `If-None-Match`。服務端確認資料沒變就返回 304 空 body，**不計入很多客戶端的"流量統計"**，但仍會消耗 1 次速率配額。
-    3. **拉長間隔**：預設建議 ≥ 5 分鐘。番劇釋出頻率本身按"集數"計算，每分鐘掃一次沒有意義。
-    4. **合併併發**：不要對同一 URL 併發發多個請求，快取層會讓後續請求拿到一樣的結果，但白白消耗速率額度。
-  </Tab>
-  <Tab value="服務端層面（自部署）">
-    透過 Web runtime / 部署平臺的**環境變數**調整（重啟後生效）：
-
-    ```bash title="env"
-    # 把每 IP 60 秒 120 次提高到 60 秒 600 次
-    RSS_ANIME_RATE_LIMIT_MAX=600
-    RSS_GROUP_RATE_LIMIT_MAX=600
-    RSS_MAGNETS_RATE_LIMIT_MAX=600
-
-    # 或者改視窗為 10 秒（變成 120 次 / 10 秒）
-    RSS_RATE_LIMIT_WINDOW_MS=10000
-
-    # 關閉 CDN 邊緣快取（不推薦，僅測試用）
-    RSS_CACHE_TTL_SECONDS=0
-    ```
-
-    <Callout type="warn">
-      所有公開 RSS 的 `limit` 上限由共享請求契約 `src/lib/rss-request-policy.ts` 定義，**不透過環境變數調整**。如果私有部署確實需要更高，必須同時修改共享 policy、快取/邊緣契約和測試後重新構建。
-    </Callout>
-
-    提高之後需要觀察：
-
-    - **單次響應 XML 大小**：100 條通常已足夠 RSS reader 使用，繼續提高會同步放大 XML 生成、傳輸、快取和客戶端解析成本。
-    - **Typesense 查詢 P95 與 Web SSR cache hit/miss**：公開 RSS 不應出現 Convex RSS query 或掃庫 fallback 流量。
-    - **客戶端解析時長**：很多 RSS reader 預設只保留最近 N 條，請同步調整。
-  </Tab>
-  <Tab value="觸發 429">
-    - 響應包含 `Retry-After: <seconds>`，按這個退避，**不要立即重試**。
-    - 短期內被打 429 通常是配置錯（輪詢太快 / 多個 reader 用同 URL）。把間隔放大到 5 分鐘 + 啟用 304，幾乎不會再觸發。
-  </Tab>
-</Tabs>
-
-## 1000 使用者場景下的真實負載
-
-> **核心結論**：origin 真實承受的回源率與併發使用者數**幾乎無關**，只與 `s-maxage` 和查詢引數多樣性有關。
-
-請求流轉：
-
-```txt
-使用者 ──► 瀏覽器 / RSS 客戶端快取 (max-age)
-        ──► Cloudflare CDN (s-maxage + SWR)
-            ──► origin (TanStack Start Web + Redis) ──► Typesense
-```
-
-- CDN 內未過期 → **0 origin 請求**
-- CDN 過期但仍在 SWR 視窗 → 使用者拿舊版本（0 延遲），origin 收到 **1 個**非同步重新整理請求
-- 完全過期 → origin 收到 1 個同步請求（~50–200ms 回源）
-- 客戶端帶 `If-None-Match` → ETag 命中時 origin 僅返回 304（無 body，開銷可忽略）
-
-各端點在 **1000 使用者、客戶端預設 15 分鐘輪詢** 假設下的預估負載：
-
-| 端點                                     | 客戶端日請求量    | origin 真實回源（次/小時） | 備註                                          |
-| ---------------------------------------- | ----------------- | -------------------------- | --------------------------------------------- |
-| `/rss/anime.xml`（實體查詢）              | 取決於實體 URL 數 | **每個熱規範 URL ≤ ~30**   | edge 120s；Redis 900s；dual owner 同批重新整理  |
-| `/rss/group/<slug>.xml`                  | 取決於 slug 數    | **每個熱 slug ≤ ~30**      | edge 120s；生命週期收斂舊/新路徑與負快取         |
-| `/rss/magnets.xml`（無 `q`）              | —                 | **每個規範 URL ≤ ~30**     | latest/filter edge 120s                        |
-| `/rss/magnets.xml` / `/rss/other/*`（穩定 `q`） | —          | **每個規範查詢 ≤ ~6**      | 搜尋與空結果 TTL-owned 600s，不跟隨分類 purge   |
-| 高基數隨機 `q`                            | —                 | **每個新查詢最多一次 MISS 後受預算限制** | 120/10m、1000/day、全站 32 MISS 併發 lease |
-| `/api/subtitle-groups`                   | ~96k              | **~12**                    | 資料極少變化，幾乎全 304                       |
-| `/api/seasons/anime`                     | ~48k              | **~6**                     | 季度資料周更，長快取                           |
-| `/api/anime/groups`（按 bgmId）           | —                 | **~12 × 熱門番劇數**        | 冷門番劇首次回源較多                          |
-
-**綜合**：穩定輪詢的 origin 成本按「規範 URL 數量」而不是使用者數增長；同一查詢由 Cloudflare/Redis 合併。實體事件會讓 dual-owner anime 的兩個 owner 一起重新整理，並讓字幕組生命週期的舊/新路徑及時收斂；other 的 `groupId`-only 過濾跟隨分類重新整理，但全文搜尋繼續按 TTL 管理。隨機不存在關鍵詞不能依靠快取共享，因此另用 distinct-query 預算和併發 lease 封頂；不要再用單一「1000 使用者 = 固定回源數」估算高基數搜尋。
-
-## 給客戶端的輪詢建議
-
-<TypeTable
-  type={{
-    '普通追番器': {
-      description: '15–30 分鐘。番劇本身按"集數"更新，更短沒意義。',
-      type: '間隔',
-    },
-    '全站監控': {
-      description: '5–10 分鐘。配合 ETag/304 開銷可忽略。',
-      type: '間隔',
-    },
-    '複雜搜尋 (magnets.xml?q=…)': {
-      description: '10 分鐘+。穩定查詢與空結果快取 600 秒；持續製造新關鍵詞會觸發 429。',
-      type: '間隔',
-    },
-    '字幕組目錄 / 季度列表': {
-      description: '啟動時調一次 + 快取到本地。資料變化極慢。',
-      type: '間隔',
-    },
-  }}
-/>
+刪除另有認證前防濫用視窗。`pending` 回執裡的 `Retry-After` 是狀態輪詢建議；真正超限是 `429`。
 
 <Callout type="warn">
-  **絕對不要做的事**：
-  - 多執行緒併發拉同一 URL（白白消耗速率配額，CDN 會讓結果完全相同）
-  - 關閉 ETag / `If-None-Match`（每次都拿全量響應，浪費頻寬）
-  - 間隔 < 1 分鐘（必觸發 429，且對你沒任何收益）
+  公開 RSS 的 `limit` 只接受單個 `1..100` 整數。非法值應用回傳 `400`，生產邊緣可能先 `403`。預設就是 100，不要傳 `limit=100`，否則可能 `308`。
 </Callout>
 
-## 主流 RSS 客戶端的實際行為
+`/rss/magnets.xml` 與 `/rss/other/*` 的 `q` / `search` 只能一個值，最多 160 UTF-8 bytes。新關鍵詞搜尋：每主題 120 次 / 10 分鐘、1000 次 / 24 小時，超限 `429`。穩定查詢不計入。
 
-不同客戶端預設的輪詢頻率、ETag/304 支援差異很大。本站公開 RSS 返回 exact-body `ETag` + `Cache-Control`；符合 HTTP 標準的客戶端會自動使用 `If-None-Match` / 304，無需額外設定。目前公開 RSS 省略 `Last-Modified`。
+公開搜尋最多 100 頁。`/magnets?page=` 超出重新導向到第 100 頁。`/api/animes/search` 的 `cursor` 只接受 `ts_page:<頁碼>`。
 
-| 客戶端                              | 預設輪詢           | `If-None-Match` | 尊重 `Cache-Control: max-age` | 備註                                            |
-| ----------------------------------- | ------------------ | --------------- | ----------------------------- | ----------------------------------------------- |
-| **NetNewsWire**（macOS/iOS）        | 1 小時             | ✅              | ✅                            | 表現最好，幾乎全 304                             |
-| **Inoreader**（雲端）               | ~30 分鐘           | ✅              | ✅                            | 自帶服務端聚合，1000 使用者共享同一上游請求         |
-| **Feedly**（雲端）                  | ~1 小時            | ✅              | ✅                            | 同上，對 origin 極友好                          |
-| **FreshRSS**（自建）                | 使用者配置（預設 1h）| ✅              | ✅                            | 推薦配置 ≥ 15min                                |
-| **Tiny Tiny RSS**（自建）           | 使用者配置           | ✅              | ⚠ 部分版本無視                 | 建議手動設 ≥ 15min                              |
-| **Reeder**（macOS/iOS）             | 跟隨 Inoreader/Feedly | —            | —                             | 透傳第三方聚合服務                              |
-| **qBittorrent RSS 自動下載**         | **預設 30 分鐘**   | ❌（每次拉全量） | ❌                            | 不傳送條件請求，origin 壓力依賴 CDN 合併         |
-| **Transmission + Flexget**          | 使用者配置           | ✅（Flexget 支援）| ✅                           | 推薦                                            |
-| **自建指令碼（Python `requests`）**    | 你寫多少就多少     | 取決於實現      | 取決於實現                    | 見 [Python 客戶端最小實現](/docs/open-api/caching#python-客戶端最小實現) |
+過濾過嚴時條數可能少於 `limit`。
 
-### 針對場景的預期
+## 客戶端
 
-- **個人訂閱 1–2 個番劇 RSS（NetNewsWire / Inoreader）**：每小時 1 個請求，全部 304，origin 幾乎感知不到。
-- **qBittorrent 用 RSS 規則自動下載**：每 30 分鐘拉一次全量 XML，但同一規範 URL 由 CDN 合併；無 `q` 變體的兜底回源視窗是 120 秒，帶 `q` 的穩定查詢是 600 秒。
-- **公開聚合站（Inoreader / Feedly）**：1000 個訂閱者後端共享同一份訂閱，對 origin 等同 1 個使用者。
-
-### 調優建議
-
-- 用 **Inoreader / Feedly / NetNewsWire iCloud** 這類支援雲端聚合的客戶端 → 你和其他使用者共享快取
-- qBittorrent / Transmission 直接拉的話，把規則間隔調到 ≥ 15 分鐘（預設 30 分鐘也很合理）
-- 自建指令碼必須實現 `If-None-Match` 複用，否則等於浪費頻寬
-
-## 後端釋出 → 使用者看到的完整延遲拆解
-
-以"字幕組釋出一個新種子"到"訂閱者的 RSS 客戶端彈出通知"為例，逐段算一遍最壞情況：
-
-```txt title="延遲拆解"
-T=0       字幕組提交 release 到 AniBT Web API
-          (Web 解析請求體 / 種子，Convex mutation 寫入 releases / files 表)
-T=0       資料庫立即可讀（Convex 強一致）
-          Web 寫側事件會按已解析 owner 觸發外部 Worker 清 Redis RSS cache + purge CDN；
-          dual-owner anime 同批重新整理兩側，字幕組生命週期收斂舊/新路徑，全文搜尋不跟隨分類 purge
-
-T≤120s    事件 purge 缺失時的兜底 CDN / Web Redis 短快取視窗內：
-          客戶端請求被 CDN 攔截，仍拿舊版本
-          → 這一段是使用者感知延遲的主要來源
-
-T=120s    CDN 快取進入 SWR 期：
-          下一個使用者請求觸發 CDN 非同步回源
-          原 origin 拿到新資料 → CDN 快取更新
-
-T=120~300s 客戶端的下次輪詢週期（取決於客戶端）：
-          - 若客戶端輪詢間隔 = 5min → 最快下一次拿到新版本
-          - 若間隔 = 15min → 平均再等 7.5 min
-          - 若間隔 = 1h → 平均再等 30 min
-```
-
-### 典型場景的端到端延遲（中位數）
-
-| 客戶端配置                  | 後端釋出 → 使用者看到        |
-| --------------------------- | -------------------------- |
-| 自建指令碼 5 min 輪詢 + ETag  | **3–5 分鐘**               |
-| NetNewsWire 預設 1h 輪詢    | 30–35 分鐘（瓶頸在客戶端） |
-| Inoreader 雲端聚合          | 15–30 分鐘（瓶頸在 Inoreader 自己的輪詢頻率） |
-| qBittorrent 預設 30min      | 15–30 分鐘                 |
-
-### 最佳化哪一段最有效
-
-1. **縮短客戶端輪詢間隔（最有效）**：從 1h 改成 5min，立刻把延遲從 30min 砍到 5min。
-2. **縮短 `s-maxage`（次要）**：從 300s 改成 60s，origin 壓力漲 5 倍但使用者延遲只少 4 分鐘，價效比低。
-3. **強制 origin 立即推送（不可行）**：HTTP RSS 是 pull 模型，沒辦法。
-
-<Callout type="info">
-  若需要**即時**（&lt; 1 分鐘）通知，RSS 不合適，應改用 webhook / Telegram bot / 站內推送。RSS 的設計目標是「**最終一致 + 極低成本**」，5–30 分鐘延遲屬於預期行為。
-</Callout>
+- 省略 `limit` 即 100 條。
+- 帶 `If-None-Match`。
+- 間隔 ≥ 5 分鐘。
+- 不要對同一 URL 並發。
+- 不要間隔 &lt; 1 分鐘。

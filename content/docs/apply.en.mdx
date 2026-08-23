@@ -1,75 +1,20 @@
 ---
 title: Apply for admission
-description: Subtitle groups apply by email; staff verify identity manually before granting publishing access.
+description: Email from the registered address to request subtitle-group publishing access.
 ---
 
-AniBT does not self-serve publishing accounts. **Subtitle groups** apply by email and are reviewed manually. After approval, the group identity is bound to an existing AniBT user account and publishing access is enabled. Releases can then be pushed via the [Release API](/docs/open-api/releases-publish) and mirrored through [site sync](/docs/site-sync).
+Publishing access is not self-serve. Send from the **AniBT registered email** to [support@anibt.net](mailto:support@anibt.net), subject: `字幕组入驻申请 - <组名>`.
 
-## What to include
+## Email contents
 
-<Steps>
-  <Step>
-    ### Send from the registered email
+- **Group name**
+- **slug**: a stable English identifier, e.g. `sakura-sub`. It appears in public URLs after approval and should not be changed.
+- **Intro**: kinds of works, activity.
+- **Contact**: a channel that can reach the subtitle group.
+- **Identity proof (one of)**: an account on another BT site, admin proof on a public channel, or equivalent.
 
-    Send the application from the email address used to register on AniBT. Staff use it to confirm the applicant is the account holder.
+If you have not registered yet, finish [Account](/docs/account-auth) first.
 
-    If no account exists yet, read [Accounts, sign-in, and sessions](/docs/account-auth), register at [anibt.net](https://anibt.net), then write from that same address.
-  </Step>
-  <Step>
-    ### Group basics
+Replies usually arrive within a few working days. If there is no reply after a week, check spam and send once more.
 
-    Include in the email body:
-
-    - **Group name**: full subtitle group name.
-    - **slug**: a short, stable English identifier used as the unique ID, e.g. `sakura-sub`. Prefer a value that will not need changing — it appears in public URLs such as [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints).
-    - **Short intro**: one or two paragraphs on what the group releases, how long it has been active, and the current release pace.
-    - **Contact channels**: Telegram, group website, Discord, mailing list, or any channel that reaches the group.
-  </Step>
-  <Step>
-    ### Identity proof (one is enough)
-
-    Provide **one** of the following — all three are not required:
-
-    - The publishing account / email the group already uses on nyaa, ACG.rip, Mikan, etc., for cross-check.
-    - Admin proof on the group's official site / Telegram channel / Twitter (e.g. a temporary pinned post acknowledging the application).
-    - Other evidence widely recognised among existing fansub members.
-
-    The goal is to confirm the applicant represents the group and is not squatting someone else's slug.
-  </Step>
-</Steps>
-
-## Send to
-
-<Callout type="info">
-  Email **[support@anibt.net](mailto:support@anibt.net)**. A subject such as `Group application - <name>` helps routing. Replies usually go out within a few working days.
-</Callout>
-
-If nothing arrives within a week (check spam), send again or reach out via [other channels](/docs/contact).
-
-## After approval
-
-Staff reply by email when the account is set up. On the account side:
-
-- Group identity and slug are bound to the user.
-- The [Release API](/docs/open-api/releases-publish) becomes available — an API Key is issued.
-- The group appears in site listings and [group RSS feeds](/docs/open-api/other-endpoints).
-
-Recommended next reading:
-
-<Cards>
-  <Card
-    title="Site sync setup"
-    href="/docs/site-sync"
-    description="Mirror AniBT releases out to nyaa / Bangumi / ACG.rip / Mikan."
-  />
-  <Card
-    title="Release API"
-    href="/docs/open-api/releases-publish"
-    description="POST /api/releases/publish — push releases programmatically."
-  />
-  <Card
-    title="Tracker URL"
-    href="/docs/tracker"
-    description="The announce URL to include in torrents."
-  />
-</Cards>
+After approval, the slug is bound, an API Key is issued, and the group appears in the on-site list and RSS. Then configure [Site sync](/docs/site-sync), [Tracker](/docs/tracker), and the [Publish API](/docs/open-api/reference).

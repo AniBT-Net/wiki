@@ -1,67 +1,31 @@
 ---
 title: Related projects
-description: Open-source projects around AniBT — FontInAss for subtitle font subsetting, AniBT-Speed for automated seeding.
+description: FontInAss and AniBT-Speed.
 ---
-
-The projects below relate to subtitle-group release workflows. They address **font size** and **seeding bandwidth**, and work alongside the AniBT main site.
-
-## FontInAss
 
 <ProjectCard
   owner="Yuri-NagaSaki"
   repo="FontInAss"
-  description="Subtitle font subsetting and sharing: scans characters used by ASS / SRT, cuts the original font down to the smallest usable subset, and bundles it for distribution. Output is typically 1–5% of the original font size."
+  description="Subtitle font subsetting. Scans characters actually used in ASS / SRT, cuts a subset, and ships it with the release."
   links={[
-    { label: 'Hosted at font.anibt.net', href: 'https://font.anibt.net' },
+    { label: 'font.anibt.net', href: 'https://font.anibt.net' },
     { label: 'GitHub', href: 'https://github.com/Yuri-NagaSaki/FontInAss' },
   ]}
 />
 
-**Why subset**
-
-CJK fonts are often 10–30 MB. For a 12-episode show, fully embedded subtitle fonts can outweigh the video. Subsetting keeps only the glyphs the subtitle file uses — commonly 100–500 KB. FontInAss turns the command-line workflow into a visual process and **records which characters were dropped** so fonts can be patched later.
-
-**Typical flow**
-
-<Steps>
-  <Step>
-    ### Upload ASS / SRT and source fonts
-
-    Multiple subtitles and fonts at once; `\fn` directives are detected automatically.
-  </Step>
-  <Step>
-    ### Subset
-
-    Produces minimal `.ttf` / `.otf` for each font.
-  </Step>
-  <Step>
-    ### Embed in the release
-
-    Place subset fonts in a `Fonts/` folder and pack them with the subtitles in the torrent. Players load them automatically; viewers do not need to install fonts.
-  </Step>
-</Steps>
-
-## AniBT-Speed
+1. Upload ASS / SRT and the original fonts.
+2. Generate subsets (`.ttf` / `.otf`).
+3. Put them in `Fonts/` and pack them into the torrent with the subtitles.
 
 <ProjectCard
   owner="Yuri-NagaSaki"
   repo="AniBT-Speed"
-  description="Automated seeding and bandwidth sharing for anime BT: pulls RSS, downloads new releases, and seeds long-term to add upload bandwidth for popular episodes."
+  description="Downloads from RSS automatically and seeds long-term."
   links={[
     { label: 'GitHub', href: 'https://github.com/Yuri-NagaSaki/AniBT-Speed' },
   ]}
 />
 
-**What it solves**
+Subscribe to [`/rss/anime.xml`](/docs/open-api/rss-anime) or [`/rss/magnets.xml`](/docs/open-api/other-endpoints).
 
-In the first few days after a release, download demand often exceeds available upload bandwidth. AniBT-Speed runs as an **auto-seeder node**:
-
-- Subscribes to [`/rss/anime.xml`](/docs/open-api/rss-anime) or [`/rss/magnets.xml`](/docs/open-api/other-endpoints).
-- Auto-downloads new releases.
-- **Seeds long-term** without silently deleting, so later downloaders still get bandwidth.
-
-Intended for operators with spare bandwidth who want to contribute public seeding.
-
-## Adding a project
-
-For AniBT-adjacent tools (scripts, client plugins, mirrors, CLIs, …), open a PR against the [wiki repo](https://github.com/AniBT-Net/wiki) to list them on this page.
+Adjacent tools can be added with a PR to the [wiki repo](https://github.com/AniBT-Net/wiki).

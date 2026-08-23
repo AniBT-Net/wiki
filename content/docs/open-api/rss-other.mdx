@@ -1,132 +1,23 @@
 ---
 title: 其他类 RSS
-description: GET /rss/other/<category>.xml —— 七个其他类分类各自独立的 RSS，不混入主 RSS。
+description: GET /rss/other/<category>.xml —— 七个分类各自一份 RSS，不混入番剧 RSS。
 ---
 
-`/rss/other/<category>.xml` 输出其他类资源的独立 RSS。当前支持七个分类：`manga`、`music`、`raw`、`stage`、`collection`、`movie`、`other`，对应漫画、音乐、RAW、舞台剧、合集、剧场版、其他。
+漫画、音乐、RAW、舞台剧、合集、剧场版、其他。订阅这些资源必须用本页路径。
 
-## 前置条件
+<ApiEndpoint method="GET" path="/rss/other/<category>.xml" auth="公开">
+分类：`manga` / `music` / `raw` / `stage` / `collection` / `movie` / `other`。
+</ApiEndpoint>
 
-- 无需鉴权。
-- 其他类资源**不会**混入 `/rss/magnets.xml`、`/rss/anime.xml` 或番剧详情页 RSS；订阅这些资源须使用本页的分类路径。
+<Callout type="info">
+  空分类仍返回有效空 channel，不返回 404。无 `<anibt:bgmId>`。
+</Callout>
 
-## URL
+完整参数见 [接口参考](/docs/open-api/reference)。
 
-```txt title="分类 RSS"
+```txt title="示例"
 https://anibt.net/rss/other/manga.xml
-https://anibt.net/rss/other/music.xml
-https://anibt.net/rss/other/raw.xml
-https://anibt.net/rss/other/stage.xml
-https://anibt.net/rss/other/collection.xml
-https://anibt.net/rss/other/movie.xml
-https://anibt.net/rss/other/other.xml
+https://anibt.net/rss/other/music.xml?q=FLAC&limit=50
 ```
 
-分类没有发布记录时，规范 URL 仍返回 `200 application/xml` 和有效的空 RSS channel，不返回 `404`。
-
-## 查询参数
-
-<TypeTable
-  type={{
-    'limit': {
-      description: '返回条数，1..100，默认 100。只接受单个无前导零的十进制整数。',
-      type: 'integer',
-      default: '100',
-    },
-    'q': {
-      description: '关键词搜索。别名：search。NFKC 规范化、去首尾空白、折叠连续空白，UTF-8 最多 160 bytes。',
-      type: 'string',
-    },
-    'search': {
-      description: 'q 的别名；q/search 合计只能出现一个值。',
-      type: 'string',
-    },
-    'groupId': {
-      description: '字幕组组织 ID。发布 API 返回的 groupId 可直接用于过滤。',
-      type: 'string',
-    },
-    'sortField': {
-      description: 'publishedAt / fileSize，默认 publishedAt。',
-      type: 'enum',
-      default: 'publishedAt',
-    },
-    'sortOrder': {
-      description: 'desc / asc，默认 desc。',
-      type: 'enum',
-      default: 'desc',
-    },
-  }}
-/>
-
-## 示例
-
-<Steps>
-  <Step>
-    ### 订阅漫画最新发布
-    ```txt title="漫画"
-    https://anibt.net/rss/other/manga.xml
-    ```
-  </Step>
-  <Step>
-    ### 搜索音乐分类
-    ```txt title="音乐 + 关键词"
-    https://anibt.net/rss/other/music.xml?q=FLAC&limit=50
-    ```
-  </Step>
-  <Step>
-    ### 按文件大小排序 RAW
-    ```txt title="RAW + 文件大小"
-    https://anibt.net/rss/other/raw.xml?sortField=fileSize&sortOrder=desc
-    ```
-  </Step>
-</Steps>
-
-## 成功响应
-
-返回标准 RSS 2.0 原生 XML。浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端按标准字段消费。
-
-每个 `<item>` 包含：
-
-<TypeTable
-  type={{
-    '<title>': {
-      description: '资源标题；若有字幕组名，显示为 [字幕组] 标题。',
-      type: 'string',
-    },
-    '<link>': {
-      description: '其他类资源详情页（/other-release/<id>）。',
-      type: 'url',
-    },
-    '<guid isPermaLink="false">': {
-      description: '稳定 other release id。',
-      type: 'string',
-    },
-    '<pubDate>': {
-      description: 'RFC 822 时间；按 Asia/Shanghai 输出，数字偏移固定为 +0800。',
-      type: 'datetime',
-    },
-    '<description>': {
-      description: 'CDATA，包含分类、字幕组、文件大小、下载链接、说明和标签。',
-      type: 'string',
-    },
-    '<enclosure>': {
-      description: '种子下载 URL，type="application/x-bittorrent"。仅上传过种子文件的条目会有。',
-      type: 'url',
-    },
-    '<torrent>': {
-      description: 'RSS 内的 torrent 元信息；有 magnet 时会包含 infoHash，内嵌 <pubDate> 使用 RFC 3339，按 Asia/Shanghai 输出为 +08:00。',
-      type: 'element',
-    },
-  }}
-/>
-
-## 缓存与索引
-
-- RSS 响应从最终 XML UTF-8 bytes 计算 exact-body `W/"anibt-sha256-{...}"` ETag，并移除了请求时间 `lastBuildDate`；匹配 ETag 的 `304` 表示当前 feed bytes 未变化。当前省略 `Last-Modified`。
-- 无 `q` 的 latest/filter 变体为 `s-maxage=120`；带 `q` 的搜索（包括空结果）为 `s-maxage=600`；两类统一 `stale-while-revalidate=60`。
-- 分类发布变化会先失效 latest Redis 家族，再清除该 category 的全部非全文搜索 CDN 参数变体，包含只传 `groupId` 的过滤 URL；带 `q` / `search` 的搜索 Redis 与 CDN 身份仍按 600 秒 TTL 自主管理，不会被无关分类发布清除，因此这不是实时搜索 SLA。
-- 搜索缓存身份只保存规范化查询的 SHA-256。重复/空/控制字符 q、同时传 q+search 或超过 160 bytes 返回 `400 + no-store`。仅调整原始 query 参数对顺序会直接返回同一规范 `200`；默认值、兼容别名或其他字节级规范化仍返回可缓存一天的 `308`。
-- 只有真正穿透 CDN/Redis 的新搜索 MISS 才受 distinct-query 与全站并发预算保护；超限返回 `429 + Retry-After`，稳定查询和缓存 HIT 不扣额度。
-- 这些 RSS 响应会带 `noindex, follow` 搜索引擎策略，避免分类 feed 被搜索引擎索引。
-
-继续：[发布其他类资源](/docs/open-api/other-releases-publish)；番剧主 RSS 见 [RSS 主入口](/docs/open-api/rss-anime)。
+`q` 与 `search` 只能提供一个值。空、控制字符或超长返回 `400`。

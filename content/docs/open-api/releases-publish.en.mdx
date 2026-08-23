@@ -1,70 +1,34 @@
 ---
 title: Publish a release
-description: POST /api/releases/publish — the authenticated write endpoint groups use to upload torrents; supports JSON (magnet) and multipart/form-data (torrent file).
+description: POST /api/releases/publish — publish a torrent with a group API key.
 ---
 
-`/api/releases/publish` is the group endpoint that **writes** anime releases. Send a subtitle-group API key; formal publish and preview both require the `releases:publish` scope. Both `application/json` (magnet link) and `multipart/form-data` (torrent upload) are supported.
+Writes an anime release. Both live publish and preview require `releases:publish`.
 
-## Preconditions
-
-- The group API key must explicitly include `releases:publish`.
-- Rate limits and quotas are tracked per group, separate from the IP-based RSS rate window.
-- Rotate the key immediately if it leaks.
+<ApiEndpoint method="POST" path="/api/releases/publish" auth="auth · releases:publish">
+Prefer multipart `.torrent` upload, or JSON with a magnet.
+</ApiEndpoint>
 
 <Callout type="warn">
-  This is a **write endpoint**. Do not embed keys in client code, commit them to repos, or paste them into issues. CI must inject secrets.
+  Do not put the key in clients, git, or issues. Inject it as a CI secret. `200` means the canonical row is written, not that RSS / search / pages already show it.
 </Callout>
 
-## URL
+Full fields: [API reference](/docs/open-api/reference).
 
-```http title="HTTP"
-POST https://anibt.net/api/releases/publish
-Authorization: Bearer <YOUR_API_KEY>
-```
+## Whoami
 
-### Whoami
-
-Before bulk publishing, **GET** the same endpoint to confirm which subtitle group the API key is bound to (**no write**):
+GET the same path. Does not write. Does not require publish scope. Assert `groupSlug` and `scopes` before a batch.
 
 ```bash title="whoami"
 curl -X GET 'https://anibt.net/api/releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>'
 ```
 
-```json title="whoami response"
-{
-  "ok": true,
-  "result": {
-    "groupId": "org_xxxxxxxx",
-    "groupName": "LoliHouse",
-    "groupSlug": "lolihouse",
-    "apiKeyId": "sgak_xxxxxxxx",
-    "apiKeySuffix": "5c5d6fcd",
-    "scopes": ["releases:publish"],
-    "kind": "anime"
-  }
-}
-```
+## Publish
 
-Automation should assert `groupSlug` / `groupName` and confirm that `scopes` contains `releases:publish` before formal publish. Group identity comes **only** from the API key, not from the `[GroupName]` prefix in the title. GET whoami is identity-only and does not require publish scope.
-
-## `200 OK` and public visibility
-
-A production publish response with `200 OK` and a `releaseId` means the canonical AniBT record was written and the downstream index, public-snapshot, and cache work was handed off reliably. It does **not** mean that RSS, search, public pages, and every CDN location already contain the release when the response returns, nor that publishing to Nyaa or another external site has completed.
-
-The public read path advances asynchronously. After the corresponding Typesense write completes, affected immutable R2 snapshots are generated; Web verifies the snapshot publication heads, invalidates and strictly warms Redis, and only then emits page-ready events for Edge CDN purging. An explicitly failed stage stays retryable and prevents that page-ready operation from completing early.
-
-<Callout type="info">
-  The current success response does not confirm that this release is visible in every public read model. Automation should treat `200 OK` as **accepted**, then use the returned `releaseId` to inspect the release page and the relevant RSS / magnets response body. HTTP 200, a newer `generatedAt`, an ETag, or `cf-cache-status: HIT` alone does not prove that the expected release is present. See [HTTP caching & 304](/docs/open-api/caching) for the cache path.
-</Callout>
-
-## Two request shapes
-
-<Tabs items={['multipart/form-data (recommended)', 'application/json']}>
-  <Tab value="multipart/form-data (recommended)">
-    Upload the torrent and the backend **automatically extracts** the magnet, infoHash, and file size from it.
-
-    ```bash title="Upload a torrent"
+<Tabs items={['multipart (recommended)', 'JSON']}>
+  <Tab value="multipart (recommended)">
+    ```bash title="Upload torrent"
     curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -F 'animeIdType=anilist' \
@@ -77,13 +41,9 @@ The public read path advances asynchronously. After the corresponding Typesense 
       -F 'format=MKV' \
       -F 'torrent=@/path/to/release.torrent'
     ```
-
-    Repeat `language` to send multiple values (CHS + JP).
   </Tab>
-  <Tab value="application/json">
-    Send the magnet link directly (you still need a torrent on disk — only well-formed magnets are accepted).
-
-    ```bash title="JSON body"
+  <Tab value="JSON">
+    ```bash title="JSON magnet"
     curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -H 'Content-Type: application/json' \
@@ -98,444 +58,82 @@ The public read path advances asynchronously. After the corresponding Typesense 
       "language": ["CHS", "JP"],
       "subtitle": "EXTERNAL",
       "format": "MKV",
-      "fileSize": 734003200,
-      "notes": "**Fonts embedded**, dropped frames fixed."
+      "fileSize": 734003200
     }
     JSON
     ```
-
-    `magnetBase64` accepts both the raw magnet URL and a Base64-encoded magnet.
   </Tab>
 </Tabs>
 
-## Parameters
+## Constraints
 
-<TypeTable
-  type={{
-    'animeIdType': {
-      description: 'Anime ID source. One of bgm, anilist, mal, anidb. Use it together with animeId. New integrations should prefer this pair.',
-      type: 'enum',
-    },
-    'animeId': {
-      description: 'Anime ID value. Use it with animeIdType, for example animeIdType=mal + animeId=52991.',
-      type: 'string',
-    },
-    'anime': {
-      description: 'Structured anime reference, e.g. {"source":"anidb","id":"17617"}. JSON requests can pass an object; multipart can pass a JSON string.',
-      type: 'object',
-    },
-    'bgmId': {
-      description: 'Compatibility field: Bangumi subject id. Still supported; new integrations should use animeIdType=bgm + animeId.',
-      type: 'number',
-    },
-    'title': {
-      description: 'Release filename, e.g. [Group] Show - 01 [1080p].mkv. Required for JSON; multipart can fall back to the torrent internal name.',
-      type: 'string',
-      required: true,
-    },
-    'torrent': {
-      description: 'Torrent file (required for multipart). Magnet, title, file size, and infoHash are auto-extracted.',
-      type: 'file',
-      required: true,
-    },
-    'magnetBase64': {
-      description: 'Raw magnet URL or its Base64 encoding. Required for JSON; auto-extracted from the torrent for multipart if omitted.',
-      type: 'string',
-    },
-    'torrentStorageId': {
-      description: 'Existing public torrent object key in AniBT storage. Intended for internal automation; normal clients should upload torrent.',
-      type: 'string',
-    },
-    'episodeKey': {
-      description: 'Episode label, e.g. 01 / 01-13 / BATCH / SP / MOVIE / OVA.',
-      type: 'string',
-    },
-    'resolution': {
-      description: '2160p / 1080p / 720p / 480p / 360p.',
-      type: 'enum',
-    },
-    'language': {
-      description: 'CHS / CHT / JP / EN / KO / ES / PT / FR / DE / IT / RU / AR / HI / ID / MS / TH / VI / TL / TR / PL / UK, repeatable, no item limit.',
-      type: 'enum[]',
-    },
-    'subtitle': {
-      description: 'EXTERNAL / INTERNAL / EMBEDDED / NONE.',
-      type: 'enum',
-    },
-    'format': {
-      description: 'MKV / MP4 / AVI / WEBM.',
-      type: 'enum',
-    },
-    'version': {
-      description: 'Version string, e.g. v1, v2, used to re-publish a corrected release.',
-      type: 'string',
-    },
-    'fileSize': {
-      description: 'File size in bytes; auto-extracted from the torrent or inferred from magnet xl=. Formal magnet-only publishes require fileSize > 0; otherwise the API returns reason=EMPTY_RELEASE_CONTENT (no 0 B rows).',
-      type: 'number',
-    },
-    'publishedAt': {
-      description: 'Publish timestamp in milliseconds. Defaults to the server current time.',
-      type: 'number',
-    },
-    'notes': {
-      description: 'Release notes support Markdown and raw HTML, up to 50000 characters. HTML is rendered directly without a sanitizer or HTML/CSS allowlist.',
-      type: 'string',
-    },
-    'descriptionMarkdown': {
-      description: 'Compatibility alias for notes with the same Markdown + raw HTML rendering behavior. content / description / intro are also accepted as note aliases.',
-      type: 'string',
-    },
-    'trackers': {
-      description: 'Optional list of tracker URLs (one per line). Merged + de-duplicated with site defaults.',
-      type: 'string[]',
-    },
-    'nyaa': {
-      description: 'Set true to request Nyaa proxy publishing. Only allowlisted groups can use it, and torrent upload via multipart is required.',
-      type: 'boolean',
-      default: 'false',
-    },
-    'nyaaCategory': {
-      description: 'Nyaa category code. Required when Nyaa proxy publishing is enabled. Pick from the Nyaa category table below; Chinese anime subtitles usually use 1_3.',
-      type: 'string',
-    },
-    'nyaaComplete': {
-      description: 'Whether to set Nyaa complete.',
-      type: 'boolean',
-      default: 'false',
-    },
-    'nyaaRemake': {
-      description: 'Whether to set Nyaa remake.',
-      type: 'boolean',
-      default: 'false',
-    },
-    'nyaaDescription': {
-      description: 'Markdown description sent to Nyaa, up to 20000 characters. When omitted, AniBT notes are used and the same 20000-character limit applies.',
-      type: 'string',
-    },
-    'nyaaInformation': {
-      description: 'Override Nyaa information field, up to 500 characters. Usually a project page, group page, official site, or related link.',
-      type: 'string',
-    },
-    'preview': {
-      description: 'When true, only a temporary preview URL is generated (expires in 10 minutes); the release is NOT published to RSS / search / public pages.',
-      type: 'boolean',
-      default: 'false',
-    },
-  }}
-/>
-
-<Callout type="warn">
-  Raw HTML in `notes` is rendered directly on release-detail and preview pages. No sanitizer or tag, attribute, or CSS allowlist is applied. Only trusted subtitle-group members, administrators, or controlled publishing API keys should write this field.
-</Callout>
-
-<Callout type="info">
-  `torrent` is **required** in multipart requests. `magnetBase64` is optional — when omitted, the backend extracts it from the torrent.
-</Callout>
-
-## Value Reference
-
-### Request Shape Differences
-
-| Scenario | How to send it |
-| -------- | -------------- |
-| Upload a `.torrent` | Use `multipart/form-data` with field name `torrent`, e.g. `-F 'torrent=@release.torrent'`. |
-| Magnet-only publish | Use JSON and pass `magnetBase64`. Accepts raw `magnet:?xt=...` or Base64. **Formal** publish still requires `fileSize > 0` (or magnet `xl=`); otherwise `422` / `EMPTY_RELEASE_CONTENT`. Prefer uploading a torrent. |
-| Multiple languages | JSON uses an array: `"language":["CHS","JP"]`; multipart may repeat the field: `-F 'language=CHS' -F 'language=JP'`, or send a JSON array string. |
-| Tracker list | JSON uses an array; multipart uses newline-separated text. The site merges and de-duplicates with defaults. |
-| Booleans | JSON uses `true/false`; multipart accepts `true/false`, `1/0`, `yes/no`, and `on/off`. |
-| Anime ID | Send one anime identifier. New integrations should use `animeIdType` + `animeId`; the historical Bangumi field `bgmId` remains supported. |
-
-### Anime and Episode Fields
-
-| Field | Accepted values | Meaning |
-| ----- | --------------- | ------- |
-| `animeIdType` + `animeId` | `bgm` / `anilist` / `mal` / `anidb` + the site-specific ID | Recommended. Example: `animeIdType=anilist`, `animeId=170942`. |
-| `anime` | `{"source":"anidb","id":"17617"}` | Structured form for JSON clients. `source` must be `bgm`, `anilist`, `mal`, or `anidb`. |
-| `bgmId` | Bangumi subject id, e.g. `400602` | Legacy-compatible field. Use [`/api/bgm/search`](/docs/open-api/bgm-search) to find it. |
-| `episode` | Non-negative integer, e.g. `1`, `12` | Used for ordering. For custom `episodeKey` values such as `SP` or `BATCH`, pass `episode=0`. |
-| `episodeKey` | `01`, `1-12`, `13.5`, `SP`, `OVA`, `MOVIE`, `BATCH` | Used for display and de-duplication. Pure numeric values are normalized for de-duplication. |
-| `version` | `v1`, `v2`, `v2_fix` | Defaults to `v1`. Use `v2` for corrected re-releases. |
-
-Send one anime identifier whenever possible. External site IDs should use `animeIdType + animeId` or `anime`; mappings follow bangumi-data. Historical scripts that send only `bgmId` still work. If an external ID maps to multiple BGM entries, multiple external IDs conflict, or no mapping is found yet, API-key publishing creates a pending release for later manual matching.
-
-When no explicit anime ID is supplied, the publish endpoint runs the same v3 matcher as
-[`POST /api/animes/torrent-match`](/docs/open-api/anime-torrent-match) inside the Web
-server. Only `decision.kind="auto"` binds directly. `manual`, `none`, `unavailable`,
-`unsupported`, and `non_anime` remain pending or require caller handling. Automation may
-still call the matcher as a preflight, but first rank, `confidence`, `matchScore`, and fuzzy
-recall never replace `decision.kind="auto"`.
-
-The matcher preserves two inputs when they exist. For a real multipart `.torrent` upload,
-the publish field `title` becomes `rawTitle`, while the parsed torrent `info.name` becomes an
-independent `torrentName`. The Web upload flow first verifies that the current user belongs to the
-target group, then replays v3 server-side with the edited release title and actual `info.name`;
-caller-supplied `matchProjectContext` multipart data is ignored. JSON / magnet-only requests contain
-no torrent bytes, so automatic matching primarily uses `title`; keep the full group,
-Chinese/Japanese/romaji/English, season, and episode structure instead of sending an aggressively
-cleaned short title.
-
-Context distinguishes bare numeric brackets: `24` is an episode in `[Title][24][1080p]`, but remains
-frame-rate metadata in `[Title][1080p][24][AAC]`. An explicit `2024 edition` / `(2024)` must match the
-candidate's premiere year exactly. If an upstream previous-season total includes one special while a
-group numbers regular episodes continuously, a single boundary episode and an exact whole-season
-range may shift back by one only when complete family, publication-time, and unique-target evidence
-all agree; this does not relax true multi-season bundle handling.
-
-An explicit anime selection in the Web torrent upload flow can also provide a group-scoped project
-confirmation. The server recomputes the fingerprint from `title` and torrent `info.name`. If the matcher
-already auto-selected the same internal anime, it does not train itself. If the decision still needs
-manual confirmation, or the automatic target differs from the user's selection, the first confirmation
-for that project is `pending` and a second distinct episode confirming the same anime activates the
-binding. Re-publishing the same episode does not increment confirmation count; confirming another anime
-suspends the binding. The manual flow for an existing pending release may still explicitly choose
-“remember this project” to activate immediately.
-
-Future matches use the binding only inside the same group and project, and only after candidate
-projection, season/year/format/episode veto, conflict, and completeness checks pass. If the matcher is
-unavailable, throws internally, or the torrent `info.name` exceeds the Web matcher's 500-character
-bound, an explicit selection that already passed torrent validation and group authorization still
-publishes without learning a binding. Invalid torrents and unauthorized requests still fail normally.
-
-### Resolution, Language, Subtitles, Format
-
-| Field | Value | Meaning |
-| ----- | ----- | ------- |
-| `resolution` | `4K` / `2160p` / `1080p` / `720p` / `480p` / `360p` | Values are case-sensitive. Common 4K releases may use either `2160p` or `4K`. |
-| `language` | `CHS` | Simplified Chinese. |
-| `language` | `CHT` | Traditional Chinese. |
-| `language` | `JP` | Japanese. |
-| `language` | `EN` | English; use this for English subtitles. |
-| `language` | `KO` | Korean. |
-| `language` | `ES` | Spanish. |
-| `language` | `PT` | Portuguese. |
-| `language` | `FR` | French. |
-| `language` | `DE` | German. |
-| `language` | `IT` | Italian. |
-| `language` | `RU` | Russian. |
-| `language` | `AR` | Arabic. |
-| `language` | `HI` | Hindi. |
-| `language` | `ID` | Indonesian. |
-| `language` | `MS` | Malay. |
-| `language` | `TH` | Thai. |
-| `language` | `VI` | Vietnamese. |
-| `language` | `TL` | Filipino / Tagalog. |
-| `language` | `TR` | Turkish. |
-| `language` | `PL` | Polish. |
-| `language` | `UK` | Ukrainian. |
-| `subtitle` | `EXTERNAL` | External subtitle files. |
-| `subtitle` | `INTERNAL` | Soft subtitles muxed in the container and toggleable. |
-| `subtitle` | `EMBEDDED` | Hard subtitles burned into the video. |
-| `subtitle` | `NONE` | No subtitles; language is stored as an empty list. |
-| `format` | `MKV` / `MP4` / `AVI` / `WEBM` | Container format, not codec. |
-
-When omitted, these fields are inferred from `title` first, then the torrent internal filename. Fallback defaults are `resolution=1080p`, `format=MKV`, `subtitle=INTERNAL`, `language=["CHS"]`, and `version=v1`; if the final format is `MP4`, the default subtitle type leans toward `EMBEDDED`.
-
-<Callout type="info">
-  The number of languages in the world depends on counting criteria; [Ethnologue 2025](https://www.ethnologue.com/insights/how-many-languages/) lists about 7,159 living languages, and ISO 639 maintains standardized language codes. AniBT does not try to model every language. It supports a practical set of common subtitle languages first; new language codes should prefer ISO 639-1, while `CHS` / `CHT` remain AniBT compatibility codes for simplified and traditional Chinese.
-</Callout>
+- JSON requires `title`; multipart may fall back to the torrent internal name.
+- Multipart requires `torrent`. JSON requires `magnetBase64` (raw magnet or Base64).
+- Without a torrent, live publish needs `fileSize > 0`, else `422` / `EMPTY_RELEASE_CONTENT`.
+- `notes`: Markdown + raw HTML, max 50000 characters, rendered as-is.
+- `preview=true`: preview URL expires in 10 minutes and never enters public lists.
+- With no anime ID, the server runs the same matcher. Do not send a forged match. Only `auto` binds immediately.
+- If resolution and similar fields are omitted, defaults are `resolution=1080p`, `format=MKV`, `subtitle=INTERNAL`, `language=["CHS"]`, `version=v1`; final `format=MP4` leans to `EMBEDDED` subtitles.
+- Same version already exists → `409`; change `version`.
 
 ## Nyaa proxy publishing
 
 <Callout type="warn">
-  Nyaa proxy publishing is only available to allowlisted groups. Groups publishing supersampled or upscaled releases cannot apply for allowlist access. See the [Nyaa proxy guide](/en/docs/nyaa-proxy).
+  Allowlisted groups only. Groups that publish supersampled releases cannot apply. Rules: [Nyaa proxy](/docs/nyaa-proxy). Must use multipart `.torrent`, and the torrent must contain `http://nyaa.tracker.wf:7777/announce`.
 </Callout>
 
-Nyaa proxy publishing must use `multipart/form-data` with a `.torrent` upload. The torrent's `announce` or `announce-list` must include:
-
-```txt title="Nyaa tracker"
-http://nyaa.tracker.wf:7777/announce
-```
-
-Create API keys at `/groups/<slug>/api-keys`. The in-app API reference is available at `/groups/<slug>/publish?tab=api`.
-
-```bash title="Publish to AniBT and request Nyaa proxy publishing"
+```bash title="AniBT + Nyaa"
 curl -X POST 'https://anibt.net/api/releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -F 'torrent=@release.torrent' \
-  -F 'title=[Group] Show Title - 01 [1080p][CHS]' \
+  -F 'title=[Group] Title - 01 [1080p][CHS]' \
   -F 'animeIdType=mal' \
   -F 'animeId=58514' \
   -F 'nyaa=true' \
-  -F 'nyaaCategory=1_3' \
-  -F 'nyaaComplete=false' \
-  -F 'nyaaRemake=false' \
-  -F 'nyaaDescription=Optional Markdown description for Nyaa'
+  -F 'nyaaCategory=1_3'
 ```
 
-Structured fields such as `sitePublish.nyaa.enabled`, `sitePublish.nyaa.category`, and `sitePublish.nyaa.description` are also accepted. Production Nyaa proxy publishing should still use multipart because AniBT validates the actual torrent bytes for the required tracker.
+Structured fields such as `sitePublish.nyaa.enabled` / `sitePublish.nyaa.category` also work. Sending Nyaa fields like `nyaaCategory` without `nyaa` still enables proxy publishing.
 
 ### Nyaa Proxy Fields and Categories
 
 | Form field | JSON structured field | Required | Meaning |
-| ---------- | --------------------- | -------- | ------- |
-| `nyaa` | `sitePublish.nyaa.enabled` | No | Set to `true` to request Nyaa proxy publishing. Passing other Nyaa fields such as `nyaaCategory` also implies enabled. |
-| `nyaaCategory` | `sitePublish.nyaa.category` | Required when enabled | Nyaa category code. Pick one from the table below. Normal Chinese anime subtitles usually use `1_3`. |
-| `nyaaComplete` | `sitePublish.nyaa.complete` | No | Nyaa Complete flag. Use `true` for complete batches, full seasons, or full volumes. Defaults to `false`. |
-| `nyaaRemake` | `sitePublish.nyaa.remake` | No | Nyaa Remake flag. Use for re-uploads, fixes, or remakes when appropriate. Defaults to `false`. |
-| `nyaaDescription` | `sitePublish.nyaa.description` | No | Markdown description sent to Nyaa, up to 20000 characters. Falls back to AniBT `notes`; inherited notes have the same 20000-character limit and fail validation if exceeded. |
-| `nyaaInformation` | `sitePublish.nyaa.information` | No | Nyaa information field, up to 500 characters. Usually an official site, project page, group page, or related link. |
-
-Nyaa category codes must be sent exactly as shown:
+| --- | --- | --- | --- |
+| `nyaa` | `sitePublish.nyaa.enabled` | No | `true` requests proxy publishing |
+| `nyaaCategory` | `sitePublish.nyaa.category` | Required when enabled | Code from the table. Chinese anime subs usually `1_3` |
+| `nyaaComplete` | `sitePublish.nyaa.complete` | No | Complete flag. Default `false` |
+| `nyaaRemake` | `sitePublish.nyaa.remake` | No | Remake flag. Default `false` |
+| `nyaaDescription` | `sitePublish.nyaa.description` | No | Markdown sent to Nyaa, max 20000 characters. Falls back to `notes` with the same 20000 cap |
+| `nyaaInformation` | `sitePublish.nyaa.information` | No | information, max 500 characters |
 
 | Code | Nyaa category | Use when |
-| ---- | ------------- | -------- |
-| `1_1` | Anime - AMV | Anime music videos, edits, MAD/AMV. |
-| `1_2` | Anime - English-translated | Anime with English translation. |
-| `1_3` | Anime - Non-English-translated | Anime translated to languages other than English. Chinese subtitles usually use this. |
-| `1_4` | Anime - Raw | Anime RAW, no translation subtitles. |
-| `2_1` | Audio - Lossless | Lossless audio such as FLAC or WAV. |
-| `2_2` | Audio - Lossy | Lossy audio such as MP3, AAC, or Opus. |
-| `3_1` | Literature - English-translated | English-translated manga, light novels, books. |
-| `3_2` | Literature - Non-English-translated | Non-English-translated manga, light novels, books. Chinese literature releases usually use this. |
-| `3_3` | Literature - Raw | Untranslated manga, light novels, books. |
-| `4_1` | Live Action - English-translated | English-translated live action. |
-| `4_2` | Live Action - Idol/Promotional Video | Idol, promotional video, or PV live action content. |
-| `4_3` | Live Action - Non-English-translated | Non-English-translated live action. |
-| `4_4` | Live Action - Raw | Live action RAW. |
-| `5_1` | Pictures - Graphics | CG, artbooks, illustrations, scans, graphics. |
-| `5_2` | Pictures - Photos | Photo sets or photography. |
-| `6_1` | Software - Applications | Applications. |
-| `6_2` | Software - Games | Games. |
+| --- | --- | --- |
+| `1_1` | Anime - AMV | Anime music videos, edits, MAD/AMV |
+| `1_2` | Anime - English-translated | English-translated anime |
+| `1_3` | Anime - Non-English-translated | Non-English-translated anime. Simplified, traditional, or bilingual Chinese usually this |
+| `1_4` | Anime - Raw | Anime RAW, no translation subs |
+| `2_1` | Audio - Lossless | Lossless audio, e.g. FLAC, WAV |
+| `2_2` | Audio - Lossy | Lossy audio, e.g. MP3, AAC, Opus |
+| `3_1` | Literature - English-translated | English-translated manga, light novels, books |
+| `3_2` | Literature - Non-English-translated | Non-English-translated manga, light novels, books. Chinese literature usually this |
+| `3_3` | Literature - Raw | Untranslated manga, light novels, books |
+| `4_1` | Live Action - English-translated | English-translated live action |
+| `4_2` | Live Action - Idol/Promotional Video | Idol, promotional, or PV live action |
+| `4_3` | Live Action - Non-English-translated | Non-English-translated live action |
+| `4_4` | Live Action - Raw | Live action RAW |
+| `5_1` | Pictures - Graphics | CG, artbooks, illustrations, scans |
+| `5_2` | Pictures - Photos | Photo sets |
+| `6_1` | Software - Applications | Applications |
+| `6_2` | Software - Games | Games |
 
-## Success response fields
+## Failures
 
-A formal publish success `result` includes at least:
-
-| Field | Meaning |
-| ----- | ------- |
-| `releaseId` | Created (or idempotent) release id |
-| `animeId` | Bound anime id; placeholder when pending |
-| `matchStatus` | `matched` or `pending` |
-| `fileSize` | Stored size in bytes |
-| `groupId` / `groupName` / `groupSlug` | **Subtitle group bound to the API key** |
-| `apiKeyId` / `apiKeySuffix` | Key identity for logs (suffix is not the full secret) |
-
-Preview responses also return the same group identity fields at the top level so wrong-key mistakes are visible before durable write.
-
-## Preview mode
-
-To verify how a release will render (title parsing, Markdown/HTML notes, magnet correctness) before going public, set `preview=true`:
-
-```bash title="Preview only — not published"
-curl -X POST 'https://anibt.net/api/releases/publish' \
-  -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  -F 'animeIdType=bgm' \
-  -F 'animeId=400602' \
-  -F 'title=[Group] Frieren - 01 [1080p].mkv' \
-  -F 'preview=true' \
-  -F 'torrent=@/path/to/release.torrent'
-```
-
-The returned preview URL **expires in 10 minutes** and **does not** show up in RSS / search / public listings. Useful as the last manual gate in an automated pipeline.
-
-### Local smoke test
-
-This script uses JSON + magnet only and always sends `preview: true`. Use it in CI or locally to verify the key, anime ID, and basic fields.
-
-```js title="preview-smoke.mjs"
-const apiKey = process.env.ANIBT_API_KEY;
-if (!apiKey) throw new Error("Set ANIBT_API_KEY first");
-
-const body = {
-  preview: true,
-  animeIdType: "mal",
-  animeId: "52991",
-  title: "[Group] Preview Smoke - 01 [1080p][CHS].mkv",
-  magnetBase64: "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567",
-  episodeKey: "01",
-  resolution: "1080p",
-  language: ["CHS"],
-  subtitle: "EXTERNAL",
-  format: "MKV",
-  fileSize: 734003200,
-};
-
-const res = await fetch("https://anibt.net/api/releases/publish", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  },
-  body: JSON.stringify(body),
-});
-const data = await res.json();
-console.log(res.status, data.ok, data.previewUrl, data.groupSlug, data.apiKeySuffix);
-if (!res.ok || !data.previewUrl) process.exit(1);
-// Optional: assert groupSlug matches the expected group before formal publish
-// if (data.groupSlug !== "lolihouse") process.exit(2);
-```
-
-## Authentication & key management
-
-<Steps>
-  <Step>
-    ### Generate an API key in the group dashboard
-    Each group can have multiple keys; consider one for CI and one for ad-hoc scripts. A key used here must explicitly include `releases:publish`.
-  </Step>
-  <Step>
-    ### Send it on every request
-    ```http
-    Authorization: Bearer <YOUR_API_KEY>
-    ```
-  </Step>
-  <Step>
-    ### Rotate immediately on leak
-    The previous key is revoked instantly; the new key is shown only once at generation, so save it carefully.
-  </Step>
-</Steps>
-
-<Callout type="warn">
-  Never embed keys in client-side code, commit them to a repo, or paste them in issues. Inject through CI secrets only.
-</Callout>
-
-## Unified error response
-
-Whether the request uses a JSON magnet or a multipart torrent upload, authentication, parsing, upload, canonical-write, and handoff failures use the same JSON envelope:
-
-```json title="Error response"
-{
-  "ok": false,
-  "error": {
-    "code": "PUBLIC_SNAPSHOT_ENQUEUE_PAUSED",
-    "message": "System deployment in progress. Please retry shortly.",
-    "reason": "DEPLOYMENT_IN_PROGRESS",
-    "retryable": true,
-    "retryAfterMs": 15000,
-    "requestId": "req-example-123",
-    "i18n": {
-      "key": "error_deployment_in_progress"
-    }
-  }
-}
-```
-
-| Field | Meaning |
+| HTTP | What to do |
 | --- | --- |
-| `code` | Stable machine error code for programmatic branching, such as `CONFLICT` or `RATE_LIMIT_EXCEEDED`. |
-| `message` | Safe human-readable message. Internal server errors do not expose credentials or upstream failure details. |
-| `reason` | More specific business reason than `code`, such as `RELEASE_VERSION_EXISTS` or `DEPLOYMENT_IN_PROGRESS`. Present only when applicable. |
-| `retryable` | Whether retrying under unchanged conditions is appropriate. Present only when the server can decide explicitly. |
-| `retryAfterMs` | Suggested delay in milliseconds. When present, the response also includes a `Retry-After` header rounded up to seconds. |
-| `requestId` | Correlation ID for this request. The `X-Request-ID` response header contains the same value; include it in support reports. |
-| `i18n` | Localization metadata containing a `key` and, when needed, `params`; clients can prefer it for localized UI messages. |
-
-When publish handoff is paused for a planned deployment, the endpoint returns `503 Service Unavailable` with `code=PUBLIC_SNAPSHOT_ENQUEUE_PAUSED`, `reason=DEPLOYMENT_IN_PROGRESS`, `retryable=true`, plus both `Retry-After` and `retryAfterMs`. This is not a generic `500`; wait for the specified delay before retrying.
-
-When the same release version already exists, the endpoint returns `409 Conflict` with `code=CONFLICT`, `reason=RELEASE_VERSION_EXISTS`, and `i18n.key=error_release_version_exists`. Do not retry the unchanged request indefinitely; use a new `version` only for a genuine revision.
-
-When the write limit is reached, the endpoint returns `429 Too Many Requests` with `code=RATE_LIMIT_EXCEEDED`, `reason=RATE_LIMITED`, `retryable=true`, and the backoff delay in `Retry-After` / `retryAfterMs`.
-
-## Common errors
-
-| HTTP | Cause                                                  | Fix                                                            |
-| ---- | ------------------------------------------------------ | -------------------------------------------------------------- |
-| 400  | Missing `title` / anime identifier, or torrent could not be parsed | Check required fields; ensure a valid .torrent file              |
-| 401  | API key missing, malformed, invalid, or revoked          | Check Bearer / `X-API-Key`; re-issue an invalid key             |
-| 403  | `INSUFFICIENT_SCOPE`; key lacks `releases:publish`       | Create or use a key that includes `releases:publish`            |
-| 409  | `reason=RELEASE_VERSION_EXISTS`; the same release version exists | Do not retry unchanged; use a new `version` only for a genuine revision |
-| 413  | Torrent / form too large                                | Trim the tracker list inside the torrent and retry              |
-| 429  | `reason=RATE_LIMITED`; write quota exhausted            | Back off using `Retry-After` / `retryAfterMs`                   |
-| 503  | `reason=DEPLOYMENT_IN_PROGRESS`; deployment in progress | Wait for `Retry-After` / `retryAfterMs`, then retry             |
-
-Next: subscribe to [`/rss/anime.xml`](/docs/open-api/rss-anime) right after to verify; find a Bangumi ID via [Bangumi search](/docs/open-api/bgm-search), or pass the AniList / MyAnimeList / AniDB ID directly; inspect your group via [`/api/subtitle-groups/me`](/docs/open-api/me).
+| 400 | Check `title` / anime ID / `.torrent` |
+| 401 | Check Bearer / `X-API-Key`; rotate if revoked |
+| 403 | Use a key with `releases:publish` |
+| 409 | Change `version`; do not retry the same payload |
+| 413 | Torrent too large |
+| 422 | Validation failed, e.g. `EMPTY_RELEASE_CONTENT` |
+| 429 / 503 | Back off with `Retry-After` |

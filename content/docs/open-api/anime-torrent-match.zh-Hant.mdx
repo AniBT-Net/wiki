@@ -1,31 +1,40 @@
 ---
 title: 種子標題匹配番劇
-description: POST /api/animes/torrent-match —— 解析釋出標題與種子內部名稱，並用可解釋的多語證據匹配站內番劇。
+description: POST /api/animes/torrent-match —— 解析標題，回傳 auto / manual 等決定。
 ---
 
-`/api/animes/torrent-match` 預設是公開、無需鑑權的番劇識別端點；只有請求字幕組內
-scoped binding 時需要登入。Canonical 介面是
-`POST` v3：保留原始釋出標題與 torrent internal name，先生成結構化 AST，再執行
-獨立 exact / strict recall / fuzzy recall 分支，最後返回可機器處理的自動、人工、
-非番劇、unsupported 或不可用決定。
+公開識別端點。傳入 `groupId` 時必須登入且屬於該組。
 
-<Callout type="info">
-  生產執行時只讀取 AniBT 已入庫資料與內部 Typesense 索引，不抓取 Anime Garden、Nyaa、TMDB、TVDB 或其他外站，也不使用外站 `subjectId`。Anime Garden 只作離線測試語料。
+<ApiEndpoint method="POST" path="/api/animes/torrent-match" auth="公開">
+GET 回傳 `405 METHOD_NOT_ALLOWED`。
+</ApiEndpoint>
+
+<Callout type="warn">
+  不要把呼叫方偽造的匹配結果傳給釋出介面。未帶番劇 ID 時，釋出介面會在伺服端跑同一 matcher。
 </Callout>
 
-## POST v3 請求
+## 請求
 
-```http title="HTTP"
-POST https://anibt.net/api/animes/torrent-match
-Content-Type: application/json
-```
+<TypeTable
+  type={{
+    rawTitle: { type: 'string', required: true, description: '釋出標題原文，1–1000 字元' },
+    torrentName: { type: 'string', description: 'torrent 內部名，1–1000 字元。與 rawTitle 指向不同番劇時禁止自動綁定' },
+    publishedAt: { type: 'integer', description: '釋出時間，毫秒' },
+    groupId: { type: 'string', description: '字幕組 ID，最多 200 字元。傳入則需 session 且屬於該組，否則 403' },
+    limit: { type: 'integer', default: '10', description: '候選數，上限 50。縮小 limit 不會放寬自動綁定門檻' },
+  }}
+/>
 
-```bash title="釋出標題 + torrent 內部名稱"
+公開路由 `diagnostics=true` 回傳 `403`。請求體上限 32 KiB。不快取。
+
+完整欄位見 [API 參考](/docs/open-api/reference)。
+
+```bash title="釋出標題 + torrent 內部名"
 curl -sS 'https://anibt.net/api/animes/torrent-match' \
   -H 'Content-Type: application/json' \
   --data @- <<'JSON'
 {
-  "rawTitle": "[LoliHouse] 孤獨搖滾！ / Bocchi the Rock! - 01 [WebRip 1080p HEVC-10bit AAC][簡繁內封字幕]",
+  "rawTitle": "[LoliHouse] 孤独摇滚！ / Bocchi the Rock! - 01 [WebRip 1080p HEVC-10bit AAC][简繁内封字幕]",
   "torrentName": "[LoliHouse] Bocchi the Rock! [01][1080p].mkv",
   "publishedAt": 1664640000000,
   "limit": 10
@@ -33,149 +42,23 @@ curl -sS 'https://anibt.net/api/animes/torrent-match' \
 JSON
 ```
 
-## 請求欄位
-
-<TypeTable
-  type={{
-    'rawTitle': {
-      description: '釋出標題原文，必填，1–1000 字元。不要預先刪除中文、日文、羅馬字、英文、字幕組、季度或集數結構。',
-      type: 'string',
-      required: true,
-    },
-    'torrentName': {
-      description: '可選 torrent internal name，1–1000 字元。服務端會與 rawTitle 分開解析；兩個強標題指向不同番劇時禁止自動釋出。',
-      type: 'string',
-    },
-    'publishedAt': {
-      description: '可選釋出時間戳，單位毫秒。用於首播時間安全檢查；過早釋出可 veto，晚到的 BD / 重發不會因此被拒絕。',
-      type: 'integer',
-    },
-    'groupId': {
-      description: '可選 AniBT 字幕組 ID，最多 200 字元。傳入時必須攜帶登入工作階段且目前使用者屬於該字幕組，否則返回 403；只可讀取本組已啟用的項目 binding。API Key 釋出會在服務端自動使用對應字幕組。',
-      type: 'string',
-    },
-    'limit': {
-      description: '返回候選數，預設 10，上限 50。縮小 limit 不會放寬自動綁定門檻。',
-      type: 'integer',
-      default: '10',
-    },
-  }}
-/>
-
-公開路由固定 `diagnostics=false`；請求 `diagnostics=true` 返回 `403 FORBIDDEN`。診斷 AST
-只供受控測試與運維使用。
-
-<Callout type="warn">
-  不要把呼叫方自行構造的「自動匹配結果」傳給釋出 API。`/api/releases/publish` 會丟棄呼叫方偽造的內部結果，並在沒有明確番劇 ID 時直接執行同一套服務端 v3 matcher。
-</Callout>
-
-## 匹配與自動授權邊界
-
-- 釋出標題與 torrent name 分開解析；相同檢索只執行一次，但兩個輸入仍分別參與一致性判斷。
-- 中文、繁中、日文、羅馬字、英文、緊湊多語拼接、全形斜線、反斜線與 script boundary 都可形成 title hypothesis。
-- 純 Latin 標題會同時保留原始重音 token 與去變音符號的等價 token，例如 `Caraméliser` / `Carameliser`。折疊只作用於純 Latin 片段，CJK 與混合腳本不會被改寫；若折疊後碰撞到多個番劇，所有候選都會保留並 fail closed，不會取第一名自動綁定。
-- 自動授權來源只允許 BGM / bgm.tv、bangumi-data、本站人工全域 alias，以及目前已鑑權字幕組內唯一 active scoped binding；弱站點線索與派生 stem 只能支援召回或消歧。
-- TMDB / TVDB、外部數字 ID、官網 slug、fuzzy、typo、prefix、infix、split/join 與文字分數都不能獨立授權自動釋出。
-- Season / Cour / Part / Sequence / Format、明確年份、開播窗口與已知 TV 集數會執行候選 veto。明確 Season 使用季內集數；沒有 Season 時，只有作品族、時間 cohort 與累計集數窗口都唯一，才會用 `EP25` 等絕對集數安全提升續作。
-- 類似 `[Title][24][1080p]` 的 bracket 結構會把 `[24]` 識別為集數；`[Title][1080p][24][AAC]` 中的 `[24]` 仍按幀率後設資料處理，避免全域誤解數字標題或 FPS。
-- `2024年版`、`(2024)` 等明確版本年份，只有在目標候選自身首播年精確等於 2024 時，才能參與自動結構淘汰；上傳年份或模糊年份不能取代該證據。
-- 當上季官方總集數包含一個 SP、字幕組連續編號只計算正片時，matcher 可在 family 完整、後季排名第一、雙方 recall-only、釋出時間明顯支持後季且目標唯一的前提下，把跨季窗口安全前移一集。單集 `24` 與精確整季範圍 `24-46` 使用同一修正窗口；真正多季合集仍為 `unsupported`。
-- 任一 exact / recall / 全域候選 overflow、search cutoff、lookup 二次複核失敗、hydrate 缺失、generation / projection 不一致，都會令 `candidateSetComplete=false` 並禁止 `auto`。
-- 獨立 PV / CM、MAD / AMV、遊戲影片、演唱會、真人劇、音樂專輯、舞台/朗讀劇、公告、桌布或字型包可返回 `non_anime`；OVA / OAD / ONA / SP / MOVIE 仍屬動畫內容。
-- 多番劇、多季或 `S1+S2+OVA` 合集返回 `unsupported`，不會強行挑一個 subject。
-
-<Callout type="info">
-  目前生產 generation 為 `match_v3_20260718_2040`：8,621 個候選番劇、223,792 條別名、168 個 scoped bindings。固定 34,083 條離線語料中有 28,559 條自動匹配（83.7925%）；2024–2026 子集為 9,084 / 9,807（92.6277%）。這是自動決策覆蓋率，不是外部真值準確率。
-</Callout>
-
-## v3 響應
-
-```jsonc title="200 OK"
-{
-  "version": 3,
-  "content": { "kind": "anime_episode", "confidence": "medium", "reasonCodes": [] },
-  "decision": {
-    "kind": "auto",
-    "reason": "multi_branch_identity_unique",
-    "animeId": "anime_example",
-    "bgmId": 253046,
-    "confidence": "high",
-    "vetoes": []
-  },
-  "candidates": [
-    {
-      "anime": { "_id": "anime_example", "bgmId": 253046, "title": { "chinese": "孤獨搖滾！" } },
-      "animeId": "anime_example",
-      "bgmId": 253046,
-      "matchScore": 100,
-      "textMatch": 0,
-      "matchedHypothesisIds": ["..."],
-      "matchedInputs": ["release_title", "torrent_name"],
-      "retrieval": ["exact"]
-    }
-  ],
-  "search": {
-    "branchCount": 2,
-    "exactOverflow": false,
-    "recallOverflow": false,
-    "candidateOverflow": false,
-    "searchCutoff": false,
-    "exactVerificationFailed": false,
-    "versionMismatch": false,
-    "generationMismatch": false,
-    "projectionMismatch": false,
-    "candidateSetComplete": true,
-    "strictRecallUsed": true,
-    "fuzzyRecallUsed": false,
-    "generation": "match_v3_20260718_2040"
-  },
-  "diagnostics": null
-}
-```
-
-## 決策種類
+## `decision.kind`
 
 | `decision.kind` | 呼叫方行為 |
-| --------------- | ---------- |
-| `auto` | 可以採用 `decision.animeId`；該 ID 也必須存在於 `candidates`。 |
-| `manual` | 顯示 `candidates` 供使用者確認，不得自動釋出到某個番劇。 |
-| `none` | 沒有候選，進入手動搜尋或待匹配。 |
-| `non_anime` | 高信心非番劇內容，不進入番劇釋出流程。 |
-| `unsupported` | 單番劇釋出契約無法安全表達，例如多標題或多季合集。 |
-| `unavailable` | 必要檢索或投影不可用；fail closed，稍後重試。 |
+| --- | --- |
+| `auto` | 可用 `decision.animeId`，且必須出現在 `candidates` |
+| `manual` | 展示候選，不得自動綁定 |
+| `none` | 無候選 |
+| `non_anime` | 非番劇 |
+| `unsupported` | 合集等無法用單番劇表達 |
+| `unavailable` | 檢索不可用，稍後重試 |
 
-常見 `decision.reason`：
+`candidates` 不是授權欄位。高 `matchScore` 不能代替 `decision.kind="auto"`。
 
-- `single_branch_identity_unique` / `multi_branch_identity_unique`：可信 identity 分支唯一且一致。
-- `scoped_binding_active`：目前字幕組的項目 binding 已啟用，且仍通過候選投影、結構 veto、衝突與完整性檢查。
-- `scoped_binding_conflict`：組內 binding 與目前強標題證據衝突，保留人工確認。
-- `projection_gap`：一個強語言分支缺少可信投影；有候選也保留人工確認。
-- `input_title_conflict` / `branch_conflict`：釋出標題、torrent name 或多語分支指向不同番劇。
-- `modifier_conflict` / `candidate_veto`：季度、Part、格式、年份、時間或集數衝突。
-- `search_incomplete`：候選集不完整，任何 overflow / cutoff / generation mismatch 都會走這裡。
-- `low_evidence` / `no_candidates` / `search_unavailable`：證據不足、無候選或檢索不可用。
-
-<Callout type="warn">
-  `candidates` 是有界證據列表，不是自動授權欄位。集數、季度與 veto 可能使最終
-  `decision.animeId` 不等於原始分數最高的 `candidates[0]`；呼叫方應在候選中找到與
-  `decision.animeId` 相同的項目。高 `matchScore`、Typesense `textMatch`、strict/fuzzy
-  recall 或單一標題命中都不能取代 `decision.kind="auto"`。
-</Callout>
-
-## 限流與失敗回應
-
-| 項目 | POST v3 |
-| ---- | ------- |
-| 請求體 | JSON，最大 32 KiB；超出返回 `413 PAYLOAD_TOO_LARGE` |
-| Schema 錯誤 | `422 VALIDATION_ERROR` |
-| `groupId` 無工作階段或非成員 | `403 FORBIDDEN` |
-| 非法 JSON | `400 INVALID_JSON` |
-| 速率限制 | 預設 180 次 / 60 秒 / IP；返回 `429 RATE_LIMIT_EXCEEDED` |
-| 快取 | `Cache-Control: no-store`，同時禁止 CDN / Cloudflare 快取 |
-| 方法 | 只允許 `POST, OPTIONS`；GET 返回 JSON `405 METHOD_NOT_ALLOWED`，`Allow: POST, OPTIONS` |
-| CORS | `POST, OPTIONS` |
-
-釋出端不必先單獨呼叫本介面：未提供明確番劇 ID 時，
-[`/api/releases/publish`](/docs/open-api/releases-publish) 會在 Web 服務端直接執行同一
-matcher。只有 `auto` 會直接綁定；`manual / none / unavailable / unsupported / non_anime`
-都會保留待匹配或交由呼叫方處理。
+| HTTP | 處理 |
+| --- | --- |
+| 400 | 非法 JSON |
+| 403 | `groupId` 無 session 或非成員；或公開路由傳了 `diagnostics=true` |
+| 413 | 請求體超過 32 KiB |
+| 422 | 校驗未通過 |
+| 429 | 180 次 / 60 秒 / IP，按 `Retry-After` 退避 |

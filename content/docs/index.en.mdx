@@ -1,105 +1,18 @@
 ---
 title: Getting started
-description: AniBT Wiki entry point — publishing path for subtitle groups, and RSS / JSON consumption path for users and developers.
+description: Subtitle-group publishing, and RSS / JSON data access.
 ---
 
-**AniBT** is a public BitTorrent tracker focused on anime. It supports subtitle-group publishing and follow-show consumption. This Wiki covers on-site publishing, external site sync, public APIs, accounts, and adjacent tools. Pick a path by use case.
+AniBT is a public BitTorrent tracker for anime.
 
-Two main tracks:
-
-- **Subtitle groups**: apply for admission → configure site sync → use the official Tracker when packing torrents → publish via API or web UI.
-- **Users / developers**: use RSS and JSON anonymously; register only when personal subscriptions or publishing rights are needed.
-
----
-
-## Subtitle groups: publish releases
-
-Recommended order:
+- **Subtitle groups**: apply for admission → site sync → Tracker → publish.
+- **Users / developers**: use RSS and JSON anonymously; an account is required for personal subscriptions or publishing.
 
 <Cards>
-  <Card
-    title="① Apply for admission"
-    href="/docs/apply"
-    description="Email support@anibt.net with identity information for manual review."
-  />
-  <Card
-    title="② Site sync"
-    href="/docs/site-sync"
-    description="Mirror AniBT releases to nyaa, Bangumi, ACG.rip, Mikan, and others."
-  />
-  <Card
-    title="③ Tracker URL"
-    href="/docs/tracker"
-    description="Add https://tracker.anibt.net/announce when creating torrents."
-  />
-  <Card
-    title="④ Release API"
-    href="/docs/open-api/reference"
-    description="Methods, paths, parameters, and responses. Writes use POST /api/releases/publish."
-  />
+  <Card title="Apply for admission" href="/docs/apply" description="support@anibt.net" />
+  <Card title="Site sync" href="/docs/site-sync" description="Nyaa, Bangumi Moe, ACGNX, Mikan, ACG.rip" />
+  <Card title="Tracker" href="/docs/tracker" description="https://tracker.anibt.net/announce" />
+  <Card title="API reference" href="/docs/open-api/reference" description="JSON and RSS" />
+  <Card title="Account" href="/docs/account-auth" description="Register, sign in, recover password" />
+  <Card title="Contact" href="/docs/contact" description="support@anibt.net" />
 </Cards>
-
-## Users / developers: follow shows and pull data
-
-Most public endpoints need no account. RSS fits BT clients; JSON / search fits scripts.
-
-<Cards>
-  <Card
-    title="Accounts, sign-in, and sessions"
-    href="/docs/account-auth"
-    description="Email-OTP registration, password / external sign-in, and UI behavior during session restoration."
-  />
-  <Card
-    title="API reference"
-    href="/docs/open-api/reference"
-    description="JSON and RSS: methods, paths, parameters, responses."
-  />
-  <Card
-    title="Per-show RSS"
-    href="/docs/open-api/rss-anime"
-    description="GET /rss/anime.xml — standard RSS, filterable by show / group / tag."
-  />
-  <Card
-    title="Personal subscriptions (auth)"
-    href="/docs/open-api/rss-subscriptions"
-    description="GET /rss/subscriptions.xml — selections from My subscriptions rolled into one private feed."
-  />
-  <Card
-    title="Group / sitewide / season"
-    href="/docs/open-api/other-endpoints"
-    description="Group short-link RSS, sitewide magnet RSS, season JSON, per-show group JSON."
-  />
-  <Card
-    title="Integration examples"
-    href="/docs/open-api/examples"
-    description="Wiring qBittorrent, Sonarr, and custom scripts."
-  />
-</Cards>
-
-## AI / Agent / RAG
-
-Wiki content is exposed in LLM-friendly forms:
-
-<Cards>
-  <Card
-    title="LLM integration"
-    href="/docs/llm"
-    description="/llms.txt, /llms-full.txt, per-page .md — for ChatGPT / Cursor / custom RAG."
-  />
-</Cards>
-
-## Adjacent projects
-
-Open-source tools that pair with the AniBT main site:
-
-<Cards>
-  <Card
-    title="Related projects"
-    href="/docs/projects"
-    description="FontInAss (subtitle font subsetting), AniBT-Speed (auto-seeder)."
-  />
-</Cards>
-
----
-
-If a topic is missing, see [Contact](/docs/contact) or write to [support@anibt.net](mailto:support@anibt.net).

@@ -1,42 +1,20 @@
 ---
 title: 字幕組圖床
-description: 在字幕組後台圖床模組上傳圖片，複製全球加速連結、BBCode、Markdown、HTML 等格式。
+description: 在字幕組後台上傳圖片並複製連結。
 ---
 
-字幕組圖床用於在組內上傳釋出相關圖片，並複製多種引用格式。入口位於字幕組後台 **圖床** 模組，透過 Web 上傳。
+入口：`/groups/<slug>/image-host`。僅該組成員可用。單張上限 10 MiB。
 
-上傳成功後可複製：
+上傳後可複製加速連結、BBCode、Markdown、HTML。
 
-| 格式 | 範例 |
-| --- | --- |
-| 全球加速連結 | `https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp` |
-| BBCode | `[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]` |
-| Markdown | `![pasted-image.webp](https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp)` |
-| HTML | `<img src="https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp" alt="pasted-image.webp">` |
-| BBCode 連結 | `[url=https://anibt.net/i/Ab3CdE1][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
-| BBCode 直連 | `[url=https://i.anibt.net/image-host/...webp][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
-| HTML 連結 | `<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
-| HTML 直連 | `<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
+## 刪除
 
-<Callout type="info">
-  圖床僅對已加入該字幕組的成員開放。選單路徑：字幕組後台 → **圖床**（`/groups/<slug>/image-host`）。
-</Callout>
-
-## 刪除圖片
-
-上傳者、字幕組 owner / 管理員或站點管理員可以刪除圖片。刪除請求由
-`DELETE /api/image-host/image?imageId=...` 受理，並回傳 HTTP `202` 與穩定的
-`operationId`。同一張圖片的重複請求會重用同一個刪除 operation，不會建立平行刪除鏈路。
-
-圖片在請求受理後立即從活動清單和 `/i/:shortCode` 的站內查詢中隱藏。介面隨後透過
-`GET /api/image-host/image?operationId=...` 查詢狀態：
+上傳者、組 owner / 管理員或站點管理員可刪。請求返回 `202`。同一圖片的重複刪除走同一操作。
 
 | 狀態 | 含義 |
 | --- | --- |
-| `queued` | 已受理，後台正在刪除物件或等待 Cloudflare 快取收斂。 |
-| `complete` | AniBT R2 物件（含已持久化的圖庫縮圖）已驗證不存在；短連結頁面、`i.anibt.net` 直連以及（若存在）縮圖已在 AniBT 控制的 Cloudflare 快取中完成收斂，並回傳 `404` / `410`。 |
-| `failed` | 刪除 operation 已進入終態失敗，介面會顯示失敗狀態。 |
+| `queued` | 已受理 |
+| `complete` | 站內短鏈和 `i.anibt.net` 直鏈返回 `404` / `410` |
+| `failed` | 失敗 |
 
-<Callout type="warning">
-  `complete` 不表示所有網際網路副本都已抹除。獨立加速連結及其 CDN、訪客瀏覽器快取、下游代理、搜尋引擎和第三方轉載不屬於刪除完成範圍。
-</Callout>
+`complete` 不包括獨立加速 CDN、瀏覽器快取和第三方轉載。

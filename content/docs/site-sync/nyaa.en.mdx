@@ -1,42 +1,18 @@
 ---
 title: Nyaa Sync
-description: Fill in the username and password required for Nyaa sync.
+description: Enter the Nyaa username and password.
 ---
 
-Nyaa sync uses Nyaa's official `/api/upload` endpoint. After a subtitle group stores its own Nyaa username and password in AniBT, the background worker uses that account to sync releases to Nyaa.
+Sync uses the group's own Nyaa account. This is not [Nyaa proxy publishing](/en/docs/nyaa-proxy): proxy publishing uses the platform account and requires allowlist access.
 
 <Callout type="warn">
-  Credentials are encrypted at rest, but you should still use a dedicated Nyaa publishing account instead of a personal main account.
+  Use a dedicated Nyaa publishing account. Do not reuse a personal main-account password.
 </Callout>
-
-<Callout type="info">
-  You can also apply for the [Nyaa proxy allowlist](/en/docs/nyaa-proxy). Sync and proxy publishing are separate features: sync uses your group's own Nyaa account; proxy publishing requires admin allowlist approval.
-</Callout>
-
-## Steps
 
 <Steps>
   <Step>
-    ### Prepare a Nyaa account
+    ### Enter credentials and test
 
-    Confirm that the account can publish on Nyaa. A dedicated group publishing account is recommended.
-  </Step>
-
-  <Step>
-    ### Open sync settings
-
-    In AniBT, open the subtitle group sync settings page and find **Nyaa Sync**.
-  </Step>
-
-  <Step>
-    ### Enter username and password
-
-    Enter the Nyaa username and password. After saving, the page only shows a masked account suffix and never displays the plaintext password.
-  </Step>
-
-  <Step>
-    ### Test the account
-
-    Click **Test account**. The background worker performs a Nyaa API authentication probe and does not upload a real release.
+    Confirm the account can publish on Nyaa. Subtitle group sync settings → **Nyaa Sync**, enter username and password, then save. Select **Test account**; the test does not upload a real release.
   </Step>
 </Steps>

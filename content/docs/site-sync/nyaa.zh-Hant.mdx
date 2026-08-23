@@ -1,42 +1,18 @@
 ---
 title: Nyaa 同步
-description: 填寫 Nyaa 同步所需的使用者名稱和密碼。
+description: 填寫 Nyaa 使用者名稱和密碼。
 ---
 
-Nyaa 同步使用 Nyaa 官方 `/api/upload` 介面。字幕組在 AniBT 中儲存自己的 Nyaa 使用者名稱和密碼後，釋出資源時由後台 worker 使用該帳號同步到 Nyaa。
+釋出時用字幕組自己的 Nyaa 帳號同步。與 [Nyaa 代發](/zh-Hant/docs/nyaa-proxy) 不同：代發走平台帳號，需白名單。
 
 <Callout type="warn">
-  憑據會加密儲存，但仍應使用專門用於釋出的 Nyaa 帳號，不要共用個人主帳號密碼。
+  使用專門用於釋出的 Nyaa 帳號，不要共用個人主帳號密碼。
 </Callout>
-
-<Callout type="info">
-  也可以申請 [Nyaa 代發白名單](/zh-Hant/docs/nyaa-proxy)。代發與同步是兩個功能：同步使用字幕組自己的 Nyaa 帳號，代發需要管理員開通白名單。
-</Callout>
-
-## 操作步驟
 
 <Steps>
   <Step>
-    ### 準備 Nyaa 帳號
+    ### 填寫並測試
 
-    確認該帳號可以在 Nyaa 正常釋出資源。建議使用字幕組釋出專用帳號。
-  </Step>
-
-  <Step>
-    ### 開啟同步設定
-
-    在 AniBT 進入字幕組後台的同步設定頁，找到 **Nyaa 同步**。
-  </Step>
-
-  <Step>
-    ### 填寫使用者名稱和密碼
-
-    輸入 Nyaa 使用者名稱和密碼。儲存後，頁面只會顯示脫敏帳號後綴，不會展示明文密碼。
-  </Step>
-
-  <Step>
-    ### 測試帳號
-
-    點選 **測試帳號**。測試由後台 worker 呼叫 Nyaa API 做認證探測，不會上傳真實資源。
+    確認該帳號能在 Nyaa 釋出。字幕組後台同步設定 → **Nyaa 同步**，填使用者名稱和密碼後儲存。點選 **測試帳號**；測試不會上傳真實資源。
   </Step>
 </Steps>

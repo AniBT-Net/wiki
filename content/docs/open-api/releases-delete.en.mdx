@@ -1,155 +1,27 @@
 ---
 title: Delete an anime release
-description: DELETE /api/releases/{releaseId} and GET /api/releases/{releaseId}/deletion — stable receipts, idempotent retries, and strict visibility completion.
+description: DELETE /api/releases/{releaseId} — delete an anime release; GET …/deletion for status.
 ---
 
-`DELETE /api/releases/{releaseId}` deletes an AniBT anime release. `GET /api/releases/{releaseId}/deletion` reads the same operation's status. Both routes require a subtitle-group API key with the `releases:delete` scope.
+`rel_*` only. Requires `releases:delete`. No query, no body.
 
-## Preconditions
+<ApiEndpoint method="DELETE" path="/api/releases/{releaseId}" auth="auth · releases:delete">
+Waits up to ~2 seconds: 200 if done, else 202. Repeated DELETE is idempotent.
+</ApiEndpoint>
 
-- The group API key must explicitly include `releases:delete`.
-- V1 supports anime release IDs (`rel_*`) only; other-release IDs (`orel_*`) are out of scope.
-- Keys are always bound to the issuing group and cannot delete across groups.
-
-<Callout type="warn">
-  Deletion is destructive and asynchronous. `202 Accepted` means the operation was durably accepted. Only `state=completed` means AniBT-owned canonical data, public read models, caches, and objects passed the deletion barrier.
-</Callout>
-
-## Endpoints
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `DELETE` | `/api/releases/{releaseId}` | Start deletion or idempotently replay it |
-| `GET` | `/api/releases/{releaseId}/deletion` | Read the stable deletion receipt |
-| `OPTIONS` | Both paths | CORS preflight; returns `204` |
-
-Production base URL: `https://anibt.net`.
-
-## API-key scopes and authorization
-
-When creating a key in the group dashboard, select at least one scope:
-
-- `releases:publish` — publish anime and other releases.
-- `releases:delete` — call the deletion and deletion-status routes.
-
-A key may have one or both scopes. Keys created before scopes were introduced were migrated to **`releases:publish` only**; deletion was not granted automatically. Inspect the active key through [`GET /api/subtitle-groups/me`](/en/docs/open-api/me), which returns `scopes`.
+<ApiEndpoint method="GET" path="/api/releases/{releaseId}/deletion" auth="auth · releases:delete">
+Same deletion receipt. Unknown, never deleted, or unauthorized → 404.
+</ApiEndpoint>
 
 <Callout type="warn">
-  An API key is always hard-bound to its issuing group. Even if its owner is also a site administrator, that key is not a cross-group deletion credential.
+  `202` means accepted. Only `completed` means AniBT public surfaces are gone. It does not recall downloads, Tracker state, or external posts.
 </Callout>
 
-Resource authorization:
+`releaseId`: `^rel_[A-Za-z0-9_-]+$`, 5–100 characters. Regular members delete only their own releases; owner / admin may delete any in the group. Unauthorized looks like missing (404). Keys cannot delete across groups. Keys created before scopes shipped have `releases:publish` only — check `scopes` via [`/me`](/docs/open-api/me).
 
-| Current membership | Allowed deletion |
-| --- | --- |
-| Ordinary group member | Releases published by that member only |
-| Group owner / admin | Any release in that group |
-| Key belongs to another group, or membership no longer grants access | Same `404 NOT_FOUND` response as a nonexistent release |
+Full fields: [API reference](/docs/open-api/reference).
 
-These public HTTP routes require an API key; a browser session is not a substitute. Current membership and role are evaluated on every request.
-
-## Request contract
-
-<TypeTable
-  type={{
-    'releaseId': {
-      description: 'Path parameter. An anime release ID, 5–100 characters, matching ^rel_[A-Za-z0-9_-]+$.',
-      type: 'string',
-      required: true,
-    },
-    'Authorization': {
-      description: 'Preferred header: Bearer <API_KEY>. If both Authorization and X-API-Key are present, Bearer wins.',
-      type: 'header',
-      required: true,
-    },
-    'X-API-Key': {
-      description: 'Compatibility header used when no valid Bearer value is present.',
-      type: 'header',
-    },
-  }}
-/>
-
-Strict rules:
-
-- Neither endpoint accepts **any query parameter**. `?force=true`, `?groupId=...`, and `?wait=true` are rejected.
-- The `DELETE` body must contain **zero bytes**. Do not send JSON, form data, storage keys, or provider-specific options.
-- The caller supplies only the known `releaseId` — never a group ID, R2 key, infoHash, or external-site deletion flag.
-
-## Start deletion
-
-```bash title="DELETE"
-curl -i -X DELETE \
-  -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  'https://anibt.net/api/releases/rel_example'
-```
-
-Do not add `--data`. The handler waits for at most about two seconds for the completion barrier and then returns `200` or `202`.
-
-### `202 Accepted` — cleanup is pending
-
-```json title="Pending receipt"
-{
-  "ok": true,
-  "result": {
-    "operationId": "rdel_example",
-    "releaseId": "rel_example",
-    "state": "pending",
-    "statusUrl": "/api/releases/rel_example/deletion",
-    "acceptedAt": 1784693156387,
-    "updatedAt": 1784693156387,
-    "retryAfterMs": 2000
-  }
-}
-```
-
-Important headers:
-
-```http
-HTTP/2 202
-Location: /api/releases/rel_example/deletion
-Retry-After: 2
-Cache-Control: private, no-store, max-age=0
-X-Request-ID: ...
-```
-
-### `200 OK` — completion was observed synchronously
-
-If the cross-system barrier finishes inside the two-second wait:
-
-```json title="Completed receipt"
-{
-  "ok": true,
-  "result": {
-    "operationId": "rdel_example",
-    "releaseId": "rel_example",
-    "state": "completed",
-    "statusUrl": "/api/releases/rel_example/deletion",
-    "acceptedAt": 1784693156387,
-    "updatedAt": 1784693190989,
-    "completedAt": 1784693190989
-  }
-}
-```
-
-## Read deletion status
-
-```bash title="GET status"
-curl -i \
-  -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  'https://anibt.net/api/releases/rel_example/deletion'
-```
-
-For an authorized tombstone, the status endpoint returns `200 OK` for `pending`, `completed`, and `failed`. An unknown release, a release that was never deleted, and a release inaccessible to this key are all `404`.
-
-| `state` | Meaning | Client action |
-| --- | --- | --- |
-| `pending` | At least one required cleanup witness is incomplete | Poll using `Retry-After` / `retryAfterMs` |
-| `completed` | AniBT-owned visibility surfaces passed the barrier | Stop polling |
-| `failed` | A required dependency ended in failure | Stop blind retries; record `failure.code` and `X-Request-ID` |
-
-Minimal polling loop:
-
-```bash title="Poll to a terminal state"
+```bash title="DELETE + poll"
 release_id='rel_example'
 base='https://anibt.net'
 
@@ -167,101 +39,23 @@ done
 jq . <<<"$response"
 ```
 
-## Receipt fields
+| `state` | What to do |
+| --- | --- |
+| `pending` | Keep polling with `Retry-After` |
+| `completed` | Stop |
+| `failed` | Stop auto-retry; record `failure.code` and `X-Request-ID` |
 
-<TypeTable
-  type={{
-    'operationId': {
-      description: 'Stable opaque rdel_* operation ID. Authorized retries for the same release return the same value.',
-      type: 'string',
-    },
-    'releaseId': {
-      description: 'The requested rel_* release ID.',
-      type: 'string',
-    },
-    'state': {
-      description: 'pending / completed / failed.',
-      type: 'enum',
-    },
-    'statusUrl': {
-      description: 'Relative canonical status path.',
-      type: 'string',
-    },
-    'acceptedAt': {
-      description: 'Unix-millisecond timestamp of the first accepted deletion; unchanged on replay.',
-      type: 'number',
-    },
-    'updatedAt': {
-      description: 'Unix-millisecond timestamp of the latest receipt state change.',
-      type: 'number',
-    },
-    'retryAfterMs': {
-      description: 'Pending only; default 2000.',
-      type: 'number?',
-    },
-    'completedAt': {
-      description: 'Completed only; Unix milliseconds.',
-      type: 'number?',
-    },
-    'failedAt': {
-      description: 'Failed only; Unix milliseconds.',
-      type: 'number?',
-    },
-    'failure': {
-      description: 'Failed only; safe bounded RELEASE_DELETION_FAILED code/message.',
-      type: 'object?',
-    },
-  }}
-/>
+`Retry-After` on `pending` is poll guidance. A real rate limit is `429`. Responses are `private, no-store` — do not cache receipts. A tombstoned `releaseId` cannot be reused. If the object is still referenced by another live release, `409` / `RELEASE_OBJECT_SHARED`.
 
-Internal job IDs, storage credentials, token hashes, user IDs, and provider responses are never exposed.
+| HTTP | What to do |
+| --- | --- |
+| 400 | Drop the body |
+| 401 | Check Bearer / `X-API-Key` |
+| 403 | Use a key with `releases:delete` |
+| 404 | Missing or unauthorized; indistinguishable |
+| 409 | Unlink the shared object first |
+| 422 | Canonical `rel_*` path only; no query |
+| 429 | Back off with `Retry-After` |
+| 500 | DELETE observed terminal failure. Keep the receipt and `X-Request-ID`; stop blind retries |
 
-## Idempotency
-
-- The first authorized deletion creates a permanent tombstone and a stable `rdel_*` receipt.
-- A later authorized `DELETE` returns the **same `operationId`**, even after the canonical row is gone.
-- Replaying a completed deletion returns `200` and emits no second canonical deletion event.
-- Replaying a failed deletion returns `500 RELEASE_DELETION_FAILED` with the same safe receipt; it does not silently create or requeue another operation.
-- A tombstoned public `releaseId` can never be reused by a later publish.
-
-## What `completed` guarantees
-
-`completed` is emitted only after AniBT verifies all of these owned surfaces:
-
-- canonical release and detail reads are absent;
-- the torrent download route no longer serves the torrent;
-- the Typesense document, search, default/filtered magnets, group/anime lists, public RSS, and private subscription RSS no longer contain the release;
-- relevant Redis keys/families are invalidated and Cloudflare exact/narrow-prefix purge work is terminally acknowledged;
-- captured AniBT public-R2 torrent / MediaInfo objects and metadata are absent;
-- dependent public read models, aggregates, and counts completed their deletion generation.
-
-<Callout type="warn">
-  `completed` does **not recall** already-open pages, browser/RSS-client local caches, downloaded torrent or magnet files, tracker swarm/whitelist state, or posts on Nyaa, Mikan, DMHY, and other external sites. External takedown and tracker operations are separate workflows.
-</Callout>
-
-If another live release references the same historical torrent or MediaInfo object, deletion fails before canonical mutation with `409 CONFLICT` and `reason=RELEASE_OBJECT_SHARED`. Neither the release nor the shared object is removed.
-
-## Errors
-
-| HTTP | `code` / cause | Action |
-| --- | --- | --- |
-| `400` | `INVALID_BODY`; DELETE received any body byte | Remove the body |
-| `401` | `TOKEN_MISSING` / `TOKEN_INVALID` | Fix Bearer / X-API-Key or issue a new key |
-| `403` | `INSUFFICIENT_SCOPE` | Use a key containing `releases:delete` |
-| `404` | `NOT_FOUND` | Missing and inaccessible resources are intentionally indistinguishable |
-| `409` | `CONFLICT` + `RELEASE_OBJECT_SHARED` | Remove the other live reference first |
-| `422` | `VALIDATION_ERROR`; invalid `releaseId` or any query parameter | Send only the canonical `rel_*` path |
-| `429` | `RATE_LIMIT_EXCEEDED` | Back off using `Retry-After` |
-| `500` | `RELEASE_DELETION_FAILED` observed by DELETE | Preserve the safe receipt and `X-Request-ID`; stop blind retries |
-
-A `GET` of an already-failed operation still returns `200` with `result.state=failed`. Only a repeated `DELETE` maps that terminal failure to `500`.
-
-## Rate limits, CORS, and caching
-
-- Default authenticated limits: 30 `DELETE` requests / 60 seconds / API key; 120 status `GET` requests / 60 seconds / API key.
-- A separate pre-auth abuse window also applies; it is not a client throughput quota.
-- `429` includes `Retry-After`.
-- Success and error responses are `private, no-store`; do not cache receipts.
-- CORS allows `GET, DELETE, OPTIONS` and exposes `Location`, `Retry-After`, `WWW-Authenticate`, and `X-Request-ID`.
-
-Next: inspect key scopes through [`/api/subtitle-groups/me`](/en/docs/open-api/me); publishing is documented in [Publish a release](/en/docs/open-api/releases-publish).
+`GET` of a failed operation still returns `200` with `state=failed`. A later `DELETE` maps that terminal failure to `500`.

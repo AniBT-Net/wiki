@@ -1,132 +1,28 @@
 ---
 title: Bangumi search
-description: GET /api/bgm/search — public Bangumi subject lookup by Chinese, English, Japanese, or romanized keywords.
+description: GET /api/bgm/search — map a title to bgmId.
 ---
 
-`/api/bgm/search` is a **public** search endpoint (no auth). It maps a free-text anime title to a stable Bangumi.tv subject id (`bgmId`) for [`/rss/anime.xml`](/docs/open-api/rss-anime) or [`/api/releases/publish`](/docs/open-api/releases-publish).
+Public search. Use the `bgmId` to build RSS URLs or publish.
 
-## Preconditions
+<ApiEndpoint method="GET" path="/api/bgm/search" auth="public">
+Unindexed titles are not found.
+</ApiEndpoint>
 
-- No authentication.
-- Results cover anime already indexed on AniBT; titles missing from the site need local anime sync first.
+<TypeTable
+  type={{
+    q: { type: 'string', required: true, description: 'Keyword. Chinese / English / Japanese / romaji' },
+    limit: { type: 'integer', default: '5', description: 'Count, max 25' },
+  }}
+/>
 
-<Callout type="info">
-  Production queries AniBT’s Typesense anime index directly from the Web runtime; it no longer proxies Bangumi upstream through a Convex HTTP action.
+<Callout type="warn">
+  The first hit is not guaranteed to be the target. Raise `limit` and pick. Cache `bgmId` locally.
 </Callout>
 
-## Request
+Full fields: [API reference](/docs/open-api/reference).
 
-```txt title="URL"
-GET https://anibt.net/api/bgm/search?q=<keyword>&limit=<n>
-```
-
-Chinese, English, Japanese, and romanized keywords are all accepted.
-
-```bash title="curl example"
+```bash title="curl"
 curl -s -G 'https://anibt.net/api/bgm/search' \
   --data-urlencode 'q=葬送的芙莉莲' -d 'limit=3'
 ```
-
-## Query parameters
-
-<TypeTable
-  type={{
-    'q': {
-      description: 'Keyword (Chinese / English / Japanese / romanization). Prefer --data-urlencode with curl.',
-      type: 'string',
-      required: true,
-    },
-    'limit': {
-      description: 'Result count; default 5, max 25.',
-      type: 'integer',
-      default: '5',
-    },
-  }}
-/>
-
-## Success response
-
-```jsonc title="200 OK"
-{
-  "ok": true,
-  "data": [
-    {
-      "bgmId": 400602,
-      "name": "葬送のフリーレン",
-      "nameCn": "葬送的芙莉莲",
-      "date": null,
-      "image": "https://...",
-      "rating": 8.5,
-      "totalEpisodes": 28,
-      "url": "https://bgm.tv/subject/400602"
-    }
-  ]
-}
-```
-
-## Fields
-
-<TypeTable
-  type={{
-    'bgmId': {
-      description: 'Bangumi.tv subject id — the canonical bgmId for every other endpoint.',
-      type: 'number',
-    },
-    'name': {
-      description: 'Original title (usually Japanese).',
-      type: 'string',
-    },
-    'nameCn': {
-      description: 'Chinese title.',
-      type: 'string',
-    },
-    'date': {
-      description: 'First air date. The Web index may currently return null.',
-      type: 'string | null',
-    },
-    'image': {
-      description: 'Cover image URL.',
-      type: 'url',
-    },
-    'rating': {
-      description: '0–10 Bangumi user score, or null if unrated.',
-      type: 'number | null',
-    },
-    'totalEpisodes': {
-      description: 'Episode count. Movies may be 1.',
-      type: 'number',
-    },
-    'url': {
-      description: 'Bangumi.tv subject page URL.',
-      type: 'url',
-    },
-  }}
-/>
-
-## Practice: search → build RSS
-
-```bash title="One-liner bgmId → RSS URL"
-BGM=$(curl -s -G 'https://anibt.net/api/bgm/search' \
-  --data-urlencode 'q=葬送的芙莉莲' -d 'limit=1' \
-  | jq -r '.data[0].bgmId')
-
-echo "https://anibt.net/rss/anime.xml?bgmId=$BGM&resolution=1080p&language=CHS"
-```
-
-## Caching & rate limits
-
-| Item | Value |
-| ---- | ----- |
-| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=300, stale-if-error=300` |
-| ETag | `If-None-Match` supported; unchanged bodies return `304 Not Modified` |
-| Rate limit | 60 req / 60 s / IP; see [Rate limits & caps](/docs/open-api/limits) |
-
-## Notes
-
-<Callout type="info">
-  Results are ranked by text relevance, popularity, and recency — the first hit is **not** guaranteed to be the “main” season. For ambiguous titles (multi-season / same name), raise `limit` and pick manually.
-</Callout>
-
-<Callout type="warn">
-  Production code should cache resolved `bgmId` values locally instead of searching before every publish or RSS pull.
-</Callout>

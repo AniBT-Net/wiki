@@ -1,288 +1,63 @@
 ---
 title: 釋出其他類資源
-description: POST /api/other-releases/publish —— 字幕組用 API Key 釋出七類其他資源；不綁定 bgmId。
+description: POST /api/other-releases/publish —— 釋出七類其他資源；不綁定 bgmId。
 ---
 
-`/api/other-releases/publish` 是字幕組釋出**其他類資源**的寫入端點，適用於漫畫、音樂、RAW、舞台劇、合集、劇場版和其他。使用同一套字幕組 API Key 鑑權，並要求 `releases:publish` scope；不需要 `bgmId`，也不會混入番劇釋出列表。
+漫畫、音樂、RAW、舞台劇、合集、劇場版、其他。要求 `releases:publish`。不混入番劇列表。
 
-## 前置條件
-
-- 字幕組 API Key 顯式包含 `releases:publish`。
-- Key 僅用於服務端腳本或 CI secret；洩露後可立即在後台重設。
-- `category` 與 `title` 必填；`torrent`、`torrentStorageId`、`magnetLink`、`magnetBase64` 至少提供一個。
+<ApiEndpoint method="POST" path="/api/other-releases/publish" auth="鑑權 · releases:publish">
+`category` 與 `title` 必填；`torrent` / `torrentStorageId` / `magnetLink` / `magnetBase64` 至少一個。
+</ApiEndpoint>
 
 <Callout type="warn">
-  這是**寫入介面**。Key 洩露後，他人可以該字幕組名義釋出其他類資源。
+  Key 不要寫進客戶端、倉庫或 issue。`notes` 中的 HTML 會直接渲染。
 </Callout>
 
-## URL
+完整欄位見 [API 參考](/docs/open-api/reference)。Nyaa 分類代碼見 [釋出資源](/docs/open-api/releases-publish#nyaa-代發欄位和分類)。
 
-```http title="HTTP"
-POST https://anibt.net/api/other-releases/publish
-Authorization: Bearer <YOUR_API_KEY>
-```
+## 身分自檢
 
-也支援 `X-API-Key: <YOUR_API_KEY>`，但推薦統一使用 `Authorization: Bearer`。
+GET 同一路徑，不寫庫。`kind` 為 `other`。
 
-## 兩種請求格式
-
-<Tabs items={['multipart/form-data（推薦）', 'application/json']}>
-  <Tab value="multipart/form-data（推薦）">
-    上傳 `.torrent` 檔案，後端會自動提取磁力連結、標題、檔案大小和 tracker。`category` 與 `title` 仍建議顯式傳入。需要 Nyaa 代發時也必須使用這種格式。
-
-    ```bash title="上傳其他類種子"
-    curl -X POST 'https://anibt.net/api/other-releases/publish' \
-      -H 'Authorization: Bearer <YOUR_API_KEY>' \
-      -F 'category=manga' \
-      -F 'title=Example Manga Vol.01' \
-      -F 'customTags=電子版,中文' \
-      -F 'notes=釋出說明支援 Markdown 與原始 HTML。' \
-      -F 'nyaa=true' \
-      -F 'nyaaCategory=3_2' \
-      -F 'nyaaComplete=false' \
-      -F 'nyaaRemake=false' \
-      -F 'nyaaDescription=可選：覆蓋提交到 Nyaa 的 Markdown 說明' \
-      -F 'torrent=@/path/to/release.torrent'
-    ```
-
-    `customTags` / `tags` 在表單裡用逗號分隔；`trackers` 用換行或 JSON 陣列字串。
-  </Tab>
-  <Tab value="application/json">
-    直接提交磁力連結，適合已有磁力但沒有上傳種子檔案的自動化流程。
-
-    ```bash title="JSON 請求"
-    curl -X POST 'https://anibt.net/api/other-releases/publish' \
-      -H 'Authorization: Bearer <YOUR_API_KEY>' \
-      -H 'Content-Type: application/json' \
-      --data @- <<'JSON'
-    {
-      "category": "music",
-      "title": "Example Album FLAC",
-      "magnetLink": "magnet:?xt=urn:btih:...",
-      "fileSize": 734003200,
-      "customTags": ["FLAC", "BK"],
-      "notes": "**無損音源**，含 BK。"
-    }
-    JSON
-    ```
-
-    `magnetBase64` 也可使用；它既接受原始 magnet，也接受 Base64 編碼後的 magnet。
-  </Tab>
-</Tabs>
-
-## Nyaa 代發
-
-其他類釋出 API 使用和 [`/api/releases/publish`](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類) 相同的 Nyaa 代發參數。啟用後，釋出記錄會先寫入 AniBT，再由後台 `release_sync` 佇列提交到 Nyaa。
-
-<Callout type="warn">
-  Nyaa 代發僅對白名單字幕組開放，並且必須使用 `multipart/form-data` 上傳 `.torrent` 檔案。種子的 `announce` 或 `announce-list` 必須包含 `http://nyaa.tracker.wf:7777/announce`，否則請求會被拒絕。
-</Callout>
-
-常用分類範例：
-
-| 內容 | 建議 `nyaaCategory` | Nyaa 分類 |
-| ---- | ------------------ | --------- |
-| 漫畫 / 輕小說翻譯 | `3_2` | Literature - Non-English-translated |
-| 無損音樂 / BK | `2_1` | Audio - Lossless |
-| RAW 或實拍影片 | `4_4` | Live Action - Raw |
-| 如果內容本質仍是動畫 RAW | `1_4` | Anime - Raw |
-
-```bash title="其他類資源 + Nyaa 代發"
-curl -X POST 'https://anibt.net/api/other-releases/publish' \
-  -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  -F 'category=manga' \
-  -F 'title=Example Manga Vol.01' \
-  -F 'notes=釋出說明支援 Markdown 與原始 HTML。' \
-  -F 'torrent=@/path/to/release.torrent' \
-  -F 'nyaa=true' \
-  -F 'nyaaCategory=3_2' \
-  -F 'nyaaComplete=false' \
-  -F 'nyaaRemake=false' \
-  -F 'nyaaDescription=可選：覆蓋提交到 Nyaa 的 Markdown 說明' \
-  -F 'nyaaInformation=https://anibt.net/group/example'
-```
-
-欄位別名和結構化 JSON 形態與番劇釋出一致：
-
-| 表單別名 | 結構化欄位 | 必填 | 含義 |
-| -------- | ---------- | ---- | ---- |
-| `nyaa` / `publishToNyaa` | `sitePublish.nyaa.enabled` | 否 | 設為 `true` 表示請求 Nyaa 代發。只傳 `nyaaCategory` 等 Nyaa 欄位時，服務端也會視為啟用。 |
-| `nyaaCategory` | `sitePublish.nyaa.category` | 啟用代發時必填 | Nyaa 分類代碼，必須使用 Nyaa 官方代碼。完整代碼表見 [釋出資源 API](/zh-Hant/docs/open-api/releases-publish#nyaa-代發欄位和分類)。 |
-| `nyaaComplete` | `sitePublish.nyaa.complete` | 否 | 對應 Nyaa 的 Complete 標記；合集、全卷、全季等完整資源可設為 `true`。預設 `false`。 |
-| `nyaaRemake` | `sitePublish.nyaa.remake` | 否 | 對應 Nyaa 的 Remake 標記；重傳、修復版、重製版按需要設為 `true`。預設 `false`。 |
-| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 說明，最多 20000 字元。不傳時繼承本站 `notes`，繼承內容同樣不能超過 20000 字元，否則回傳校驗錯誤。 |
-| `nyaaInformation` | `sitePublish.nyaa.information` | 否 | Nyaa information 欄位，最多 500 字元，通常填寫官網、字幕組頁面、專案頁或相關說明連結。 |
-
-## 參數
-
-<TypeTable
-  type={{
-    'category': {
-      description: '資源分類：manga / music / raw / stage / collection / movie / other。必須原樣填寫這些英文代碼。',
-      type: 'enum',
-      required: true,
-    },
-    'title': {
-      description: '資源標題，最長 500 字元。詳情頁和 RSS item 標題都會使用它。',
-      type: 'string',
-      required: true,
-    },
-    'torrent': {
-      description: '種子檔案（multipart）。提供後會自動上傳到公共 R2，並提取磁力連結、檔案大小和 tracker。',
-      type: 'file',
-    },
-    'magnetLink': {
-      description: '原始 magnet 連結。可與 torrent 同傳；tracker 會合併去重。欄位別名 magnet 也會被相容。',
-      type: 'string',
-    },
-    'magnetBase64': {
-      description: '原始 magnet 或 Base64 編碼 magnet。與 magnetLink 二選一即可。',
-      type: 'string',
-    },
-    'torrentStorageId': {
-      description: '已上傳到本站公共儲存的種子檔案 key，通常只給內部自動化使用。',
-      type: 'string',
-    },
-    'fileSize': {
-      description: '檔案大小（位元組）。上傳 torrent 或 magnet 帶 xl 參數時可自動推斷。',
-      type: 'number',
-    },
-    'trackers': {
-      description: '附加 tracker 列表；JSON 用陣列，表單用換行分隔；會與 magnet/torrent 中已有 tracker 合併去重。',
-      type: 'string[]',
-    },
-    'notes': {
-      description: '釋出頁說明，支援 Markdown 與原始 HTML，最多 50000 字元。頁面會直接渲染 HTML，不經過 sanitizer 或 HTML/CSS 白名單。',
-      type: 'string',
-    },
-    'descriptionMarkdown': {
-      description: 'notes 的相容別名，使用相同的 Markdown + 原始 HTML 渲染規則。content / description / intro 也會被相容為說明文字。',
-      type: 'string',
-    },
-    'customTags': {
-      description: '自定義標籤，最多 20 個，每個最長 80 字元；表單用逗號分隔。',
-      type: 'string[]',
-    },
-    'tags': {
-      description: 'customTags 的相容別名。',
-      type: 'string[]',
-    },
-  }}
-/>
-
-<Callout type="warn">
-  `notes` 中的原始 HTML 會在其他類釋出詳情直接渲染，不啟用 sanitizer、標籤/屬性白名單或 CSS 白名單。請只讓可信的字幕組成員、管理員或受控釋出 API Key 寫入此欄位。
-</Callout>
-
-<Callout type="info">
-  `category` 和 `title` 必填；`torrent`、`torrentStorageId`、`magnetLink`、`magnetBase64` 至少提供一個。
-</Callout>
-
-## 引數值速查
-
-### 分類代碼
-
-`category` 不是中文名，必須填寫英文代碼：
-
-| 代碼 | 頁面分類 | RSS 路徑 | 什麼時候用 |
-| ---- | -------- | -------- | ---------- |
-| `manga` | 漫畫 | `/rss/other/manga.xml` | 漫畫、輕小說、書籍、畫冊等非番劇文字/圖像閱讀資源。 |
-| `music` | 音樂 | `/rss/other/music.xml` | OST、角色歌、專輯、單曲、演唱會音源、廣播劇音訊。 |
-| `raw` | RAW | `/rss/other/raw.xml` | 不綁定 Bangumi 番劇條目的 RAW 資源或雜項影片源。 |
-| `stage` | 舞台劇 | `/rss/other/stage.xml` | 舞台劇、音樂劇、Live action 舞台相關資源。 |
-| `collection` | 合集 | `/rss/other/collection.xml` | 按合集分類釋出的其他類資源；不會自動改成番劇釋出。 |
-| `movie` | 劇場版 | `/rss/other/movie.xml` | 按劇場版分類釋出的其他類資源；不需要 `bgmId`。 |
-| `other` | 其他 | `/rss/other/other.xml` | 無法歸入前六個分類的其他類資源。 |
-
-### 種子、磁力和說明欄位
-
-| 欄位 | 怎麼填 | 說明 |
-| ---- | ------ | ---- |
-| `torrent` | multipart 檔案欄位，`-F 'torrent=@release.torrent'` | 推薦方式。上傳後會寫入本站公共儲存，並從種子提取 magnet、檔案大小和 tracker。 |
-| `magnetLink` | 原始 `magnet:?xt=urn:btih:...` | JSON 或 multipart 都可傳。表單欄位 `magnet` 是相容別名。 |
-| `magnetBase64` | 原始 magnet 或 Base64 編碼後的 magnet | 與 `magnetLink` 二選一即可；存在 `torrent` 時通常不用手填。 |
-| `torrentStorageId` | 已上傳的公共 torrent key | 內部自動化場景使用。普通客戶端不要手工構造。 |
-| `fileSize` | 位元組數，例如 `734003200` | 上傳 torrent 時可自動提取；magnet 帶 `xl=` 時也可推斷。 |
-| `trackers` | JSON 陣列或 multipart 換行文字 | 追加 tracker。不要把多個 URL 寫成一個逗號字串，除非是 `customTags`。 |
-| `notes` | Markdown + 原始 HTML | 釋出頁直接渲染；RSS 描述由獨立 RSS 轉換器生成，不等同於頁面 DOM。 |
-| `descriptionMarkdown` | Markdown + 原始 HTML | `notes` 的相容別名。`content`、`description`、`intro` 也會被相容為說明文字。 |
-| `customTags` | JSON 陣列或 multipart 逗號分隔 | 最多 20 個，每個最長 80 字元。例：`FLAC,BK,自購`。 |
-| `tags` | 同 `customTags` | `customTags` 的相容別名。 |
-
-## 身份自檢（Whoami）
-
-```bash
+```bash title="whoami"
 curl -X GET 'https://anibt.net/api/other-releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>'
 ```
 
-```json title="whoami 回應"
-{
-  "ok": true,
-  "result": {
-    "groupId": "org_xxxxxxxx",
-    "groupName": "示例字幕組",
-    "groupSlug": "example",
-    "apiKeyId": "sgak_xxxxxxxx",
-    "apiKeySuffix": "5c5d6fcd",
-    "scopes": ["releases:publish"],
-    "kind": "other"
-  }
-}
+## 釋出
+
+```bash title="上傳種子"
+curl -X POST 'https://anibt.net/api/other-releases/publish' \
+  -H 'Authorization: Bearer <YOUR_API_KEY>' \
+  -F 'category=manga' \
+  -F 'title=Example Manga Vol.01' \
+  -F 'customTags=電子版,中文' \
+  -F 'torrent=@/path/to/release.torrent'
 ```
 
-用法與番劇釋出 whoami 相同：正式寫入前應確認字幕組身分，並檢查 `scopes` 包含 `releases:publish`。GET whoami 本身不要求 publish scope。
+| 代碼 | RSS |
+| --- | --- |
+| `manga` | `/rss/other/manga.xml` |
+| `music` | `/rss/other/music.xml` |
+| `raw` | `/rss/other/raw.xml` |
+| `stage` | `/rss/other/stage.xml` |
+| `collection` | `/rss/other/collection.xml` |
+| `movie` | `/rss/other/movie.xml` |
+| `other` | `/rss/other/other.xml` |
 
-## 返回
+- `title` 最長 500 字元。
+- `customTags` 最多 20 個，每個最長 80 字元。別名 `tags`。
+- 無 torrent 時正式釋出必須 `fileSize > 0`，否則 `422` / `EMPTY_RELEASE_CONTENT`。
+- Nyaa 代發規則與番劇釋出相同：白名單、multipart、Nyaa tracker。漫畫翻譯常用 `3_2`，無損音樂 `2_1`，RAW / 實拍 `4_4`，動畫 RAW `1_4`。
 
-```json title="成功回應"
-{
-  "ok": true,
-  "result": {
-    "releaseId": "orel_DYXiEZs5KMep",
-    "groupId": "org_xxx",
-    "category": "manga",
-    "createdTorrentFileKey": "torrent/..."
-  }
-}
-```
+`releaseId` 詳情頁：`https://anibt.net/other-release/<releaseId>`。
 
-`releaseId` 可拼成詳情頁：`https://anibt.net/other-release/<releaseId>`。釋出後對應分類的 RSS 會出現新條目，見 [其他類 RSS](/docs/open-api/rss-other)。
+## 失敗
 
-## 統一錯誤回應
-
-JSON 磁力釋出和 multipart 種子上傳使用同一種錯誤 envelope；欄位語義與 [番劇資源釋出 API](/docs/open-api/releases-publish#統一錯誤回應) 一致：
-
-```json title="錯誤回應"
-{
-  "ok": false,
-  "error": {
-    "code": "PUBLIC_SNAPSHOT_ENQUEUE_PAUSED",
-    "message": "System deployment in progress. Please retry shortly.",
-    "reason": "DEPLOYMENT_IN_PROGRESS",
-    "retryable": true,
-    "retryAfterMs": 15000,
-    "requestId": "req-example-123",
-    "i18n": {
-      "key": "error_deployment_in_progress"
-    }
-  }
-}
-```
-
-`code` 和 `message` 用於機器分支與安全回退提示；`reason` 給出更具體的業務原因；`retryable` / `retryAfterMs` 指示能否重試及等待時間；`requestId` 與回應標頭 `X-Request-ID` 相同；`i18n.key`（以及可選 `i18n.params`）用於本地化顯示。`reason`、重試欄位與 `i18n` 只在適用時返回。存在 `retryAfterMs` 時，回應標頭也會返回按秒向上取整的 `Retry-After`。
-
-部署期間暫停釋出交接會返回 `503 Service Unavailable`，`code=PUBLIC_SNAPSHOT_ENQUEUE_PAUSED`、`reason=DEPLOYMENT_IN_PROGRESS`、`retryable=true`。寫入限流會返回 `429 Too Many Requests`，`code=RATE_LIMIT_EXCEEDED`、`reason=RATE_LIMITED`、`retryable=true`。兩者都應按 `Retry-After` / `retryAfterMs` 退避。
-
-## 常見錯誤
-
-| HTTP | 原因                                             | 處理                                                   |
-| ---- | ------------------------------------------------ | ------------------------------------------------------ |
-| 400  | 缺少 `category` / `title`，或沒有任何種子 / 磁力來源 | 補齊必填項；確認 `category` 是四個允許值之一              |
-| 401  | API Key 缺失、無效或已撤銷                         | 檢查 Bearer / `X-API-Key`；失效時重新產生 Key           |
-| 403  | `INSUFFICIENT_SCOPE`；Key 缺少 `releases:publish` | 建立或改用包含 `releases:publish` 的 Key                |
-| 404  | `torrentStorageId` 指向的檔案不存在                | 改用 multipart 上傳，或確認檔案 key 屬於該字幕組          |
-| 429  | `reason=RATE_LIMITED`，寫入頻率過高                | 按 `Retry-After` / `retryAfterMs` 退避                  |
-| 503  | `reason=DEPLOYMENT_IN_PROGRESS`，系統正在部署       | 按 `Retry-After` / `retryAfterMs` 等待後重試            |
-
-下一步：訂閱分類 RSS 用 [`/rss/other/<category>.xml`](/docs/open-api/rss-other)；番劇資源仍走 [`/api/releases/publish`](/docs/open-api/releases-publish)。
+| HTTP | 處理 |
+| --- | --- |
+| 400 | 補齊 `category` / `title` / 種子或磁力 |
+| 401 | 檢查 Bearer / `X-API-Key` |
+| 403 | 改用含 `releases:publish` 的 Key |
+| 404 | `torrentStorageId` 不存在；改用 multipart 上傳 |
+| 429 / 503 | 按 `Retry-After` 退避 |

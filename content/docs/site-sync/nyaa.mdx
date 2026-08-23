@@ -1,42 +1,18 @@
 ---
 title: Nyaa 同步
-description: 填写 Nyaa 同步所需的用户名和密码。
+description: 填写 Nyaa 用户名和密码。
 ---
 
-Nyaa 同步使用 Nyaa 官方 `/api/upload` 接口。字幕组在 AniBT 中保存自己的 Nyaa 用户名和密码后，发布资源时由后台 worker 使用该账号同步到 Nyaa。
+发布时用字幕组自己的 Nyaa 账号同步。与 [Nyaa 代发](/docs/nyaa-proxy) 不同：代发走平台账号，需白名单。
 
 <Callout type="warn">
-  凭据会加密保存，但仍应使用专门用于发布的 Nyaa 账号，不要共用个人主账号密码。
+  使用专门用于发布的 Nyaa 账号，不要共用个人主账号密码。
 </Callout>
-
-<Callout type="info">
-  也可以申请 [Nyaa 代发白名单](/docs/nyaa-proxy)。代发与同步是两个功能：同步使用字幕组自己的 Nyaa 账号，代发需要管理员开通白名单。
-</Callout>
-
-## 操作步骤
 
 <Steps>
   <Step>
-    ### 准备 Nyaa 账号
+    ### 填写并测试
 
-    确认该账号可以在 Nyaa 正常发布资源。建议使用字幕组发布专用账号。
-  </Step>
-
-  <Step>
-    ### 打开同步设置
-
-    在 AniBT 进入字幕组后台的同步设置页，找到 **Nyaa 同步**。
-  </Step>
-
-  <Step>
-    ### 填写用户名和密码
-
-    输入 Nyaa 用户名和密码。保存后，页面只会显示脱敏账号后缀，不会展示明文密码。
-  </Step>
-
-  <Step>
-    ### 测试账号
-
-    点击 **测试账号**。测试由后台 worker 调用 Nyaa API 做认证探测，不会上传真实资源。
+    确认该账号能在 Nyaa 发布。字幕组后台同步设置 → **Nyaa 同步**，填用户名和密码后保存。点击 **测试账号**；测试不会上传真实资源。
   </Step>
 </Steps>

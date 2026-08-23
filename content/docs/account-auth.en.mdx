@@ -1,82 +1,30 @@
 ---
-title: Accounts, sign-in, and sessions
-description: Email-OTP registration, password or external sign-in, and AniBT UI states during session restoration.
+title: Account
+description: Register, sign in, and recover the password.
 ---
 
-AniBT user accounts support email-OTP registration, email/password sign-in, and the external providers currently shown on the sign-in page.
+Register: [anibt.net/auth/sign-up](https://anibt.net/auth/sign-up)
 
-<Callout type="info">
-  Register at [anibt.net/auth/sign-up](https://anibt.net/auth/sign-up). Sign in at [anibt.net/auth/sign-in](https://anibt.net/auth/sign-in). Publishing as a subtitle group still requires a separate [admission application](/docs/apply) after the normal account exists.
-</Callout>
+Sign in: [anibt.net/auth/sign-in](https://anibt.net/auth/sign-in)
 
-## Register with an email OTP
+Subtitle-group publishing still requires a separate [admission application](/docs/apply).
 
-<Steps>
-  <Step>
-    ### Request a code
+## Register
 
-    Enter an email address and complete human verification. The code has six digits and expires after ten minutes. Resends are protected by a client cooldown and server-side rate limits.
+1. Enter an email, complete human verification, and get a 6-digit code (valid for 10 minutes).
+2. Enter a display name, password, and the code.
+3. After verification succeeds, the password is registered. If this step is interrupted, retry in the same tab. Do not reuse a consumed code.
 
-    To avoid revealing whether an address is registered, an existing address receives the same success response but no new registration code. Use sign-in or password reset for an existing account.
-  </Step>
-  <Step>
-    ### Verify the address
+A registered address still shows a send-success message, but no new registration code is sent. Use sign-in or password recovery.
 
-    Enter a display name, password, and code. Password format is checked before the code is consumed. A successful code is one-time use and creates a verified session.
-  </Step>
-  <Step>
-    ### Finish attaching the password
+Codes, CAPTCHA, and third-party sign-in callbacks are one-time. Do not refresh the callback page repeatedly.
 
-    AniBT attaches the password inside that new session. If the network response is lost or password attachment temporarily fails, retry on the same page; do not reuse the consumed code.
+## Sign in
 
-    Unexpired registration state stays in the current tab. A full-page reload in the same browser can restore the authoritative session and continue password attachment. Until it finishes, do not switch email, private window, device, or tab.
-  </Step>
-</Steps>
+| Method | Notes |
+| --- | --- |
+| Email and password | Email + password + human verification. Repeated failures are rate-limited. |
+| Third-party | The sign-in page shows currently enabled providers. On failure, return to the sign-in page and start again. |
+| Forgot password | Use the entry on the sign-in page. Mail is sent in the background; a short delay does not mean failure. |
 
-<Callout type="warn">
-  OTP codes, CAPTCHA tickets, and OAuth callback state are one-time values. Never share them. Repeatedly refreshing an already-consumed external-login callback can be rejected by security checks.
-</Callout>
-
-## Sign-in and password recovery
-
-<Tabs items={["Email and password", "External provider", "Forgot password"]}>
-  <Tab value="Email and password">
-    Enter the registered email and password and complete human verification. Repeated failures are rate-limited.
-  </Tab>
-  <Tab value="External provider">
-    The page only shows providers enabled in production, such as Bangumi, KUNGal, or other social accounts. Authorization returns to `https://anibt.net/api/auth/*`. If the callback was already consumed or failed midway, return to the sign-in page and start again instead of refreshing the old callback.
-  </Tab>
-  <Tab value="Forgot password">
-    Use “Forgot password” on the sign-in page. Reset mail is sent through a background queue; a short delay does not mean the request failed, so avoid repeated submissions.
-  </Tab>
-</Tabs>
-
-## UI states during session restoration
-
-Public pages remain cacheable and never embed a user session in shared HTML. The browser confirms the real token after load or when returning to the page. The user control has three states:
-
-<TypeTable
-  type={{
-    authenticated: {
-      description: 'A real token is confirmed; the account menu and private Convex data are enabled.',
-      type: 'Signed in',
-    },
-    restoring: {
-      description: 'A browser hint suggests a session, but the token request is pending or hit a temporary network / 5xx failure. AniBT shows cached identity or a neutral control, never a clickable sign-in prompt.',
-      type: 'Restoring',
-    },
-    anonymous: {
-      description: 'Only an explicit no-session result shows the sign-in link. Protected pages redirect at this point.',
-      type: 'Signed out',
-    },
-  }}
-/>
-
-A temporary network error is not treated as logout. Explicit sign-out, confirmed expiry, or account revocation clears the non-sensitive restoration hint and cached menu display.
-
-## Account linking and safety
-
-- External account linking trusts only providers explicitly enabled by AniBT. Never share provider tokens or cookies.
-- `anibt_auth_hint` and cached menu data only prevent UI flashing; they are not credentials.
-- Private data and publishing rights are always checked server-side against the session, role, and subtitle-group membership.
-- If restoration remains stuck, check the network and reopen the sign-in page. Contact [support@anibt.net](mailto:support@anibt.net) if it still cannot recover.
+The site does not provide TOTP / two-factor authentication.

@@ -1,55 +1,21 @@
 ---
 title: Tracker
-description: AniBT official Tracker fixed announce URL, whitelist rules, and closed endpoints.
+description: The AniBT announce URL to use when creating torrents.
 ---
 
-The AniBT Tracker only serves torrents published on AniBT and admitted to its whitelist. The public announce URL is fixed:
+Only torrents already published on AniBT are accepted.
 
-```txt title="AniBT Tracker"
+```txt
 https://tracker.anibt.net/announce
 ```
 
-<Callout type="info">
-  A public URL does not admit arbitrary torrents. Torrust checks the v1
-  `info_hash` against AniBT's append-only whitelist. External hashes not
-  published on AniBT receive `not whitelisted`.
-</Callout>
+Add this URL when creating torrents. Publishing on this site writes it into the magnet. Torrents not published here receive `not whitelisted`.
 
-## Publishing and downloading
+Download `.torrent` files:
 
-- Publishing through the AniBT website or
-  [`/api/releases/publish`](/docs/open-api/releases-publish) automatically writes
-  the fixed tracker into the magnet.
-- AniBT's `.torrent` download endpoint normalizes historical signed or duplicate
-  AniBT tracker URLs to exactly one fixed URL without changing the infohash.
-- Other third-party trackers are preserved. Keeping one or two reliable public
-  trackers is still recommended so the swarm does not depend on a single service.
-- The generic remote-torrent proxy returns upstream torrent bytes unchanged and
-  does not inject the AniBT tracker.
+| Type | Path |
+| --- | --- |
+| Anime | `/api/torrent/{rel_*}.torrent` |
+| Other | `/api/other-torrent/{orel_*}.torrent` |
 
-Existing AniBT torrents can continue using the fixed `/announce` URL. No tracker
-replacement or data re-download is needed. Tracker fields sit outside the torrent
-`info` dictionary, so normalization preserves the infohash.
-
-### Public torrent download URLs
-
-- Anime releases use `/api/torrent/{rel_*}.torrent`.
-- Other releases use `/api/other-torrent/{orel_*}.torrent`.
-- `GET` and `HEAD` share the same path validation. The terminal ID is decoded
-  exactly once and must match the corresponding public ID type. A wrong prefix,
-  extra path segment, encoded slash or backslash, malformed percent escape, or
-  wrong suffix returns the standard HTTP 400 JSON response. A syntactically valid
-  ID that does not exist returns 404.
-
-If the CDN rejects a request before it reaches the site, the edge controls the
-response format and status code.
-
-## Closed endpoints
-
-- `https://tracker.anibt.net/announce/v1/*`
-- `https://tracker.anibt.net/scrape`
-- Public `/api/*`
-- UDP announce
-
-Tracker statistics use the site's Tailscale-only management API and do not depend
-on public scrape requests.
+Closed: `/scrape`, UDP, `/announce/v1/*`.

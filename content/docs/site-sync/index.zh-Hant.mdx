@@ -1,82 +1,21 @@
 ---
 title: 站點同步
-description: 將 AniBT 上的釋出同步到萌番組、Mikan、動漫花園、末日站、ACG.rip 與 Nyaa。
+description: 釋出後同步到萌番組、Mikan、動漫花園、末日站、ACG.rip、Nyaa。
 ---
 
-站點同步會在 AniBT 完成釋出後，把同一條釋出推送到已配置的外部站點，減少重複上傳和手動維護。
+在字幕組後台 `/groups/<slug>/sync` 按站點儲存憑據。每個站點單獨配置。使用前需 [申請入駐](/docs/apply)。
 
-<Callout type="info">
-  使用前完成 [申請入駐](/docs/apply)，並在 AniBT 後台進入字幕組的同步設定。每個外部站點需單獨儲存憑據。
-</Callout>
+1. 啟用要同步的站點。
+2. 填寫憑據。
+3. 測試連線通過後再發正式資源。
 
-## 配置流程
+| 站點 | 憑據 |
+| --- | --- |
+| [萌番組](/docs/site-sync/bangumi) | 已啟用帳號的使用者名稱或郵箱和密碼。舊 Cookie 已失效 |
+| [Mikan](/docs/site-sync/mikan) | API Token |
+| [動漫花園](/docs/site-sync/dmhy) | 帳號、密碼、字幕組名稱 |
+| [末日站](/docs/site-sync/acgnx) | UID 與 API Token |
+| [ACG.rip](/docs/site-sync/acgrip) | API Token，不要帶 `tpx://acg.rip/` 前綴 |
+| [Nyaa](/docs/site-sync/nyaa) | 使用者名稱和密碼 |
 
-<Steps>
-  <Step>
-    ### 選擇要同步的站點
-
-    在 AniBT 字幕組後台開啟同步設定，啟用實際維護的外部站點。
-  </Step>
-
-  <Step>
-    ### 準備對應憑據
-
-    按下方速查表開啟對應文件，準備 API Token、UID 或帳號密碼等必需欄位。
-  </Step>
-
-  <Step>
-    ### 儲存並測試連線
-
-    在 AniBT 中儲存配置。確認測試連線通過後，再釋出正式資源。
-  </Step>
-</Steps>
-
-## 後台工作台
-
-字幕組後台路徑 `/groups/<slug>/sync` 按外部站點組織：左側選擇站點並配置憑據，右側查看該站點最近的同步日誌。同一時間只展開一個站點，避免設定與日誌混雜。
-
-同步日誌只展示最近 40 條，可按全部、成功、失敗、進行中過濾。日誌保留約 14 天，用於排查短期釋出問題；過期日誌會自動清理，不作為長期審計紀錄。資源已刪除時，日誌仍會顯示釋出 ID 和刪除狀態，但重試與重新同步入口會被停用。
-
-開坑狀態和清理入口在字幕組的 `/groups/<slug>/claims` 頁面。同步頁只負責外站配置、測試連線和釋出同步結果。
-
-## 選擇具體教學
-
-<Cards>
-  <Card title="萌番組同步" href="/docs/site-sync/bangumi" description="填寫使用者名稱或電子郵件、密碼和可選釋出身份。" />
-  <Card title="Mikan 同步" href="/docs/site-sync/mikan" description="填寫 API Token，並由 AniBT 自動查詢 ID。" />
-  <Card title="動漫花園同步" href="/docs/site-sync/dmhy" description="填寫帳號、密碼和字幕組名稱。" />
-  <Card title="末日站同步" href="/docs/site-sync/acgnx" description="複製 UID 與 API Token。" />
-  <Card title="ACG.rip 同步" href="/docs/site-sync/acgrip" description="複製儀表板中的 API Token。" />
-  <Card title="Nyaa 同步" href="/docs/site-sync/nyaa" description="填寫 Nyaa 使用者名稱和密碼。" />
-</Cards>
-
-## 憑據速查
-
-<TypeTable
-  type={{
-    '萌番組': {
-      description: '需要已啟用帳號的使用者名稱或電子郵件和密碼；釋出身份名稱與 Team ID 可留空。舊 Cookie 配置已失效。',
-      type: '帳號密碼',
-    },
-    'Mikan': {
-      description: '通常只需要 API Token，AniBT 會自動查詢字幕組 ID 與釋出組 ID。',
-      type: 'API Token',
-    },
-    '動漫花園': {
-      description: '需要帳號、密碼和在動漫花園使用的字幕組名稱。',
-      type: '帳號密碼',
-    },
-    '末日站': {
-      description: '需要 UID 與 API Token（站名 ACGNX 在中文文件中稱「末日站」）。',
-      type: 'UID + API Token',
-    },
-    'ACG.rip': {
-      description: '只需要 API Token，複製時不要帶 `tpx://acg.rip/` 字首。',
-      type: 'API Token',
-    },
-    'Nyaa': {
-      description: '需要 Nyaa 使用者名稱和密碼；釋出時透過 Nyaa API 上傳。',
-      type: '帳號密碼',
-    },
-  }}
-/>
+開坑在 `/groups/<slug>/claims`，不在同步頁。

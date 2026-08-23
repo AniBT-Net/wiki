@@ -1,124 +1,26 @@
 ---
 title: 字幕组自身信息
-description: GET /api/subtitle-groups/me —— 用 API Key 查询当前字幕组、Key 标识、scope 与统计数据。
+description: GET /api/subtitle-groups/me —— 用 API Key 查当前组、scope 与统计。
 ---
 
-`/api/subtitle-groups/me` 是**鉴权读取**端点。携带字幕组 API Key 后，返回该组的基本信息、当前 Key 的安全标识与 `scopes`，以及发布数、覆盖番剧数、成员数等统计。
+返回当前 Key 所属字幕组、`scopes` 与统计。发布或删除前先确认 scope。
 
-典型用途：CI 启动时确认当前 Key、控制台展示字幕组状态、脚本在发布或删除前校验是否具备 `releases:publish` / `releases:delete`。
+<ApiEndpoint method="GET" path="/api/subtitle-groups/me" auth="鉴权">
+`Authorization: Bearer <KEY>`，或 `X-API-Key`。Bearer 优先。
+</ApiEndpoint>
 
-## 前置条件
+<Callout type="warn">
+  仅 `status=active` 可发布。`apiKeySuffix` 不能用于鉴权。
+</Callout>
 
-- 字幕组已开通 API Key。
-- 请求头携带 `Authorization: Bearer <KEY>` 或 `X-API-Key`。
+完整字段见 [接口参考](/docs/open-api/reference)。
 
-## 请求
-
-```http title="HTTP"
-GET https://anibt.net/api/subtitle-groups/me
-Authorization: Bearer <YOUR_API_KEY>
-```
-
-```bash title="curl 示例"
+```bash title="curl"
 curl -H "Authorization: Bearer <YOUR_API_KEY>" \
   https://anibt.net/api/subtitle-groups/me
 ```
 
-## 成功响应
-
-```jsonc title="200 OK"
-{
-  "ok": true,
-  "data": {
-    "_id": "...",
-    "name": "My Group",
-    "slug": "my-group",
-    "description": "...",
-    "website": "https://...",
-    "stats": {
-      "totalReleases": 42,
-      "totalAnimes": 10,
-      "memberCount": 5
-    },
-    "status": "active",
-    "createdAt": 1700000000000,
-    "apiKeyId": "sgak_xxxxxxxx",
-    "apiKeySuffix": "5c5d6fcd",
-    "scopes": ["releases:publish", "releases:delete"]
-  }
-}
-```
-
-## 字段说明
-
-<TypeTable
-  type={{
-    '_id': {
-      description: '内部主键。第三方一律使用 slug，不要硬编码 _id。',
-      type: 'string',
-    },
-    'name': {
-      description: '字幕组展示名（中英不限，可能随运营调整）。',
-      type: 'string',
-    },
-    'slug': {
-      description: 'URL 安全的稳定标识，与 /api/subtitle-groups 返回的 slug 完全一致，可直接用于 /rss/anime.xml?groupSlug=…。',
-      type: 'string',
-    },
-    'description': {
-      description: '字幕组简介。',
-      type: 'string',
-    },
-    'website': {
-      description: '字幕组站外主页。',
-      type: 'string?',
-    },
-    'stats.totalReleases': {
-      description: '总发布数。',
-      type: 'number',
-    },
-    'stats.totalAnimes': {
-      description: '覆盖番剧数。',
-      type: 'number',
-    },
-    'stats.memberCount': {
-      description: '当前活跃成员数。',
-      type: 'number',
-    },
-    'status': {
-      description: 'active / hidden / banned 等。仅 active 可发布。',
-      type: 'enum',
-    },
-    'createdAt': {
-      description: '字幕组首次入库时间（毫秒）。',
-      type: 'number',
-    },
-    'apiKeyId': {
-      description: '当前 API Key 的稳定标识；可用于日志核对，不是完整密钥。',
-      type: 'string',
-    },
-    'apiKeySuffix': {
-      description: '当前 Key 的安全尾缀，只用于人工识别，不能用于鉴权。',
-      type: 'string',
-    },
-    'scopes': {
-      description: '当前 Key 的显式能力集合：releases:publish、releases:delete，至少包含一个且不会重复。',
-      type: 'string[]',
-    },
-  }}
-/>
-
-## 与公共目录的关系
-
-<Callout type="info">
-  与 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 的核心差别：
-  - `/api/subtitle-groups`：**公开**，返回**所有**可见字幕组的精简信息，无需鉴权。
-  - `/api/subtitle-groups/me`：**鉴权**，只返回**调用方**这一组的详细信息，附带 `stats`、Key 标识、`scopes`，以及内部 `_id`、`description`、`status`。
-</Callout>
-
-## 失败响应
-
-| HTTP | 原因 | 处理 |
-| ---- | ---- | ---- |
-| 401 | API Key 缺失、格式错误、无效或已撤销 | 使用 `Authorization: Bearer <KEY>` 或 `X-API-Key`；失效时在后台重新生成 |
-| 429 | 请求过于频繁 | 按 `Retry-After` 退避 |
+| HTTP | 处理 |
+| --- | --- |
+| 401 | 检查 Bearer / `X-API-Key`；失效则后台重新生成 |
+| 429 | 按 `Retry-After` 退避 |

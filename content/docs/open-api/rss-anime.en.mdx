@@ -1,164 +1,32 @@
 ---
 title: RSS main entry
-description: GET /rss/anime.xml — flexible anime RSS with bgmId, group slug, multi-tag filters, and Mikan-compatible aliases.
+description: GET /rss/anime.xml — bgmId, group slug, and tag filters. Mikan-compatible.
 ---
 
-`/rss/anime.xml` is the most flexible subscription endpoint: combine `bgmId`, `groupSlug`, and tags (`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`) to follow one show, one group, or related site-wide releases. Search engines are told not to crawl `/rss/`; subscriptions themselves are unchanged.
+Main subscribe URL. Provide at least one of `bgmId` or `groupSlug`.
 
-## Preconditions
-
-- No authentication.
-- Provide **at least one** of `bgmId` or `groupSlug`; omitting both is rejected.
-
-## URL
-
-```txt title="URL"
-GET https://anibt.net/rss/anime.xml?<query>
-```
-
-## Query parameters
-
-<TypeTable
-  type={{
-    'bgmId': {
-      description: 'Bangumi.tv subject id. Alias: bangumiId.',
-      type: 'integer',
-    },
-    'groupSlug': {
-      description: 'Group slug. Aliases: subgroupSlug, subgroupid (Mikan-compatible).',
-      type: 'string',
-    },
-    'resolution': {
-      description: '4K / 2160p / 1080p / 720p / 480p / 360p. Repeatable or comma-separated.',
-      type: 'enum[]',
-    },
-    'language': {
-      description: 'CHS / CHT / JP / EN / KO / ES / PT / FR / DE / IT / RU / AR / HI / ID / MS / TH / VI / TL / TR / PL / UK. Repeatable or comma-separated.',
-      type: 'enum[]',
-    },
-    'format': {
-      description: 'MKV / MP4 / AVI / WEBM. Repeatable or comma-separated.',
-      type: 'enum[]',
-    },
-    'subtitle': {
-      description: 'EXTERNAL / INTERNAL / EMBEDDED / NONE. Repeatable or comma-separated.',
-      type: 'enum[]',
-    },
-    'episode': {
-      description: 'Numeric episode for exact match, sorting, and filtering.',
-      type: 'integer',
-    },
-    'episodeKey': {
-      description: 'Display episode key such as 01, 00-01, BATCH. Exact string match.',
-      type: 'string',
-    },
-    'limit': {
-      description: '1..100, default 100. Single decimal integer without leading zeros.',
-      type: 'integer',
-      default: '100',
-    },
-  }}
-/>
+<ApiEndpoint method="GET" path="/rss/anime.xml" auth="public">
+Mikan aliases `bangumiId` and `subgroupid` work.
+</ApiEndpoint>
 
 <Callout type="warn">
-  Duplicate, empty, zero-padded, non-integer, or `>100` `limit` values return application `400 + no-store`; production edge may respond with Cloudflare `403` first. Default-equivalent forms such as `limit=100` `308` to the canonical URL (cacheable for one day). Clients should follow permanent redirects.
+  `limit` defaults to 100, range 1–100. Duplicate, empty, zero-padded, or non-integer values: app `400`; production edge may return `403` first. Forms equivalent to the default `308` to the canonical URL — follow the redirect.
 </Callout>
 
-When only the original query-pair order changes and no parameter bytes differ, the response is the same canonical `200` without redirect; `atom:link rel="self"`, ETag, and cache identity still use the stable canonical URL. `Last-Modified` is currently omitted.
+Full parameters: [API reference](/docs/open-api/reference).
 
-<Callout type="warn">
-  Public RSS computes `W/"anibt-sha256-{...}"` ETags from final XML UTF-8 bytes and no longer writes request-time `lastBuildDate`. Matching ETag ⇒ identical body; a matching-ETag `304` means current feed bytes are unchanged. `Last-Modified` is omitted. A well-shaped but unresolvable anime owner may still return an empty `200`; unknown `/rss/group/<slug>.xml` still returns `404`.
-</Callout>
-
-## Two equivalent multi-value forms
-
-```txt title="Repeated query (preferred)"
-?resolution=1080p&resolution=720p
+```txt title="Example"
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p
 ```
 
-```txt title="Comma-separated (also supported)"
-?resolution=1080p,720p
+Tags may repeat or use commas: `?resolution=1080p&resolution=720p` equals `?resolution=1080p,720p`.
+
+## Mikan
+
+Swap the host to `anibt.net`; parameters keep working:
+
+```txt title="Compatible form"
+https://anibt.net/rss/anime.xml?bangumiId=3921&subgroupid=615
 ```
 
-## Success response
-
-Returns native **RSS 2.0 + BEP 36** XML. Opening the URL in a browser shows the default XML tree (no site XSL/CSS). Readers and BitTorrent clients consume standard fields.
-
-Each `<item>` includes:
-
-<TypeTable
-  type={{
-    '<title>': {
-      description: 'e.g. [Group] Title - EP05 [1080p] [CHS+JP] [MKV].',
-      type: 'string',
-    },
-    '<link>': {
-      description: 'Release detail page (/release/<id>).',
-      type: 'url',
-    },
-    '<guid isPermaLink="false">': {
-      description: 'Stable release id.',
-      type: 'string',
-    },
-    '<pubDate>': {
-      description: 'RFC 822 timestamp in Asia/Shanghai with the numeric offset fixed at +0800.',
-      type: 'datetime',
-    },
-    '<description>': {
-      description: 'CDATA with resolution / language / subtitle / size / notes.',
-      type: 'string',
-    },
-    '<enclosure>': {
-      description: 'BEP 36 magnet URL, type="application/x-bittorrent", with site default trackers appended.',
-      type: 'magnet',
-    },
-    '<torrent xmlns="…">': {
-      description: 'BEP 36: infoHash / magnet (with site default trackers); its nested <pubDate> uses RFC 3339 in Asia/Shanghai with +08:00.',
-      type: 'element',
-    },
-    '<anibt:bgmId>': {
-      description: 'Bangumi subject id under xmlns:anibt="https://anibt.net/xmlns/rss/1.0/"; emitted when bound, omitted otherwise. Standard readers may ignore the namespace.',
-      type: 'number',
-    },
-  }}
-/>
-
-The same `anibt:` extension appears on anime items in [`/rss/magnets.xml`](/docs/open-api/other-endpoints) and [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints). `/rss/other/*` does not emit `bgmId`.
-
-## Backend execution
-
-`/rss/anime.xml` is generated by the main-site Web runtime and does not fall back to Convex RSS queries. Web resolves `bgmId` / `groupSlug` via Typesense `rss_resolvers`, then queries the Typesense `releases` collection:
-
-| Inputs | Execution |
-| ------ | --------- |
-| `bgmId` + `groupSlug` | Typesense filter on anime and group |
-| `bgmId` only | Typesense filter on anime |
-| `groupSlug` only | Typesense filter on group |
-
-Resolution, language, format, and subtitle tags are pushed into Typesense when possible; display fields such as `episode` / `episodeKey` may use a small Web post-filter. Entity RSS uses **Redis 900 s + edge/CDN 120 s + 60 s stale-while-revalidate**. Publish events invalidate Redis families first, then purge every CDN query variant for the same entity by `bgmId` / `groupSlug`. When an anime resolves to two owners, both Redis families and CDN variants refresh as one publish result. TTL remains a fallback if the event path fails; ETag always comes from the final cached XML body.
-
-## Mikan parameter compatibility
-
-Mikan-style parameters work after host swap:
-
-<Tabs items={['Original Mikan URL', 'Host swap', 'Preferred form']}>
-  <Tab value="Original Mikan URL">
-    ```txt
-    https://mikanani.me/RSS/Bangumi?bangumiId=3921&subgroupid=615
-    ```
-  </Tab>
-  <Tab value="Host swap">
-    ```txt
-    https://anibt.net/rss/anime.xml?bangumiId=3921&subgroupid=615
-    ```
-    `bangumiId` and `subgroupid` remain compatibility aliases.
-  </Tab>
-  <Tab value="Preferred form">
-    ```txt
-    https://anibt.net/rss/anime.xml?bgmId=3921&groupSlug=<slug>
-    ```
-    Use canonical names in new code.
-  </Tab>
-</Tabs>
-
-Continue: [Examples](/docs/open-api/examples) covers eight common query shapes.
+New code should use `bgmId` and `groupSlug`.

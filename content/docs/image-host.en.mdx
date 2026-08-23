@@ -1,44 +1,20 @@
 ---
 title: Subtitle group image host
-description: Upload images from the subtitle group Image Host module and copy global CDN links, BBCode, Markdown, HTML, and related formats.
+description: Upload images in the group admin and copy links.
 ---
 
-The subtitle group image host is for uploading release-related images within a group and copying common embed formats. Use the group admin **Image Host** module and upload via the web UI.
+Entry: `/groups/<slug>/image-host`. Members of that group only. 10 MiB per image.
 
-After upload, these formats are available:
+After upload you can copy the accelerated link, BBCode, Markdown, and HTML.
 
-| Format | Example |
-| --- | --- |
-| Global CDN link | `https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp` |
-| BBCode | `[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]` |
-| Markdown | `![pasted-image.webp](https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp)` |
-| HTML | `<img src="https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp" alt="pasted-image.webp">` |
-| BBCode linked | `[url=https://anibt.net/i/Ab3CdE1][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
-| BBCode direct | `[url=https://i.anibt.net/image-host/...webp][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
-| HTML linked | `<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
-| HTML direct | `<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
+## Delete
 
-<Callout type="info">
-  Image Host is available only to members of that subtitle group. Path: group admin → **Image Host** (`/groups/<slug>/image-host`).
-</Callout>
-
-## Deleting an image
-
-The uploader, group owner/administrators, or a site administrator can delete an
-image. `DELETE /api/image-host/image?imageId=...` accepts the request with HTTP
-`202` and a stable `operationId`. Repeated requests for the same image reuse the
-same deletion operation instead of creating parallel deletion chains.
-
-The image is immediately hidden from active lists and the `/i/:shortCode`
-application lookup. The UI then reads
-`GET /api/image-host/image?operationId=...` for status:
+The uploader, group owner / administrators, or a site administrator can delete. The request returns `202`. Repeated deletes of the same image reuse the same operation.
 
 | Status | Meaning |
 | --- | --- |
-| `queued` | Accepted; background processing is deleting the object or waiting for Cloudflare cache convergence. |
-| `complete` | The AniBT R2 objects (including a persisted library thumb) are verified absent, and the short page, `i.anibt.net` direct URL, and persisted thumb have converged in AniBT-controlled Cloudflare caches and return `404` / `410`. |
-| `failed` | The deletion operation reached a terminal failure; the UI displays the failure state. |
+| `queued` | Accepted |
+| `complete` | On-site short links and `i.anibt.net` direct links return `404` / `410` |
+| `failed` | Failed |
 
-<Callout type="warning">
-  `complete` does not mean every copy on the internet was erased. Separate accelerated links and their CDN, visitor browser caches, downstream proxies, search engines, and third-party reposts are outside the deletion completion scope.
-</Callout>
+`complete` does not include separate accelerated CDNs, browser caches, or third-party reposts.

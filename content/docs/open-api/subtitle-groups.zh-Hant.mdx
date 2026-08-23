@@ -1,135 +1,26 @@
 ---
 title: 字幕組目錄
-description: GET /api/subtitle-groups —— 公開字幕組列表；拼 RSS 前先拉一份做 name → slug 對應。
+description: GET /api/subtitle-groups —— 公開字幕組列表。拼 RSS 前先拉一份做 name → slug。
 ---
 
-`/api/subtitle-groups` 返回站內所有可見字幕組的 **slug、展示名、釋出數與番劇數**。第三方應用宜在啟動時呼叫一次，將回應快取到本機後再拼 RSS。
+回傳可見字幕組的 `slug`、展示名與統計。啟動時調一次，本地快取後再拼 RSS。
 
-## 前置條件
-
-- 無需鑑權。
-- 建議請求時攜帶 `Accept: application/json`。
+<ApiEndpoint method="GET" path="/api/subtitle-groups" auth="公開">
+無需鑑權。
+</ApiEndpoint>
 
 <Callout type="info">
-  資料極少變化，多數輪詢會命中 304。配合 `If-None-Match` 時頻寬接近可忽略。
+  資料很少變。帶 `If-None-Match` 時多數會 304。
 </Callout>
 
-## 請求
+第三方用 `slug`，不要硬編碼 `organizationId`。完整欄位見 [API 參考](/docs/open-api/reference)。
 
-```http title="HTTP"
+```http title="請求"
 GET https://anibt.net/api/subtitle-groups
 Accept: application/json
 ```
 
-## 成功回應（節選）
-
-```jsonc title="200 OK"
-{
-  "ok": true,
-  "data": [
-    {
-      "slug": "kirara-fantasia",
-      "name": "Kirara Fantasia",
-      "organizationId": "org_HCFDS3FmwXnP",
-      "status": "ACTIVE",
-      "totalReleases": 469,
-      "totalAnimes": 84,
-      "createdAt": 1775269444251
-    },
-    {
-      "slug": "pre-s",
-      "name": "Prejudice-Studio",
-      "organizationId": "org_OcyZBPpv1lTk",
-      "status": "ACTIVE",
-      "totalReleases": 47,
-      "totalAnimes": 12,
-      "createdAt": 1772900000000
-    },
-    {
-      "slug": "kitauji-sub",
-      "name": "北宇治字幕組",
-      "organizationId": "org_aagmgM9i0ZyR",
-      "status": "ACTIVE",
-      "totalReleases": 6,
-      "totalAnimes": 2,
-      "createdAt": 1776618758015
-    }
-  ]
-}
-```
-
-## 欄位說明
-
-<TypeTable
-  type={{
-    'slug': {
-      description: 'URL 安全的穩定標識，用於所有 RSS 端點的 groupSlug 參數。',
-      type: 'string',
-    },
-    'name': {
-      description: '展示名（中英不限，可能隨營運調整）。',
-      type: 'string',
-    },
-    'organizationId': {
-      description: '內部 ID，第三方一般不需要。',
-      type: 'string',
-    },
-    'status': {
-      description: 'ACTIVE / HIDDEN 等；本介面只返回可見項。',
-      type: 'enum',
-    },
-    'totalReleases': {
-      description: '字幕組總釋出數（聚合統計，秒級新鮮）。',
-      type: 'number',
-    },
-    'totalAnimes': {
-      description: '該組覆蓋的番劇數。',
-      type: 'number',
-    },
-    'website': {
-      description: '字幕組站外主頁（可選）。',
-      type: 'string?',
-    },
-    'createdAt': {
-      description: '字幕組首次入庫時間（毫秒）。',
-      type: 'number',
-    },
-  }}
-/>
-
-## 304 支援
-
-ETag 形如 `W/"anibt-sha256-{64 lowercase hex}"`，由最終 JSON UTF-8 bytes 計算。再次請求時帶上匹配的 `If-None-Match` 即返回 304；目前省略 `Last-Modified`。
-
-```bash title="驗證 304"
-H=$(curl -sI "https://anibt.net/api/subtitle-groups")
-ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
-curl -sI -H "If-None-Match: $ETAG" "https://anibt.net/api/subtitle-groups" | head -1
-# → HTTP/2 304
-```
-
-## 實戰：用 jq 挑出目標字幕組
-
-```bash title="挑 4 個組"
+```bash title="挑出 slug"
 curl -s https://anibt.net/api/subtitle-groups \
-  | jq '.data[] | select(.name | test("Kirara Fantasia|Prejudice-Studio|北宇治字幕组|拨雪寻春")) | {name, slug}'
+  | jq '.data[] | {name, slug}'
 ```
-
-輸出：
-
-```json title="結果"
-{"name":"Kirara Fantasia","slug":"kirara-fantasia"}
-{"name":"Prejudice-Studio","slug":"pre-s"}
-{"name":"北宇治字幕组","slug":"kitauji-sub"}
-{"name":"拨雪寻春","slug":"haruhana"}
-```
-
-## 快取與限流
-
-| 項目         | 值                                                        |
-| ------------ | --------------------------------------------------------- |
-| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400` |
-| 速率限制     | 與 RSS 端點共用 60 秒視窗，詳見 [限流與上限](/docs/open-api/limits) |
-| 條件請求     | 支援 `If-None-Match`；目前省略 `Last-Modified`             |
-
-下一步：拿到 slug 後，去 [RSS 主入口](/docs/open-api/rss-anime) 拼訂閱 URL。

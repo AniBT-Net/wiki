@@ -1,27 +1,40 @@
 ---
 title: Match a torrent title to anime
-description: POST /api/animes/torrent-match — parse a release title and torrent internal name, then match them to AniBT anime with explainable multilingual evidence.
+description: POST /api/animes/torrent-match — parse a title and return auto / manual (and other) decisions.
 ---
 
-`/api/animes/torrent-match` is public and unauthenticated by default; authentication is required only when requesting a subtitle-group scoped binding. The canonical API is POST v3. It keeps the raw release title and torrent internal name, builds a structured AST, runs independent exact / strict-recall / fuzzy-recall branches, and returns a machine-readable automatic, manual, non-anime, unsupported, or unavailable decision.
+Public matcher. Passing `groupId` requires a login session in that group.
 
-<Callout type="info">
-  Production reads only data already stored by AniBT and its internal Typesense indexes. It does not crawl Anime Garden, Nyaa, TMDB, TVDB, or any other external site at request time, and it never trusts an external `subjectId`. Anime Garden is offline test corpus only.
+<ApiEndpoint method="POST" path="/api/animes/torrent-match" auth="public">
+GET returns `405 METHOD_NOT_ALLOWED`.
+</ApiEndpoint>
+
+<Callout type="warn">
+  Do not send a caller-forged match to the publish API. If no anime ID is provided, publish runs the same matcher on the server.
 </Callout>
 
-## POST v3 request
+## Request
 
-```http title="HTTP"
-POST https://anibt.net/api/animes/torrent-match
-Content-Type: application/json
-```
+<TypeTable
+  type={{
+    rawTitle: { type: 'string', required: true, description: 'Release title as-is, 1–1000 characters' },
+    torrentName: { type: 'string', description: 'Torrent internal name, 1–1000 characters. Auto-bind is forbidden if it points at a different anime than rawTitle' },
+    publishedAt: { type: 'integer', description: 'Publish time, milliseconds' },
+    groupId: { type: 'string', description: 'Group ID, max 200 characters. Requires a session in that group, else 403' },
+    limit: { type: 'integer', default: '10', description: 'Candidate count, max 50. A smaller limit does not lower the auto-bind bar' },
+  }}
+/>
+
+Public routes return `403` for `diagnostics=true`. Body max 32 KiB. Not cached.
+
+Full fields: [API reference](/docs/open-api/reference).
 
 ```bash title="Release title + torrent internal name"
 curl -sS 'https://anibt.net/api/animes/torrent-match' \
   -H 'Content-Type: application/json' \
   --data @- <<'JSON'
 {
-  "rawTitle": "[LoliHouse] 孤独摇滚！ / Bocchi the Rock! - 01 [WebRip 1080p HEVC-10bit AAC][CHS&CHT]",
+  "rawTitle": "[LoliHouse] 孤独摇滚！ / Bocchi the Rock! - 01 [WebRip 1080p HEVC-10bit AAC][简繁内封字幕]",
   "torrentName": "[LoliHouse] Bocchi the Rock! [01][1080p].mkv",
   "publishedAt": 1664640000000,
   "limit": 10
@@ -29,146 +42,23 @@ curl -sS 'https://anibt.net/api/animes/torrent-match' \
 JSON
 ```
 
-## Request fields
+## `decision.kind`
 
-<TypeTable
-  type={{
-    'rawTitle': {
-      description: 'Original release title, required, 1–1000 characters. Do not pre-strip Chinese, Japanese, romaji, English, group, season, or episode structure.',
-      type: 'string',
-      required: true,
-    },
-    'torrentName': {
-      description: 'Optional torrent internal name, 1–1000 characters. It is parsed separately from rawTitle; conflicting strong identities block automatic publishing.',
-      type: 'string',
-    },
-    'publishedAt': {
-      description: 'Optional publication timestamp in milliseconds. It is used for premiere-window safety checks; suspiciously early releases may be vetoed, while late BD/re-release uploads are allowed.',
-      type: 'integer',
-    },
-    'groupId': {
-      description: 'Optional AniBT subtitle-group ID, maximum 200 characters. Supplying it requires a login session and membership in that group, otherwise the route returns 403. It can read only that group’s active project bindings. API-key publishing supplies its group server-side.',
-      type: 'string',
-    },
-    'limit': {
-      description: 'Candidate count, default 10, maximum 50. A smaller limit never relaxes the auto-binding gate.',
-      type: 'integer',
-      default: '10',
-    },
-  }}
-/>
+| `decision.kind` | Caller action |
+| --- | --- |
+| `auto` | Use `decision.animeId`; it must also appear in `candidates` |
+| `manual` | Show candidates; do not auto-bind |
+| `none` | No candidates |
+| `non_anime` | Not anime |
+| `unsupported` | Batch / multi-title that a single anime cannot express |
+| `unavailable` | Search unavailable; retry later |
 
-The public route fixes `diagnostics=false`; `diagnostics=true` returns `403 FORBIDDEN`. Detailed AST diagnostics are restricted to controlled tests and operations.
+`candidates` is not an authorization field. A high `matchScore` does not replace `decision.kind="auto"`.
 
-<Callout type="warn">
-  Never send a caller-forged “auto match result” to the publish API. `/api/releases/publish` discards caller-supplied internal assertions and runs the same server-side v3 matcher when no explicit anime ID is provided.
-</Callout>
-
-## Matching and authorization boundaries
-
-- Release title and torrent name are parsed separately. Identical searches are executed once, but both inputs still participate in consensus.
-- Chinese, Traditional Chinese, Japanese, romaji, English, compact multilingual joins, fullwidth slashes, backslashes, and script boundaries can form title hypotheses.
-- Pure-Latin titles keep both their original diacritic token and a diacritic-folded equivalent, for example `Caraméliser` / `Carameliser`. Folding applies only to pure-Latin segments; CJK and mixed-script text are not rewritten. If folding collides across multiple anime, every candidate survives and the decision fails closed instead of auto-binding the first result.
-- Automatic authorization is restricted to BGM / bgm.tv, bangumi-data, AniBT manual-global aliases, and one active scoped binding inside the authenticated subtitle group. Site hints and derived stems are support evidence only.
-- TMDB / TVDB, external numeric IDs, site slugs, fuzzy matching, typos, prefix/infix, split/join behavior, and text score cannot authorize automatic publishing by themselves.
-- Season / Cour / Part / Sequence / Format, explicit year, premiere window, and known TV episode count are candidate vetoes. Explicit seasons use per-season episode numbers. Without a season marker, an absolute number such as `EP25` may promote a sequel only when the work family, time cohort, and cumulative episode window are all unique.
-- In a bracket envelope such as `[Title][24][1080p]`, `[24]` is treated as an episode. In `[Title][1080p][24][AAC]`, the same token remains frame-rate metadata, so numeric titles and FPS are not globally reinterpreted.
-- An explicit version year such as `2024 edition` or `(2024)` may participate in automatic structural elimination only when the selected candidate itself premiered in 2024. Upload year or a fuzzy year cohort is not a substitute.
-- If an upstream season total includes one special while a release group continuously numbers regular episodes only, the matcher may shift the family window back by one episode only when family completion is safe, the later season ranks first, both adjacent candidates are recall-only, publication time clearly supports the later season, and the target is unique. A single `24` and the exact whole-season range `24-46` share the repaired window; true multi-season bundles remain `unsupported`.
-- Any exact / recall / global overflow, search cutoff, lookup re-verification failure, missing hydration, or generation/projection mismatch sets `candidateSetComplete=false` and forbids `auto`.
-- Standalone PV/CM, MAD/AMV, game video, concert, live-action title, music album, stage/reading production, announcement, wallpaper, or font package may return `non_anime`. OVA/OAD/ONA/SP/MOVIE remain anime content.
-- Multi-anime, multi-season, and `S1+S2+OVA` bundles return `unsupported`; the matcher does not force one subject.
-
-<Callout type="info">
-  The active production generation is `match_v3_20260718_2040`: 8,621 anime candidates, 223,792 aliases, and 168 scoped bindings. On the fixed 34,083-item offline corpus, 28,559 decisions are automatic (83.7925%); the 2024–2026 subset is 9,084 / 9,807 (92.6277%). This is automatic-decision coverage, not external ground-truth accuracy.
-</Callout>
-
-## v3 response
-
-```jsonc title="200 OK"
-{
-  "version": 3,
-  "content": { "kind": "anime_episode", "confidence": "medium", "reasonCodes": [] },
-  "decision": {
-    "kind": "auto",
-    "reason": "multi_branch_identity_unique",
-    "animeId": "anime_example",
-    "bgmId": 253046,
-    "confidence": "high",
-    "vetoes": []
-  },
-  "candidates": [
-    {
-      "anime": { "_id": "anime_example", "bgmId": 253046, "title": { "chinese": "孤独摇滚！" } },
-      "animeId": "anime_example",
-      "bgmId": 253046,
-      "matchScore": 100,
-      "textMatch": 0,
-      "matchedHypothesisIds": ["..."],
-      "matchedInputs": ["release_title", "torrent_name"],
-      "retrieval": ["exact"]
-    }
-  ],
-  "search": {
-    "branchCount": 2,
-    "exactOverflow": false,
-    "recallOverflow": false,
-    "candidateOverflow": false,
-    "searchCutoff": false,
-    "exactVerificationFailed": false,
-    "versionMismatch": false,
-    "generationMismatch": false,
-    "projectionMismatch": false,
-    "candidateSetComplete": true,
-    "strictRecallUsed": true,
-    "fuzzyRecallUsed": false,
-    "generation": "match_v3_20260718_2040"
-  },
-  "diagnostics": null
-}
-```
-
-## Decision kinds
-
-| `decision.kind` | Client behavior |
-| --------------- | --------------- |
-| `auto` | The client may use `decision.animeId`; that ID must also be present in `candidates`. |
-| `manual` | Present `candidates` for confirmation; do not auto-publish to one anime. |
-| `none` | No candidate; open manual search or keep the release pending. |
-| `non_anime` | High-confidence non-anime content; do not enter the anime publish flow. |
-| `unsupported` | The single-anime publish contract cannot safely represent this title. |
-| `unavailable` | Required search/projection is unavailable; fail closed and retry later. |
-
-Common `decision.reason` values:
-
-- `single_branch_identity_unique` / `multi_branch_identity_unique`: trusted identity branches are unique and agree.
-- `scoped_binding_active`: the current group has an active project binding that also passed projection, structural veto, conflict, and completeness checks.
-- `scoped_binding_conflict`: the group binding conflicts with current strong title evidence, so the result stays manual.
-- `projection_gap`: one strong language branch lacks a trusted projection, so the result stays manual.
-- `input_title_conflict` / `branch_conflict`: release title, torrent name, or multilingual branches disagree.
-- `modifier_conflict` / `candidate_veto`: season, part, format, year, time, or episode evidence conflicts.
-- `search_incomplete`: any overflow, cutoff, missing hydration, or generation mismatch.
-- `low_evidence` / `no_candidates` / `search_unavailable`: insufficient evidence, no candidates, or unavailable search.
-
-<Callout type="warn">
-  `candidates` is bounded evidence, not the authorization result. Episode, season, and veto
-  evidence can make the final `decision.animeId` differ from the raw highest-score
-  `candidates[0]`; clients should locate the candidate whose ID equals `decision.animeId`.
-  A high `matchScore`, Typesense `textMatch`, strict/fuzzy recall, or one title hit never
-  replaces `decision.kind="auto"`.
-</Callout>
-
-## Rate limits & error responses
-
-| Item | POST v3 |
-| ---- | ------- |
-| Body | JSON, maximum 32 KiB; overflow returns `413 PAYLOAD_TOO_LARGE` |
-| Schema error | `422 VALIDATION_ERROR` |
-| Missing session or non-member with `groupId` | `403 FORBIDDEN` |
-| Invalid JSON | `400 INVALID_JSON` |
-| Rate limit | Default 180 requests / 60 seconds / IP; `429 RATE_LIMIT_EXCEEDED` |
-| Cache | `Cache-Control: no-store`, including CDN and Cloudflare no-store headers |
-| Methods | Only `POST, OPTIONS`; GET returns JSON `405 METHOD_NOT_ALLOWED` with `Allow: POST, OPTIONS` |
-| CORS | `POST, OPTIONS` |
-
-Publishers do not have to call this endpoint first. When no explicit anime ID is supplied, [`/api/releases/publish`](/docs/open-api/releases-publish) runs the same matcher inside the Web server. Only `auto` binds directly; `manual / none / unavailable / unsupported / non_anime` remains pending or requires caller handling.
+| HTTP | What to do |
+| --- | --- |
+| 400 | Invalid JSON |
+| 403 | `groupId` without a session or membership; or `diagnostics=true` on the public route |
+| 413 | Body over 32 KiB |
+| 422 | Validation failed |
+| 429 | 180 req / 60 s / IP; back off with `Retry-After` |

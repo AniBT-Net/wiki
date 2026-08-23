@@ -1,22 +1,33 @@
 ---
 title: 种子标题匹配番剧
-description: POST /api/animes/torrent-match —— 解析发布标题与种子内部名，并用可解释的多语言证据匹配站内番剧。
+description: POST /api/animes/torrent-match —— 解析标题，返回 auto / manual 等决定。
 ---
 
-`/api/animes/torrent-match` 默认是公开、无需鉴权的番剧识别端点；仅在请求组内 scoped binding 时需要登录。Canonical 接口为 `POST` v3：保留原始发布标题与 torrent internal name，先生成结构化 AST，再执行独立的 exact / strict recall / fuzzy recall 分支，最后返回可机器处理的自动、人工、非番剧、unsupported 或不可用决定。
+公开识别端点。传入 `groupId` 时必须登录且属于该组。
 
-## 前置条件
+<ApiEndpoint method="POST" path="/api/animes/torrent-match" auth="公开">
+GET 返回 `405 METHOD_NOT_ALLOWED`。
+</ApiEndpoint>
 
-- 默认无需鉴权。
-- 传入 `groupId` 时必须携带登录会话，且当前用户属于该字幕组。
-- 生产运行时只读取 AniBT 已入库数据与内部 Typesense 索引，不抓取 Anime Garden、Nyaa、TMDB、TVDB 或其他外站，也不使用外站 `subjectId`。Anime Garden 仅用于离线测试语料。
+<Callout type="warn">
+  不要把调用方伪造的匹配结果传给发布接口。未带番剧 ID 时，发布接口会在服务端跑同一 matcher。
+</Callout>
 
-## POST v3 请求
+## 请求
 
-```http title="HTTP"
-POST https://anibt.net/api/animes/torrent-match
-Content-Type: application/json
-```
+<TypeTable
+  type={{
+    rawTitle: { type: 'string', required: true, description: '发布标题原文，1–1000 字符' },
+    torrentName: { type: 'string', description: 'torrent 内部名，1–1000 字符。与 rawTitle 指向不同番剧时禁止自动绑定' },
+    publishedAt: { type: 'integer', description: '发布时间，毫秒' },
+    groupId: { type: 'string', description: '字幕组 ID，最多 200 字符。传入则需会话且属于该组，否则 403' },
+    limit: { type: 'integer', default: '10', description: '候选数，上限 50。缩小 limit 不会放宽自动绑定门槛' },
+  }}
+/>
+
+公开路由 `diagnostics=true` 返回 `403`。请求体上限 32 KiB。不缓存。
+
+完整字段见 [接口参考](/docs/open-api/reference)。
 
 ```bash title="发布标题 + torrent 内部名"
 curl -sS 'https://anibt.net/api/animes/torrent-match' \
@@ -31,150 +42,23 @@ curl -sS 'https://anibt.net/api/animes/torrent-match' \
 JSON
 ```
 
-## 请求字段
-
-<TypeTable
-  type={{
-    'rawTitle': {
-      description: '发布标题原文，必填，1–1000 字符。不要先删掉中文、日文、罗马字、英文、字幕组、季度或集数结构。',
-      type: 'string',
-      required: true,
-    },
-    'torrentName': {
-      description: '可选 torrent internal name，1–1000 字符。服务端会与 rawTitle 分开解析；两个强标题指向不同番剧时禁止自动发布。',
-      type: 'string',
-    },
-    'publishedAt': {
-      description: '可选发布时间戳，单位毫秒。用于首播时间安全检查；过早发布可 veto，晚到的 BD / 重发不会因此被拒绝。',
-      type: 'integer',
-    },
-    'groupId': {
-      description: '可选 AniBT 字幕组 ID，最多 200 字符。传入时必须携带登录会话且当前用户属于该字幕组，否则返回 403；用于读取本组已激活的项目匹配，不会暴露其他组数据。API Key 发布会在服务端自动使用对应字幕组。',
-      type: 'string',
-    },
-    'limit': {
-      description: '返回候选数，默认 10，上限 50。缩小 limit 不会放宽自动绑定门槛。',
-      type: 'integer',
-      default: '10',
-    },
-  }}
-/>
-
-公开路由固定 `diagnostics=false`；请求 `diagnostics=true` 返回 `403 FORBIDDEN`。诊断 AST
-只用于受控测试和运维，不公开返回完整标题切分细节。
-
-<Callout type="warn">
-  不要把调用方自行构造的「自动匹配结果」传给发布 API。`/api/releases/publish` 会丢弃调用方伪造的内部结果，并在没有显式番剧 ID 时直接运行同一套服务端 v3 matcher。
-</Callout>
-
-## 匹配与自动授权边界
-
-- 发布标题与 torrent name 分开解析；相同检索只执行一次，但两个输入仍分别参与一致性判断。
-- 中文、繁中、日文、罗马字、英文、紧凑多语拼接、全角斜线、反斜线和 script boundary 都可形成标题 hypothesis。
-- 纯 Latin 标题会同时保留原始重音 token 与去变音符号的等价 token，例如 `Caraméliser` / `Carameliser`。折叠只作用于纯 Latin 片段，CJK 与混合脚本不会被改写；若折叠后碰撞到多个番剧，所有候选都会保留并 fail closed，不会取第一名自动绑定。
-- 自动授权来源仅允许 BGM / bgm.tv、bangumi-data、本站人工全局 alias，以及当前已鉴权字幕组内唯一 active scoped binding；弱站点线索和派生 stem 只能支持召回或消歧。
-- TMDB / TVDB、外部数字 ID、官网 slug、fuzzy、typo、prefix、infix、split/join 和文本分数都不能独立授权自动发布。
-- Season / Cour / Part / Sequence / Format、显式年份、开播窗口和已知 TV 集数会在候选阶段执行 veto。显式 Season 使用季内集数；没有 Season 时，只有同一作品族、时间 cohort 和累计集数窗口均唯一，才会用 `EP25` 等绝对集数安全提升续作。
-- 类似 `[Title][24][1080p]` 的 bracket 结构会把 `[24]` 识别为集数；`[Title][1080p][24][AAC]` 中的 `[24]` 仍按帧率元数据处理，避免全局误解数字标题或 FPS。
-- `2024年版`、`(2024)` 等明确版本年份只有在目标候选自身首播年精确等于 2024 时，才能参与自动结构淘汰；上传年份或模糊年份不能代替该证据。
-- 当上季官方总集数包含一个 SP、字幕组连续编号只计算正片时，matcher 可在 family 完整、后季排名第一、双方 recall-only、发布时间明显支持后季且目标唯一的前提下，把跨季窗口安全前移一集。单集 `24` 与精确整季范围 `24-46` 使用同一修正窗口；真正多季合集仍为 `unsupported`。
-- 任一 exact / recall / 全局候选 overflow、search cutoff、lookup 二次复核失败、hydrate 缺失、generation / projection 不一致都会令 `candidateSetComplete=false`，禁止 `auto`。
-- 独立 PV / CM、MAD / AMV、游戏视频、演唱会、真人剧、音乐专辑、舞台/朗读剧、公告、壁纸或字体包可返回 `non_anime`；OVA / OAD / ONA / SP / MOVIE 仍属于动画内容。
-- 多番剧、多季或 `S1+S2+OVA` 合集返回 `unsupported`，不会强行挑一个 subject。
-
-<Callout type="info">
-  当前生产 generation 为 `match_v3_20260718_2040`：8,621 个候选番剧、223,792 条别名、168 个 scoped bindings。固定 34,083 条离线语料中有 28,559 条自动匹配（83.7925%）；2024–2026 子集为 9,084 / 9,807（92.6277%）。这是自动决策覆盖率，不是外部真值准确率。
-</Callout>
-
-## v3 响应
-
-```jsonc title="200 OK"
-{
-  "version": 3,
-  "content": {
-    "kind": "anime_episode",
-    "confidence": "medium",
-    "reasonCodes": []
-  },
-  "decision": {
-    "kind": "auto",
-    "reason": "multi_branch_identity_unique",
-    "animeId": "anime_example",
-    "bgmId": 253046,
-    "confidence": "high",
-    "vetoes": []
-  },
-  "candidates": [
-    {
-      "anime": { "_id": "anime_example", "bgmId": 253046, "title": { "chinese": "孤独摇滚！" } },
-      "animeId": "anime_example",
-      "bgmId": 253046,
-      "matchScore": 100,
-      "textMatch": 0,
-      "matchedHypothesisIds": ["..."],
-      "matchedInputs": ["release_title", "torrent_name"],
-      "retrieval": ["exact"]
-    }
-  ],
-  "search": {
-    "branchCount": 2,
-    "exactOverflow": false,
-    "recallOverflow": false,
-    "candidateOverflow": false,
-    "searchCutoff": false,
-    "exactVerificationFailed": false,
-    "versionMismatch": false,
-    "generationMismatch": false,
-    "projectionMismatch": false,
-    "candidateSetComplete": true,
-    "strictRecallUsed": true,
-    "fuzzyRecallUsed": false,
-    "generation": "match_v3_20260718_2040"
-  },
-  "diagnostics": null
-}
-```
-
-## 决策种类（成功响应内）
+## `decision.kind`
 
 | `decision.kind` | 调用方行为 |
-| --------------- | ---------- |
-| `auto` | 可采用 `decision.animeId`；该 ID 也必须存在于 `candidates`。 |
-| `manual` | 展示 `candidates` 供人工确认，不得自动绑定到某个番剧。 |
-| `none` | 没有候选，进入手动搜索或待匹配。 |
-| `non_anime` | 高置信非番剧内容，不进入番剧发布流程。 |
-| `unsupported` | 单番剧发布契约无法安全表达，例如多标题或多季合集。 |
-| `unavailable` | 必要检索或投影不可用；fail closed，稍后重试。 |
+| --- | --- |
+| `auto` | 可用 `decision.animeId`，且必须出现在 `candidates` |
+| `manual` | 展示候选，不得自动绑定 |
+| `none` | 无候选 |
+| `non_anime` | 非番剧 |
+| `unsupported` | 合集等无法用单番剧表达 |
+| `unavailable` | 检索不可用，稍后重试 |
 
-常见 `decision.reason`：
+`candidates` 不是授权字段。高 `matchScore` 不能代替 `decision.kind="auto"`。
 
-- `single_branch_identity_unique` / `multi_branch_identity_unique`：可信 identity 分支唯一且一致。
-- `scoped_binding_active`：当前字幕组的项目 binding 已激活，且仍通过候选投影、结构 veto、冲突与完整性检查。
-- `scoped_binding_conflict`：组内 binding 与当前强标题证据冲突，保留人工确认。
-- `projection_gap`：一个强语言分支缺少可信投影；有候选也保留人工确认。
-- `input_title_conflict` / `branch_conflict`：发布标题、torrent name 或多语言分支指向不同番剧。
-- `modifier_conflict` / `candidate_veto`：季度、Part、格式、年份、时间或集数冲突。
-- `search_incomplete`：候选集不完整，任何 overflow / cutoff / generation mismatch 都会走这里。
-- `low_evidence` / `no_candidates` / `search_unavailable`：证据不足、无候选或检索不可用。
-
-<Callout type="warn">
-  `candidates` 是有界证据列表，不是自动授权字段。集数、季度与 veto 可能让最终
-  `decision.animeId` 不等于原始分数最高的 `candidates[0]`；调用方应在候选中找到与
-  `decision.animeId` 相同的条目。高 `matchScore`、Typesense `textMatch`、strict/fuzzy
-  recall 或单一标题命中都不能代替 `decision.kind="auto"`。
-</Callout>
-
-## 限流与失败响应
-
-| 项目 | POST v3 |
-| ---- | ------- |
-| 请求体 | JSON，最大 32 KiB；超出返回 `413 PAYLOAD_TOO_LARGE` |
-| Schema 错误 | `422 VALIDATION_ERROR` |
-| `groupId` 无会话或非成员 | `403 FORBIDDEN` |
-| 非法 JSON | `400 INVALID_JSON` |
-| 速率限制 | 默认 180 次 / 60 秒 / IP；返回 `429 RATE_LIMIT_EXCEEDED` |
-| 缓存 | `Cache-Control: no-store`，同时禁止 CDN / Cloudflare 缓存 |
-| 方法 | 只允许 `POST, OPTIONS`；GET 返回 JSON `405 METHOD_NOT_ALLOWED`，`Allow: POST, OPTIONS` |
-| CORS | `POST, OPTIONS` |
-
-发布端不必先单独调用本接口：未提供显式番剧 ID 时，[`/api/releases/publish`](/docs/open-api/releases-publish) 会在 Web 服务端直接运行同一 matcher。只有 `auto` 会直接绑定；`manual` / `none` / `unavailable` / `unsupported` / `non_anime` 都会保留待匹配或由调用方处理。
+| HTTP | 处理 |
+| --- | --- |
+| 400 | 非法 JSON |
+| 403 | `groupId` 无会话或非成员；或公开路由传了 `diagnostics=true` |
+| 413 | 请求体超过 32 KiB |
+| 422 | 校验未通过 |
+| 429 | 180 次 / 60 秒 / IP，按 `Retry-After` 退避 |

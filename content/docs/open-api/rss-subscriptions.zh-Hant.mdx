@@ -1,87 +1,27 @@
 ---
 title: 個人訂閱 RSS
-description: GET /rss/subscriptions.xml —— 使用者在前端勾選的「我的訂閱」組合，輸出一份個人化 RSS。需登入認證。
+description: GET /rss/subscriptions.xml —— 前端「我的訂閱」合併成一份私人 RSS。
 ---
 
-`/rss/subscriptions.xml` 把 AniBT 前端「我的訂閱」中勾選的番劇 / 字幕組 / 過濾條件**合併**成一份 RSS，便於放入 BT 客戶端或 RSS 閱讀器。
+把已儲存的訂閱匯出為 RSS。使用帳戶後台產生的完整連結。
 
-與 [`/rss/anime.xml`](/docs/open-api/rss-anime)、[`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) 等**對所有人公開**的 feed 不同，這是**使用者私人** feed，因此需要登入認證。
+<ApiEndpoint method="GET" path="/rss/subscriptions.xml" auth="鑑權">
+`Cache-Control: private, no-store`。無公開 ETag。
+</ApiEndpoint>
 
-## 前置條件
-
-- 已登入 AniBT 帳號，或持有帳戶後台產生的個人訂閱連結（帶簽名參數或 token）。
-- 訂閱本身在前端設定：勾選番劇、字幕組，並設定清晰度 / 字幕語言等過濾；本端點只負責**匯出目前訂閱狀態為 RSS**。
-
-<Callout type="info">
-  在番劇詳情頁點訂閱時，彈窗會用目前番劇已載入的近期資源即時預覽篩選命中情況。調整字幕組、清晰度、字幕語言、字幕方式、封裝格式或自訂 Tag 後，可先查看預計命中，再儲存訂閱。最終進入 `/rss/subscriptions.xml` 的條目以服務端儲存後的訂閱設定和後續釋出為準。
+<Callout type="warn">
+  連結帶身分憑證。不要貼到 issue、截圖、倉庫或群。洩露後立刻到後台重設。
 </Callout>
 
-## 請求
+輪詢間隔 ≥ 5 分鐘。過快回傳 429。條目結構與 [`/rss/anime.xml`](/docs/open-api/rss-anime) 相同。完整說明見 [API 參考](/docs/open-api/reference)。
 
-```http title="HTTP"
+```txt title="請求"
 GET https://anibt.net/rss/subscriptions.xml
 ```
 
-存取方式：
-
-- 瀏覽器：登入 AniBT 帳號後直接開啟連結即可下載。
-- BT 客戶端 / RSS 閱讀器：從帳戶後台取得個人訂閱連結，將完整 URL 配進客戶端。
-
-token 產生與鑑權標頭格式以站點使用者中心為準；營運策略可能調整，**不要硬編碼**連結形態到長期腳本——優先複製後台產生的最新連結。
-
-<Callout type="warn">
-  訂閱連結通常帶有使用者身分憑證。**不要**貼到 issue、截圖、公共倉庫或公共群。洩露後應立即到後台重設。
-</Callout>
-
-## 成功回應
-
-標準 RSS 2.0 原生 XML，結構與 [`/rss/anime.xml`](/docs/open-api/rss-anime) 一致：每條 `<item>` 是一次釋出，附帶磁力 `<enclosure>`、檔案大小、字幕組、集數等。區別僅在於「哪些條目能進來」由訂閱設定決定。
-
-瀏覽器直開 RSS URL 時不載入站點自訂 XSL/CSS，使用瀏覽器預設 XML 樹展示；RSS 閱讀器和 BT 客戶端按標準欄位消費。
-
-標準 `<pubDate>` 使用 RFC 822，並按 `Asia/Shanghai` 輸出，數字偏移固定為 `+0800`；torrent 元資訊內嵌的 `<pubDate>` 使用 RFC 3339，偏移為 `+08:00`。
-
-```xml title="片段"
-<rss version="2.0">
-  <channel>
-    <title>AniBT - 我的订阅</title>
-    <link>https://anibt.net/subscriptions</link>
-    <description>由 12 个订阅条目合并生成</description>
-    <item>
-      <title>[字幕组A] 番名 - 01 [1080p][CHS&JP].mkv</title>
-      <link>https://anibt.net/release/...</link>
-      <pubDate>Tue, 11 Aug 2026 13:00:00 +0800</pubDate>
-      <enclosure url="magnet:?xt=urn:btih:..." length="734003200" type="application/x-bittorrent" />
-    </item>
-    ...
-  </channel>
-</rss>
-```
-
-## 快取與延遲
-
-- **所有回應都禁止共享快取**：成功 XML 與缺少/無效憑證、限流、服務端錯誤等回應統一返回 `Cache-Control: private, no-store`、`CDN-Cache-Control: no-store` 和 `Cloudflare-CDN-Cache-Control: no-store`。瀏覽器或 CDN 不應儲存或共享這些私人內容。
-- **頻率**：建議 BT 客戶端 5–10 分鐘輪詢一次。後端按單使用者維度限流，過快輪詢會被節流。
-- **無公開校驗器**：該私人 feed 不返回公開 `ETag`，也不提供基於 `If-None-Match` 的 `304 Not Modified` 契約；客戶端應按完整私人回應處理每次成功請求。
-
-詳見 [快取機制](/docs/open-api/caching) 和 [限流與上限](/docs/open-api/limits)。
-
-## 與公開 RSS 的對比
-
-| 維度        | `/rss/anime.xml` / `/rss/group/<slug>.xml` | `/rss/subscriptions.xml`            |
-| ----------- | ------------------------------------------ | ----------------------------------- |
-| 鑑權        | 不需要                                     | 需要（Bearer 或 Cookie）            |
-| 內容來源    | 單番劇 / 單字幕組                          | 前端勾選的多條訂閱合併              |
-| 快取策略    | CDN 共享快取                                | 私有，不走共享 CDN                  |
-| 適合場景    | 跟一部番、跟一個組                         | 一份 feed 涵蓋全部追番              |
-
-## 失敗回應
-
-| HTTP | 原因                                      | 處理                                  |
-| ---- | ----------------------------------------- | ------------------------------------- |
-| 400  | 缺少個人 RSS key / token                  | 從帳戶後台重新複製完整訂閱連結          |
-| 401  | 未登入 / 憑證過期                          | 重新登入，或在後台重新取得訂閱連結      |
-| 403  | 憑證已吊銷 / 使用者被封禁                    | 聯絡站點管理員                          |
-| 429  | 輪詢過快                                   | 拉長輪詢間隔（建議 ≥ 5 分鐘）            |
-
-下一步：把訂閱連結配進客戶端見 [整合示例](/docs/open-api/examples)；訂閱公開番劇用 [`/rss/anime.xml`](/docs/open-api/rss-anime)。
+| HTTP | 處理 |
+| --- | --- |
+| 400 | 從後台重新複製完整連結 |
+| 401 | 重新登入，或重新取得連結 |
+| 403 | 憑證已吊銷 / 使用者被封禁 |
+| 429 | 拉長間隔 |

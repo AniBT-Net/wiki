@@ -1,42 +1,20 @@
 ---
 title: 字幕组图床
-description: 在字幕组后台图床模块上传图片，复制全球加速链接、BBCode、Markdown、HTML 等格式。
+description: 在字幕组后台上传图片并复制链接。
 ---
 
-字幕组图床用于在组内上传发布相关图片，并复制多种引用格式。入口位于字幕组后台 **图床** 模块，通过 Web 上传。
+入口：`/groups/<slug>/image-host`。仅该组成员可用。单张上限 10 MiB。
 
-上传成功后可复制：
+上传后可复制加速链接、BBCode、Markdown、HTML。
 
-| 格式 | 示例 |
-| --- | --- |
-| 全球加速链接 | `https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp` |
-| BBCode | `[img]https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp[/img]` |
-| Markdown | `![pasted-image.webp](https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp)` |
-| HTML | `<img src="https://i.anibt.net/image-host/2026/07/05/Ab3CdE1/pasted-image.webp" alt="pasted-image.webp">` |
-| BBCode 链接 | `[url=https://anibt.net/i/Ab3CdE1][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
-| BBCode 直链 | `[url=https://i.anibt.net/image-host/...webp][img]https://i.anibt.net/image-host/...webp[/img][/url]` |
-| HTML 链接 | `<a href="https://anibt.net/i/Ab3CdE1" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
-| HTML 直链 | `<a href="https://i.anibt.net/image-host/...webp" target="_blank" rel="noopener noreferrer"><img src="..." alt="..."></a>` |
+## 删除
 
-<Callout type="info">
-  图床仅对已加入该字幕组的成员开放。菜单路径：字幕组后台 → **图床**（`/groups/<slug>/image-host`）。
-</Callout>
-
-## 删除图片
-
-上传者、字幕组 owner / 管理员或站点管理员可以删除图片。删除请求由
-`DELETE /api/image-host/image?imageId=...` 受理，并返回 HTTP `202` 与稳定的
-`operationId`。同一张图片的重复请求复用同一个删除 operation，不会创建并行删除链路。
-
-图片在请求受理后立即从活动列表和 `/i/:shortCode` 的站内查询中隐藏。界面随后通过
-`GET /api/image-host/image?operationId=...` 查询状态：
+上传者、组 owner / 管理员或站点管理员可删。请求返回 `202`。同一图片的重复删除走同一操作。
 
 | 状态 | 含义 |
 | --- | --- |
-| `queued` | 已受理，后台正在删除对象或等待 Cloudflare 缓存收敛。 |
-| `complete` | AniBT R2 对象（含已持久化的图库缩略图）已验证不存在；短链接页面、`i.anibt.net` 直链以及（若存在）缩略图已在 AniBT 控制的 Cloudflare 缓存中完成收敛，并返回 `404` / `410`。 |
-| `failed` | 删除 operation 已进入终态失败，界面会显示失败状态。 |
+| `queued` | 已受理 |
+| `complete` | 站内短链和 `i.anibt.net` 直链返回 `404` / `410` |
+| `failed` | 失败 |
 
-<Callout type="warning">
-  `complete` 不表示所有互联网副本都已擦除。独立加速链接及其 CDN、访问者浏览器缓存、下游代理、搜索引擎和第三方转载不属于删除完成范围。
-</Callout>
+`complete` 不包括独立加速 CDN、浏览器缓存和第三方转载。

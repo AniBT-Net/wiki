@@ -1,132 +1,23 @@
 ---
 title: 其他類 RSS
-description: GET /rss/other/<category>.xml —— 七個其他類分類各自獨立的 RSS，不混入主 RSS。
+description: GET /rss/other/<category>.xml —— 七個分類各自一份 RSS，不混入番劇 RSS。
 ---
 
-`/rss/other/<category>.xml` 輸出其他類資源的獨立 RSS。目前支援七個分類：`manga`、`music`、`raw`、`stage`、`collection`、`movie`、`other`，對應漫畫、音樂、RAW、舞台劇、合集、劇場版、其他。
+漫畫、音樂、RAW、舞台劇、合集、劇場版、其他。訂閱這些資源必須用本頁路徑。
 
-## 前置條件
+<ApiEndpoint method="GET" path="/rss/other/<category>.xml" auth="公開">
+分類：`manga` / `music` / `raw` / `stage` / `collection` / `movie` / `other`。
+</ApiEndpoint>
 
-- 無需鑑權。
-- 其他類資源**不會**混入 `/rss/magnets.xml`、`/rss/anime.xml` 或番劇詳情頁 RSS；訂閱這些資源須使用本頁的分類路徑。
+<Callout type="info">
+  空分類仍回傳有效空 channel，不回傳 404。無 `<anibt:bgmId>`。
+</Callout>
 
-## URL
+完整參數見 [API 參考](/docs/open-api/reference)。
 
-```txt title="分類 RSS"
+```txt title="示例"
 https://anibt.net/rss/other/manga.xml
-https://anibt.net/rss/other/music.xml
-https://anibt.net/rss/other/raw.xml
-https://anibt.net/rss/other/stage.xml
-https://anibt.net/rss/other/collection.xml
-https://anibt.net/rss/other/movie.xml
-https://anibt.net/rss/other/other.xml
+https://anibt.net/rss/other/music.xml?q=FLAC&limit=50
 ```
 
-分類沒有釋出記錄時，規範 URL 仍回傳 `200 application/xml` 和有效的空 RSS channel，不回傳 `404`。
-
-## 查詢參數
-
-<TypeTable
-  type={{
-    'limit': {
-      description: '返回條數，1..100，預設 100。只接受單個無前導零的十進位整數。',
-      type: 'integer',
-      default: '100',
-    },
-    'q': {
-      description: '關鍵詞搜尋。別名：search。NFKC 規範化、去首尾空白、折疊連續空白，UTF-8 最多 160 bytes。',
-      type: 'string',
-    },
-    'search': {
-      description: 'q 的別名；q/search 合計只能出現一個值。',
-      type: 'string',
-    },
-    'groupId': {
-      description: '字幕組組織 ID。釋出 API 返回的 groupId 可直接用於過濾。',
-      type: 'string',
-    },
-    'sortField': {
-      description: 'publishedAt / fileSize，預設 publishedAt。',
-      type: 'enum',
-      default: 'publishedAt',
-    },
-    'sortOrder': {
-      description: 'desc / asc，預設 desc。',
-      type: 'enum',
-      default: 'desc',
-    },
-  }}
-/>
-
-## 示例
-
-<Steps>
-  <Step>
-    ### 訂閱漫畫最新釋出
-    ```txt title="漫畫"
-    https://anibt.net/rss/other/manga.xml
-    ```
-  </Step>
-  <Step>
-    ### 搜尋音樂分類
-    ```txt title="音樂 + 關鍵詞"
-    https://anibt.net/rss/other/music.xml?q=FLAC&limit=50
-    ```
-  </Step>
-  <Step>
-    ### 按檔案大小排序 RAW
-    ```txt title="RAW + 檔案大小"
-    https://anibt.net/rss/other/raw.xml?sortField=fileSize&sortOrder=desc
-    ```
-  </Step>
-</Steps>
-
-## 成功回應
-
-返回標準 RSS 2.0 原生 XML。瀏覽器直開 RSS URL 時不載入站點自訂 XSL/CSS，使用瀏覽器預設 XML 樹展示；RSS 閱讀器和 BT 客戶端按標準欄位消費。
-
-每個 `<item>` 包含：
-
-<TypeTable
-  type={{
-    '<title>': {
-      description: '資源標題；若有字幕組名，顯示為 [字幕組] 標題。',
-      type: 'string',
-    },
-    '<link>': {
-      description: '其他類資源詳情頁（/other-release/<id>）。',
-      type: 'url',
-    },
-    '<guid isPermaLink="false">': {
-      description: '穩定 other release id。',
-      type: 'string',
-    },
-    '<pubDate>': {
-      description: 'RFC 822 時間；按 Asia/Shanghai 輸出，數字偏移固定為 +0800。',
-      type: 'datetime',
-    },
-    '<description>': {
-      description: 'CDATA，包含分類、字幕組、檔案大小、下載連結、說明和標籤。',
-      type: 'string',
-    },
-    '<enclosure>': {
-      description: '種子下載 URL，type="application/x-bittorrent"。僅上傳過種子檔案的條目會有。',
-      type: 'url',
-    },
-    '<torrent>': {
-      description: 'RSS 內的 torrent 元資訊；有 magnet 時會包含 infoHash，內嵌 <pubDate> 使用 RFC 3339，按 Asia/Shanghai 輸出為 +08:00。',
-      type: 'element',
-    },
-  }}
-/>
-
-## 快取與索引
-
-- RSS 回應從最終 XML UTF-8 bytes 計算 exact-body `W/"anibt-sha256-{...}"` ETag，並移除了請求時間 `lastBuildDate`；匹配 ETag 的 `304` 表示目前 feed bytes 未變化。目前省略 `Last-Modified`。
-- 無 `q` 的 latest/filter 變體為 `s-maxage=120`；帶 `q` 的搜尋（包括空結果）為 `s-maxage=600`；兩類統一 `stale-while-revalidate=60`。
-- 分類釋出變化會先失效 latest Redis 家族，再清除該 category 的全部非全文搜尋 CDN 參數變體，包含只傳 `groupId` 的過濾 URL；帶 `q` / `search` 的搜尋 Redis 與 CDN 身分仍按 600 秒 TTL 自主管理，不會被無關分類釋出清除，因此這不是即時搜尋 SLA。
-- 搜尋快取身分只儲存規範化查詢的 SHA-256。重複/空/控制字元 q、同時傳 q+search 或超過 160 bytes 返回 `400 + no-store`。僅調整原始 query 參數對順序會直接返回同一規範 `200`；預設值、相容別名或其他位元組級規範化仍返回可快取一天的 `308`。
-- 只有真正穿透 CDN/Redis 的新搜尋 MISS 才受 distinct-query 與全站併發預算保護；超限返回 `429 + Retry-After`，穩定查詢和快取 HIT 不扣額度。
-- 這些 RSS 回應會帶 `noindex, follow` 搜尋引擎策略，避免分類 feed 被搜尋引擎索引。
-
-繼續：[釋出其他類資源](/docs/open-api/other-releases-publish)；番劇主 RSS 見 [RSS 主入口](/docs/open-api/rss-anime)。
+`q` 與 `search` 只能提供一個值。空、控制字元或超長回傳 `400`。

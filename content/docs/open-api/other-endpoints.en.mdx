@@ -1,316 +1,59 @@
 ---
 title: Other endpoints
-description: Group short-link RSS, site-wide magnet RSS, seasonal anime JSON, and per-show group JSON.
+description: Group short-link RSS, site-wide magnet RSS, seasonal anime JSON, per-show group JSON.
 ---
 
-Beyond the main entry, AniBT provides four common endpoints: two RSS variants (short link + site-wide) and two JSON APIs (seasonal + per-show).
+Full fields: [API reference](/docs/open-api/reference).
 
-The RSS endpoints on this page return native RSS 2.0 XML. Opening an RSS URL in a browser no longer loads AniBT custom XSL/CSS; the browser renders its default XML tree while RSS readers and BT clients keep consuming the standard fields.
+## Group short link
 
-<Cards>
-  <Card title="Group short link RSS" href="#group-short-link-rssgroupslugxml" description="GET /rss/group/<slug>.xml" />
-  <Card title="Site-wide magnet RSS" href="#site-wide-magnets-rssmagnetsxml" description="GET /rss/magnets.xml" />
-  <Card title="Seasonal anime JSON" href="#seasonal-anime-apiseasonsanime" description="GET /api/seasons/anime" />
-  <Card title="Per-show groups JSON" href="#per-show-groups-apianimegroups" description="GET /api/anime/groups" />
-</Cards>
+<ApiEndpoint method="GET" path="/rss/group/<slug>.xml" auth="public">
+Same as `/rss/anime.xml?groupSlug=<slug>`. No tag filters.
+</ApiEndpoint>
 
-## Group short link `/rss/group/<slug>.xml`
+Path must end with `.xml`. Unknown slug returns `404`. `limit=1..100`. Invalid `limit` returns app `400`; production edge may return `403` first.
 
-Equivalent to `/rss/anime.xml?groupSlug=<slug>`, but with a shorter URL — handy for READMEs and forums.
-
-<Callout type="warn">
-  The path **must** end with `.xml`. A single `limit=1..100` is supported, but tag filters are **not**; for filtering, use [the main entry](/docs/open-api/rss-anime). Invalid limits return application 400 and may be blocked first by Cloudflare 403 at the production edge.
-</Callout>
-
-```txt title="Examples"
+```txt title="Example"
 https://anibt.net/rss/group/kirara-fantasia.xml
-https://anibt.net/rss/group/pre-s.xml
-https://anibt.net/rss/group/kitauji-sub.xml
-https://anibt.net/rss/group/haruhana.xml
 ```
 
-Items use the same AniBT extension fields as [the main RSS entry](/docs/open-api/rss-anime), including `<anibt:bgmId>` when the release is bound.
+## Site-wide magnets
 
-<Callout type="info">
-  Routine publication refreshes only the known group's owner-scoped RSS variants. Group creation, canonical-slug rename, and deletion converge the old/new full paths together with their bounded cached `404` state; arbitrary unknown slugs are still not treated as invalidation owners. A healthy event path reflects a real lifecycle transition without waiting for the full TTL, but clients should still retain the final URL after a rename.
-</Callout>
+<ApiEndpoint method="GET" path="/rss/magnets.xml" auth="public">
+Latest site-wide releases. Bound anime items include `<anibt:bgmId>`.
+</ApiEndpoint>
 
-## Site-wide magnets `/rss/magnets.xml`
-
-Good for "what's new across the whole site". `robots.txt` disallows `/rss/` for search engines; downloader subscriptions are unchanged.
-
-```txt title="Common queries"
+```txt title="Examples"
 https://anibt.net/rss/magnets.xml
-https://anibt.net/rss/magnets.xml?limit=100
 https://anibt.net/rss/magnets.xml?q=葬送的芙莉莲
 https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 ```
 
-Each anime `<item>` includes `xmlns:anibt` structured metadata; **`<anibt:bgmId>`** is the Bangumi subject id (emitted when bound). Field set matches `/rss/anime.xml` and `/rss/group/*.xml`. `/rss/other/*` does not emit `bgmId`.
+`q` and `search` may supply only one value. Empty, control characters, or overlong input returns `400`.
 
-<Callout type="info">
-  Latest/filter variants without `q` cache for **120s**; searches with `q`, including empty results, cache for **600s**; both use `stale-while-revalidate=60s`. See [HTTP caching & 304](/docs/open-api/caching).
-</Callout>
+## Seasonal anime
 
-<Callout type="warn">
-  `q` and `search` are aliases and may contain only one value. Search text is NFKC-normalized, trimmed, whitespace-collapsed, and capped at 160 UTF-8 bytes; repeated, empty, control-bearing, or oversized input returns `400 + no-store`. Reordering otherwise byte-identical raw query pairs returns the same canonical `200`; defaults, compatibility aliases, and other lexical normalization still return a cacheable one-day `308`. Excessive new high-cardinality MISSes return `429 + Retry-After`.
-</Callout>
+<ApiEndpoint method="GET" path="/api/seasons/anime" auth="public">
+Anime listed for the current season. `bgmId` wins over `season`, and cannot be combined with `query`.
+</ApiEndpoint>
 
-## Seasonal anime `/api/seasons/anime`
-
-Used by external trackers, dashboards, and editor helpers. **Returns the current-season anime list and the available seasons.**
-
-### Request
-
-```txt title="Several call shapes"
-GET https://anibt.net/api/seasons/anime
-GET https://anibt.net/api/seasons/anime?season=2026春
-GET https://anibt.net/api/seasons/anime?season=2026-SPRING   # ISO form also accepted
-GET https://anibt.net/api/seasons/anime?bgmId=543360         # exact-match a single show
-GET https://anibt.net/api/seasons/anime?query=Summer%20Pockets # search by anime title
-GET https://anibt.net/api/seasons/anime?season=2026夏&query=夏日口袋
+```txt title="Examples"
+https://anibt.net/api/seasons/anime
+https://anibt.net/api/seasons/anime?season=2026春
+https://anibt.net/api/seasons/anime?bgmId=543360
+https://anibt.net/api/seasons/anime?query=夏日口袋
 ```
 
-### Query
+`weekday`: 0=Sunday … 6=Saturday, Asia/Shanghai; `null` means unscheduled. `rating` is 0–100.
 
-<TypeTable
-  type={{
-    'season': {
-      description: 'Forms like 2026春 / 2026夏 / 2026秋 / 2026冬, or ISO forms like 2026-SPRING.',
-      type: 'string',
-      default: 'current season',
-    },
-    'bgmId': {
-      description: 'Exact-match a single show by Bangumi subject id. Takes priority over season: when set, the season filter is ignored. requestedSeason is auto-filled with the show’s real season; an unmatched id returns total: 0 and byWeekday: [].',
-      type: 'integer',
-    },
-    'query': {
-      description: 'Search by anime title (short alias: q), matching Chinese, Traditional Chinese, romaji, English, Japanese, and allTitles. Max 120 characters; returns up to 50 matching shows. Without season it searches all public anime; with season it searches only that season. Cannot be combined with bgmId.',
-      type: 'string',
-    },
-  }}
-/>
+## Groups for one anime
 
-### Response (excerpt)
+<ApiEndpoint method="GET" path="/api/anime/groups" auth="public">
+Groups currently publishing a `bgmId`, plus the latest 30 items per group.
+</ApiEndpoint>
 
-```jsonc title="200 OK"
-{
-  "ok": true,
-  "ts": 1776841966624,
-  "data": {
-    "currentSeason": "2026春",
-    "requestedSeason": "2026春",
-    "availableSeasons": ["2024春", "2024夏", "...", "2026秋"],
-    "scheduleSummary": {
-      "scheduled": 97,
-      "weekdayOnly": 0,
-      "missingSource": 9
-    },
-    "byWeekday": [
-      {
-        "weekday": 1,
-        "weekdayLabel": "周一",
-        "animes": [
-          {
-            "bgmId": 543360,
-            "animeId": "nh73r0ernee7s0afv9s82f763983gcz7",
-            "cover": "https://r2.anibt.net/anime_covers/.../...jpg",
-            "title": {
-              "primary": "上伊那牡丹，酒醉身姿似百合花般",
-              "chinese": "上伊那牡丹，酒醉身姿似百合花般",
-              "romaji": "Kamiina Botan, Yoeru Sugata wa Yuri no Hana",
-              "english": "Botan Kamiina Fully Blossoms When Drunk",
-              "japanese": "上伊那ぼたん、酔へる姿は百合の花"
-            },
-            "format": "TV",
-            "kind": "TV",
-            "rating": 73,
-            "airingAt": 1764259200,
-            "weekday": 1,
-            "weekdayLabel": "周一",
-            "scheduleStatus": "scheduled",
-            "rssReleaseCount": 11,
-            "hasRelease": true
-          }
-        ]
-      },
-      { "weekday": null, "weekdayLabel": "未排播", "animes": [ /* source is missing weekday data */ ] }
-    ],
-    "total": 106
-  }
-}
+```txt title="Example"
+https://anibt.net/api/anime/groups?bgmId=543360
 ```
 
-### Key fields
-
-<TypeTable
-  type={{
-    'ts': {
-      description: 'Materialization time of the cached representation (ms). It stays stable while the same Redis representation is reused and is included in the final JSON body and exact-body ETag; it advances when a refreshed representation is created.',
-      type: 'number',
-    },
-    'byWeekday': {
-      description: 'Anime list grouped by weekday. Order: Mon(1) → Tue(2) → … → Sun(0) → unscheduled(null); empty groups are omitted. Within a group, sorted by airingAt asc, unknown last.',
-      type: 'array',
-    },
-    'scheduleSummary': {
-      description: 'Schedule-source summary: scheduled = weekday + airingAt; weekdayOnly = weekday known but exact time missing; missingSource = Bangumi/BGMWiki/Typesense source fields are missing.',
-      type: 'object',
-    },
-    'scheduleStatus': {
-      description: 'Per-show schedule status: scheduled / weekday_only / missing_source. missing_source means source data is absent, not that AniBT failed to refresh its cache.',
-      type: 'enum',
-    },
-    'rssReleaseCount': {
-      description: 'Number of AniBT releases published and matched to this anime. It updates after publish, delete, or pending-match changes; the home weekly cards use the same value to show the "No torrents yet" state.',
-      type: 'number',
-    },
-    'hasRelease': {
-      description: 'Whether this anime has at least one AniBT release. Equivalent to rssReleaseCount > 0, for clients that only need an availability flag.',
-      type: 'boolean',
-    },
-    'availableSeasons': {
-      description: 'Auto-detected seasons within the current ±N range that contain at least one show. Sorted ascending; current season is always included. Render directly into a dropdown.',
-      type: 'string[]',
-    },
-    'weekday': {
-      description: '0 = Sunday … 6 = Saturday, Asia/Shanghai. null means the current index has no weekday source; combine with scheduleStatus.',
-      type: 'number | null',
-    },
-    'format': {
-      description: 'AniList raw enum: TV / TV_SHORT / MOVIE / SPECIAL / OVA / ONA / MUSIC, or null when unknown.',
-      type: 'enum',
-    },
-    'kind': {
-      description: 'Simplified bucket: TV (incl. TV_SHORT) / MOVIE / OTHER (OVA/ONA/SPECIAL/MUSIC/unknown).',
-      type: 'enum',
-    },
-    'rating': {
-      description: '0–100 (AniList averageScore), null when unknown.',
-      type: 'number | null',
-    },
-    'title.japanese': {
-      description: 'Native Japanese title (from AniList title.native). All public APIs use the name "japanese".',
-      type: 'string',
-    },
-  }}
-/>
-
-### Caching & rate limiting
-
-| Item              | Value                                                                                |
-| ----------------- | ------------------------------------------------------------------------------------ |
-| Rate limit        | **30 requests / 60 s / IP** (shared with `/api/anime/groups`)                         |
-| `Cache-Control`   | `public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400` (**browser revalidates + CDN 10 min fresh + 24 h SWR/SIE**) |
-| Conditional req.  | `If-None-Match` (opaque ETag like `W/"anibt-sha256-{64 lowercase hex}"`); `Last-Modified` is currently omitted |
-
-<Callout type="info">
-  `ts`, the final JSON bytes, and the ETag now belong to one cached representation: all three remain stable on a cache hit and advance together on refresh. A matching-ETag `304` therefore means the current body bytes are unchanged.
-</Callout>
-
-```bash title="Conditional request"
-curl 'https://anibt.net/api/seasons/anime'
-curl 'https://anibt.net/api/seasons/anime?season=2026春'
-curl 'https://anibt.net/api/seasons/anime?bgmId=543360'
-curl 'https://anibt.net/api/seasons/anime?query=Summer%20Pockets'
-
-ETAG=$(curl -sSI 'https://anibt.net/api/seasons/anime' | grep -i ^etag: | awk '{print $2}' | tr -d '\r')
-curl -i 'https://anibt.net/api/seasons/anime' -H "If-None-Match: $ETAG"
-# → HTTP/2 304; the current cached representation body bytes are unchanged
-```
-
-## Per-show groups `/api/anime/groups`
-
-> "Who's working on this anime?" Pass a single `bgmId` and get every active group, the latest update time, and **up to 30 recent releases**.
-
-Designed to feed `groupSlug` into `/rss/anime.xml`, and equally useful for building "show detail / release list" UIs directly.
-
-### Request
-
-```txt
-GET https://anibt.net/api/anime/groups?bgmId=543360
-```
-
-<TypeTable
-  type={{
-    'bgmId': {
-      description: 'Bangumi id (positive integer), e.g. 543360.',
-      type: 'integer',
-    },
-  }}
-/>
-
-### Response (excerpt)
-
-```jsonc title="200 OK"
-{
-  "ok": true,
-  "ts": 1776841967132,
-  "data": {
-    "bgmId": 543360,
-    "animeId": "nh73r0ernee7s0afv9s82f763983gcz7",
-    "title": { /* primary / chinese / romaji / english / japanese */ },
-    "groups": [
-      {
-        "groupId": "org_aagmgM9i0ZyR",
-        "slug": "kitauji-sub",
-        "name": "北宇治字幕组",
-        "status": "ACTIVE",
-        "lastUpdatedAt": 1776624843260,
-        "items": [
-          {
-            "releaseId": "rel_fItEHE7r1gR1",
-            "title": "[北宇治字幕组] 上伊那牡丹，酒醉身姿似百合 [02][WebRip][HEVC_AAC][繁日內嵌]",
-            "magnet": "magnet:?xt=urn:btih:282e2b…",
-            "episodeKey": "2",
-            "resolution": "1080p",
-            "language": ["CHT", "JP"],
-            "subtitle": "EMBEDDED",
-            "publishedAt": 1776624843260
-          }
-          /* … up to 30 entries, sorted by publishedAt desc … */
-        ]
-      }
-      /* … other groups … */
-    ],
-    "total": 4
-  }
-}
-```
-
-- `ts`: materialization time of the cached representation; it stays stable in one cached value and is included in the exact-body ETag.
-- The list is sorted by `lastUpdatedAt` desc (most recently active first).
-- `items`: up to 30 latest releases for that group on that show, sorted by `publishedAt` desc. You can render a "show × group" resource panel directly without pulling RSS.
-  - `magnet` may be `null` if only a torrent file exists.
-  - `episodeKey` is a stable episode key (e.g. `01`, `SP01`) suitable for sorting / aggregation.
-  - `language`: `("CHS" | "CHT" | "JP" | "EN" | "KO" | "ES" | "PT" | "FR" | "DE" | "IT" | "RU" | "AR" | "HI" | "ID" | "MS" | "TH" | "VI" | "TL" | "TR" | "PL" | "UK")[]`.
-  - `subtitle`: `"EMBEDDED" | "EXTERNAL" | "BUILT_IN" | "NONE"`.
-- `slug` matches [the catalogue](/docs/open-api/subtitle-groups) exactly and can be fed to `/rss/anime.xml?groupSlug=...`.
-- An unlisted or hidden id returns `404 ANIME_NOT_FOUND`.
-
-### Typical use — build an RSS for a tracker
-
-```bash title="Two-step pipeline"
-# Step 1: given a bgmId, fetch the group list
-curl -s 'https://anibt.net/api/anime/groups?bgmId=543360' \
-  | jq -r '.data.groups[].slug'
-# kitauji-sub
-# kirara-fantasia
-# pre-s
-# haruhana
-
-# Step 2: build an RSS (multiple groups, CHS + 1080p)
-curl 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub,kirara-fantasia,pre-s,haruhana&language=CHS&resolution=1080p&limit=50'
-```
-
-### Caching & rate limiting
-
-| Item              | Value                                                                              |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| Rate limit        | **30 requests / 60 s / IP** (shared with `/api/seasons/anime`)                      |
-| `Cache-Control`   | `public, max-age=0, s-maxage=300, stale-while-revalidate=3600, stale-if-error=3600` (**browser revalidates + CDN 5 min fresh + 1 h SWR/SIE**) |
-| Conditional req.  | `If-None-Match` (`W/"anibt-sha256-{64 lowercase hex}"`); `Last-Modified` is currently omitted |
-
-<Callout type="info">
-  `ts`, the groups/items body, and the ETag are generated as one cached representation; any body-byte change advances the ETag. Polling intervals shorter than five minutes are still discouraged.
-</Callout>
+Unlisted or hidden anime returns `404 ANIME_NOT_FOUND`. `magnet` may be `null`. `slug` can go straight into `/rss/anime.xml?groupSlug=…`.

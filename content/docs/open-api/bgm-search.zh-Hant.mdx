@@ -1,132 +1,28 @@
 ---
 title: Bangumi 搜尋
-description: GET /api/bgm/search —— 公開搜尋 Bangumi 番劇 ID，支援中 / 英 / 日 / 羅馬音關鍵詞。
+description: GET /api/bgm/search —— 把番劇名對應為 bgmId。
 ---
 
-`/api/bgm/search` 是**公開**搜尋端點，無需鑑權。用於把「使用者輸入的番劇名」對應為穩定的 Bangumi.tv subject id（`bgmId`），再交給 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或 [`/api/releases/publish`](/docs/open-api/releases-publish)。
+公開搜尋。拿到 `bgmId` 再去拼 RSS 或釋出。
 
-## 前置條件
+<ApiEndpoint method="GET" path="/api/bgm/search" auth="公開">
+站內未收錄的作品搜不到。
+</ApiEndpoint>
 
-- 無需鑑權。
-- 查詢目標須為站內已索引番劇；未收錄作品需先完成站內番劇同步。
+<TypeTable
+  type={{
+    q: { type: 'string', required: true, description: '關鍵詞。中 / 英 / 日 / 羅馬音' },
+    limit: { type: 'integer', default: '5', description: '條數，上限 25' },
+  }}
+/>
 
-<Callout type="info">
-  生產實作由主站 Web runtime 直接查詢 AniBT 的 Typesense 番劇索引，不再經 Convex HTTP action 透傳 Bangumi 上游。
+<Callout type="warn">
+  不保證第一條就是目標作品。撞名時加大 `limit` 再挑。把 `bgmId` 快取到本地。
 </Callout>
 
-## 請求
+完整欄位見 [API 參考](/docs/open-api/reference)。
 
-```txt title="URL"
-GET https://anibt.net/api/bgm/search?q=<keyword>&limit=<n>
-```
-
-支援中文、英文、日文、羅馬音任意關鍵詞。
-
-```bash title="curl 示例"
+```bash title="curl"
 curl -s -G 'https://anibt.net/api/bgm/search' \
   --data-urlencode 'q=葬送的芙莉莲' -d 'limit=3'
 ```
-
-## 查詢參數
-
-<TypeTable
-  type={{
-    'q': {
-      description: '關鍵詞。支援中 / 英 / 日 / 羅馬音。建議用 --data-urlencode 讓 curl 自動編碼。',
-      type: 'string',
-      required: true,
-    },
-    'limit': {
-      description: '返回條數，預設 5，上限 25。',
-      type: 'integer',
-      default: '5',
-    },
-  }}
-/>
-
-## 成功回應
-
-```jsonc title="200 OK"
-{
-  "ok": true,
-  "data": [
-    {
-      "bgmId": 400602,
-      "name": "葬送のフリーレン",
-      "nameCn": "葬送的芙莉莲",
-      "date": null,
-      "image": "https://...",
-      "rating": 8.5,
-      "totalEpisodes": 28,
-      "url": "https://bgm.tv/subject/400602"
-    }
-  ]
-}
-```
-
-## 欄位說明
-
-<TypeTable
-  type={{
-    'bgmId': {
-      description: 'Bangumi.tv subject id。這是後續所有介面裡用作 bgmId 參數的唯一權威值。',
-      type: 'number',
-    },
-    'name': {
-      description: '原始名（通常日文）。',
-      type: 'string',
-    },
-    'nameCn': {
-      description: '中文譯名。',
-      type: 'string',
-    },
-    'date': {
-      description: '首播日期。目前 Web 索引可能返回 null。',
-      type: 'string | null',
-    },
-    'image': {
-      description: '封面圖 URL。',
-      type: 'url',
-    },
-    'rating': {
-      description: '0–10，Bangumi 使用者評分。未評分為 null。',
-      type: 'number | null',
-    },
-    'totalEpisodes': {
-      description: '總集數。劇場版可能為 1。',
-      type: 'number',
-    },
-    'url': {
-      description: 'Bangumi.tv 詳情頁 URL。',
-      type: 'url',
-    },
-  }}
-/>
-
-## 實戰：搜尋 → 拼 RSS
-
-```bash title="一行打出 bgmId 給 RSS 用"
-BGM=$(curl -s -G 'https://anibt.net/api/bgm/search' \
-  --data-urlencode 'q=葬送的芙莉莲' -d 'limit=1' \
-  | jq -r '.data[0].bgmId')
-
-echo "https://anibt.net/rss/anime.xml?bgmId=$BGM&resolution=1080p&language=CHS"
-```
-
-## 快取與限流
-
-| 項目            | 值                                                                 |
-| --------------- | ------------------------------------------------------------------ |
-| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=300, stale-if-error=300` |
-| ETag            | 支援 `If-None-Match`；未變化返回 `304 Not Modified`                 |
-| 速率限制        | 60 次 / 60 秒 / IP，詳見 [限流與上限](/docs/open-api/limits)         |
-
-## 注意事項
-
-<Callout type="info">
-  搜尋結果按文本相關度、熱度與更新時間排序，**不**保證第一條就是最熱門版本。番名易撞車時（多季 / 同名作品），宜增大 `limit` 後人工挑選。
-</Callout>
-
-<Callout type="warn">
-  生產程式碼宜將解析出的 `bgmId` 快取到本機，避免每次釋出或拉 RSS 前都查詢。
-</Callout>

@@ -1,72 +1,55 @@
 ---
 title: Bangumi Moe Sync
-description: Configure release sync with a Bangumi Moe username or email and password.
+description: Configure sync with an activated account username or email and password.
 ---
 
-Bangumi Moe sync signs in with an account password. AniBT stores the credentials encrypted and reuses the derived login session. The background worker signs in again after the session expires.
+Sign in with a Bangumi Moe username or email and password, then sync publishes.
 
 <Callout type="warn">
-  Activate the Bangumi Moe account by email before configuring sync. Pasted browser Cookies are no longer supported; groups that only had a Cookie configured must enter a username and password.
+  Activate the account by email first. Pasted browser Cookies no longer work; groups that only stored a Cookie must enter a username and password.
 </Callout>
-
-## Configure the Account
 
 <Steps>
   <Step>
-    ### Open Bangumi Moe sync settings
+    ### Enter credentials
 
-    Open `/groups/<slug>/sync` in the AniBT subtitle group dashboard and select **Bangumi Moe Sync**.
+    Subtitle group dashboard `/groups/<slug>/sync` → **Bangumi Moe Sync**. Enable it, select **Change credentials**, and enter the username or email and password.
   </Step>
-
   <Step>
-    ### Enter the username and password
+    ### Publishing identity and save
 
-    Enable Bangumi Moe sync. Select **Change credentials**, then enter the Bangumi Moe username or email and password.
-  </Step>
-
-  <Step>
-    ### Configure the publishing identity
-
-    To publish through a Bangumi Moe Team, enter the publishing identity name or Team ID. Leave both fields empty to publish as the account itself.
-  </Step>
-
-  <Step>
-    ### Save the configuration
-
-    Select **Save**. Changing the username or password clears the previous session; AniBT signs in again during the next test or publish attempt.
+    To publish as a Team, enter the publishing identity name or Team ID. Leave both empty to publish as the account. Select **Save**.
   </Step>
 </Steps>
-
-## Fields
 
 <TypeTable
   type={{
     'Username or email': {
-      description: 'The username or email used to sign in to Bangumi Moe.',
+      description: 'Bangumi Moe sign-in username or email.',
       type: 'string',
     },
     'Password': {
-      description: 'The Bangumi Moe password. The account must already be activated by email.',
+      description: 'Bangumi Moe password. The account must already be activated by email.',
       type: 'string',
     },
     'Publishing Identity Name': {
-      description: 'The Bangumi Moe Team name. Leave empty to publish as the account itself.',
+      description: 'Bangumi Moe Team name. Leave empty to publish as the account.',
       type: 'string',
       default: 'optional',
     },
     'Team ID': {
-      description: 'Enter a Team ID to pin a specific Team. It takes priority over name matching.',
+      description: 'Pin a specific Team. Takes priority over name matching.',
       type: 'string',
       default: 'optional',
     },
   }}
 />
 
-## Test the Connection
+After saving, select **Test Connection**:
 
-After saving the credentials, select **Test Connection**.
-
-- **Connection successful** — the account is signed in and can access the Bangumi Moe publishing feature.
-- **Account not activated** — activate the account by email on Bangumi Moe, then test again.
-- **Login failed** — check the username or email and password.
-- **Login too frequent** — wait before testing again instead of repeatedly signing in.
+| Result | Action |
+| --- | --- |
+| Connection successful | Publishing is available |
+| Account not activated | Activate the account by email on Bangumi Moe first |
+| Login failed | Check the username or email and password |
+| Login too frequent | Wait, then test again. Do not sign in repeatedly |

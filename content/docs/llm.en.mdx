@@ -1,130 +1,19 @@
 ---
 title: LLM integration
-description: AniBT provides llms.txt, llms-full.txt, per-page Markdown endpoints, and HTTP Markdown content negotiation for LLM, Agent, and RAG clients.
+description: Markdown entry points for the Wiki and public pages.
 ---
 
-AniBT Wiki content is exposed as LLM-friendly Markdown. Public AniBT HTML pages can also be converted to Markdown on request. Use either form as context for ChatGPT / Claude / Cursor / custom RAG pipelines.
+| Path | Use |
+| --- | --- |
+| `/llms.txt` | Index |
+| `/llms-full.txt` | Full Simplified Chinese |
+| `/llms-full.en.txt` | Full English |
+| `/docs/<slug>.md` | Per-page source. Prefix `/en` for English, `/zh-Hant` for Traditional Chinese |
 
-## Endpoints
-
-<Cards>
-  <Card
-    title="/llms.txt"
-    href="/llms.txt"
-    description="An llmstxt.org-style index: site title plus a link list of every page."
-  />
-  <Card
-    title="/llms-full.txt"
-    href="/llms-full.txt"
-    description="Every zh-CN page concatenated into one Markdown file for one-shot LLM loading."
-  />
-  <Card
-    title="/llms-full.en.txt"
-    href="/llms-full.en.txt"
-    description="Same content in English. Prefer this when feeding international models."
-  />
-  <Card
-    title="<page>.md"
-    href="/en/docs/open-api.md"
-    description="Append .md to any doc path for raw Markdown, e.g. /en/docs/open-api.md."
-  />
-  <Card
-    title="Accept: text/markdown"
-    href="https://anibt.net/anime/638151"
-    description="Request any public HTML page as Markdown via Cloudflare edge conversion."
-  />
-</Cards>
-
-## Real-time conversion for public pages
-
-AniBT has enabled Cloudflare Markdown for Agents. Add `Accept: text/markdown` when requesting a public HTML page:
+Public HTML pages accept `Accept: text/markdown`. JSON, RSS, and images are not converted.
 
 ```bash
-curl 'https://anibt.net/anime/638151' \
-  -H 'Accept: text/markdown'
+curl 'https://anibt.net/anime/638151' -H 'Accept: text/markdown'
 ```
 
-A successful response uses `Content-Type: text/markdown; charset=utf-8` and includes:
-
-- `Vary: accept`, so HTML and Markdown are stored as separate cache variants.
-- `x-markdown-tokens`, the estimated token count of the converted Markdown.
-- `x-original-tokens`, the estimated token count of the original HTML.
-- `Content-Signal: ai-train=yes, search=yes, ai-input=yes`, the current policy for public content.
-
-Only HTML is converted. JSON APIs, RSS/XML, images, and R2 objects keep their native content types. Conversion removes scripts, styles, navigation, and other non-content elements. Pages that render multiple responsive DOM variants may still contain repeated sections. Prefer the static `.md` or `llms-full.*` endpoints above when ingesting Wiki documentation.
-
-## Usage
-
-### ChatGPT / Claude / Gemini chat UIs
-
-Paste the URL into the conversation:
-
-```txt
-Use this document as the source for follow-up questions:
-https://anibt.net/llms-full.en.txt
-```
-
-The model fetches and loads the full document as context. `llms-full.en.txt` is about 80 KB — within common major-model context windows for a single load.
-
-### Cursor / Continue / Cline (IDE agents)
-
-Add the index as a custom doc source. Cursor's `@Docs` accepts:
-
-```txt
-https://anibt.net/llms.txt
-```
-
-It expands the index and pulls per-page `.md` files on demand.
-
-### RAG / custom pipelines
-
-```python title="Crawl the whole site for embeddings"
-import requests, re
-
-base = 'https://anibt.net'
-index = requests.get(f'{base}/llms.txt').text
-
-# Each (link) in llms.txt is one page; append .md to the path to get the source.
-urls = re.findall(r'\(([^)]+)\)', index)
-for path in urls:
-    if not path.startswith('/docs'):
-        continue
-    md = requests.get(f'{base}/en{path}.md').text
-    # → feed into chunker / embedder
-```
-
-Swap `/en` for `/zh-Hant` for Traditional Chinese, or omit the prefix for default zh-CN.
-
-## Endpoint comparison
-
-| Endpoint                 | Content                       | Best for                            |
-| ------------------------ | ----------------------------- | ----------------------------------- |
-| `/llms.txt`              | TOC + links (a few KB)         | Sitemap for agents that fetch lazily |
-| `/llms-full.txt`         | All zh-CN content (~80 KB)    | One-shot ingestion into a CN LLM    |
-| `/llms-full.en.txt`      | All English content           | International LLMs / English answers |
-| `/<lang>/docs/<slug>.md` | Single page Markdown source   | Citing or quoting one specific page |
-| `Accept: text/markdown`  | Real-time conversion of any public HTML page | Ad-hoc Agent retrieval of public site pages |
-
-<Callout type="info">
-  `llms.txt`, `llms-full.*`, and per-page `.md` files are **fully static** with `Cache-Control: s-maxage=31536000`. A Wiki rebuild refreshes them within a few minutes. Real-time `Accept: text/markdown` conversion follows the cache policy of the original HTML page.
-</Callout>
-
-## Coverage
-
-`/llms.txt` and `/llms-full.*` cover the same Wiki pages currently published, including:
-
-- Site sync workflows
-- [Open API](/docs/open-api) (RSS / JSON / caching / limits / troubleshooting)
-- [Tracker URL](/docs/tracker)
-- [Related projects](/docs/projects)
-
-Any page can be served as Markdown by appending `.md`:
-
-```txt
-HTML page    https://anibt.net/en/docs/open-api/rss-anime
-Markdown     https://anibt.net/en/docs/open-api/rss-anime.md
-```
-
-## License
-
-Content is licensed CC-BY-SA. When citing it from an LLM / Agent / RAG output, **keep a link back to the original page**.
+Docs are CC-BY-SA. Keep a link to the original page when citing.

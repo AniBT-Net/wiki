@@ -1,224 +1,45 @@
 ---
 title: Rate limits & caps
-description: Per-endpoint limits, scan caps, rate limiting, RSS-client compatibility matrix, and end-to-end latency breakdown.
+description: Per-endpoint limit and rate windows.
 ---
 
-Item caps, rate windows, client compatibility, and end-to-end latency for public RSS and catalog APIs. Numbers and status codes are part of the public contract.
+Numbers and status codes are the public contract. Over limit returns `429`; back off with `Retry-After`.
 
-## Caps per endpoint
+## Per endpoint
 
-| Endpoint                  | `limit` default | `limit` cap | Scan cap          | Rate limit (default)  |
-| ------------------------- | --------------- | ----------- | ----------------- | --------------------- |
-| `/rss/anime.xml`          | **100**         | **100**     | Typesense filter  | 120 req / 60 s / IP   |
-| `/rss/group/<slug>.xml`   | 100             | **100**     | —                 | 120 req / 60 s / IP   |
-| `/rss/magnets.xml`        | 100             | **100**     | —                 | 120 req / 60 s / IP   |
-| `/rss/other/<category>.xml` | 100           | **100**     | Typesense filter  | 120 req / 60 s / IP   |
-| `/api/bgm/search`         | 5               | **25**      | Typesense search  | 60 req / 60 s / IP    |
-| `/api/animes/search`      | 24              | **50**      | Typesense search  | 120 req / 60 s / IP   |
-| `/api/animes/torrent-match` | 10            | **50**      | Typesense search  | 180 req / 60 s / IP   |
-| `/api/anime/lookup`       | —               | —           | Convex lookup     | 60 req / 60 s / IP    |
-| `/api/mikan/group-lookup` | —               | —           | Mikan upstream + Redis | 60 req / 60 s / IP |
-| `/api/subtitle-groups`    | —               | full list   | —                 | 60 req / 60 s / IP    |
-| `/api/seasons/anime`      | —               | —           | —                 | 30 req / 60 s / IP    |
-| `/api/anime/groups`       | —               | —           | —                 | 30 req / 60 s / IP    |
-| `DELETE /api/releases/{releaseId}` | — | — | Deletion receipt and completion barrier | 30 req / 60 s / API key |
-| `GET /api/releases/{releaseId}/deletion` | — | — | Deletion status receipt | 120 req / 60 s / API key |
+| Endpoint | `limit` default | `limit` cap | Rate limit (default) |
+| --- | --- | --- | --- |
+| `/rss/anime.xml` | **100** | **100** | 120 req / 60 s / IP |
+| `/rss/group/<slug>.xml` | 100 | **100** | 120 req / 60 s / IP |
+| `/rss/magnets.xml` | 100 | **100** | 120 req / 60 s / IP |
+| `/rss/other/<category>.xml` | 100 | **100** | 120 req / 60 s / IP |
+| `/api/bgm/search` | 5 | **25** | 60 req / 60 s / IP |
+| `/api/animes/search` | 24 | **50** | 120 req / 60 s / IP |
+| `/api/animes/torrent-match` | 10 | **50** | 180 req / 60 s / IP |
+| `/api/anime/lookup` | — | — | 60 req / 60 s / IP |
+| `/api/mikan/group-lookup` | — | — | 60 req / 60 s / IP |
+| `/api/subtitle-groups` | — | full list | 60 req / 60 s / IP |
+| `/api/seasons/anime` | — | — | 30 req / 60 s / IP |
+| `/api/anime/groups` | — | — | 30 req / 60 s / IP |
+| `DELETE /api/releases/{releaseId}` | — | — | 30 req / 60 s / API key |
+| `GET /api/releases/{releaseId}/deletion` | — | — | 120 req / 60 s / API key |
 
-Deletion routes also have a separate pre-auth abuse window. `retryAfterMs` / `Retry-After` on a `pending` receipt is polling guidance; an exhausted rate limit returns `429 RATE_LIMIT_EXCEEDED`, whose `Retry-After` must also be honoured. See [Delete an anime release](/docs/open-api/releases-delete).
-
-<Callout type="warn">
-  **Public RSS uses a strict `limit` contract**: exactly one decimal integer from `1..100`, with no duplicate, empty, zero-padded, or fractional form. Invalid input returns application `400 + no-store` and may be blocked first by Cloudflare `403` at the production edge; it is no longer silently truncated. The default is already 100, so omit `limit=100` or expect a cacheable one-day canonical `308`.
-</Callout>
-
-<Callout type="info">
-  Across `/rss/magnets.xml` and `/rss/other/*`, `q`/`search` may contain only one value in total. Search text is NFKC-normalized, trimmed, whitespace-collapsed, and capped at 160 UTF-8 bytes. Only a **new search MISS** that passes CDN and Redis consumes the per-subject 120-new-query/10-minute and 1000-new-query/24-hour budgets plus the global 32-MISS concurrency lease. Stable queries, empty-result rechecks, and cache HITs are free. Rejection returns `429 + Retry-After`.
-</Callout>
-
-### Public search page depth
-
-Public search and magnet listing use Typesense page pagination. The server reads at most **100 pages**:
-
-- `/magnets?page=<n>` normalizes page numbers to `1–100`; for example, `?page=10000` redirects to `?page=100`.
-- `/api/animes/search` only accepts `cursor` values in the `ts_page:<page>` format. Invalid prefixes return `400 VALIDATION_ERROR`; oversized page numbers are normalized to page 100 and return an empty page or the last available page.
-- `limit` and page depth are separate guards: `limit` controls page size, while `cursor` / `page` controls how deep a client can paginate.
-
-### Filtering model (`/rss/anime.xml`)
-
-`/rss/anime.xml` is generated by the main Web runtime from the Typesense release index. Filters such as `bgmId`, `groupSlug`, `resolution`, `language`, `subtitle`, and `format` are pushed into Typesense where possible; display fields such as `episode` / `episodeKey` may use a small bounded post-filter in Web. It does not fall back to Convex scans.
-
-Very rare combinations with many filters may return fewer than `limit` items; that is a consequence of the bounded index window and performance guard. If you need deeper history, relax filters or poll per-group feeds.
-
-## Using the caps correctly
-
-<Tabs items={['Client-side', 'Server-side (self-hosted)', 'Hitting 429']}>
-  <Tab value="Client-side">
-    1. **The default already returns 100 items**: omit `limit`; set `1..99` only when you want a smaller response.
-    2. **Use 304 instead of polling harder**: include `If-None-Match` on every request. The server returns 304 with empty body when nothing changed — most clients do not count it as bandwidth, but it still costs one rate-limit slot.
-    3. **Increase the interval**: ≥ 5 minutes is the right default. Anime ships per episode; per-minute polling has zero upside.
-    4. **Don't fan out concurrently**: parallel requests against the same URL just get the same cached response and burn rate-limit budget.
-  </Tab>
-  <Tab value="Server-side (self-hosted)">
-    Adjust via Web runtime / platform **environment variables** (effective after restart):
-
-    ```bash title="env"
-    # raise from 120 / 60 s / IP to 600 / 60 s / IP
-    RSS_ANIME_RATE_LIMIT_MAX=600
-    RSS_GROUP_RATE_LIMIT_MAX=600
-    RSS_MAGNETS_RATE_LIMIT_MAX=600
-
-    # or change the window to 10 s (becomes 120 / 10 s)
-    RSS_RATE_LIMIT_WINDOW_MS=10000
-
-    # disable the CDN edge cache (NOT recommended — testing only)
-    RSS_CACHE_TTL_SECONDS=0
-    ```
-
-    <Callout type="warn">
-      Every public RSS route shares the cap in `src/lib/rss-request-policy.ts`; it is **not** environment-controlled. A private deployment that truly needs more must update the shared policy, cache/edge contract, and tests together before rebuilding.
-    </Callout>
-
-    After raising, watch for:
-
-    - **Response size**: 100 items is normally enough for RSS readers; raising it multiplies XML generation, transfer, cache, and client parsing work.
-    - **Typesense P95 and Web SSR cache hit/miss**: public RSS should not show Convex RSS query or scan fallback traffic.
-    - **Client-side parsing**: many RSS readers cap retained items at N — adjust accordingly.
-  </Tab>
-  <Tab value="Hitting 429">
-    - Responses include `Retry-After: <seconds>` — back off accordingly. **Do not retry immediately.**
-    - Short-burst 429s usually mean misconfiguration (too-fast polling, multiple readers sharing a URL). Bumping to 5-minute intervals + ETag basically eliminates them.
-  </Tab>
-</Tabs>
-
-## Real load at 1000 users
-
-> **Bottom line**: origin's true backfill rate is essentially independent of concurrent users — it scales with `s-maxage` and query-shape diversity.
-
-Request flow:
-
-```txt
-User ──► Browser / RSS-client cache (max-age)
-        ──► Cloudflare CDN (s-maxage + SWR)
-            ──► origin (TanStack Start Web + Redis) ──► Typesense
-```
-
-- Inside CDN fresh window → **0 origin hits**
-- CDN expired but inside SWR → user gets stale (zero latency), origin sees **1** async refresh
-- Fully expired → origin sees one synchronous backfill (~50–200 ms)
-- Client sends `If-None-Match` → origin returns 304 (no body; cost is negligible) on hit
-
-Estimates assuming **1000 users polling every 15 minutes by default**:
-
-| Endpoint                                | Client req / day  | Origin backfill / hour       | Notes                                       |
-| --------------------------------------- | ----------------- | ---------------------------- | ------------------------------------------- |
-| `/rss/anime.xml` (entity query)         | depends on entity URLs | **≤ ~30 per hot canonical URL** | edge 120s; Redis 900s; both owners refresh in one batch |
-| `/rss/group/<slug>.xml`                 | depends on slugs  | **≤ ~30 per hot slug**       | edge 120s; lifecycle converges old/new paths and negative cache |
-| `/rss/magnets.xml` (without `q`)        | —                 | **≤ ~30 per canonical URL**  | latest/filter edge 120s                     |
-| `/rss/magnets.xml` / `/rss/other/*` (stable `q`) | —       | **≤ ~6 per canonical query** | search/empty results are TTL-owned for 600s and ignore category purge |
-| High-cardinality random `q`             | —                 | **at most one MISS per new query before admission caps** | 120/10m, 1000/day, global 32-MISS lease |
-| `/api/subtitle-groups`                  | ~96k              | **~12**                      | data rarely changes; mostly 304             |
-| `/api/seasons/anime`                    | ~48k              | **~6**                       | season data is weekly + long cache          |
-| `/api/anime/groups` (per bgmId)         | —                 | **~12 × hot shows**          | cold shows take more first-time backfill    |
-
-**Overall**: stable polling scales with the number of canonical URLs, not the number of users; Cloudflare and Redis collapse identical requests. Entity events refresh both owners of a dual-owner anime and promptly converge old/new group lifecycle paths. Other `groupId`-only filters follow category freshness, while free-text search remains TTL-owned. Random nonexistent terms do not share cache well, so they are bounded separately by distinct-query budgets and concurrency leases. Do not use a single fixed “1000 users = N origin requests” estimate for high-cardinality search traffic.
-
-## Recommended polling intervals
-
-<TypeTable
-  type={{
-    'General anime tracker': {
-      description: '15–30 minutes. Anime ships per episode — anything shorter is wasted work.',
-      type: 'interval',
-    },
-    'Site-wide monitoring': {
-      description: '5–10 minutes. With ETag/304 the cost is negligible.',
-      type: 'interval',
-    },
-    'Complex search (magnets.xml?q=…)': {
-      description: '10+ minutes. Stable queries and empty results cache for 600 seconds; continuously generating new terms triggers 429.',
-      type: 'interval',
-    },
-    'Group catalogue / seasonal list': {
-      description: 'Once at startup + cache locally. The data barely changes.',
-      type: 'interval',
-    },
-  }}
-/>
+Deletion also has a pre-auth abuse window. `Retry-After` on a `pending` receipt is poll guidance; a real rate limit is `429`.
 
 <Callout type="warn">
-  **Do not**:
-  - Fan out concurrent requests against the same URL (CDN gives identical responses; you only burn rate budget)
-  - Disable ETag / `If-None-Match` (each poll downloads the full body — wasted bandwidth)
-  - Poll faster than once a minute (will trigger 429, with no upside)
+  Public RSS `limit` accepts a single integer `1..100`. Invalid values return app `400`; production edge may return `403` first. Default is already 100 — do not send `limit=100` or you may get `308`.
 </Callout>
 
-## Mainstream RSS clients in practice
+On `/rss/magnets.xml` and `/rss/other/*`, `q` / `search` may be only one value, max 160 UTF-8 bytes. New-keyword search: 120 / 10 minutes and 1000 / 24 hours per subject; over limit returns `429`. Stable queries do not count.
 
-Polling cadence and ETag/304 support vary widely. AniBT public RSS emits an exact-body `ETag` plus `Cache-Control`; standards-compliant clients automatically use `If-None-Match` / 304 with no extra setup. Public RSS currently omits `Last-Modified`.
+Public search is capped at 100 pages. `/magnets?page=` over that redirects to page 100. `/api/animes/search` `cursor` must be `ts_page:<page>`.
 
-| Client                             | Default poll      | `If-None-Match` | Honours `max-age` | Notes                                            |
-| ---------------------------------- | ----------------- | --------------- | ----------------- | ------------------------------------------------ |
-| **NetNewsWire** (macOS/iOS)        | 1 hour            | ✅              | ✅                | Best behaved; almost always 304                   |
-| **Inoreader** (cloud)              | ~30 min           | ✅              | ✅                | Server-side aggregation; 1000 users → 1 upstream |
-| **Feedly** (cloud)                 | ~1 hour           | ✅              | ✅                | Same as above; very origin-friendly              |
-| **FreshRSS** (self-hosted)         | configurable (1h default) | ✅      | ✅                | Recommend ≥ 15 min                                |
-| **Tiny Tiny RSS** (self-hosted)    | configurable      | ✅              | ⚠ partial         | Recommend ≥ 15 min manually                       |
-| **Reeder** (macOS/iOS)             | follows Inoreader/Feedly | —        | —                 | Forwards via the cloud aggregator                 |
-| **qBittorrent RSS auto-download**  | **30 min default** | ❌            | ❌                | No conditional requests; origin load depends on CDN coalescing |
-| **Transmission + Flexget**         | configurable      | ✅ (Flexget)    | ✅                | Recommended                                      |
-| **Custom Python `requests`**       | whatever you write | up to you      | up to you         | See the minimal client in [HTTP caching](/docs/open-api/caching) |
+Very tight filters may return fewer than `limit` items.
 
-**Per-scenario expectations**:
+## Clients
 
-- **Personal subs to 1–2 shows (NetNewsWire / Inoreader)**: 1 request / hour, all 304 — origin barely notices.
-- **qBittorrent auto-download**: pulls the full XML every 30 minutes, but CDN collapses the same canonical URL; fallback origin windows are 120 seconds without `q` and 600 seconds for a stable `q`.
-- **Public aggregator (Inoreader / Feedly)**: 1000 readers behind one shared upstream — origin sees one user.
-
-**Tuning tips**:
-
-- Prefer Inoreader / Feedly / NetNewsWire iCloud so many readers share one upstream pull.
-- For direct qBittorrent / Transmission pulls, set the rule interval to ≥ 15 min (the 30 min default is usually fine).
-- Custom scripts must reuse `If-None-Match`; otherwise every poll downloads a full body.
-
-## End-to-end latency breakdown
-
-From “a group publishes a new release” to “the subscriber’s RSS client surfaces it”:
-
-```txt
-T=0       Group submits release to the AniBT Web API
-          (Web parses the body / torrent, Convex mutation writes releases / files)
-T=0       Database is immediately readable (Convex strong consistency)
-          The write-side event lets the external Worker clear Web Redis RSS cache + purge CDN by resolved owner;
-          dual-owner anime refreshes both sides together, group lifecycle converges old/new paths, and free-text search ignores category purge
-
-T≤120s    Fallback CDN / Web Redis short-cache window when event purge is missed:
-          requests are intercepted by CDN; users still see the old version
-          → this is the dominant source of subscriber-side delay
-
-T=120s    CDN enters SWR window:
-          the next request triggers async refresh
-          origin returns the new data → CDN cache updates
-
-T=120~300s Next client poll cycle (depends on the client):
-          - 5 min interval → next poll picks up the new version
-          - 15 min interval → on average wait another 7.5 min
-          - 1 h interval → on average another 30 min
-```
-
-**Median end-to-end latency by client config**:
-
-| Client config                             | Origin → subscriber-visible |
-| ----------------------------------------- | --------------------------- |
-| Custom script, 5-min poll + ETag          | **3–5 minutes**             |
-| NetNewsWire default 1 h poll              | 30–35 min (client-bottlenecked) |
-| Inoreader cloud aggregation               | 15–30 min (Inoreader's own cadence is the bottleneck) |
-| qBittorrent default 30 min                | 15–30 min                   |
-
-### Where to optimise
-
-1. **Shorten the client poll interval (highest impact)**: 1 h → 5 min can cut latency from ~30 min to ~5 min.
-2. **Shorten `s-maxage` (lower impact)**: 300s → 60s multiplies origin pressure ~5× for only ~4 min less latency.
-3. **Force origin to push (impossible)**: HTTP RSS is pull-only.
-
-<Callout type="info">
-  For **real-time** notifications (&lt; 1 minute), RSS is the wrong tool — use webhooks / Telegram bot / push. RSS targets “**eventually consistent + low cost**”; 5–30 min latency is expected behaviour.
-</Callout>
+- Omit `limit` for 100 items.
+- Send `If-None-Match`.
+- Interval ≥ 5 minutes.
+- Do not fan out concurrent requests to the same URL.
+- Do not poll more often than once a minute.

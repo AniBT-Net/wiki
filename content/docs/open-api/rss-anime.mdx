@@ -1,164 +1,32 @@
 ---
 title: RSS 主入口
-description: GET /rss/anime.xml —— 支持 bgmId、字幕组 slug 与多 Tag 任意组合的 RSS 主入口，兼容 Mikan 链接。
+description: GET /rss/anime.xml —— bgmId、字幕组 slug 与 Tag 过滤。兼容 Mikan。
 ---
 
-`/rss/anime.xml` 是最灵活的订阅端点：用 `bgmId` + `groupSlug` + 多个 Tag（`resolution` / `language` / `format` / `subtitle` / `episode` / `episodeKey`）任意组合，订阅一个番剧、一个字幕组或全站相关发布。搜索引擎不会抓 `/rss/`；订阅本身照常工作。
+主订阅入口。`bgmId` 与 `groupSlug` 至少提供一个。
 
-## 前置条件
-
-- 无需鉴权。
-- 必须提供 `bgmId` 或 `groupSlug` **至少之一**；两者都不传会被拒绝。
-
-## URL
-
-```txt title="URL"
-GET https://anibt.net/rss/anime.xml?<query>
-```
-
-## 查询参数
-
-<TypeTable
-  type={{
-    'bgmId': {
-      description: 'Bangumi.tv subject id。别名：bangumiId。',
-      type: 'integer',
-    },
-    'groupSlug': {
-      description: '字幕组 slug。别名：subgroupSlug、subgroupid（与 Mikan 的旧链接兼容）。',
-      type: 'string',
-    },
-    'resolution': {
-      description: '4K / 2160p / 1080p / 720p / 480p / 360p。可重复或用逗号分隔。',
-      type: 'enum[]',
-    },
-    'language': {
-      description: 'CHS / CHT / JP / EN / KO / ES / PT / FR / DE / IT / RU / AR / HI / ID / MS / TH / VI / TL / TR / PL / UK。可重复或用逗号分隔。',
-      type: 'enum[]',
-    },
-    'format': {
-      description: 'MKV / MP4 / AVI / WEBM。可重复或用逗号分隔。',
-      type: 'enum[]',
-    },
-    'subtitle': {
-      description: 'EXTERNAL（外挂）/ INTERNAL（内封）/ EMBEDDED（内嵌）/ NONE。可重复或用逗号分隔。',
-      type: 'enum[]',
-    },
-    'episode': {
-      description: '数字集数，精确匹配，用于排序和过滤。',
-      type: 'integer',
-    },
-    'episodeKey': {
-      description: '显示集数键，如 01、00-01、BATCH。字符串原样匹配。',
-      type: 'string',
-    },
-    'limit': {
-      description: '1..100，默认 100。只接受单个无前导零的十进制整数。',
-      type: 'integer',
-      default: '100',
-    },
-  }}
-/>
+<ApiEndpoint method="GET" path="/rss/anime.xml" auth="公开">
+兼容 Mikan 的 `bangumiId`、`subgroupid`。
+</ApiEndpoint>
 
 <Callout type="warn">
-  `limit` 重复、为空、含前导零、不是整数或大于 100 时，应用返回 `400 + no-store`；生产边缘可能先返回 Cloudflare `403`。`limit=100` 等与默认值等价的写法会 `308` 到规范 URL，跳转可缓存 1 天；客户端应跟随永久重定向。
+  `limit` 默认 100，范围 1–100。重复、为空、前导零或非整数：应用 `400`，生产边缘可能先 `403`。与默认值等价的写法会 `308` 到规范 URL，跟随跳转。
 </Callout>
 
-只调整原始 query 参数对顺序、且未改变任何参数字节时，不再跳转：请求直接返回同一份规范 `200`，`atom:link rel="self"`、ETag 与缓存身份仍使用稳定规范 URL；当前省略 `Last-Modified`。
+完整参数见 [接口参考](/docs/open-api/reference)。
 
-<Callout type="warn">
-  公开 RSS 从最终 XML UTF-8 bytes 计算 `W/"anibt-sha256-{...}"` ETag，并移除了请求时间 `lastBuildDate`。相同 ETag 绑定相同正文；匹配 ETag 的 `304` 表示当前 feed bytes 未变化。当前省略 `Last-Modified`。shape 合法但无法解析的 anime owner 仍可能返回空 `200`，而未知 `/rss/group/<slug>.xml` 仍返回 `404`。
-</Callout>
-
-## 重复参数两种写法等价
-
-```txt title="标准重复 query（推荐）"
-?resolution=1080p&resolution=720p
+```txt title="示例"
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p
 ```
 
-```txt title="逗号分隔（也支持）"
-?resolution=1080p,720p
+Tag 可重复或逗号分隔：`?resolution=1080p&resolution=720p` 与 `?resolution=1080p,720p` 等价。
+
+## Mikan
+
+把主机换成 `anibt.net`，参数原样工作：
+
+```txt title="兼容写法"
+https://anibt.net/rss/anime.xml?bangumiId=3921&subgroupid=615
 ```
 
-## 成功响应
-
-返回 **RSS 2.0 + BEP 36** 原生 XML。浏览器直开 RSS URL 时不加载站点自定义 XSL/CSS，使用浏览器默认 XML 树展示；RSS 阅读器和 BT 客户端按标准字段消费。
-
-每个 `<item>` 包含：
-
-<TypeTable
-  type={{
-    '<title>': {
-      description: '形如 [字幕组] 番剧 - EP05 [1080p] [CHS+JP] [MKV]。',
-      type: 'string',
-    },
-    '<link>': {
-      description: '发布详情页（/release/<id>）。',
-      type: 'url',
-    },
-    '<guid isPermaLink="false">': {
-      description: '稳定 release id。',
-      type: 'string',
-    },
-    '<pubDate>': {
-      description: 'RFC 822 时间；按 Asia/Shanghai 输出，数字偏移固定为 +0800。',
-      type: 'datetime',
-    },
-    '<description>': {
-      description: 'CDATA，含分辨率 / 语言 / 字幕 / 容量 / 备注。',
-      type: 'string',
-    },
-    '<enclosure>': {
-      description: 'BEP 36，磁力 URL，type="application/x-bittorrent"。已自动追加站点默认 tracker。',
-      type: 'magnet',
-    },
-    '<torrent xmlns="…">': {
-      description: 'BEP 36：infoHash / magnet（含站点默认 tracker）；内嵌 <pubDate> 使用 RFC 3339，按 Asia/Shanghai 输出为 +08:00。',
-      type: 'element',
-    },
-    '<anibt:bgmId>': {
-      description: 'Bangumi subject id。`xmlns:anibt="https://anibt.net/xmlns/rss/1.0/"`；条目已绑定时输出，未绑定则省略。标准阅读器可忽略该命名空间。',
-      type: 'number',
-    },
-  }}
-/>
-
-同一 `anibt:` 扩展字段也会出现在 [`/rss/magnets.xml`](/docs/open-api/other-endpoints) 与 [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) 的 anime 条目中，便于跨端点统一解析。`/rss/other/*` 不输出 `bgmId`。
-
-## 后端执行方式
-
-`/rss/anime.xml` 在主站 Web runtime 生成，不再回源 Convex RSS query。Web 层使用 Typesense 的 `rss_resolvers` collection 解析 `bgmId` / `groupSlug`，再查询 Typesense `releases` collection：
-
-| 提供                    | 执行方式                         |
-| ----------------------- | -------------------------------- |
-| `bgmId` + `groupSlug`   | Typesense filter 精确约束番剧与字幕组 |
-| 仅 `bgmId`              | Typesense filter 约束番剧          |
-| 仅 `groupSlug`          | Typesense filter 约束字幕组        |
-
-分辨率、语言、格式、字幕方式等 Tag 尽量下推到 Typesense filter；`episode` / `episodeKey` 等展示字段只在 Web runtime 做小窗口后过滤。实体 RSS 使用 **Redis 900 秒 + edge/CDN 120 秒 + 60 秒 stale-while-revalidate**。发布事件会先失效对应 Redis 家族，再按 `bgmId` / `groupSlug` 清除同一实体的全部 CDN 参数变体；当一个 anime 同时解析出两个 owner 时，两组 Redis 家族与 CDN 变体作为同一个发布结果一起刷新，不会只更新其中一侧。TTL 继续作为事件链路失败时的兜底，ETag 始终由缓存后的最终 XML 正文决定。
-
-## Mikan 参数兼容
-
-Mikan 风格参数可直接换主机，参数原样工作：
-
-<Tabs items={['原始 Mikan 链接', '直接换主机', '推荐写法']}>
-  <Tab value="原始 Mikan 链接">
-    ```txt
-    https://mikanani.me/RSS/Bangumi?bangumiId=3921&subgroupid=615
-    ```
-  </Tab>
-  <Tab value="直接换主机">
-    ```txt
-    https://anibt.net/rss/anime.xml?bangumiId=3921&subgroupid=615
-    ```
-    `bangumiId`、`subgroupid` 作为兼容别名继续工作。
-  </Tab>
-  <Tab value="推荐写法">
-    ```txt
-    https://anibt.net/rss/anime.xml?bgmId=3921&groupSlug=<slug>
-    ```
-    新代码中使用规范名称。
-  </Tab>
-</Tabs>
-
-继续：[实战示例](/docs/open-api/examples) 演示了 8 种典型查询组合。
+新代码用 `bgmId` 与 `groupSlug`。

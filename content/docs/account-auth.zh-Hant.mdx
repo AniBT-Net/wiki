@@ -1,82 +1,30 @@
 ---
-title: 帳號、登入與 session
-description: 郵箱驗證碼註冊、密碼或第三方登入，以及 AniBT session 恢復時的介面狀態。
+title: 帳號
+description: 註冊、登入和找回密碼。
 ---
 
-AniBT 普通帳號支援郵箱驗證碼註冊、郵箱密碼登入，以及登入頁目前展示的第三方入口。
+註冊：[anibt.net/auth/sign-up](https://anibt.net/auth/sign-up)
 
-<Callout type="info">
-  註冊入口：[anibt.net/auth/sign-up](https://anibt.net/auth/sign-up)。登入入口：[anibt.net/auth/sign-in](https://anibt.net/auth/sign-in)。字幕組釋出權限須在普通帳號註冊後另行[申請入駐](/docs/apply)。
-</Callout>
+登入：[anibt.net/auth/sign-in](https://anibt.net/auth/sign-in)
 
-## 郵箱驗證碼註冊
+字幕組釋出權限需另行 [申請入駐](/docs/apply)。
 
-<Steps>
-  <Step>
-    ### 取得驗證碼
+## 註冊
 
-    輸入郵箱並完成人機驗證。驗證碼為 6 位數字，10 分鐘內有效；同一郵箱的重發受冷卻時間與伺服器限流保護。
+1. 填寫郵箱並完成人機驗證，取得 6 位驗證碼（10 分鐘有效）。
+2. 填寫暱稱、密碼和驗證碼。
+3. 驗證成功後登記密碼。若這一步中斷，在同一分頁重試，不要再用已消耗的驗證碼。
 
-    為避免洩露郵箱是否已註冊，對已存在郵箱同樣返回成功提示，但不會傳送新的註冊驗證碼。已有帳號請使用登入或密碼重設。
-  </Step>
-  <Step>
-    ### 驗證郵箱
+已註冊郵箱也會顯示傳送成功，但不會再發註冊驗證碼。使用登入或找回密碼。
 
-    填寫暱稱、密碼與驗證碼。密碼格式會先校驗，不合格時不消耗驗證碼。驗證成功後驗證碼一次性作廢，並建立已驗證的 session。
-  </Step>
-  <Step>
-    ### 完成密碼登記
+驗證碼、CAPTCHA 和第三方登入回呼均為一次性。不要重複重新整理回呼頁。
 
-    驗證郵箱後，AniBT 在同一 session 內登記密碼。若網路響應中斷或密碼登記暫時失敗，在原頁面直接重試，不要複用已消耗的驗證碼。
+## 登入
 
-    未過期的註冊進度保留在目前分頁。整頁重新整理後，原瀏覽器仍可先恢復權威 session，再繼續密碼登記；完成前不要切換郵箱、無痕視窗、裝置或分頁。
-  </Step>
-</Steps>
+| 方式 | 說明 |
+| --- | --- |
+| 郵箱密碼 | 郵箱 + 密碼 + 人機驗證。連續失敗會限流。 |
+| 第三方 | 登入頁展示目前已啟用的入口。失敗後回到登入頁重新發起。 |
+| 忘記密碼 | 使用登入頁入口。郵件由後台傳送，短暫延遲不代表失敗。 |
 
-<Callout type="warn">
-  驗證碼、CAPTCHA ticket 與 OAuth callback state 均為一次性值。不要分享連結、驗證碼或 callback URL；重複重新整理第三方登入 callback 頁可能被安全校驗拒絕。
-</Callout>
-
-## 登入與找回密碼
-
-<Tabs items={["郵箱密碼", "第三方帳號", "忘記密碼"]}>
-  <Tab value="郵箱密碼">
-    在登入頁輸入註冊郵箱與密碼，並完成人機驗證。連續失敗會觸發限流。
-  </Tab>
-  <Tab value="第三方帳號">
-    登入頁只顯示目前生產環境已啟用的 provider（例如 Bangumi、KUNGal 或其它社交帳號）。授權完成後回到 `https://anibt.net/api/auth/*`。若 callback 已被消耗或中途失敗，應返回登入頁重新發起，不要反覆重新整理舊 callback。
-  </Tab>
-  <Tab value="忘記密碼">
-    使用登入頁的「忘記密碼」入口。重設郵件由背景佇列傳送；短暫延遲不代表請求失敗，應避免連續重複提交。
-  </Tab>
-</Tabs>
-
-## session 恢復時的介面狀態
-
-公開頁面保持可快取，不把使用者 session 寫入共享 HTML。頁面首次載入或回到前景時，客戶端再確認真實 token。使用者選單有三種狀態：
-
-<TypeTable
-  type={{
-    authenticated: {
-      description: '真實 token 已確認，顯示帳號選單並連線私有 Convex 資料。',
-      type: '已登入',
-    },
-    restoring: {
-      description: '瀏覽器提示可能存在 session，但 token 請求仍在進行或遇到臨時網路 / 5xx；顯示快取頭像或中性按鈕，不顯示可點選的「登入」。',
-      type: '恢復中',
-    },
-    anonymous: {
-      description: '伺服器明確確認沒有有效 session，才顯示登入入口；受保護頁面此時跳轉到登入頁。',
-      type: '未登入',
-    },
-  }}
-/>
-
-臨時網路錯誤不會被當作登出。主動登出、session 明確失效或帳號被撤銷後，AniBT 會清理本機的非敏感恢復提示與使用者選單快取。
-
-## 帳號關聯與安全
-
-- 第三方帳號關聯只信任站點明確啟用的 provider；不要把第三方 token 或 Cookie 傳給他人。
-- `anibt_auth_hint` 與本機使用者選單快取僅用於減少介面閃爍，不是鑑權憑據。
-- 私有資料與釋出權限始終由伺服器 session、角色與字幕組成員關係校驗。
-- 若登入狀態長期停在「恢復中」，先檢查網路，再重新開啟登入頁；仍無法恢復時聯絡 [support@anibt.net](mailto:support@anibt.net)。
+站點不提供 TOTP / 二次驗證。

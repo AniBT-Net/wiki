@@ -1,39 +1,22 @@
 ---
 title: Mikan（蜜柑計畫）同步
-description: 填寫蜜柑計畫同步所需的 API Token；AniBT 可自動查詢字幕組 ID 與釋出組 ID。
+description: 填寫 API Token；需要時再手動填字幕組 ID 與釋出組 ID。
 ---
 
-蜜柑計畫同步通常只需 **API Token**。AniBT 使用該 Token 自動查詢字幕組 ID 與釋出組 ID。
-
-<Callout type="info">
-  通常只需填寫 API Token。AniBT 會自動查詢 ID。本頁末尾提供手動取得 ID 的方法，供自動查詢失敗時參考。
-</Callout>
-
-## 操作步驟
+通常只需 **API Token**。儲存後點查詢即可帶出字幕組 ID 與釋出組 ID。自動查詢失敗時用本頁末尾的手動方法。
 
 <Steps>
   <Step>
-    ### 找到 API Token
+    ### 複製 API Token
 
-    在 [https://mikanani.me](https://mikanani.me) 登入後，點選右上角 **帳號設定** → **個人中心** → **編輯資料**，在 **基本資料** 下找到 **API Token**。
-
-    <Callout type="info">
-      如果沒有看到 API Token，點選右側的 **生成**。
-    </Callout>
-  </Step>
-
-  <Step>
-    ### 在 AniBT 中儲存 Token
-
-    複製 API Token，貼上到 AniBT 的蜜柑計畫同步設定中，點選 **儲存**。
+    登入 [https://mikanani.me](https://mikanani.me)，右上角 **帳號設定** → **個人中心** → **編輯資料**，在 **基本資料** 下複製 **API Token**。沒有則點右側 **生成**。貼上到 AniBT 蜜柑計畫同步設定後 **儲存**。
 
     ![蜜柑計畫 API Token 與 ID 查詢](/images/site-sync/mikan-api-token.webp)
   </Step>
-
   <Step>
-    ### 自動查詢 ID
+    ### 查詢 ID
 
-    點選 **【從蜜柑查詢「XXXXXX」的 ID】** 按鈕。AniBT 會自動取得 **字幕組 ID** 與 **釋出組 ID**。
+    點選 **【從蜜柑查詢「XXXXXX」的 ID】**，取得 **字幕組 ID** 與 **釋出組 ID**。
   </Step>
 </Steps>
 
@@ -49,12 +32,12 @@ description: 填寫蜜柑計畫同步所需的 API Token；AniBT 可自動查詢
     https://mikanani.me/Home/PublishGroup/359
     ```
 
-    其中 `359` 即字幕組 ID。在列表或作品簡介中點選 **字幕組**，跳轉後的頁面就是字幕組頁面。
+    其中 `359` 即字幕組 ID。在列表或作品簡介中點選 **字幕組**，開啟的就是字幕組頁面。
 
     ![蜜柑計畫字幕組 ID 頁面](/images/site-sync/mikan-publish-group-id.webp)
   </Tab>
   <Tab value="釋出組 ID">
-    以 LoliHouse 為例，進入任意以 LoliHouse 身份釋出的動畫列表，點選字幕組名字右側的 **RSS 圖示**，得到形如：
+    以 LoliHouse 為例：開啟任意以 LoliHouse 身份釋出的動畫列表，點選字幕組名字右側的 **RSS 圖示**：
 
     ```txt title="RSS 連結"
     https://mikanani.me/RSS/Bangumi?bangumiId=3953&subgroupid=370

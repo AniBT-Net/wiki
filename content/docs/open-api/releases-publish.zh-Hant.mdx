@@ -1,75 +1,39 @@
 ---
 title: 釋出資源
-description: POST /api/releases/publish —— 字幕組用 API Key 釋出種子的寫入端點；支援 JSON（磁力）和 multipart/form-data（種子檔案）兩種格式。
+description: POST /api/releases/publish —— 字幕組用 API Key 釋出種子。
 ---
 
-`/api/releases/publish` 是字幕組**寫入**番劇資源的端點。請求必須攜帶字幕組 API Key，正式釋出與 preview 都要求 `releases:publish` scope；支援 `application/json`（直接傳磁力連結）和 `multipart/form-data`（上傳種子檔案）兩種格式。
+寫入番劇資源。正式釋出與 preview 都要求 `releases:publish`。
 
-## 前置條件
-
-- 字幕組 API Key 顯式包含 `releases:publish`。
-- 呼叫頻率與配額按字幕組維度獨立計數，與公開 RSS 的 IP 速率視窗不共享。
-- Key 洩露後應立即在後台重設。
+<ApiEndpoint method="POST" path="/api/releases/publish" auth="鑑權 · releases:publish">
+推薦 multipart 上傳 `.torrent`；或 JSON 傳磁力。
+</ApiEndpoint>
 
 <Callout type="warn">
-  這是**寫入介面**。Key 不要寫進客戶端程式碼、不要 commit 到倉庫、不要貼 issue；CI 必須用 secret 注入。
+  Key 不要寫進客戶端、倉庫或 issue。CI 用 secret 注入。`200` 表示主記錄已寫入，不表示 RSS / 搜尋 / 頁面已可見。
 </Callout>
 
-## URL
+完整欄位見 [API 參考](/docs/open-api/reference)。
 
-```http title="HTTP"
-POST https://anibt.net/api/releases/publish
-Authorization: Bearer <YOUR_API_KEY>
-```
+## 身分自檢
 
-### 身份自檢（Whoami）
-
-批次釋出前，用 **GET** 同一端點確認目前 API Key 綁定的字幕組（**不寫庫**）：
+GET 同一路徑，不寫庫，不要求 publish scope。批次釋出前確認 `groupSlug` 與 `scopes`。
 
 ```bash title="whoami"
 curl -X GET 'https://anibt.net/api/releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>'
 ```
 
-```json title="whoami 響應"
-{
-  "ok": true,
-  "result": {
-    "groupId": "org_xxxxxxxx",
-    "groupName": "LoliHouse",
-    "groupSlug": "lolihouse",
-    "apiKeyId": "sgak_xxxxxxxx",
-    "apiKeySuffix": "5c5d6fcd",
-    "scopes": ["releases:publish"],
-    "kind": "anime"
-  }
-}
-```
+## 釋出
 
-自動化腳本應在正式 publish 前斷言 `groupSlug` / `groupName` 符合預期，並確認 `scopes` 包含 `releases:publish`。`groupId` 只來自 API Key 所屬字幕組，**與標題裡的 `[字幕組名]` 無關**。GET whoami 只做身分檢查，不要求 publish scope。
-
-## `200 OK` 與公開可見性
-
-正式釋出返回 `200 OK` 和 `releaseId`，表示站內主記錄已寫入，後續索引、公開快照與快取任務已經可靠交接。它**不表示** RSS、搜尋、公開頁面和 CDN 在這個響應返回時已經包含該資源，也不表示 Nyaa 等外站代發已經完成。
-
-公開讀取鏈路會非同步推進：對應的 Typesense 寫入完成後生成受影響的不可變 R2 快照，Web 核對快照釋出頭、失效並嚴格預熱 Redis，隨後才發出 page-ready 事件讓 Edge 清理 CDN。任一步明確失敗都會保留可重試任務，並阻止該次 page-ready 提前完成。
-
-<Callout type="info">
-  目前成功響應不確認該 release 已在所有公開讀取模型可見。自動化釋出端應把 `200 OK` 當作**已接受**，再用返回的 `releaseId` 檢查詳情頁和目標 RSS / magnets 響應正文；只看到 HTTP 200、較新的 `generatedAt`、ETag 或 `cf-cache-status: HIT`，都不能單獨證明目標資源已出現。快取鏈路細節見 [HTTP 快取與 304](/docs/open-api/caching)。
-</Callout>
-
-## 兩種請求格式
-
-<Tabs items={['multipart/form-data（推薦）', 'application/json']}>
-  <Tab value="multipart/form-data（推薦）">
-    上傳種子檔案，後端**自動從種子裡提取**磁力連結、infoHash、檔案大小等後設資料。
-
+<Tabs items={['multipart（推薦）', 'JSON']}>
+  <Tab value="multipart（推薦）">
     ```bash title="上傳種子"
     curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -F 'animeIdType=anilist' \
       -F 'animeId=170942' \
-      -F 'title=[字幕組] 葬送的芙莉蓮 - 01 [1080p].mkv' \
+      -F 'title=[字幕組] 葬送的芙莉莲 - 01 [1080p].mkv' \
       -F 'episodeKey=01' \
       -F 'resolution=1080p' \
       -F 'language=CHS' -F 'language=JP' \
@@ -77,13 +41,9 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
       -F 'format=MKV' \
       -F 'torrent=@/path/to/release.torrent'
     ```
-
-    `language` 重複表示多個值（CHS + JP）。
   </Tab>
-  <Tab value="application/json">
-    直接給磁力連結（**仍然需要先有種子**，因為後端只接受能解析的合法 magnet）。
-
-    ```bash title="JSON 請求"
+  <Tab value="JSON">
+    ```bash title="JSON 磁力"
     curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -H 'Content-Type: application/json' \
@@ -91,258 +51,38 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
     {
       "animeIdType": "mal",
       "animeId": "52991",
-      "title": "[字幕組] 葬送的芙莉蓮 - 01 [1080p].mkv",
+      "title": "[字幕組] 葬送的芙莉莲 - 01 [1080p].mkv",
       "magnetBase64": "magnet:?xt=urn:btih:...",
       "episodeKey": "01",
       "resolution": "1080p",
       "language": ["CHS", "JP"],
       "subtitle": "EXTERNAL",
       "format": "MKV",
-      "fileSize": 734003200,
-      "notes": "**字型內嵌**，缺幀問題已修復。"
+      "fileSize": 734003200
     }
     JSON
     ```
-
-    `magnetBase64` 既接受原始 magnet 連結，也接受 Base64 編碼後的磁力。
   </Tab>
 </Tabs>
 
-## 引數
+## 約束
 
-<TypeTable
-  type={{
-    'animeIdType': {
-      description: '番劇 ID 來源。可選 bgm、anilist、mal、anidb；與 animeId 一起使用。新接入建議統一使用這組欄位。',
-      type: 'enum',
-    },
-    'animeId': {
-      description: '番劇 ID 值。與 animeIdType 一起使用，例如 animeIdType=mal + animeId=52991。',
-      type: 'string',
-    },
-    'anime': {
-      description: '結構化番劇引用，例如 {"source":"anidb","id":"17617"}。JSON 請求可直接傳物件；multipart 可傳 JSON 字串。',
-      type: 'object',
-    },
-    'bgmId': {
-      description: '相容欄位：Bangumi 番劇 ID。仍然支援；新接入建議改用 animeIdType=bgm + animeId。',
-      type: 'number',
-    },
-    'title': {
-      description: '資源檔名，例如 [字幕組] 番名 - 01 [1080p].mkv。JSON 請求必填；multipart 未傳時會嘗試使用種子內部名稱。',
-      type: 'string',
-      required: true,
-    },
-    'torrent': {
-      description: '種子檔案（multipart 必填）。後端會自動提取磁力連結、標題、檔案大小、infoHash。',
-      type: 'file',
-      required: true,
-    },
-    'magnetBase64': {
-      description: '原始 magnet 連結或 Base64 編碼後的 magnet。JSON 請求必填；multipart 不傳時會從種子檔案自動提取。',
-      type: 'string',
-    },
-    'torrentStorageId': {
-      description: '已存在於本站公共儲存的種子檔案 key。通常只供內部自動化使用；普通 API 客戶端請上傳 torrent。',
-      type: 'string',
-    },
-    'episodeKey': {
-      description: '集數標識，如 01 / 01-13 / 合集 / SP / MOVIE / OVA。',
-      type: 'string',
-    },
-    'resolution': {
-      description: '2160p / 1080p / 720p / 480p / 360p。',
-      type: 'enum',
-    },
-    'language': {
-      description: 'CHS / CHT / JP / EN / KO / ES / PT / FR / DE / IT / RU / AR / HI / ID / MS / TH / VI / TL / TR / PL / UK，可重複，不限制數量。',
-      type: 'enum[]',
-    },
-    'subtitle': {
-      description: 'EXTERNAL（外掛）/ INTERNAL（內封）/ EMBEDDED（內嵌）/ NONE（無字幕）。',
-      type: 'enum',
-    },
-    'format': {
-      description: 'MKV / MP4 / AVI / WEBM。',
-      type: 'enum',
-    },
-    'version': {
-      description: '版本號，例如 v1、v2，用於重發修訂版。',
-      type: 'string',
-    },
-    'fileSize': {
-      description: '檔案大小（位元組）。可從種子檔案自動提取，也可從 magnet 的 xl= 推斷。無 torrent 時正式釋出必須 > 0，否則返回 reason=EMPTY_RELEASE_CONTENT（禁止 0B 入庫）。',
-      type: 'number',
-    },
-    'publishedAt': {
-      description: '釋出時間戳（毫秒）。不傳時使用服務端目前時間。',
-      type: 'number',
-    },
-    'notes': {
-      description: '釋出備註，支援 Markdown 與原始 HTML，最多 50000 字元。頁面會直接渲染 HTML，不經過 sanitizer 或 HTML/CSS 白名單。',
-      type: 'string',
-    },
-    'descriptionMarkdown': {
-      description: 'notes 的相容別名，使用相同的 Markdown + 原始 HTML 渲染規則。content / description / intro 也會被相容為說明文字。',
-      type: 'string',
-    },
-    'trackers': {
-      description: '可選 tracker 地址列表，每行一個；將與站點預設 tracker 合併去重。',
-      type: 'string[]',
-    },
-    'nyaa': {
-      description: '設為 true 時請求 Nyaa 代發；僅對白名單字幕組開放，且必須使用 multipart 上傳 torrent。',
-      type: 'boolean',
-      default: 'false',
-    },
-    'nyaaCategory': {
-      description: 'Nyaa 分類代碼，啟用 Nyaa 代發時必填。必須從下方 Nyaa 分類表選擇，例如中文動畫字幕通常填 1_3。',
-      type: 'string',
-    },
-    'nyaaComplete': {
-      description: '是否設定 Nyaa complete 標記。',
-      type: 'boolean',
-      default: 'false',
-    },
-    'nyaaRemake': {
-      description: '是否設定 Nyaa remake 標記。',
-      type: 'boolean',
-      default: 'false',
-    },
-    'nyaaDescription': {
-      description: '覆蓋提交到 Nyaa 的 Markdown 說明，最多 20000 字。不傳時使用本站 notes，繼承時同樣受 20000 字上限。',
-      type: 'string',
-    },
-    'nyaaInformation': {
-      description: '覆蓋提交到 Nyaa 的 information 欄位，最多 500 字元；通常填寫官網、字幕組頁面或相關說明連結。',
-      type: 'string',
-    },
-    'preview': {
-      description: '設為 true 時僅生成臨時預覽連結（10 分鐘後過期），不會實際釋出到 RSS、搜尋和前端頁面。',
-      type: 'boolean',
-      default: 'false',
-    },
-  }}
-/>
-
-<Callout type="warn">
-  `notes` 中的原始 HTML 會在釋出詳情與預覽頁面直接渲染，不啟用 sanitizer、標籤/屬性白名單或 CSS 白名單。請只讓可信的字幕組成員、管理員或受控釋出 API Key 寫入此欄位。
-</Callout>
-
-<Callout type="info">
-  `torrent` 種子檔案**必填**（multipart）。`magnetBase64` 可選——不提供時後端會從種子檔案解析出磁力連結。
-</Callout>
-
-## 引數值速查
-
-### 請求格式差異
-
-| 場景 | 應該怎麼傳 |
-| ---- | ---------- |
-| 上傳 `.torrent` | 使用 `multipart/form-data`，欄位名為 `torrent`，例如 `-F 'torrent=@release.torrent'`。 |
-| 只傳磁力連結 | 使用 JSON，傳 `magnetBase64`。這個欄位既接受原始 `magnet:?xt=...`，也接受 Base64 編碼後的 magnet。**正式釋出**還須提供 `fileSize>0`（或 magnet 自帶 `xl=`），否則 422 / `EMPTY_RELEASE_CONTENT`。推薦仍上傳 torrent。 |
-| 多語言 | JSON 用陣列：`"language":["CHS","JP"]`；multipart 可以重複欄位：`-F 'language=CHS' -F 'language=JP'`，也可以傳 JSON 陣列字串。 |
-| tracker 列表 | JSON 用陣列；multipart 用換行分隔。站點會與預設 tracker 合併去重。 |
-| 布林值 | JSON 用 `true/false`；multipart 可用 `true/false`、`1/0`、`yes/no`、`on/off`。 |
-| 番劇 ID | 建議只傳一種番劇標識。新接入用 `animeIdType` + `animeId`；歷史 Bangumi 欄位 `bgmId` 繼續相容。 |
-
-### 番劇與集數
-
-| 欄位 | 可填值 | 說明 |
-| ---- | ------ | ---- |
-| `animeIdType` + `animeId` | `bgm` / `anilist` / `mal` / `anidb` + 對應站點 ID | 推薦寫法。例：`animeIdType=anilist`、`animeId=170942`。 |
-| `anime` | `{"source":"anidb","id":"17617"}` | 結構化寫法，適合 JSON 客戶端；`source` 同樣只能是 `bgm` / `anilist` / `mal` / `anidb`。 |
-| `bgmId` | Bangumi subject id，例如 `400602` | 相容舊欄位。可先呼叫 [`/api/bgm/search`](/docs/open-api/bgm-search) 搜尋番劇。 |
-| `episode` | 非負整數，例如 `1`、`12` | 用於排序。自訂 `episodeKey`（如 `SP`、`BATCH`）時請傳 `episode=0`。 |
-| `episodeKey` | `01`、`1-12`、`13.5`、`SP`、`OVA`、`MOVIE`、`BATCH` | 用於顯示和去重。純數字會規範化為數字字串，例如 `01` 最終按 `1` 去重。 |
-| `version` | `v1`、`v2`、`v2_fix` | 不傳時預設 `v1`。修正版建議用 `v2`。 |
-
-番劇識別建議只傳一種 ID。外部站點 ID 統一用 `animeIdType + animeId` 或 `anime`，對應關係以 bangumi-data 為準；歷史腳本裡只傳 `bgmId` 仍然可用。若外部 ID 對應多個 BGM 條目、多個外部 ID 解析結果互相衝突，或暫時找不到對應番劇，API Key 釋出會進入待匹配狀態，之後由字幕組或管理員補匹配。
-
-如果沒有明確番劇 ID，釋出介面會在 Web 服務端直接執行
-[`POST /api/animes/torrent-match`](/docs/open-api/anime-torrent-match) 的同一套 v3
-matcher。只有 `decision.kind="auto"` 才會直接綁定；`manual`、`none`、`unavailable`、
-`unsupported` 或 `non_anime` 會保留待匹配或交由呼叫方處理。自動化也可先呼叫匹配
-介面做預檢，但候選第一名、`confidence`、`matchScore` 或 fuzzy recall 都不能取代
-`decision.kind="auto"`。
-
-匹配輸入會在存在時保留兩份證據：multipart 上傳真實 `.torrent` 時，釋出欄位 `title`
-作為 `rawTitle`，服務端解析出的 torrent `info.name` 作為獨立 `torrentName`。Web 上傳頁會
-先驗證目前使用者確實屬於目標字幕組，再用編輯後的釋出標題與實際 `info.name` 在服務端
-重放 v3 matcher；multipart 中呼叫方提交的 `matchProjectContext` 會被忽略。JSON /
-magnet-only 請求沒有 torrent bytes，因此自動匹配主要依賴 `title`，應盡量保留完整字幕組、
-中文/日文/羅馬字/英文、季度與集數結構，不要只傳過度清洗的短標題。
-
-目前解析會按上下文區分 bracket 裸數字：`[Title][24][1080p]` 中的 `24` 是集數，
-`[Title][1080p][24][AAC]` 中仍是幀率；`2024年版` / `(2024)` 必須精確命中候選首播年。
-若官方上季總集數包含一個 SP 而字幕組只連續編號正片，單集邊界與精確整季範圍可在完整
-family、釋出時間和唯一目標共同證明後安全前移一集，不會放寬真正多季合集的限制。
-
-Web torrent 上傳中的明確番劇選擇也會參與本組項目學習：服務端從 `title` 與 torrent
-`info.name` 重新計算項目指紋。若 matcher 已自動命中使用者選擇的同一站內番劇，則不會
-反向訓練；若決定仍需人工確認，或自動結果與使用者選擇不同，該項目的第一次確認只記錄
-`pending`，第二個不同集數仍指向同一番劇後才啟用。同一集的重複版本不會增加確認數，
-指向其他番劇的衝突確認會把 binding 設為 `suspended`。對既有 pending 釋出執行人工匹配
-時，仍可明確選擇「記住此項目」立即啟用。
-
-後續匹配只會在同組、同項目，且候選投影、季度/年份/格式/集數 veto 與完整性檢查全部
-通過時使用該 binding。matcher 不可用、內部異常，或 torrent `info.name` 超過 Web matcher
-的 500 字元上限時，已通過 torrent 合法性與字幕組權限校驗的明確選擇仍可繼續釋出，但
-不會學習 binding；無效 torrent 與無權限請求仍會正常失敗。
-
-### 解析度、語言、字幕、格式
-
-| 欄位 | 可填值 | 含義 |
-| ---- | ------ | ---- |
-| `resolution` | `4K` / `2160p` / `1080p` / `720p` / `480p` / `360p` | 必須完全按這些代碼填寫。常見 4K 可填 `2160p` 或 `4K`。 |
-| `language` | `CHS` | 簡體中文。 |
-| `language` | `CHT` | 繁體中文。 |
-| `language` | `JP` | 日語。 |
-| `language` | `EN` | 英語；例如「英文字幕」就填 `EN`。 |
-| `language` | `KO` | 韓語。 |
-| `language` | `ES` | 西班牙語。 |
-| `language` | `PT` | 葡萄牙語。 |
-| `language` | `FR` | 法語。 |
-| `language` | `DE` | 德語。 |
-| `language` | `IT` | 義大利語。 |
-| `language` | `RU` | 俄語。 |
-| `language` | `AR` | 阿拉伯語。 |
-| `language` | `HI` | 印地語。 |
-| `language` | `ID` | 印尼語。 |
-| `language` | `MS` | 馬來語。 |
-| `language` | `TH` | 泰語。 |
-| `language` | `VI` | 越南語。 |
-| `language` | `TL` | 菲律賓語 / 他加祿語。 |
-| `language` | `TR` | 土耳其語。 |
-| `language` | `PL` | 波蘭語。 |
-| `language` | `UK` | 烏克蘭語。 |
-| `subtitle` | `EXTERNAL` | 外掛字幕，字幕檔案獨立於影片檔案。 |
-| `subtitle` | `INTERNAL` | 內封軟字幕，字幕封裝在 MKV/MP4 內，可開關。 |
-| `subtitle` | `EMBEDDED` | 內嵌/硬字幕，字幕已壓進畫面，無法關閉。 |
-| `subtitle` | `NONE` | 無字幕；設定後語言會按空列表處理。 |
-| `format` | `MKV` / `MP4` / `AVI` / `WEBM` | 影片容器格式，不是編碼格式。 |
-
-如果不顯式傳這些欄位，服務端會先從 `title` 推斷，再從種子內部主檔名推斷。仍然無法識別時，預設值為 `resolution=1080p`、`format=MKV`、`subtitle=INTERNAL`、`language=["CHS"]`、`version=v1`；如果最終 `format=MP4`，預設字幕類型會更傾向 `EMBEDDED`。
-
-<Callout type="info">
-  現實世界語言數量取決於統計口徑；[Ethnologue 2025](https://www.ethnologue.com/insights/how-many-languages/) 統計約 7,159 種現存語言，ISO 639 也維護標準語言代碼。AniBT 不追全量語言清單，而是先支援字幕發布中常見的大語種；新增語言代碼優先沿用 ISO 639-1，兩岸中文繼續保留站內相容代碼 `CHS` / `CHT`。
-</Callout>
+- JSON 必填 `title`；multipart 未傳時可用種子內部名。
+- multipart 必填 `torrent`。JSON 必填 `magnetBase64`（原始 magnet 或 Base64）。
+- 無 torrent 時正式釋出必須 `fileSize > 0`，否則 `422` / `EMPTY_RELEASE_CONTENT`。
+- `notes`：Markdown + 原始 HTML，最多 50000 字元，頁面直接渲染。
+- `preview=true`：預覽連結 10 分鐘過期，不進入公開列表。
+- 未帶番劇 ID 時伺服端跑同一 matcher；不要傳偽造的匹配結果。只有 `auto` 才直接綁定。
+- 未傳解析度等欄位時，預設 `resolution=1080p`、`format=MKV`、`subtitle=INTERNAL`、`language=["CHS"]`、`version=v1`；最終 `format=MP4` 時字幕預設更傾向 `EMBEDDED`。
+- 同版本已存在回傳 `409`，換 `version`。
 
 ## Nyaa 代發
 
 <Callout type="warn">
-  Nyaa 代發僅對白名單字幕組開放。發佈超分資源者無法申請白名單；申請規則見 [Nyaa 代發說明](/zh-Hant/docs/nyaa-proxy)。
+  僅白名單字幕組。釋出超分資源者無法申請。規則見 [Nyaa 代發](/docs/nyaa-proxy)。必須 multipart 上傳 `.torrent`，且種子含 `http://nyaa.tracker.wf:7777/announce`。
 </Callout>
 
-Nyaa 代發必須使用 `multipart/form-data` 上傳 `.torrent` 檔案，並且種子的 `announce` 或 `announce-list` 必須包含：
-
-```txt title="Nyaa tracker"
-http://nyaa.tracker.wf:7777/announce
-```
-
-API Key 在 `/groups/<slug>/api-keys` 建立；站內引數說明頁在 `/groups/<slug>/publish?tab=api`。
-
-```bash title="釋出到 AniBT 並請求 Nyaa 代發"
+```bash title="AniBT + Nyaa"
 curl -X POST 'https://anibt.net/api/releases/publish' \
   -H 'Authorization: Bearer <YOUR_API_KEY>' \
   -F 'torrent=@release.torrent' \
@@ -350,185 +90,50 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
   -F 'animeIdType=mal' \
   -F 'animeId=58514' \
   -F 'nyaa=true' \
-  -F 'nyaaCategory=1_3' \
-  -F 'nyaaComplete=false' \
-  -F 'nyaaRemake=false' \
-  -F 'nyaaDescription=可選：覆蓋提交到 Nyaa 的 Markdown 說明'
+  -F 'nyaaCategory=1_3'
 ```
 
-也可以使用結構化欄位 `sitePublish.nyaa.enabled` / `sitePublish.nyaa.category` / `sitePublish.nyaa.description`。生產代發仍應使用 multipart，因為本站需要校驗實際 torrent bytes 中的 Nyaa tracker。
+也可用 `sitePublish.nyaa.enabled` / `sitePublish.nyaa.category` 等結構化欄位。只傳 `nyaaCategory` 等 Nyaa 欄位時，伺服端視為啟用。
 
 ### Nyaa 代發欄位和分類
 
 | 表單欄位 | JSON 結構化欄位 | 必填 | 說明 |
-| -------- | --------------- | ---- | ---- |
-| `nyaa` | `sitePublish.nyaa.enabled` | 否 | 設為 `true` 表示請求 Nyaa 代發。只傳 `nyaaCategory` 等 Nyaa 欄位時，服務端也會視為啟用。 |
-| `nyaaCategory` | `sitePublish.nyaa.category` | 啟用代發時必填 | Nyaa 分類代碼，必須從下表選擇。普通中文動畫字幕常用 `1_3`。 |
-| `nyaaComplete` | `sitePublish.nyaa.complete` | 否 | 對應 Nyaa 的 Complete 標記；合集、全卷、全季等完整資源可設為 `true`。預設 `false`。 |
-| `nyaaRemake` | `sitePublish.nyaa.remake` | 否 | 對應 Nyaa 的 Remake 標記；重傳、修復版、重製版按需要設為 `true`。預設 `false`。 |
-| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown 說明，最多 20000 字元。不傳時繼承本站 `notes`，繼承內容同樣不能超過 20000 字元，否則回傳校驗錯誤。 |
-| `nyaaInformation` | `sitePublish.nyaa.information` | 否 | Nyaa information 欄位，最多 500 字元，通常填寫官網、字幕組頁面、專案頁或相關說明連結。 |
-
-Nyaa 分類代碼必須原樣填寫：
+| --- | --- | --- | --- |
+| `nyaa` | `sitePublish.nyaa.enabled` | 否 | `true` 表示請求代發 |
+| `nyaaCategory` | `sitePublish.nyaa.category` | 啟用時必填 | 下表代碼，中文動畫字幕常用 `1_3` |
+| `nyaaComplete` | `sitePublish.nyaa.complete` | 否 | Complete 標記。預設 `false` |
+| `nyaaRemake` | `sitePublish.nyaa.remake` | 否 | Remake 標記。預設 `false` |
+| `nyaaDescription` | `sitePublish.nyaa.description` | 否 | 提交到 Nyaa 的 Markdown，最多 20000 字元。不傳則用 `notes`，同樣受 20000 上限 |
+| `nyaaInformation` | `sitePublish.nyaa.information` | 否 | information，最多 500 字元 |
 
 | 代碼 | Nyaa 分類 | 什麼時候用 |
-| ---- | --------- | ---------- |
-| `1_1` | Anime - AMV | 動畫音樂影片、剪輯、MAD/AMV。 |
-| `1_2` | Anime - English-translated | 英文翻譯動畫字幕。 |
-| `1_3` | Anime - Non-English-translated | 非英文翻譯動畫字幕。中文簡體、繁體、雙語中文字幕通常選這個。 |
-| `1_4` | Anime - Raw | 動畫 RAW，無翻譯字幕。 |
-| `2_1` | Audio - Lossless | 無損音訊，例如 FLAC、WAV。 |
-| `2_2` | Audio - Lossy | 有損音訊，例如 MP3、AAC、Opus。 |
-| `3_1` | Literature - English-translated | 英文翻譯漫畫、輕小說、書籍。 |
-| `3_2` | Literature - Non-English-translated | 非英文翻譯漫畫、輕小說、書籍。中文漫畫/小說通常選這個。 |
-| `3_3` | Literature - Raw | 未翻譯漫畫、輕小說、書籍原文。 |
-| `4_1` | Live Action - English-translated | 英文翻譯真人影視。 |
-| `4_2` | Live Action - Idol/Promotional Video | 偶像、宣傳影片、PV 類真人資源。 |
-| `4_3` | Live Action - Non-English-translated | 非英文翻譯真人影視。 |
-| `4_4` | Live Action - Raw | 真人影視 RAW。 |
-| `5_1` | Pictures - Graphics | CG、畫集、插畫、掃描圖等圖像資源。 |
-| `5_2` | Pictures - Photos | 照片寫真類資源。 |
-| `6_1` | Software - Applications | 應用軟體。 |
-| `6_2` | Software - Games | 遊戲。 |
+| --- | --- | --- |
+| `1_1` | Anime - AMV | 動畫音樂影片、剪輯、MAD/AMV |
+| `1_2` | Anime - English-translated | 英文翻譯動畫字幕 |
+| `1_3` | Anime - Non-English-translated | 非英文翻譯動畫字幕。中文簡體、繁體、雙語中文字幕通常選這個 |
+| `1_4` | Anime - Raw | 動畫 RAW，無翻譯字幕 |
+| `2_1` | Audio - Lossless | 無損音訊，例如 FLAC、WAV |
+| `2_2` | Audio - Lossy | 有損音訊，例如 MP3、AAC、Opus |
+| `3_1` | Literature - English-translated | 英文翻譯漫畫、輕小說、書籍 |
+| `3_2` | Literature - Non-English-translated | 非英文翻譯漫畫、輕小說、書籍。中文漫畫/小說通常選這個 |
+| `3_3` | Literature - Raw | 未翻譯漫畫、輕小說、書籍原文 |
+| `4_1` | Live Action - English-translated | 英文翻譯真人影視 |
+| `4_2` | Live Action - Idol/Promotional Video | 偶像、宣傳影片、PV 類真人資源 |
+| `4_3` | Live Action - Non-English-translated | 非英文翻譯真人影視 |
+| `4_4` | Live Action - Raw | 真人影視 RAW |
+| `5_1` | Pictures - Graphics | CG、畫集、插畫、掃描圖 |
+| `5_2` | Pictures - Photos | 照片寫真 |
+| `6_1` | Software - Applications | 應用軟體 |
+| `6_2` | Software - Games | 遊戲 |
 
-## 成功響應欄位
+## 失敗
 
-正式釋出成功時，`result` 至少包含：
-
-| 欄位 | 說明 |
-| ---- | ---- |
-| `releaseId` | 新建（或冪等返回）的資源 ID |
-| `animeId` | 綁定的番劇 ID；待匹配時為佔位值 |
-| `matchStatus` | `matched` 或 `pending` |
-| `fileSize` | 寫入的檔案大小（位元組） |
-| `groupId` / `groupName` / `groupSlug` | **API Key 所屬字幕組**（用於核對釋出身份） |
-| `apiKeyId` / `apiKeySuffix` | 本次使用的 Key 識別（suffix 便於日誌核對，不是完整密鑰） |
-
-預覽模式也會在頂層返回同樣的組身份欄位，便於在寫庫前發現 Key 綁錯組。
-
-## 預覽模式
-
-釋出前想先看看渲染效果（標題解析、Markdown/HTML 備註、磁力是否正確），把 `preview=true` 即可：
-
-```bash title="預覽，不公開"
-curl -X POST 'https://anibt.net/api/releases/publish' \
-  -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  -F 'animeIdType=bgm' \
-  -F 'animeId=400602' \
-  -F 'title=[字幕組] 葬送的芙莉蓮 - 01 [1080p].mkv' \
-  -F 'preview=true' \
-  -F 'torrent=@/path/to/release.torrent'
-```
-
-返回的預覽 URL **10 分鐘後過期**，**不會**進入 RSS / 搜尋 / 前端列表。適合自動化流水線在正式釋出前做最後一次人工確認。
-
-### 本地 smoke test
-
-下面的腳本只使用 JSON + magnet，並且固定傳 `preview: true`；適合在 CI 或本地驗證 Key、番劇 ID 和基礎欄位是否能通過。
-
-```js title="preview-smoke.mjs"
-const apiKey = process.env.ANIBT_API_KEY;
-if (!apiKey) throw new Error("Set ANIBT_API_KEY first");
-
-const body = {
-  preview: true,
-  animeIdType: "mal",
-  animeId: "52991",
-  title: "[Group] Preview Smoke - 01 [1080p][CHS].mkv",
-  magnetBase64: "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567",
-  episodeKey: "01",
-  resolution: "1080p",
-  language: ["CHS"],
-  subtitle: "EXTERNAL",
-  format: "MKV",
-  fileSize: 734003200,
-};
-
-const res = await fetch("https://anibt.net/api/releases/publish", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  },
-  body: JSON.stringify(body),
-});
-const data = await res.json();
-console.log(res.status, data.ok, data.previewUrl, data.groupSlug, data.apiKeySuffix);
-if (!res.ok || !data.previewUrl) process.exit(1);
-// 可選：斷言 groupSlug 符合預期，防止 Key 綁錯字幕組
-// if (data.groupSlug !== "lolihouse") process.exit(2);
-```
-
-## 鑑權與 Key 管理
-
-<Steps>
-  <Step>
-    ### 在字幕組後臺生成 API Key
-    每個字幕組可獨立生成多個 Key，建議為 CI / 個人指令碼各申請一把；用於本介面的 Key 必須明確選擇 `releases:publish`。
-  </Step>
-  <Step>
-    ### 在請求頭攜帶
-    ```http
-    Authorization: Bearer <YOUR_API_KEY>
-    ```
-  </Step>
-  <Step>
-    ### Key 洩露立即重置
-    舊 Key 立即失效；新 Key 只在生成時顯示一次，請妥善儲存。
-  </Step>
-</Steps>
-
-<Callout type="warn">
-  Key 不要寫進客戶端程式碼、不要 commit 到倉庫、不要貼 issue。CI 必須用 secret 注入。
-</Callout>
-
-## 統一錯誤回應
-
-無論使用 JSON 磁力釋出還是 multipart 種子上傳，鑑權、請求解析、上傳、站內寫入或任務交接失敗時，介面都會返回同一種 JSON envelope：
-
-```json title="錯誤回應"
-{
-  "ok": false,
-  "error": {
-    "code": "PUBLIC_SNAPSHOT_ENQUEUE_PAUSED",
-    "message": "System deployment in progress. Please retry shortly.",
-    "reason": "DEPLOYMENT_IN_PROGRESS",
-    "retryable": true,
-    "retryAfterMs": 15000,
-    "requestId": "req-example-123",
-    "i18n": {
-      "key": "error_deployment_in_progress"
-    }
-  }
-}
-```
-
-| 欄位 | 含義 |
+| HTTP | 處理 |
 | --- | --- |
-| `code` | 穩定的機器錯誤碼，用於程式分支，例如 `CONFLICT`、`RATE_LIMIT_EXCEEDED`。 |
-| `message` | 可直接顯示的安全錯誤說明；服務端內部錯誤不會把憑據或上游異常細節返回給客戶端。 |
-| `reason` | 比 `code` 更具體的業務原因，例如 `RELEASE_VERSION_EXISTS`、`DEPLOYMENT_IN_PROGRESS`。僅在適用時返回。 |
-| `retryable` | 是否適合在條件不變時重試。僅在服務端能夠明確判斷時返回。 |
-| `retryAfterMs` | 建議等待的毫秒數。存在時，回應標頭也會帶按秒向上取整的 `Retry-After`。 |
-| `requestId` | 本次請求的關聯 ID；回應標頭 `X-Request-ID` 返回相同值，回報問題時請一併提供。 |
-| `i18n` | 本地化後設資料，包含 `key`，必要時還會包含 `params`；客戶端可優先按它顯示本地化提示。 |
-
-計劃部署期間暫停釋出交接時，介面返回 `503 Service Unavailable`，`code=PUBLIC_SNAPSHOT_ENQUEUE_PAUSED`、`reason=DEPLOYMENT_IN_PROGRESS`、`retryable=true`，並同時返回 `Retry-After` 與 `retryAfterMs`。這不是普通的 `500`；呼叫方應等待指定時間後重試。
-
-同一釋出版本已經存在時，介面返回 `409 Conflict`，`code=CONFLICT`、`reason=RELEASE_VERSION_EXISTS`、`i18n.key=error_release_version_exists`。不要原樣無限重試；確認確實是新修訂後再使用新的 `version`。
-
-寫入限流時，介面返回 `429 Too Many Requests`，`code=RATE_LIMIT_EXCEEDED`、`reason=RATE_LIMITED`、`retryable=true`，並透過 `Retry-After` / `retryAfterMs` 告知退避時間。
-
-## 常見錯誤
-
-| HTTP | 原因                                              | 處理                                                          |
-| ---- | ------------------------------------------------- | ------------------------------------------------------------- |
-| 400  | `title` / 番劇標識缺失，或 `torrent` 解析失敗       | 檢查必填項；確認上傳的是合法 .torrent 檔案                       |
-| 401  | API Key 缺失、格式錯誤、無效或已撤銷                 | 檢查 Bearer / `X-API-Key`；失效時重新產生 Key                  |
-| 403  | `INSUFFICIENT_SCOPE`；Key 缺少 `releases:publish`   | 建立或改用包含 `releases:publish` 的 Key                       |
-| 409  | `reason=RELEASE_VERSION_EXISTS`，同一釋出版本已存在  | 不要原樣重試；確認是新修訂後使用新的 `version`                    |
-| 413  | 種子檔案 / 表單超過大小限制                         | 壓縮種子（裁剪 tracker 列表）                                   |
-| 429  | `reason=RATE_LIMITED`，寫入配額耗盡                 | 按 `Retry-After` / `retryAfterMs` 退避                          |
-| 503  | `reason=DEPLOYMENT_IN_PROGRESS`，系統正在部署        | 按 `Retry-After` / `retryAfterMs` 等待後重試                    |
-
-下一步：發完直接訂閱 [`/rss/anime.xml`](/docs/open-api/rss-anime) 驗證；找 Bangumi ID 用 [Bangumi 搜尋](/docs/open-api/bgm-search)，AniList / MyAnimeList / AniDB 可直接填對應站點 ID；想看自己字幕組的統計走 [`/api/subtitle-groups/me`](/docs/open-api/me)。
+| 400 | 檢查 `title` / 番劇標識 / `.torrent` |
+| 401 | 檢查 Bearer / `X-API-Key`；失效則重新產生 |
+| 403 | 改用含 `releases:publish` 的 Key |
+| 409 | 換 `version`，不要原樣重試 |
+| 413 | 種子過大 |
+| 422 | `EMPTY_RELEASE_CONTENT` 等校驗失敗 |
+| 429 / 503 | 按 `Retry-After` 退避 |

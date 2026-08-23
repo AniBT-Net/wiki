@@ -1,75 +1,20 @@
 ---
 title: 申请入驻
-description: 字幕组通过邮件提交入驻申请；站务人工核验身份后开通发布权限。
+description: 用注册邮箱发邮件申请字幕组发布权限。
 ---
 
-AniBT 不提供自助开通发布权限。**字幕组**须按下列流程发邮件申请，由站务人工审核。通过后，会在已有普通账号上绑定字幕组身份并开通发布能力，之后可使用 [发布 API](/docs/open-api/releases-publish) 推送资源，并通过 [站点同步](/docs/site-sync) 同步到其它 BT 站。
+发布权限不自助开通。用 **AniBT 注册邮箱** 发到 [support@anibt.net](mailto:support@anibt.net)，主题：`字幕组入驻申请 - <组名>`。
 
-## 申请材料
+## 邮件内容
 
-<Steps>
-  <Step>
-    ### 使用注册邮箱发送
+- **组名**
+- **slug**：稳定英文标识，例如 `sakura-sub`。开通后会出现在公开 URL 中，不宜更改。
+- **简介**：作品类型、活跃情况。
+- **联系方式**：可反向联系到字幕组的渠道。
+- **身份证明（任选一项）**：其它 BT 站账号、公开频道管理员证明，或等价材料。
 
-    须使用在 AniBT 注册时填写的邮箱发送申请，用于核对申请人与账号持有人一致。
+尚未注册时，先完成 [账号](/docs/account-auth)。
 
-    尚未注册时，先阅读[账号、登录与会话](/docs/account-auth)，在 [anibt.net](https://anibt.net) 注册普通账号，再用同一邮箱发申请。
-  </Step>
-  <Step>
-    ### 字幕组基本信息
+通常几个工作日内回复。一周无回复时检查垃圾邮件后可再发一次。
 
-    邮件正文需包含：
-
-    - **组名**：字幕组完整名称。
-    - **slug**：简短、稳定的英文标识，作为唯一 ID（例如 `sakura-sub`）。开通后不宜更改，会出现在 [`/rss/group/<slug>.xml`](/docs/open-api/other-endpoints) 等公开 URL 中。
-    - **简要介绍**：一两段说明作品类型、活跃时长与当前发布节奏。
-    - **联系方式**：Telegram、官网、Discord、邮件群组等可反向联系到字幕组的渠道。
-  </Step>
-  <Step>
-    ### 身份证明（任选一项）
-
-    提供下列材料之一即可，**不必全部提供**：
-
-    - 字幕组在 nyaa / 末日站 / Mikan / ACG.rip 等站点已使用的发布账号或邮箱（用于比对）。
-    - 官方网站 / Telegram 频道 / Twitter 等公开渠道的管理员证明（例如临时置顶一条声明）。
-    - 在既有字幕组成员中被广泛认可的其它身份证据。
-
-    目的是确认申请人代表该字幕组，避免冒用他人名义占用 slug。
-  </Step>
-</Steps>
-
-## 发送地址
-
-<Callout type="info">
-  发送至 **[support@anibt.net](mailto:support@anibt.net)**。主题建议写 `字幕组入驻申请 - <组名>`。通常在几个工作日内回复。
-</Callout>
-
-若一周内未收到回复（请同时检查垃圾邮件箱），可再发一次，或通过 [其他联系方式](/docs/contact) 提醒站务。
-
-## 审核通过后
-
-站务会邮件确认开通，并在账号上完成：
-
-- 绑定字幕组身份与 slug。
-- 开通 [发布 API](/docs/open-api/releases-publish) 访问权限（生成 API Key）。
-- 字幕组出现在站点列表与 [字幕组 RSS](/docs/open-api/other-endpoints) 中。
-
-建议继续阅读：
-
-<Cards>
-  <Card
-    title="站点同步设置"
-    href="/docs/site-sync"
-    description="将 AniBT 上的发布同步到 nyaa / 萌番组 / 末日站等。"
-  />
-  <Card
-    title="发布 API"
-    href="/docs/open-api/releases-publish"
-    description="POST /api/releases/publish — 以 API 推送种子。"
-  />
-  <Card
-    title="Tracker 地址"
-    href="/docs/tracker"
-    description="制种时使用的 announce URL。"
-  />
-</Cards>
+开通后会绑定 slug、发放 API Key，字幕组出现在站内列表和 RSS。接着配置 [站点同步](/docs/site-sync)、[Tracker](/docs/tracker)、[发布 API](/docs/open-api/reference)。

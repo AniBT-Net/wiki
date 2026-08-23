@@ -1,41 +1,21 @@
 ---
 title: Tracker
-description: AniBT 官方 Tracker 的固定 announce 地址、白名單規則與已關閉入口。
+description: 製種時使用的 AniBT announce 地址。
 ---
 
-AniBT Tracker 只服務已在 AniBT 釋出並加入白名單的種子。公開 announce 地址固定為：
+只接受已在 AniBT 釋出的種子。
 
-```txt title="AniBT Tracker"
+```txt
 https://tracker.anibt.net/announce
 ```
 
-<Callout type="info">
-  地址公開不代表任意種子可用。Tracker 按 v1 `info_hash` 對照 AniBT 的
-  append-only 白名單；未在 AniBT 收錄的外部 hash 會返回 `not whitelisted`。
-</Callout>
+製種時加入該地址。站內釋出會把它寫入 magnet。未在本站釋出的種子會返回 `not whitelisted`。
 
-## 釋出與下載
+下載 `.torrent`：
 
-- 透過 AniBT 網頁或 [`/api/releases/publish`](/docs/open-api/releases-publish) 釋出時，站點會自動把固定 Tracker 寫入 magnet。
-- 從 AniBT 的 `.torrent` 下載介面取得種子時，在不改變 infohash 的前提下，會把歷史 signed / 重複的 AniBT 地址規範為唯一固定地址。
-- 其它第三方 tracker 會保留。仍建議種子包含 1–2 個可靠的公開 tracker，避免只依賴單一服務。
-- 通用 remote torrent 代理返回上游原始 torrent bytes，不注入 AniBT Tracker。
+| 類型 | 路徑 |
+| --- | --- |
+| 番劇 | `/api/torrent/{rel_*}.torrent` |
+| 其他類 | `/api/other-torrent/{orel_*}.torrent` |
 
-既有 AniBT 種子可繼續使用固定 `/announce`，無需更換地址或重新下載資料。Tracker 欄位位於 torrent `info` dictionary 之外，規範化不會改變 infohash。
-
-### 公開種子下載地址
-
-- 番劇資源使用 `/api/torrent/{rel_*}.torrent`。
-- 其他類資源使用 `/api/other-torrent/{orel_*}.torrent`。
-- `GET` 與 `HEAD` 共用同一套路徑校驗。末尾 ID 只解碼一次，並且必須符合對應的公開 ID 類型；錯誤前綴、額外路徑段、編碼後的斜線或反斜線、非法百分號編碼和錯誤副檔名都會回傳標準 HTTP 400 JSON。格式正確但不存在的 ID 回傳 404。
-
-請求若在到達站點前已被 CDN 拒絕，回應格式和狀態碼由邊緣層決定。
-
-## 已關閉的入口
-
-- `https://tracker.anibt.net/announce/v1/*`
-- `https://tracker.anibt.net/scrape`
-- 公網 `/api/*`
-- UDP announce
-
-Tracker 統計透過站內服務存取 Tailscale-only 管理 API，不依賴公網 scrape。
+已關閉：`/scrape`、UDP、`/announce/v1/*`。

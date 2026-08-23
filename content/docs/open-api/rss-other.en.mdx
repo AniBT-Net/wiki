@@ -1,132 +1,23 @@
 ---
-title: Other-category RSS
-description: GET /rss/other/<category>.xml — independent feeds for all seven other-release categories; never mixed into anime RSS.
+title: Other release RSS
+description: GET /rss/other/<category>.xml — one feed per category; not mixed into anime RSS.
 ---
 
-`/rss/other/<category>.xml` serves independent feeds for other releases. Supported categories: `manga`, `music`, `raw`, `stage`, `collection`, `movie`, and `other`.
+Manga, music, RAW, stage, collection, movie, other. Subscribe to these with this path.
 
-## Preconditions
+<ApiEndpoint method="GET" path="/rss/other/<category>.xml" auth="public">
+Categories: `manga` / `music` / `raw` / `stage` / `collection` / `movie` / `other`.
+</ApiEndpoint>
 
-- No authentication.
-- Other-category items are **not** mixed into `/rss/magnets.xml`, `/rss/anime.xml`, or anime detail RSS; subscribe via these category paths.
+<Callout type="info">
+  An empty category still returns a valid empty channel, not 404. No `<anibt:bgmId>`.
+</Callout>
 
-## URL
+Full parameters: [API reference](/docs/open-api/reference).
 
-```txt title="Category RSS"
+```txt title="Examples"
 https://anibt.net/rss/other/manga.xml
-https://anibt.net/rss/other/music.xml
-https://anibt.net/rss/other/raw.xml
-https://anibt.net/rss/other/stage.xml
-https://anibt.net/rss/other/collection.xml
-https://anibt.net/rss/other/movie.xml
-https://anibt.net/rss/other/other.xml
+https://anibt.net/rss/other/music.xml?q=FLAC&limit=50
 ```
 
-When a category has no releases, its canonical URL still returns `200 application/xml` with a valid empty RSS channel rather than `404`.
-
-## Query parameters
-
-<TypeTable
-  type={{
-    'limit': {
-      description: 'Item count, 1..100, default 100. Single decimal integer without leading zeros.',
-      type: 'integer',
-      default: '100',
-    },
-    'q': {
-      description: 'Keyword search. Alias: search. NFKC-normalized, trimmed, whitespace-collapsed, max 160 UTF-8 bytes.',
-      type: 'string',
-    },
-    'search': {
-      description: 'Alias of q; only one q/search value total.',
-      type: 'string',
-    },
-    'groupId': {
-      description: 'Organization id of a group. Publish API groupId values work here as filters.',
-      type: 'string',
-    },
-    'sortField': {
-      description: 'publishedAt / fileSize, default publishedAt.',
-      type: 'enum',
-      default: 'publishedAt',
-    },
-    'sortOrder': {
-      description: 'desc / asc, default desc.',
-      type: 'enum',
-      default: 'desc',
-    },
-  }}
-/>
-
-## Examples
-
-<Steps>
-  <Step>
-    ### Latest manga
-    ```txt title="Manga"
-    https://anibt.net/rss/other/manga.xml
-    ```
-  </Step>
-  <Step>
-    ### Search music
-    ```txt title="Music + keyword"
-    https://anibt.net/rss/other/music.xml?q=FLAC&limit=50
-    ```
-  </Step>
-  <Step>
-    ### Sort RAW by file size
-    ```txt title="RAW + file size"
-    https://anibt.net/rss/other/raw.xml?sortField=fileSize&sortOrder=desc
-    ```
-  </Step>
-</Steps>
-
-## Success response
-
-Native RSS 2.0 XML. Browsers show the default XML tree (no site XSL/CSS). Readers and BitTorrent clients consume standard fields.
-
-Each `<item>` includes:
-
-<TypeTable
-  type={{
-    '<title>': {
-      description: 'Title; with a group name, rendered as [Group] Title.',
-      type: 'string',
-    },
-    '<link>': {
-      description: 'Other-release detail page (/other-release/<id>).',
-      type: 'url',
-    },
-    '<guid isPermaLink="false">': {
-      description: 'Stable other-release id.',
-      type: 'string',
-    },
-    '<pubDate>': {
-      description: 'RFC 822 timestamp in Asia/Shanghai with the numeric offset fixed at +0800.',
-      type: 'datetime',
-    },
-    '<description>': {
-      description: 'CDATA with category, group, size, download links, notes, and tags.',
-      type: 'string',
-    },
-    '<enclosure>': {
-      description: 'Torrent download URL, type="application/x-bittorrent". Only when a torrent file was uploaded.',
-      type: 'url',
-    },
-    '<torrent>': {
-      description: 'In-feed torrent metadata; includes infoHash when a magnet exists, and its nested <pubDate> uses RFC 3339 in Asia/Shanghai with +08:00.',
-      type: 'element',
-    },
-  }}
-/>
-
-## Caching & indexing
-
-- Responses compute an exact-body `W/"anibt-sha256-{...}"` ETag from final XML UTF-8 bytes and omit request-time `lastBuildDate`. Matching-ETag `304` means current feed bytes are unchanged. `Last-Modified` is currently omitted.
-- latest/filter variants without `q` use `s-maxage=120`; searches with `q` (including empty results) use `s-maxage=600`; both use `stale-while-revalidate=60`.
-- Category publishes invalidate the latest Redis family first, then purge non-full-text CDN variants for that category (including `groupId`-only filters). Search Redis/CDN identities with `q` / `search` stay on a 600-second TTL and are not purged by unrelated category publishes — this is not a real-time search SLA.
-- Search cache identity stores only the SHA-256 of the normalized query. Duplicate/empty/control-character `q`, both `q` and `search`, or >160 bytes return `400 + no-store`. Reordering original query pairs returns the same canonical `200`; default/alias/byte-level normalization still returns a one-day-cacheable `308`.
-- Only true CDN/Redis search MISSes consume distinct-query and global concurrency budgets; over-budget returns `429 + Retry-After`. Stable queries and cache HITs do not.
-- Responses include `noindex, follow` so category feeds are not indexed by search engines.
-
-Continue: [Publish other releases](/docs/open-api/other-releases-publish); anime RSS at [RSS main entry](/docs/open-api/rss-anime).
+`q` and `search` may supply only one value. Empty, control characters, or overlong input returns `400`.

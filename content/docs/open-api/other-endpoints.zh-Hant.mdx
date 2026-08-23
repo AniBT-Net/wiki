@@ -3,317 +3,57 @@ title: 其他端點
 description: 字幕組短鏈 RSS、全站磁力 RSS、季度番劇 JSON、單番劇字幕組 JSON。
 ---
 
-主入口之外，AniBT 還提供四個常用端點：兩個 RSS（短鏈 + 全站）、兩個 JSON（季度 + 單番劇）。
+完整欄位見 [API 參考](/docs/open-api/reference)。
 
-本頁的 RSS 端點都返回原生 RSS 2.0 XML。瀏覽器直開 RSS URL 時不載入站點自訂 XSL/CSS，會使用瀏覽器預設 XML 樹展示；RSS 閱讀器和 BT 客戶端繼續按標準欄位消費。
+## 字幕組短鏈
 
-<Cards>
-  <Card title="字幕組短鏈 RSS" href="#字幕組短鏈-rssgroupslugxml" description="GET /rss/group/<slug>.xml" />
-  <Card title="全站磁力 RSS" href="#全站磁力-rssmagnetsxml" description="GET /rss/magnets.xml" />
-  <Card title="季度番劇 JSON" href="#季度番劇-apiseasonsanime" description="GET /api/seasons/anime" />
-  <Card title="單番劇字幕組 JSON" href="#單番劇字幕組-apianimegroups" description="GET /api/anime/groups" />
-</Cards>
+<ApiEndpoint method="GET" path="/rss/group/<slug>.xml" auth="公開">
+等價 `/rss/anime.xml?groupSlug=<slug>`。不支援 Tag 過濾。
+</ApiEndpoint>
 
-## 字幕組短鏈 `/rss/group/<slug>.xml`
-
-等價於 `/rss/anime.xml?groupSlug=<slug>` 但 URL 更短，便於貼 README / 論壇。
-
-<Callout type="warn">
-  路徑必須以 `.xml` 結尾。支援單值 `limit=1..100`，**不支援** Tag 過濾；需要過濾請走 [RSS 主入口](/docs/open-api/rss-anime)。非法 limit 返回應用 400，生產邊緣可能先返回 Cloudflare 403。
-</Callout>
+路徑必須以 `.xml` 結尾。未知 slug 回傳 `404`。支援 `limit=1..100`。非法 `limit` 回傳應用 `400`，生產邊緣可能先 `403`。
 
 ```txt title="示例"
 https://anibt.net/rss/group/kirara-fantasia.xml
-https://anibt.net/rss/group/pre-s.xml
-https://anibt.net/rss/group/kitauji-sub.xml
-https://anibt.net/rss/group/haruhana.xml
 ```
 
-條目與 [RSS 主入口](/docs/open-api/rss-anime) 一樣會輸出 AniBT 擴展欄位（含 `<anibt:bgmId>`，有綁定才出現）。
+## 全站磁力
 
-<Callout type="info">
-  已知字幕組的日常釋出只重新整理該 owner 的 RSS 變體。字幕組建立、規範 slug 重新命名或刪除時，舊/新完整路徑及其有界 `404` 負快取會一起收斂；任意未知 slug 仍不會被當成可失效的 owner。正常事件鏈路無需等完整 TTL 才反映真實生命週期變更，但客戶端仍應保存重新命名後的最終 URL。
-</Callout>
+<ApiEndpoint method="GET" path="/rss/magnets.xml" auth="公開">
+全站最近釋出。已綁定的 anime 條目帶 `<anibt:bgmId>`。
+</ApiEndpoint>
 
-## 全站磁力 `/rss/magnets.xml`
-
-適合瀏覽全站最近釋出。搜尋引擎按 `robots.txt` 不會抓 `/rss/`；下載器訂閱不受影響。
-
-```txt title="基本用法"
+```txt title="示例"
 https://anibt.net/rss/magnets.xml
-https://anibt.net/rss/magnets.xml?limit=100
-https://anibt.net/rss/magnets.xml?q=葬送的芙莉蓮
+https://anibt.net/rss/magnets.xml?q=葬送的芙莉莲
 https://anibt.net/rss/magnets.xml?resolution=1080p&language=CHS
 ```
 
-每個 anime `<item>` 含 `xmlns:anibt` 結構化元資料，其中 **`<anibt:bgmId>`** 為 Bangumi subject id（已綁定則輸出）。與 `/rss/anime.xml`、`/rss/group/*.xml` 欄位一致；`/rss/other/*` 無此欄位。
+`q` 與 `search` 只能提供一個值。空、控制字元或超長回傳 `400`。
 
-<Callout type="info">
-  無 `q` 的 latest/filter 變體快取 **120 秒**；帶 `q` 的搜尋（包括空結果）快取 **600 秒**；兩者均為 `stale-while-revalidate=60s`。詳見 [HTTP 快取與 304](/docs/open-api/caching)。
-</Callout>
+## 季度番劇
 
-<Callout type="warn">
-  `q` 與 `search` 是別名，只能提供一個值。搜尋詞會做 NFKC、trim 與空白折疊，UTF-8 最多 160 bytes；重複、空、控制字元或超長輸入返回 `400 + no-store`。僅改變原始 query 參數對順序時直接返回同一規範 `200`；預設值、相容別名或其它位元組級規範化仍返回可快取一天的 `308`。新的高基數 MISS 超出預算時返回 `429 + Retry-After`。
-</Callout>
+<ApiEndpoint method="GET" path="/api/seasons/anime" auth="公開">
+當季已上架番劇。`bgmId` 優先於 `season`，且不能與 `query` 同時使用。
+</ApiEndpoint>
 
-## 季度番劇 `/api/seasons/anime`
-
-第三方追番站 / 看板 / 編輯器輔助使用。**返回當季已上架番劇 + 可選季度列表。**
-
-### 請求
-
-```txt title="多種呼叫方式"
-GET https://anibt.net/api/seasons/anime
-GET https://anibt.net/api/seasons/anime?season=2026春
-GET https://anibt.net/api/seasons/anime?season=2026-SPRING   # 也接受英文形式
-GET https://anibt.net/api/seasons/anime?bgmId=543360         # 精確返回單個番劇
-GET https://anibt.net/api/seasons/anime?query=夏日口袋        # 按番劇標題搜尋
-GET https://anibt.net/api/seasons/anime?season=2026夏&query=Summer%20Pockets
+```txt title="示例"
+https://anibt.net/api/seasons/anime
+https://anibt.net/api/seasons/anime?season=2026春
+https://anibt.net/api/seasons/anime?bgmId=543360
+https://anibt.net/api/seasons/anime?query=夏日口袋
 ```
 
-### Query
+`weekday`：0=週日 … 6=週六，按 Asia/Shanghai；`null` 為未排播。`rating` 為 0–100。
 
-<TypeTable
-  type={{
-    'season': {
-      description: '形如 2026春 / 2026夏 / 2026秋 / 2026冬，也接受 2026-SPRING 等 ISO 形式。',
-      type: 'string',
-      default: '當前季',
-    },
-    'bgmId': {
-      description: '精確查詢單個番劇（按 BGM subject id）。優先順序高於 season：傳入後忽略 season 過濾，僅返回該番劇；未匹配返回 total: 0 且 byWeekday: []。requestedSeason 自動回填為該番劇所屬季度。',
-      type: 'integer',
-    },
-    'query': {
-      description: '按番劇標題搜尋（也支援短別名 q），匹配中文、繁中、羅馬字、英文、日文標題和 allTitles。最長 120 字元，最多返回 50 個匹配番劇；不傳 season 時在全部公開番劇中搜尋，傳 season 時僅搜尋該季度；不能和 bgmId 同時使用。',
-      type: 'string',
-    },
-  }}
-/>
+## 單番劇字幕組
 
-### 響應欄位（節選）
+<ApiEndpoint method="GET" path="/api/anime/groups" auth="公開">
+某 `bgmId` 正在釋出的字幕組，以及每組最近 30 條資源。
+</ApiEndpoint>
 
-```jsonc title="200 OK"
-{
-  "ok": true,
-  "ts": 1776841966624,
-  "data": {
-    "currentSeason": "2026春",
-    "requestedSeason": "2026春",
-    "availableSeasons": ["2024春", "2024夏", "...", "2026秋"],
-    "scheduleSummary": {
-      "scheduled": 97,
-      "weekdayOnly": 0,
-      "missingSource": 9
-    },
-    "byWeekday": [
-      {
-        "weekday": 1,
-        "weekdayLabel": "週一",
-        "animes": [
-          {
-            "bgmId": 543360,
-            "animeId": "nh73r0ernee7s0afv9s82f763983gcz7",
-            "cover": "https://r2.anibt.net/anime_covers/.../...jpg",
-            "title": {
-              "primary": "上伊那牡丹，酒醉身姿似百合花般",
-              "chinese": "上伊那牡丹，酒醉身姿似百合花般",
-              "romaji": "Kamiina Botan, Yoeru Sugata wa Yuri no Hana",
-              "english": "Botan Kamiina Fully Blossoms When Drunk",
-              "japanese": "上伊那ぼたん、酔へる姿は百合の花"
-            },
-            "format": "TV",
-            "kind": "TV",
-            "rating": 73,
-            "airingAt": 1764259200,
-            "weekday": 1,
-            "weekdayLabel": "週一",
-            "scheduleStatus": "scheduled",
-            "rssReleaseCount": 11,
-            "hasRelease": true
-          }
-        ]
-      },
-      { "weekday": 0, "weekdayLabel": "週日", "animes": [ /* ... */ ] },
-      { "weekday": null, "weekdayLabel": "未排播", "animes": [ /* 源資料缺少播放日 */ ] }
-    ],
-    "total": 106
-  }
-}
+```txt title="示例"
+https://anibt.net/api/anime/groups?bgmId=543360
 ```
 
-### 關鍵欄位
-
-<TypeTable
-  type={{
-    'ts': {
-      description: '快取 representation 的 materialization time（毫秒）。同一 Redis representation 命中期間保持穩定，並作為最終 JSON 正文的一部分進入 exact-body ETag；重新整理生成新 representation 時才推進。',
-      type: 'number',
-    },
-    'byWeekday': {
-      description: '按周幾分組的番劇列表。順序：週一(1) → 週二(2) → … → 週日(0) → 未排播(null)，缺失的周幾不出現。同一組內按 airingAt 升序，未知放送時間排最後。',
-      type: 'array',
-    },
-    'scheduleSummary': {
-      description: '排播來源彙總：scheduled=有 weekday + airingAt；weekdayOnly=只有周幾、暫無精確時間；missingSource=Bangumi/BGMWiki/Typesense 源欄位缺失。',
-      type: 'object',
-    },
-    'scheduleStatus': {
-      description: '單個番劇的排播狀態：scheduled / weekday_only / missing_source。missing_source 表示源資料缺失，不等同於本站快取未更新。',
-      type: 'enum',
-    },
-    'rssReleaseCount': {
-      description: '本站已釋出並匹配到該番劇的資源數量。釋出、刪除或待匹配資源補匹配後會更新；首頁週播卡片也使用該值判斷是否顯示「暫無種子」。',
-      type: 'number',
-    },
-    'hasRelease': {
-      description: '是否已有至少一個站內釋出資源。等價於 rssReleaseCount > 0，用於客戶端快速區分「已有種子」和「暫無種子」。',
-      type: 'boolean',
-    },
-    'availableSeasons': {
-      description: '自動探測當前季 ±N 內至少有一部番劇的季度，按時間升序，一定包含當前季。可直接渲染下拉框。',
-      type: 'string[]',
-    },
-    'weekday': {
-      description: '0=週日 … 6=週六，按 Asia/Shanghai 計算；null 表示當前索引沒有播放日來源，請結合 scheduleStatus 判斷。',
-      type: 'number | null',
-    },
-    'format': {
-      description: 'AniList 原始列舉：TV / TV_SHORT / MOVIE / SPECIAL / OVA / ONA / MUSIC，未知為 null。',
-      type: 'enum',
-    },
-    'kind': {
-      description: '簡化分類：TV（含 TV_SHORT）/ MOVIE / OTHER（OVA/ONA/SPECIAL/MUSIC/未知）。',
-      type: 'enum',
-    },
-    'rating': {
-      description: '0–100（來源 AniList averageScore），未知為 null。',
-      type: 'number | null',
-    },
-    'title.japanese': {
-      description: '日文原標題（來源 AniList title.native）。所有公開 API 輸出對齊這一命名。',
-      type: 'string',
-    },
-  }}
-/>
-
-### 快取與限流
-
-| 專案             | 值                                                                                       |
-| ---------------- | ---------------------------------------------------------------------------------------- |
-| 速率限制         | **30 次 / 60 秒 / IP**（與 `/api/anime/groups` 共用視窗）                                |
-| `Cache-Control`  | `public, max-age=0, s-maxage=600, stale-while-revalidate=86400, stale-if-error=86400`（**瀏覽器重新驗證 + CDN 10 分鐘新鮮 + 24h SWR/SIE**） |
-| 條件請求         | `If-None-Match`（opaque ETag 形如 `W/"anibt-sha256-{64 lowercase hex}"`）；目前省略 `Last-Modified` |
-
-<Callout type="info">
-  `ts`、最終 JSON bytes 與 ETag 現在屬於同一個快取 representation：cache hit 時三者一起穩定，重新整理時一起推進。匹配 ETag 的 `304` 因此表示目前正文 bytes 未變化。
-</Callout>
-
-```bash title="條件請求"
-curl 'https://anibt.net/api/seasons/anime'
-curl 'https://anibt.net/api/seasons/anime?season=2026春'
-curl 'https://anibt.net/api/seasons/anime?bgmId=543360'
-curl 'https://anibt.net/api/seasons/anime?query=夏日口袋'
-
-ETAG=$(curl -sSI 'https://anibt.net/api/seasons/anime' | grep -i ^etag: | awk '{print $2}' | tr -d '\r')
-curl -i 'https://anibt.net/api/seasons/anime' -H "If-None-Match: $ETAG"
-# → HTTP/2 304；目前快取 representation 的正文 bytes 未變化
-```
-
-## 單番劇字幕組 `/api/anime/groups`
-
-> 「這部番都誰在做？」一個 `bgmId` 即可拿到全部正在釋出的字幕組、最近更新時間，以及**最近 30 條釋出**。
-
-**專為給 `/rss/anime.xml` 拼 `groupSlug` 提供候選**，也方便客戶端直接做"番劇詳情頁 / 資源列表"。
-
-### 請求
-
-```txt
-GET https://anibt.net/api/anime/groups?bgmId=543360
-```
-
-<TypeTable
-  type={{
-    'bgmId': {
-      description: 'Bangumi ID（正整數），例如 543360。',
-      type: 'integer',
-    },
-  }}
-/>
-
-### 響應（節選）
-
-```jsonc title="200 OK"
-{
-  "ok": true,
-  "ts": 1776841967132,
-  "data": {
-    "bgmId": 543360,
-    "animeId": "nh73r0ernee7s0afv9s82f763983gcz7",
-    "title": { /* primary / chinese / romaji / english / japanese */ },
-    "groups": [
-      {
-        "groupId": "org_aagmgM9i0ZyR",
-        "slug": "kitauji-sub",
-        "name": "北宇治字幕組",
-        "status": "ACTIVE",
-        "lastUpdatedAt": 1776624843260,
-        "items": [
-          {
-            "releaseId": "rel_fItEHE7r1gR1",
-            "title": "[北宇治字幕組] 上伊那牡丹，酒醉身姿似百合 [02][WebRip][HEVC_AAC][繁日內嵌]",
-            "magnet": "magnet:?xt=urn:btih:282e2b…",
-            "episodeKey": "2",
-            "resolution": "1080p",
-            "language": ["CHT", "JP"],
-            "subtitle": "EMBEDDED",
-            "publishedAt": 1776624843260
-          }
-          /* … 最多 30 條，按 publishedAt desc … */
-        ]
-      }
-      /* … 其他字幕組 … */
-    ],
-    "total": 4
-  }
-}
-```
-
-### 欄位
-
-- `ts` 是快取 representation 的 materialization time；同一快取值中保持穩定，並與正文一起進入 exact-body ETag。
-- `groups` 列表按 `lastUpdatedAt` 倒序（最近發過的排前面）。
-- `items`：該字幕組對該番劇最近釋出的資源，**最多 30 條**，按 `publishedAt` desc。可直接渲染"番劇 × 字幕組"維度的資源面板，避免單獨拉 RSS。
-  - `magnet` 可能為 `null`（僅有種子檔案、未生成磁力時）。
-  - `episodeKey` 是穩定的集數鍵（如 `"01"`、`"SP01"`），便於客戶端排序 / 聚合。
-  - `language`：`("CHS" | "CHT" | "JP" | "EN" | "KO" | "ES" | "PT" | "FR" | "DE" | "IT" | "RU" | "AR" | "HI" | "ID" | "MS" | "TH" | "VI" | "TL" | "TR" | "PL" | "UK")[]`。
-  - `subtitle`：`"EMBEDDED" | "EXTERNAL" | "BUILT_IN" | "NONE"`（內嵌 / 外掛 / 內封 / 無）。
-- `slug` 與 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 完全一致，可直接餵給 `/rss/anime.xml?groupSlug=…`。
-- 如果該 `bgmId` 未上架或被隱藏，返回 `404 ANIME_NOT_FOUND`。
-
-### 典型用法 — 給追番器拼 RSS
-
-```bash title="兩步拼出 RSS"
-# Step 1: 知道 bgmId，拉它的字幕組列表
-curl -s 'https://anibt.net/api/anime/groups?bgmId=543360' \
-  | jq -r '.data.groups[].slug'
-# kitauji-sub
-# kirara-fantasia
-# pre-s
-# haruhana
-
-# Step 2: 拼 RSS（多個字幕組、CHS+1080p）
-curl 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub,kirara-fantasia,pre-s,haruhana&language=CHS&resolution=1080p&limit=50'
-```
-
-### 快取與限流
-
-| 專案             | 值                                                                              |
-| ---------------- | ------------------------------------------------------------------------------- |
-| 速率限制         | **30 次 / 60 秒 / IP**（與 `/api/seasons/anime` 共用視窗）                        |
-| `Cache-Control`  | `public, max-age=0, s-maxage=300, stale-while-revalidate=3600, stale-if-error=3600`（**瀏覽器重新驗證 + CDN 5 分鐘新鮮 + 1h SWR/SIE**） |
-| 條件請求         | `If-None-Match`（`W/"anibt-sha256-{64 lowercase hex}"`）；目前省略 `Last-Modified` |
-
-<Callout type="info">
-  `ts`、groups/items 正文與 ETag 由同一個快取 representation 生成；任意正文 byte 變化都會推進 ETag。輪詢頻率仍建議不要短於 5 分鐘。
-</Callout>
+未上架或隱藏回傳 `404 ANIME_NOT_FOUND`。`magnet` 可能為 `null`。`slug` 可直接用於 `/rss/anime.xml?groupSlug=…`。
