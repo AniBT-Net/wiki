@@ -1,5 +1,4 @@
 import '../global.css';
-import { cjk, mono, sans } from '@/app/fonts';
 import { translations } from '@/lib/layout.shared';
 import { i18nProvider } from 'fumadocs-ui/i18n';
 import { RootProvider } from 'fumadocs-ui/provider/next';
@@ -39,11 +38,7 @@ export default async function RootLayout({
   const { lang } = await params;
 
   return (
-    <html
-      lang={lang}
-      suppressHydrationWarning
-      className={`${sans.variable} ${cjk.variable} ${mono.variable}`}
-    >
+    <html lang={lang} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

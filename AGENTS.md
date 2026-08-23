@@ -5,7 +5,7 @@
 - 默认语言简体中文 (`zh-CN`)，URL 不带前缀。
 - 繁体中文 (`zh-Hant`) 通过 `/zh-Hant` 前缀访问，文件用 `.zh-Hant.mdx` / `.zh-Hant.json` 后缀。
 - 英文 (`en`) 通过 `/en` 前缀访问，文件用 `.en.mdx` / `.en.json` 后缀。
-- 新增任意语种时同步更新 `lib/i18n.ts`、`lib/layout.shared.tsx`（UI 翻译 + `baseOptions` 链接文案）、`app/[lang]/(home)/page.tsx` 的 `copy` 字典。
+- 新增任意语种时同步更新 `lib/i18n.ts`、`lib/layout.shared.tsx`（UI 翻译 + `baseOptions` 链接文案），并在 `next.config.mjs` 为该语种首页加上到 `/docs` 的跳转。
 
 ## 文档
 
@@ -35,7 +35,8 @@
 
 ## MDX 组件
 
-- `components/mdx.tsx` 注入了 fumadocs 原生组件：`Callout` / `Card` / `Cards` / `Steps` / `Step` / `Tabs` / `Tab` / `Files` / `File` / `Folder` / `Accordion` / `Accordions` / `InlineTOC` / `TypeTable` / `ImageZoom`，以及项目组件 `ApiEndpoint`。MDX 中可直接使用，无需 import。
+- `components/mdx.tsx` 注入 fumadocs 原生组件：`Callout` / `Card` / `Cards` / `Steps` / `Step` / `Tabs` / `Tab` / `Files` / `File` / `Folder` / `Accordion` / `Accordions` / `InlineTOC` / `TypeTable` / `ImageZoom` / `GithubInfo`。MDX 中可直接使用，无需 import。
+- 接口方法与路径用 `<Callout title="GET /path">`（`ApiEndpoint` 是同一组件的别名）。字段表用 `<TypeTable>`；未标 `required: false` 的字段不显示 `?`。GitHub 仓库用 `<GithubInfo owner="" repo="" />`。
 
 ## 构建
 
