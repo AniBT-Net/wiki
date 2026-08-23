@@ -4,16 +4,19 @@ import Link from 'next/link';
 
 const copy = {
   'zh-CN': {
-    enter: '进入 Wiki',
-    site: '回到 AniBT',
+    kicker: '字幕组手册 · 公开接口',
+    enter: '进入文档',
+    site: 'AniBT 主站',
   },
   'zh-Hant': {
-    enter: '進入 Wiki',
-    site: '回到 AniBT',
+    kicker: '字幕組手冊 · 公開介面',
+    enter: '進入文件',
+    site: 'AniBT 主站',
   },
   en: {
-    enter: 'Enter Wiki',
-    site: 'Back to AniBT',
+    kicker: 'Group handbook · Public API',
+    enter: 'Open docs',
+    site: 'AniBT',
   },
 } as const;
 
@@ -28,19 +31,19 @@ export default async function HomePage({
   return (
     <main className="anibt-home">
       <div className="anibt-home-bg" aria-hidden="true">
-        <div className="anibt-home-grid" />
+        <div className="anibt-home-grain" />
         <div className="anibt-home-glow anibt-home-glow-a" />
         <div className="anibt-home-glow anibt-home-glow-b" />
-        <div className="anibt-home-ring" />
       </div>
 
       <div className="anibt-home-stage">
+        <p className="anibt-home-kicker">{t.kicker}</p>
         <h1 className="anibt-home-title">
           <span>Ani</span>
           <em>BT</em>
           <span>Wiki</span>
-          <i className="anibt-home-title-dot" aria-hidden="true" />
         </h1>
+        <i className="anibt-home-rule" aria-hidden="true" />
 
         <div className="anibt-home-actions">
           <Link

@@ -1,4 +1,5 @@
 import '../global.css';
+import { display, mono, sans, serif } from '@/app/fonts';
 import { translations } from '@/lib/layout.shared';
 import { i18nProvider } from 'fumadocs-ui/i18n';
 import { RootProvider } from 'fumadocs-ui/provider/next';
@@ -38,7 +39,11 @@ export default async function RootLayout({
   const { lang } = await params;
 
   return (
-    <html lang={lang} suppressHydrationWarning>
+    <html
+      lang={lang}
+      suppressHydrationWarning
+      className={`${sans.variable} ${serif.variable} ${display.variable} ${mono.variable}`}
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -47,7 +52,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="flex min-h-screen flex-col">
+      <body className={`${sans.className} flex min-h-screen flex-col`}>
         <RootProvider i18n={i18nProvider(translations, lang)}>
           {children}
         </RootProvider>

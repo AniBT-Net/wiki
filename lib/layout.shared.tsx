@@ -110,15 +110,15 @@ export function baseOptions(locale: string): BaseLayoutProps {
     githubUrl: 'https://github.com/AniBT-Net/wiki',
     nav: {
       title: (
-        <span className="inline-flex items-center gap-2 font-semibold">
+        <span className="anibt-brand inline-flex items-center gap-2">
           <img
             src="/favicon.png"
             alt=""
-            className="size-5 rounded-sm"
+            className="size-5 rounded-[0.3rem]"
             aria-hidden="true"
           />
-          <span className="bg-gradient-to-r from-[var(--anibt-accent-primary)] to-[var(--anibt-accent-secondary)] bg-clip-text font-serif font-black text-transparent">
-            AniBT Wiki
+          <span>
+            Ani<em>BT</em> Wiki
           </span>
         </span>
       ),
