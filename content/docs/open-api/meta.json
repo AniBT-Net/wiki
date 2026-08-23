@@ -1,6 +1,7 @@
 {
   "title": "公开 API",
   "pages": [
+    "reference",
     "index",
     "subtitle-groups",
     "me",

@@ -32,7 +32,7 @@
 
 ## MDX 组件
 
-- `components/mdx.tsx` 注入了 fumadocs 原生组件：`Callout` / `Card` / `Cards` / `Steps` / `Step` / `Tabs` / `Tab` / `Files` / `File` / `Folder` / `Accordion` / `Accordions` / `InlineTOC` / `TypeTable` / `ImageZoom`。MDX 中可直接使用，无需 import。
+- `components/mdx.tsx` 注入了 fumadocs 原生组件：`Callout` / `Card` / `Cards` / `Steps` / `Step` / `Tabs` / `Tab` / `Files` / `File` / `Folder` / `Accordion` / `Accordions` / `InlineTOC` / `TypeTable` / `ImageZoom`，以及项目组件 `ApiEndpoint`。MDX 中可直接使用，无需 import。
 
 ## 构建
 

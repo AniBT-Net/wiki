@@ -1,0 +1,535 @@
+---
+title: API reference
+description: Methods, paths, parameters, and responses for AniBT JSON and RSS endpoints.
+---
+
+Production base URL: `https://anibt.net`. Paths and query parameters are the public contract: additive only, no breaking changes. Internal IDs (`organizationId`, `_id`) are not public; use `slug`.
+
+<Callout type="warn">
+  Use only the main-site paths listed here. Do not put write/delete/`/me` API keys in clients or git.
+</Callout>
+
+Rate limits, caching, and 304 details: [Limits](/docs/open-api/limits), [Caching](/docs/open-api/caching).
+
+## Auth
+
+| Kind | How |
+| --- | --- |
+| Public reads | No auth |
+| Group API key | `Authorization: Bearer <KEY>`, or `X-API-Key`. Bearer wins |
+| Key scopes | `releases:publish`, `releases:delete`; at least one |
+| Personal RSS | Subscription URL from the account dashboard |
+
+## Errors
+
+Write endpoints share one JSON envelope:
+
+```json title="error"
+{
+  "ok": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "…",
+    "reason": "RATE_LIMITED",
+    "retryable": true,
+    "retryAfterMs": 2000,
+    "requestId": "req-…"
+  }
+}
+```
+
+| HTTP | Meaning |
+| --- | --- |
+| 400 | Bad parameters or JSON |
+| 401 | Authentication failed |
+| 403 | Forbidden or missing scope |
+| 404 | Missing, or same as missing when unauthorized |
+| 413 | Payload too large |
+| 422 | Validation failed |
+| 429 | Back off with `Retry-After` |
+| 503 | Deploy in progress; retry after `Retry-After` |
+
+Public reads also return `429` when limited. Cloudflare edge limits may be HTML `429`.
+
+## JSON
+
+### Subtitle-group catalog
+
+<ApiEndpoint method="GET" path="/api/subtitle-groups" auth="public">
+Visible groups. Fetch once at startup and cache name → slug.
+</ApiEndpoint>
+
+```json title="200"
+{
+  "ok": true,
+  "data": [
+    {
+      "slug": "kirara-fantasia",
+      "name": "Kirara Fantasia",
+      "organizationId": "org_HCFDS3FmwXnP",
+      "status": "ACTIVE",
+      "totalReleases": 469,
+      "totalAnimes": 84,
+      "createdAt": 1775269444251
+    }
+  ]
+}
+```
+
+<TypeTable
+  type={{
+    slug: { type: 'string', description: 'Stable id for groupSlug' },
+    name: { type: 'string', description: 'Display name; may change' },
+    organizationId: { type: 'string', description: 'Internal id; do not hard-code' },
+    status: { type: 'enum', description: 'This route returns visible groups only' },
+    totalReleases: { type: 'number', description: 'Total releases' },
+    totalAnimes: { type: 'number', description: 'Covered anime count' },
+    website: { type: 'string?', description: 'External homepage' },
+    createdAt: { type: 'number', description: 'Created at, milliseconds' },
+  }}
+/>
+
+### Current group
+
+<ApiEndpoint method="GET" path="/api/subtitle-groups/me" auth="auth">
+Group, scopes, and stats for the current key.
+</ApiEndpoint>
+
+```json title="200"
+{
+  "ok": true,
+  "data": {
+    "_id": "…",
+    "name": "My Group",
+    "slug": "my-group",
+    "description": "…",
+    "website": "https://…",
+    "stats": { "totalReleases": 42, "totalAnimes": 10, "memberCount": 5 },
+    "status": "active",
+    "createdAt": 1700000000000,
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish", "releases:delete"]
+  }
+}
+```
+
+Only `status=active` can publish. `apiKeySuffix` is not a credential.
+
+### Bangumi search
+
+<ApiEndpoint method="GET" path="/api/bgm/search" auth="public">
+Map a title to `bgmId`. Unindexed titles are not returned.
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    q: { type: 'string', required: true, description: 'Keyword: zh / en / ja / romaji' },
+    limit: { type: 'integer', default: '5', description: 'Count, max 25' },
+  }}
+/>
+
+```json title="200"
+{
+  "ok": true,
+  "data": [
+    {
+      "bgmId": 400602,
+      "name": "葬送のフリーレン",
+      "nameCn": "葬送的芙莉莲",
+      "date": null,
+      "image": "https://…",
+      "rating": 8.5,
+      "totalEpisodes": 28,
+      "url": "https://bgm.tv/subject/400602"
+    }
+  ]
+}
+```
+
+First hit is not guaranteed to be the intended title. Results are ranked by relevance.
+
+### Seasonal anime
+
+<ApiEndpoint method="GET" path="/api/seasons/anime" auth="public">
+Anime listed for a season. `bgmId` overrides `season` and cannot be combined with `query`.
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    season: { type: 'string', default: 'current', description: '2026春 / 2026-SPRING' },
+    bgmId: { type: 'integer', description: 'Exact title; ignores season' },
+    query: { type: 'string', description: 'Title search, alias q, max 120 chars, max 50 hits' },
+  }}
+/>
+
+```json title="200"
+{
+  "ok": true,
+  "ts": 1776841966624,
+  "data": {
+    "currentSeason": "2026春",
+    "requestedSeason": "2026春",
+    "availableSeasons": ["2024春", "2026春"],
+    "scheduleSummary": { "scheduled": 97, "weekdayOnly": 0, "missingSource": 9 },
+    "byWeekday": [
+      {
+        "weekday": 1,
+        "weekdayLabel": "Mon",
+        "animes": [
+          {
+            "bgmId": 543360,
+            "title": { "primary": "…", "chinese": "…", "romaji": "…", "english": "…", "japanese": "…" },
+            "format": "TV",
+            "kind": "TV",
+            "rating": 73,
+            "airingAt": 1764259200,
+            "scheduleStatus": "scheduled",
+            "rssReleaseCount": 11,
+            "hasRelease": true
+          }
+        ]
+      }
+    ],
+    "total": 106
+  }
+}
+```
+
+`weekday`: 0=Sun … 6=Sat in Asia/Shanghai; `null` means unscheduled. `rating` is 0–100.
+
+### Groups for one anime
+
+<ApiEndpoint method="GET" path="/api/anime/groups" auth="public">
+Groups currently releasing a `bgmId`, plus the latest 30 items per group.
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    bgmId: { type: 'integer', required: true, description: 'Bangumi subject id' },
+  }}
+/>
+
+Hidden or missing anime returns `404 ANIME_NOT_FOUND`. `magnet` may be `null`. `subtitle`: `EMBEDDED` / `EXTERNAL` / `BUILT_IN` / `NONE`.
+
+```json title="200"
+{
+  "ok": true,
+  "ts": 1776841967132,
+  "data": {
+    "bgmId": 543360,
+    "animeId": "nh73r0ernee7s0afv9s82f763983gcz7",
+    "groups": [
+      {
+        "groupId": "org_aagmgM9i0ZyR",
+        "slug": "kitauji-sub",
+        "name": "北宇治字幕组",
+        "status": "ACTIVE",
+        "lastUpdatedAt": 1776624843260,
+        "items": [
+          {
+            "releaseId": "rel_fItEHE7r1gR1",
+            "title": "[北宇治字幕组] … [02]",
+            "magnet": "magnet:?xt=urn:btih:…",
+            "episodeKey": "2",
+            "resolution": "1080p",
+            "language": ["CHT", "JP"],
+            "subtitle": "EMBEDDED",
+            "publishedAt": 1776624843260
+          }
+        ]
+      }
+    ],
+    "total": 4
+  }
+}
+```
+
+### Match torrent title to anime
+
+<ApiEndpoint method="POST" path="/api/animes/torrent-match" auth="public">
+Parse the release title and torrent name; return auto / manual / …. `groupId` requires a login in that group. GET returns `405 METHOD_NOT_ALLOWED`.
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    rawTitle: { type: 'string', required: true, description: 'Raw release title, 1–1000 chars' },
+    torrentName: { type: 'string', description: 'Torrent internal name, 1–1000 chars' },
+    publishedAt: { type: 'integer', description: 'Publish time, milliseconds' },
+    groupId: { type: 'string', description: 'Group id; requires a session if set' },
+    limit: { type: 'integer', default: '10', description: 'Candidates, max 50' },
+  }}
+/>
+
+Public route: `diagnostics=true` returns `403`. Body max 32 KiB. No store.
+
+```json title="200"
+{
+  "version": 3,
+  "decision": {
+    "kind": "auto",
+    "reason": "multi_branch_identity_unique",
+    "animeId": "anime_example",
+    "bgmId": 253046,
+    "confidence": "high",
+    "vetoes": []
+  },
+  "candidates": [],
+  "search": { "candidateSetComplete": true, "generation": "match_v3_20260718_2040" },
+  "diagnostics": null
+}
+```
+
+| `decision.kind` | Meaning |
+| --- | --- |
+| `auto` | Use `decision.animeId`; it must appear in `candidates` |
+| `manual` | Show candidates; do not auto-bind |
+| `none` | No candidates |
+| `non_anime` | Not anime |
+| `unsupported` | Batch/multi-title cannot be one subject |
+| `unavailable` | Search unavailable; retry later |
+
+Publish runs the same matcher when no anime id is sent. Do not send a caller-forged match result to publish.
+
+## RSS
+
+Browsers get raw XML. Crawlers skip `/rss/`.
+
+### Anime RSS
+
+<ApiEndpoint method="GET" path="/rss/anime.xml" auth="public">
+Main feed. Provide `bgmId` or `groupSlug` (or both). Mikan aliases: `bangumiId`, `subgroupid`.
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    bgmId: { type: 'integer', description: 'Bangumi subject id. Alias bangumiId' },
+    groupSlug: { type: 'string', description: 'Group slug. Aliases subgroupSlug, subgroupid' },
+    resolution: { type: 'enum[]', description: '4K / 2160p / 1080p / 720p / 480p / 360p' },
+    language: { type: 'enum[]', description: 'CHS / CHT / JP / EN / KO / ES / PT / FR / DE / IT / RU / AR / HI / ID / MS / TH / VI / TL / TR / PL / UK' },
+    format: { type: 'enum[]', description: 'MKV / MP4 / AVI / WEBM' },
+    subtitle: { type: 'enum[]', description: 'EXTERNAL / INTERNAL / EMBEDDED / NONE' },
+    episode: { type: 'integer', description: 'Numeric episode, exact match' },
+    episodeKey: { type: 'string', description: 'Display key, e.g. 01, BATCH' },
+    limit: { type: 'integer', default: '100', description: '1–100, one integer, no leading zeros' },
+  }}
+/>
+
+Repeated tags or commas are equivalent: `?resolution=1080p&resolution=720p` and `?resolution=1080p,720p`. Illegal `limit` is application `400`; production edge may return `403` first. Default-equivalent values `308` to the canonical URL.
+
+Each `<item>`: `<title>`, `<link>` (`/release/<id>`), `<guid>`, `<pubDate>` (RFC 822, `+0800`), magnet `<enclosure>`, `<torrent>` infoHash, and `<anibt:bgmId>` when bound.
+
+### Group short RSS
+
+<ApiEndpoint method="GET" path="/rss/group/<slug>.xml" auth="public">
+Same as `/rss/anime.xml?groupSlug=<slug>`. No tag filters. Path must end with `.xml`. Unknown slug → `404`.
+</ApiEndpoint>
+
+`limit=1..100` is supported.
+
+### Site-wide magnets RSS
+
+<ApiEndpoint method="GET" path="/rss/magnets.xml" auth="public">
+Latest site-wide releases. Anime items include `<anibt:bgmId>` when bound.
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    limit: { type: 'integer', default: '100', description: '1–100' },
+    q: { type: 'string', description: 'Keyword. Alias search. Max 160 UTF-8 bytes' },
+    resolution: { type: 'enum[]', description: 'Same as anime RSS' },
+    language: { type: 'enum[]', description: 'Same as anime RSS' },
+  }}
+/>
+
+Provide only one of `q` or `search`. Empty, control characters, or over-long values return `400`.
+
+### Other-release RSS
+
+<ApiEndpoint method="GET" path="/rss/other/<category>.xml" auth="public">
+Not mixed into anime RSS. Categories: `manga` / `music` / `raw` / `stage` / `collection` / `movie` / `other`. Empty categories still return a valid empty channel.
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    limit: { type: 'integer', default: '100', description: '1–100' },
+    q: { type: 'string', description: 'Keyword. Alias search' },
+    groupId: { type: 'string', description: 'Group organization id' },
+    sortField: { type: 'enum', default: 'publishedAt', description: 'publishedAt / fileSize' },
+    sortOrder: { type: 'enum', default: 'desc', description: 'desc / asc' },
+  }}
+/>
+
+No `<anibt:bgmId>`. Detail path: `/other-release/<id>`.
+
+### Personal subscriptions RSS
+
+<ApiEndpoint method="GET" path="/rss/subscriptions.xml" auth="auth">
+Merged feed of saved subscriptions. Use the full dashboard URL. Response is `Cache-Control: private, no-store` with no public ETag.
+</ApiEndpoint>
+
+Missing token → 400, bad credentials → 401, revoked → 403.
+
+## Write
+
+### Publish whoami
+
+<ApiEndpoint method="GET" path="/api/releases/publish" auth="auth">
+Read-only. Does not require `releases:publish`.
+</ApiEndpoint>
+
+```json title="200"
+{
+  "ok": true,
+  "result": {
+    "groupId": "org_xxxxxxxx",
+    "groupName": "LoliHouse",
+    "groupSlug": "lolihouse",
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish"],
+    "kind": "anime"
+  }
+}
+```
+
+### Publish anime
+
+<ApiEndpoint method="POST" path="/api/releases/publish" auth="auth · releases:publish">
+`multipart/form-data` with `.torrent` (preferred), or JSON magnet. `200` means the primary record is written, not that RSS / search / pages already show it.
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    animeIdType: { type: 'enum', description: 'bgm / anilist / mal / anidb, with animeId' },
+    animeId: { type: 'string', description: 'Id on that site' },
+    anime: { type: 'object', description: '{"source":"anidb","id":"17617"}' },
+    bgmId: { type: 'number', description: 'Legacy field' },
+    title: { type: 'string', required: true, description: 'Required for JSON; multipart may fall back to torrent name' },
+    torrent: { type: 'file', required: true, description: 'Required for multipart' },
+    magnetBase64: { type: 'string', description: 'Raw magnet or Base64. Required for JSON' },
+    torrentStorageId: { type: 'string', description: 'Existing public storage key' },
+    episodeKey: { type: 'string', description: '01 / SP / MOVIE / BATCH' },
+    resolution: { type: 'enum', description: '4K / 2160p / 1080p / 720p / 480p / 360p' },
+    language: { type: 'enum[]', description: 'Repeatable. JSON array' },
+    subtitle: { type: 'enum', description: 'EXTERNAL / INTERNAL / EMBEDDED / NONE' },
+    format: { type: 'enum', description: 'MKV / MP4 / AVI / WEBM' },
+    version: { type: 'string', description: 'Default v1' },
+    fileSize: { type: 'number', description: 'Bytes. Must be > 0 for magnet-only publish' },
+    publishedAt: { type: 'number', description: 'Milliseconds. Default: server now' },
+    notes: { type: 'string', description: 'Markdown + raw HTML, max 50000 chars, rendered as-is' },
+    trackers: { type: 'string[]', description: 'Merged with site default trackers' },
+    nyaa: { type: 'boolean', default: 'false', description: 'Allowlisted group + multipart + Nyaa tracker' },
+    nyaaCategory: { type: 'string', description: 'Required when proxying, e.g. 1_3' },
+    preview: { type: 'boolean', default: 'false', description: 'Preview URL expires in 10 minutes; not public' },
+  }}
+/>
+
+Nyaa proxy requires `http://nyaa.tracker.wf:7777/announce` in the torrent. Category codes: [Publish](/docs/open-api/releases-publish).
+
+```json title="200"
+{
+  "ok": true,
+  "result": {
+    "releaseId": "rel_xxxxxxxx",
+    "animeId": "anime_xxxxxxxx",
+    "matchStatus": "matched",
+    "fileSize": 734003200,
+    "groupId": "org_xxxxxxxx",
+    "groupName": "LoliHouse",
+    "groupSlug": "lolihouse",
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd"
+  }
+}
+```
+
+| HTTP | Cause |
+| --- | --- |
+| 401 | Invalid key |
+| 403 | Missing `releases:publish` |
+| 409 | Same version exists; change `version` |
+| 413 | Torrent too large |
+| 422 | Validation, e.g. `EMPTY_RELEASE_CONTENT` |
+| 429 / 503 | Back off with `Retry-After` |
+
+### Other-release whoami
+
+<ApiEndpoint method="GET" path="/api/other-releases/publish" auth="auth">
+`kind` is `other`. Read-only.
+</ApiEndpoint>
+
+### Publish other releases
+
+<ApiEndpoint method="POST" path="/api/other-releases/publish" auth="auth · releases:publish">
+No `bgmId`. `category` and `title` required; at least one of `torrent` / `torrentStorageId` / `magnetLink` / `magnetBase64`.
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    category: { type: 'enum', required: true, description: 'manga / music / raw / stage / collection / movie / other' },
+    title: { type: 'string', required: true, description: 'Max 500 chars' },
+    torrent: { type: 'file', description: 'Preferred for multipart' },
+    magnetLink: { type: 'string', description: 'Raw magnet. Alias magnet' },
+    magnetBase64: { type: 'string', description: 'Raw magnet or Base64' },
+    torrentStorageId: { type: 'string', description: 'Existing public storage key' },
+    fileSize: { type: 'number', description: 'Bytes' },
+    trackers: { type: 'string[]', description: 'Extra trackers' },
+    notes: { type: 'string', description: 'Markdown + raw HTML, max 50000 chars' },
+    customTags: { type: 'string[]', description: 'Max 20, each max 80 chars. Alias tags' },
+    nyaa: { type: 'boolean', default: 'false', description: 'Same rules as anime publish' },
+  }}
+/>
+
+```json title="200"
+{
+  "ok": true,
+  "result": {
+    "releaseId": "orel_DYXiEZs5KMep",
+    "groupId": "org_xxx",
+    "groupName": "Example Group",
+    "groupSlug": "example",
+    "category": "manga",
+    "fileSize": 734003200
+  }
+}
+```
+
+### Delete an anime release
+
+<ApiEndpoint method="DELETE" path="/api/releases/{releaseId}" auth="auth · releases:delete">
+`rel_*` only. No query, empty body. Waits up to ~2s: 200 if done, else 202. Repeated DELETE is idempotent.
+</ApiEndpoint>
+
+`releaseId`: `^rel_[A-Za-z0-9_-]+$`, 5–100 chars. Regular members delete their own releases; owner / admin can delete any in the group. Unauthorized looks like 404.
+
+```json title="202"
+{
+  "ok": true,
+  "result": {
+    "operationId": "rdel_example",
+    "releaseId": "rel_example",
+    "state": "pending",
+    "statusUrl": "/api/releases/rel_example/deletion",
+    "acceptedAt": 1784693156387,
+    "updatedAt": 1784693156387,
+    "retryAfterMs": 2000
+  }
+}
+```
+
+Headers: `Location`, `Retry-After`, `Cache-Control: private, no-store`.
+
+### Deletion status
+
+<ApiEndpoint method="GET" path="/api/releases/{releaseId}/deletion" auth="auth · releases:delete">
+Same receipt. Unknown, never deleted, or unauthorized → 404.
+</ApiEndpoint>
+
+| `state` | Meaning |
+| --- | --- |
+| `pending` | Keep polling with `Retry-After` |
+| `completed` | AniBT public surfaces are gone |
+| `failed` | Stop auto-retry; log `failure.code` and `X-Request-ID` |
+
+`202` means accepted. Only `completed` means the primary record, public read models, caches, and object storage passed the deletion barrier.

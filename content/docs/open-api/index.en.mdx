@@ -1,147 +1,20 @@
 ---
 title: Overview
-description: Design overview, endpoint cheat sheet, and integration entry points for the AniBT public RSS and JSON APIs.
+description: Entry point for AniBT public RSS and JSON APIs. See the API reference for the contract.
 ---
 
-AniBT exposes public read data through two kinds of endpoints: **RSS** for subscriptions and **JSON APIs** for programmatic integration. Public read routes are anonymous and support **HTTP 304 Not Modified** according to their cache contracts. Publishing, deletion, and identity routes require a subtitle-group API key and are not cacheable.
-
-<Callout type="info">
-  Standard RSS clients such as qBittorrent, Sonarr, FlexGet, and Tiny Tiny RSS need no extra setup — caching and conditional requests are emitted in the response headers automatically.
-</Callout>
+AniBT exposes **RSS** (subscribe) and **JSON** (programmatic reads). Public reads are anonymous and support **HTTP 304** per each route’s cache contract. Publish, delete, and `/me` require a group API key and are not cached.
 
 <Callout type="warn">
-  The production base URL for public APIs is `https://anibt.net`. Third-party integrations should use only the main-site paths documented here.
+  Production base URL is `https://anibt.net`. Use only the main-site paths listed in the docs.
 </Callout>
 
-## I want to… (cheat sheet)
+Methods, parameters, and responses: [API reference](/docs/open-api/reference).
 
-<Cards>
-  <Card
-    title="Subscribe to a show + a release group"
-    href="/docs/open-api/rss-anime"
-    description="GET /rss/anime.xml?bgmId=<bgm>&groupSlug=<slug>"
-  />
-  <Card
-    title="Aggregate one show across all groups"
-    href="/docs/open-api/rss-anime"
-    description="GET /rss/anime.xml?bgmId=<bgm>"
-  />
-  <Card
-    title="Everything from one release group"
-    href="/docs/open-api/other-endpoints"
-    description="GET /rss/group/<slug>.xml"
-  />
-  <Card
-    title="Latest magnets across the whole site"
-    href="/docs/open-api/other-endpoints"
-    description="GET /rss/magnets.xml"
-  />
-  <Card
-    title="Subscribe to other releases"
-    href="/docs/open-api/rss-other"
-    description="GET /rss/other/<category>.xml"
-  />
-  <Card
-    title="Personal subscription RSS (auth)"
-    href="/docs/open-api/rss-subscriptions"
-    description="GET /rss/subscriptions.xml"
-  />
-  <Card
-    title="Look up slugs from code"
-    href="/docs/open-api/subtitle-groups"
-    description="GET /api/subtitle-groups"
-  />
-  <Card
-    title="Find a bgmId by keyword"
-    href="/docs/open-api/bgm-search"
-    description="GET /api/bgm/search?q=…"
-  />
-  <Card
-    title="Seasonal anime list"
-    href="/docs/open-api/other-endpoints"
-    description="GET /api/seasons/anime"
-  />
-  <Card
-    title="Publish a release (group)"
-    href="/docs/open-api/releases-publish"
-    description="POST /api/releases/publish (auth)"
-  />
-  <Card
-    title="Delete an anime release"
-    href="/docs/open-api/releases-delete"
-    description="DELETE /api/releases/{releaseId} (auth + async receipt)"
-  />
-  <Card
-    title="Publish other releases"
-    href="/docs/open-api/other-releases-publish"
-    description="POST /api/other-releases/publish (auth)"
-  />
-  <Card
-    title="Inspect your group"
-    href="/docs/open-api/me"
-    description="GET /api/subtitle-groups/me (auth)"
-  />
-</Cards>
+qBittorrent / Sonarr / FlexGet need no extra RSS setup. Caching, limits, and troubleshooting stay on their own pages.
 
-## Design overview
+## Stability
 
-The system is layered by responsibility so integrators can pick the right endpoint quickly:
-
-```txt title="Data flow"
-┌────────────────────────────────────────────────────────────┐
-│            Third-party client (downloader / bot)             │
-└────────────────────────────────────────────────────────────┘
-        │ ① At startup / once a day: fetch the group catalogue
-        ▼
-┌────────────────────────────────────────────────────────────┐
-│  GET https://anibt.net/api/subtitle-groups                  │
-│  Returns [{slug, name, totalReleases, totalAnimes, ...}]     │
-│  → Map display name or user input to a stable slug           │
-└────────────────────────────────────────────────────────────┘
-        │ ② When subscribing / every N minutes: pull RSS
-        ▼
-┌────────────────────────────────────────────────────────────┐
-│  /rss/anime.xml?bgmId=...&groupSlug=...&resolution=...      │  Main entry (most flexible)
-│  /rss/group/<slug>.xml                                      │  Group short link
-│  /rss/magnets.xml                                           │  Site-wide latest
-│  Returns RSS 2.0 + BEP 36 (enclosure + <torrent infoHash>)  │
-└────────────────────────────────────────────────────────────┘
-        │ ③ Send the previous ETag on every poll
-        ▼
-┌────────────────────────────────────────────────────────────┐
-│  Server uses a fast weak-ETag comparison:                    │
-│   - No change   → 304 Not Modified (empty body, ~tens B)     │
-│   - Changed     → 200 + full RSS                             │
-└────────────────────────────────────────────────────────────┘
-```
-
-## Key design decisions
-
-<TypeTable
-  type={{
-    'slug over name': {
-      description: 'Display names may change (e.g. localisation), but slugs are intended to remain stable once published. Cache the name → slug map from /api/subtitle-groups; do not hard-code slugs.',
-      type: 'convention',
-    },
-    'bgmId over free text': {
-      description: 'Anime titles collide easily; the Bangumi.tv subject id is the canonical identifier.',
-      type: 'convention',
-    },
-    'Filter pushdown': {
-      description: 'Anything pushable through the query string is pushed from the Web runtime into Typesense filters; a few display fields use a bounded Web post-filter so downstream clients do not parse the whole feed.',
-      type: 'design',
-    },
-    'HTTP cache first': {
-      description: 'A given query hits origin at most once per default 120-second RSS cache window. Repeated polls are served as 304 with negligible cost.',
-      type: 'design',
-    },
-  }}
-/>
-
-## Stability guarantees
-
-- Paths and query parameters are part of the public contract — **no breaking changes**; new parameters are additive only.
-- `slug` values are stable once published.
-- Internal primary keys (e.g. `organizationId`) are not part of the public contract; always use `slug`.
-
-Continue: [Subtitle group catalogue](/docs/open-api/subtitle-groups), [RSS main entry](/docs/open-api/rss-anime), [Delete an anime release](/docs/open-api/releases-delete), [HTTP caching & 304](/docs/open-api/caching).
+- Paths and query parameters will not change incompatibly; new parameters are additive.
+- Published `slug` values are kept stable when possible.
+- Internal primary keys are not part of the public contract; always use `slug`.

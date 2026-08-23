@@ -1,147 +1,20 @@
 ---
 title: 總覽
-description: AniBT 公開 RSS 與 JSON API 的設計邏輯、端點速查與第三方接入入口。
+description: AniBT 公開 RSS 與 JSON API 入口。契約見 API 參考。
 ---
 
-AniBT 透過兩類公開端點對外暴露讀取資料：**RSS** 用於訂閱，**JSON API** 用於程式整合。公開讀取端點可匿名存取，並依各自快取契約支援 **HTTP 304 Not Modified**。釋出、刪除與身分檢查端點必須攜帶字幕組 API Key，回應不快取。
-
-<Callout type="info">
-  qBittorrent / Sonarr / FlexGet / Tiny Tiny RSS 等標準 RSS 客戶端無需額外設定；快取與條件請求由回應標頭自動生效。
-</Callout>
+AniBT 對外提供 **RSS**（訂閱）和 **JSON**（程式讀取）。公開讀取可匿名，並依各端點快取契約支援 **HTTP 304**。釋出、刪除、`/me` 必須帶字幕組 API Key，回應不快取。
 
 <Callout type="warn">
-  公開 API 的生產 base URL 為 `https://anibt.net`。第三方整合應只使用本文檔列出的主站路徑。
+  生產 base URL 為 `https://anibt.net`。只使用文件列出的主站路徑。
 </Callout>
 
-## 我想做……（速查）
+請求、參數、回應見 [API 參考](/docs/open-api/reference)。
 
-<Cards>
-  <Card
-    title="訂閱某個番劇 + 字幕組"
-    href="/docs/open-api/rss-anime"
-    description="GET /rss/anime.xml?bgmId=<bgm>&groupSlug=<slug>"
-  />
-  <Card
-    title="跨字幕組聚合一個番劇"
-    href="/docs/open-api/rss-anime"
-    description="GET /rss/anime.xml?bgmId=<bgm>"
-  />
-  <Card
-    title="字幕組的全部釋出"
-    href="/docs/open-api/other-endpoints"
-    description="GET /rss/group/<slug>.xml"
-  />
-  <Card
-    title="全站最新磁力"
-    href="/docs/open-api/other-endpoints"
-    description="GET /rss/magnets.xml"
-  />
-  <Card
-    title="訂閱其他類資源"
-    href="/docs/open-api/rss-other"
-    description="GET /rss/other/<category>.xml"
-  />
-  <Card
-    title="個人訂閱 RSS（鑑權）"
-    href="/docs/open-api/rss-subscriptions"
-    description="GET /rss/subscriptions.xml"
-  />
-  <Card
-    title="程式裡查 slug"
-    href="/docs/open-api/subtitle-groups"
-    description="GET /api/subtitle-groups"
-  />
-  <Card
-    title="按關鍵詞查 bgmId"
-    href="/docs/open-api/bgm-search"
-    description="GET /api/bgm/search?q=…"
-  />
-  <Card
-    title="查季度番劇"
-    href="/docs/open-api/other-endpoints"
-    description="GET /api/seasons/anime"
-  />
-  <Card
-    title="字幕組釋出資源"
-    href="/docs/open-api/releases-publish"
-    description="POST /api/releases/publish（鑑權）"
-  />
-  <Card
-    title="刪除番劇釋出"
-    href="/docs/open-api/releases-delete"
-    description="DELETE /api/releases/{releaseId}（鑑權 + 非同步回執）"
-  />
-  <Card
-    title="釋出其他類資源"
-    href="/docs/open-api/other-releases-publish"
-    description="POST /api/other-releases/publish（鑑權）"
-  />
-  <Card
-    title="查自己字幕組資訊"
-    href="/docs/open-api/me"
-    description="GET /api/subtitle-groups/me（鑑權）"
-  />
-</Cards>
+qBittorrent / Sonarr / FlexGet 等 RSS 客戶端無需額外設定。快取、限流、排查仍在對應頁。
 
-## 設計邏輯
+## 穩定性
 
-整套介面按「職責分層」組織，便於按場景選擇端點：
-
-```txt title="資料流"
-┌────────────────────────────────────────────────────────────┐
-│              第三方應用 (downloader / bot)                   │
-└────────────────────────────────────────────────────────────┘
-        │ ① 啟動時 / 每天 1 次：拉取字幕組目錄
-        ▼
-┌────────────────────────────────────────────────────────────┐
-│  GET https://anibt.net/api/subtitle-groups                  │
-│  返回 [{slug, name, totalReleases, totalAnimes, ...}]        │
-│  → 把「展示名」或「使用者輸入」對應到穩定 slug                      │
-└────────────────────────────────────────────────────────────┘
-        │ ② 使用者訂閱時 / 每 N 分鐘：拉 RSS
-        ▼
-┌────────────────────────────────────────────────────────────┐
-│  /rss/anime.xml?bgmId=...&groupSlug=...&resolution=...&...  │   主入口（最靈活）
-│  /rss/group/<slug>.xml                                      │   字幕組短鏈
-│  /rss/magnets.xml                                           │   全站新片
-│  返回 RSS 2.0 + BEP 36（enclosure + <torrent infoHash>）    │
-└────────────────────────────────────────────────────────────┘
-        │ ③ 每一次輪詢都帶上上次的 ETag
-        ▼
-┌────────────────────────────────────────────────────────────┐
-│  服務端用弱 ETag 快速比較：                                    │
-│   - 資料未變：304 Not Modified（空 body，幾十字節）            │
-│   - 資料變化：200 + 完整 RSS                                 │
-└────────────────────────────────────────────────────────────┘
-```
-
-## 關鍵設計取捨
-
-<TypeTable
-  type={{
-    'slug 優先於 name': {
-      description: '字幕組展示名可能調整（例如本地化），slug 一旦釋出儘量保持穩定。第三方應快取一份從 /api/subtitle-groups 拿到的 name → slug 對應，不要硬編碼 slug。',
-      type: '約定',
-    },
-    'bgmId 優先於自然語言': {
-      description: '番劇名容易撞車，Bangumi.tv 的 subject id 是唯一權威。',
-      type: '約定',
-    },
-    '過濾下推': {
-      description: '能在 URL 裡下推的過濾由 Web runtime 下推到 Typesense filter；少量展示欄位在 Web 做受限後過濾，避免下游解析整個 RSS。',
-      type: '設計',
-    },
-    'HTTP 快取優先': {
-      description: '同一查詢在預設 120 秒 RSS 快取視窗內只命中一次 origin；同一客戶端反覆輪詢走 304，開銷可忽略。',
-      type: '設計',
-    },
-  }}
-/>
-
-## 介面穩定性承諾
-
-- 路徑與查詢參數視為公開契約，**不會做不相容變更**；新增參數只會擴展。
-- `slug` 一旦釋出也儘量保持穩定。
-- 內部主鍵（如 `organizationId`）不屬於公開契約，第三方一律使用 `slug`。
-
-繼續閱讀：[字幕組目錄](/docs/open-api/subtitle-groups)、[RSS 主入口](/docs/open-api/rss-anime)、[刪除番劇釋出](/docs/open-api/releases-delete)、[HTTP 快取與 304](/docs/open-api/caching)。
+- 路徑與查詢參數不會做不相容變更；新參數只做擴充。
+- `slug` 一旦釋出盡量保持穩定。
+- 內部主鍵不屬於公開契約，一律使用 `slug`。

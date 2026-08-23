@@ -1,0 +1,535 @@
+---
+title: 接口参考
+description: AniBT JSON 与 RSS 接口的方法、路径、参数和响应。
+---
+
+生产 base URL：`https://anibt.net`。路径与查询参数是公开契约，只做扩展、不做不兼容变更。内部主键（`organizationId`、`_id`）不属于公开契约，第三方用 `slug`。
+
+<Callout type="warn">
+  只使用本文列出的主站路径。写入、删除、`/me` 的 API Key 不要放进客户端或仓库。
+</Callout>
+
+限流、缓存、304 细节见 [限流](/docs/open-api/limits)、[缓存](/docs/open-api/caching)。
+
+## 鉴权
+
+| 类型 | 用法 |
+| --- | --- |
+| 公开读取 | 无需鉴权 |
+| 字幕组 API Key | `Authorization: Bearer <KEY>`，或 `X-API-Key`。Bearer 优先 |
+| Key scope | `releases:publish`、`releases:delete`，至少选一个 |
+| 个人订阅 RSS | 账户后台生成的订阅链接 |
+
+## 错误
+
+写入接口统一 JSON：
+
+```json title="错误"
+{
+  "ok": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "…",
+    "reason": "RATE_LIMITED",
+    "retryable": true,
+    "retryAfterMs": 2000,
+    "requestId": "req-…"
+  }
+}
+```
+
+| HTTP | 含义 |
+| --- | --- |
+| 400 | 参数或 JSON 有误 |
+| 401 | 认证未通过 |
+| 403 | 无权限或缺少 scope |
+| 404 | 资源不存在，或无权访问时与不存在相同 |
+| 413 | 请求体过大 |
+| 422 | 校验未通过 |
+| 429 | 按 `Retry-After` 退避 |
+| 503 | 部署中，按 `Retry-After` 重试 |
+
+公开读取超限同样返回 `429`；Cloudflare 边缘限流可能是 HTML `429`。
+
+## JSON
+
+### 字幕组目录
+
+<ApiEndpoint method="GET" path="/api/subtitle-groups" auth="公开">
+可见字幕组列表。启动时拉一次，缓存 name → slug。
+</ApiEndpoint>
+
+```json title="200"
+{
+  "ok": true,
+  "data": [
+    {
+      "slug": "kirara-fantasia",
+      "name": "Kirara Fantasia",
+      "organizationId": "org_HCFDS3FmwXnP",
+      "status": "ACTIVE",
+      "totalReleases": 469,
+      "totalAnimes": 84,
+      "createdAt": 1775269444251
+    }
+  ]
+}
+```
+
+<TypeTable
+  type={{
+    slug: { type: 'string', description: '稳定标识，用于 groupSlug' },
+    name: { type: 'string', description: '展示名，可能调整' },
+    organizationId: { type: 'string', description: '内部 ID，不要硬编码' },
+    status: { type: 'enum', description: '本接口只返回可见项' },
+    totalReleases: { type: 'number', description: '总发布数' },
+    totalAnimes: { type: 'number', description: '覆盖番剧数' },
+    website: { type: 'string?', description: '站外主页' },
+    createdAt: { type: 'number', description: '入库时间，毫秒' },
+  }}
+/>
+
+### 字幕组自身信息
+
+<ApiEndpoint method="GET" path="/api/subtitle-groups/me" auth="鉴权">
+当前 Key 所属字幕组、scope 与统计。
+</ApiEndpoint>
+
+```json title="200"
+{
+  "ok": true,
+  "data": {
+    "_id": "…",
+    "name": "My Group",
+    "slug": "my-group",
+    "description": "…",
+    "website": "https://…",
+    "stats": { "totalReleases": 42, "totalAnimes": 10, "memberCount": 5 },
+    "status": "active",
+    "createdAt": 1700000000000,
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish", "releases:delete"]
+  }
+}
+```
+
+仅 `status=active` 可发布。`apiKeySuffix` 不能用于鉴权。
+
+### Bangumi 搜索
+
+<ApiEndpoint method="GET" path="/api/bgm/search" auth="公开">
+把番剧名映射为 `bgmId`。站内未收录的作品搜不到。
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    q: { type: 'string', required: true, description: '关键词。中 / 英 / 日 / 罗马音' },
+    limit: { type: 'integer', default: '5', description: '条数，上限 25' },
+  }}
+/>
+
+```json title="200"
+{
+  "ok": true,
+  "data": [
+    {
+      "bgmId": 400602,
+      "name": "葬送のフリーレン",
+      "nameCn": "葬送的芙莉莲",
+      "date": null,
+      "image": "https://…",
+      "rating": 8.5,
+      "totalEpisodes": 28,
+      "url": "https://bgm.tv/subject/400602"
+    }
+  ]
+}
+```
+
+不保证第一条就是目标作品。结果按相关度排序。
+
+### 季度番剧
+
+<ApiEndpoint method="GET" path="/api/seasons/anime" auth="公开">
+当季已上架番剧。`bgmId` 优先于 `season`，且不能与 `query` 同时使用。
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    season: { type: 'string', default: '当前季', description: '2026春 / 2026-SPRING' },
+    bgmId: { type: 'integer', description: '精确查一部；忽略 season' },
+    query: { type: 'string', description: '标题搜索，别名 q，最长 120 字符，最多 50 条' },
+  }}
+/>
+
+```json title="200"
+{
+  "ok": true,
+  "ts": 1776841966624,
+  "data": {
+    "currentSeason": "2026春",
+    "requestedSeason": "2026春",
+    "availableSeasons": ["2024春", "2026春"],
+    "scheduleSummary": { "scheduled": 97, "weekdayOnly": 0, "missingSource": 9 },
+    "byWeekday": [
+      {
+        "weekday": 1,
+        "weekdayLabel": "周一",
+        "animes": [
+          {
+            "bgmId": 543360,
+            "title": { "primary": "…", "chinese": "…", "romaji": "…", "english": "…", "japanese": "…" },
+            "format": "TV",
+            "kind": "TV",
+            "rating": 73,
+            "airingAt": 1764259200,
+            "scheduleStatus": "scheduled",
+            "rssReleaseCount": 11,
+            "hasRelease": true
+          }
+        ]
+      }
+    ],
+    "total": 106
+  }
+}
+```
+
+`weekday`：0=周日 … 6=周六，按 Asia/Shanghai；`null` 为未排播。`rating` 为 0–100。
+
+### 单番剧字幕组
+
+<ApiEndpoint method="GET" path="/api/anime/groups" auth="公开">
+某 `bgmId` 正在发布的字幕组，以及每组最近 30 条资源。
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    bgmId: { type: 'integer', required: true, description: 'Bangumi subject id' },
+  }}
+/>
+
+未上架或隐藏返回 `404 ANIME_NOT_FOUND`。`magnet` 可能为 `null`。`subtitle`：`EMBEDDED` / `EXTERNAL` / `BUILT_IN` / `NONE`。
+
+```json title="200"
+{
+  "ok": true,
+  "ts": 1776841967132,
+  "data": {
+    "bgmId": 543360,
+    "animeId": "nh73r0ernee7s0afv9s82f763983gcz7",
+    "groups": [
+      {
+        "groupId": "org_aagmgM9i0ZyR",
+        "slug": "kitauji-sub",
+        "name": "北宇治字幕组",
+        "status": "ACTIVE",
+        "lastUpdatedAt": 1776624843260,
+        "items": [
+          {
+            "releaseId": "rel_fItEHE7r1gR1",
+            "title": "[北宇治字幕组] … [02]",
+            "magnet": "magnet:?xt=urn:btih:…",
+            "episodeKey": "2",
+            "resolution": "1080p",
+            "language": ["CHT", "JP"],
+            "subtitle": "EMBEDDED",
+            "publishedAt": 1776624843260
+          }
+        ]
+      }
+    ],
+    "total": 4
+  }
+}
+```
+
+### 种子标题匹配番剧
+
+<ApiEndpoint method="POST" path="/api/animes/torrent-match" auth="公开">
+解析发布标题与种子内部名，返回 auto / manual 等决定。传入 `groupId` 时必须登录且属于该组。GET 返回 `405 METHOD_NOT_ALLOWED`。
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    rawTitle: { type: 'string', required: true, description: '发布标题原文，1–1000 字符' },
+    torrentName: { type: 'string', description: 'torrent 内部名，1–1000 字符' },
+    publishedAt: { type: 'integer', description: '发布时间，毫秒' },
+    groupId: { type: 'string', description: '字幕组 ID。传入则需会话' },
+    limit: { type: 'integer', default: '10', description: '候选数，上限 50' },
+  }}
+/>
+
+公开路由 `diagnostics=true` 返回 `403`。请求体上限 32 KiB。不缓存。
+
+```json title="200"
+{
+  "version": 3,
+  "decision": {
+    "kind": "auto",
+    "reason": "multi_branch_identity_unique",
+    "animeId": "anime_example",
+    "bgmId": 253046,
+    "confidence": "high",
+    "vetoes": []
+  },
+  "candidates": [],
+  "search": { "candidateSetComplete": true, "generation": "match_v3_20260718_2040" },
+  "diagnostics": null
+}
+```
+
+| `decision.kind` | 含义 |
+| --- | --- |
+| `auto` | 可用 `decision.animeId`，且必须出现在 `candidates` |
+| `manual` | 展示候选，不得自动绑定 |
+| `none` | 无候选 |
+| `non_anime` | 非番剧 |
+| `unsupported` | 合集等无法用单番剧表达 |
+| `unavailable` | 检索不可用，稍后重试 |
+
+发布接口未带番剧 ID 时会在服务端跑同一 matcher。不要把调用方伪造的匹配结果传给发布接口。
+
+## RSS
+
+浏览器直开返回原生 XML。搜索引擎不抓 `/rss/`。
+
+### 番剧 RSS
+
+<ApiEndpoint method="GET" path="/rss/anime.xml" auth="公开">
+主入口。`bgmId` 与 `groupSlug` 至少提供一个。兼容 Mikan 的 `bangumiId`、`subgroupid`。
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    bgmId: { type: 'integer', description: 'Bangumi subject id。别名 bangumiId' },
+    groupSlug: { type: 'string', description: '字幕组 slug。别名 subgroupSlug、subgroupid' },
+    resolution: { type: 'enum[]', description: '4K / 2160p / 1080p / 720p / 480p / 360p' },
+    language: { type: 'enum[]', description: 'CHS / CHT / JP / EN / KO / ES / PT / FR / DE / IT / RU / AR / HI / ID / MS / TH / VI / TL / TR / PL / UK' },
+    format: { type: 'enum[]', description: 'MKV / MP4 / AVI / WEBM' },
+    subtitle: { type: 'enum[]', description: 'EXTERNAL / INTERNAL / EMBEDDED / NONE' },
+    episode: { type: 'integer', description: '数字集数，精确匹配' },
+    episodeKey: { type: 'string', description: '显示集数键，如 01、BATCH' },
+    limit: { type: 'integer', default: '100', description: '1–100，单个无前导零整数' },
+  }}
+/>
+
+Tag 可重复或逗号分隔：`?resolution=1080p&resolution=720p` 与 `?resolution=1080p,720p` 等价。非法 `limit` 返回应用 `400`，生产边缘可能先 `403`。与默认值等价的写法会 `308` 到规范 URL。
+
+每个 `<item>`：`<title>`、`<link>`（`/release/<id>`）、`<guid>`、`<pubDate>`（RFC 822，`+0800`）、`<enclosure>` 磁力、`<torrent>` infoHash、已绑定时 `<anibt:bgmId>`。
+
+### 字幕组短链 RSS
+
+<ApiEndpoint method="GET" path="/rss/group/<slug>.xml" auth="公开">
+等价 `/rss/anime.xml?groupSlug=<slug>`。不支持 Tag 过滤。路径必须以 `.xml` 结尾。未知 slug 返回 `404`。
+</ApiEndpoint>
+
+支持 `limit=1..100`。
+
+### 全站磁力 RSS
+
+<ApiEndpoint method="GET" path="/rss/magnets.xml" auth="公开">
+全站最近发布。anime 条目带 `<anibt:bgmId>`（已绑定才有）。
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    limit: { type: 'integer', default: '100', description: '1–100' },
+    q: { type: 'string', description: '关键词。别名 search。UTF-8 最多 160 bytes' },
+    resolution: { type: 'enum[]', description: '同番剧 RSS' },
+    language: { type: 'enum[]', description: '同番剧 RSS' },
+  }}
+/>
+
+`q` 与 `search` 只能提供一个值。空、控制字符或超长返回 `400`。
+
+### 其他类 RSS
+
+<ApiEndpoint method="GET" path="/rss/other/<category>.xml" auth="公开">
+不混入番剧 RSS。分类：`manga` / `music` / `raw` / `stage` / `collection` / `movie` / `other`。空分类仍返回有效空 channel。
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    limit: { type: 'integer', default: '100', description: '1–100' },
+    q: { type: 'string', description: '关键词。别名 search' },
+    groupId: { type: 'string', description: '字幕组组织 ID' },
+    sortField: { type: 'enum', default: 'publishedAt', description: 'publishedAt / fileSize' },
+    sortOrder: { type: 'enum', default: 'desc', description: 'desc / asc' },
+  }}
+/>
+
+无 `<anibt:bgmId>`。详情页路径：`/other-release/<id>`。
+
+### 个人订阅 RSS
+
+<ApiEndpoint method="GET" path="/rss/subscriptions.xml" auth="鉴权">
+前端已保存订阅的合并 feed。使用后台生成的完整链接。响应 `Cache-Control: private, no-store`，无公开 ETag。
+</ApiEndpoint>
+
+缺少 token 返回 400，凭证无效 401，已吊销 403。
+
+## 写入
+
+### 发布身份
+
+<ApiEndpoint method="GET" path="/api/releases/publish" auth="鉴权">
+不写库。不要求 `releases:publish`。
+</ApiEndpoint>
+
+```json title="200"
+{
+  "ok": true,
+  "result": {
+    "groupId": "org_xxxxxxxx",
+    "groupName": "LoliHouse",
+    "groupSlug": "lolihouse",
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd",
+    "scopes": ["releases:publish"],
+    "kind": "anime"
+  }
+}
+```
+
+### 发布番剧资源
+
+<ApiEndpoint method="POST" path="/api/releases/publish" auth="鉴权 · releases:publish">
+`multipart/form-data` 上传 `.torrent`（推荐），或 JSON 传磁力。`200` 表示主记录已写入，不表示 RSS / 搜索 / 页面已可见。
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    animeIdType: { type: 'enum', description: 'bgm / anilist / mal / anidb，与 animeId 一起用' },
+    animeId: { type: 'string', description: '对应站点 ID' },
+    anime: { type: 'object', description: '{"source":"anidb","id":"17617"}' },
+    bgmId: { type: 'number', description: '兼容字段' },
+    title: { type: 'string', required: true, description: 'JSON 必填；multipart 可从种子名回填' },
+    torrent: { type: 'file', required: true, description: 'multipart 必填' },
+    magnetBase64: { type: 'string', description: '原始 magnet 或 Base64。JSON 必填' },
+    torrentStorageId: { type: 'string', description: '已有公共存储 key' },
+    episodeKey: { type: 'string', description: '01 / SP / MOVIE / BATCH' },
+    resolution: { type: 'enum', description: '4K / 2160p / 1080p / 720p / 480p / 360p' },
+    language: { type: 'enum[]', description: '可重复。JSON 用数组' },
+    subtitle: { type: 'enum', description: 'EXTERNAL / INTERNAL / EMBEDDED / NONE' },
+    format: { type: 'enum', description: 'MKV / MP4 / AVI / WEBM' },
+    version: { type: 'string', description: '默认 v1' },
+    fileSize: { type: 'number', description: '字节。无 torrent 时正式发布必须 > 0' },
+    publishedAt: { type: 'number', description: '毫秒。默认服务端当前时间' },
+    notes: { type: 'string', description: 'Markdown + 原始 HTML，最多 50000 字符，直接渲染' },
+    trackers: { type: 'string[]', description: '与站点默认 tracker 合并去重' },
+    nyaa: { type: 'boolean', default: 'false', description: '白名单组 + multipart + Nyaa tracker' },
+    nyaaCategory: { type: 'string', description: '启用代发时必填，如 1_3' },
+    preview: { type: 'boolean', default: 'false', description: '预览链接 10 分钟过期，不进入公开列表' },
+  }}
+/>
+
+Nyaa 代发要求种子含 `http://nyaa.tracker.wf:7777/announce`。分类代码见 [发布资源](/docs/open-api/releases-publish)。
+
+```json title="200"
+{
+  "ok": true,
+  "result": {
+    "releaseId": "rel_xxxxxxxx",
+    "animeId": "anime_xxxxxxxx",
+    "matchStatus": "matched",
+    "fileSize": 734003200,
+    "groupId": "org_xxxxxxxx",
+    "groupName": "LoliHouse",
+    "groupSlug": "lolihouse",
+    "apiKeyId": "sgak_xxxxxxxx",
+    "apiKeySuffix": "5c5d6fcd"
+  }
+}
+```
+
+| HTTP | 原因 |
+| --- | --- |
+| 401 | Key 无效 |
+| 403 | 缺少 `releases:publish` |
+| 409 | 同版本已存在，换 `version` |
+| 413 | 种子过大 |
+| 422 | `EMPTY_RELEASE_CONTENT` 等校验失败 |
+| 429 / 503 | 按 `Retry-After` 退避 |
+
+### 其他类发布身份
+
+<ApiEndpoint method="GET" path="/api/other-releases/publish" auth="鉴权">
+`kind` 为 `other`。不写库。
+</ApiEndpoint>
+
+### 发布其他类资源
+
+<ApiEndpoint method="POST" path="/api/other-releases/publish" auth="鉴权 · releases:publish">
+不绑定 `bgmId`。`category` 与 `title` 必填；`torrent` / `torrentStorageId` / `magnetLink` / `magnetBase64` 至少一个。
+</ApiEndpoint>
+
+<TypeTable
+  type={{
+    category: { type: 'enum', required: true, description: 'manga / music / raw / stage / collection / movie / other' },
+    title: { type: 'string', required: true, description: '最长 500 字符' },
+    torrent: { type: 'file', description: 'multipart 推荐' },
+    magnetLink: { type: 'string', description: '原始 magnet。别名 magnet' },
+    magnetBase64: { type: 'string', description: '原始 magnet 或 Base64' },
+    torrentStorageId: { type: 'string', description: '已有公共存储 key' },
+    fileSize: { type: 'number', description: '字节' },
+    trackers: { type: 'string[]', description: '追加 tracker' },
+    notes: { type: 'string', description: 'Markdown + 原始 HTML，最多 50000 字符' },
+    customTags: { type: 'string[]', description: '最多 20 个，每个最长 80 字符。别名 tags' },
+    nyaa: { type: 'boolean', default: 'false', description: '与番剧发布相同规则' },
+  }}
+/>
+
+```json title="200"
+{
+  "ok": true,
+  "result": {
+    "releaseId": "orel_DYXiEZs5KMep",
+    "groupId": "org_xxx",
+    "groupName": "示例字幕组",
+    "groupSlug": "example",
+    "category": "manga",
+    "fileSize": 734003200
+  }
+}
+```
+
+### 删除番剧发布
+
+<ApiEndpoint method="DELETE" path="/api/releases/{releaseId}" auth="鉴权 · releases:delete">
+只支持 `rel_*`。无 query、无请求体。最多等待约 2 秒：完成返回 200，否则 202。重复 DELETE 幂等。
+</ApiEndpoint>
+
+`releaseId`：`^rel_[A-Za-z0-9_-]+$`，5–100 字符。普通成员只能删自己的发布；owner / admin 可删本组任意发布。无权与不存在一样返回 404。
+
+```json title="202"
+{
+  "ok": true,
+  "result": {
+    "operationId": "rdel_example",
+    "releaseId": "rel_example",
+    "state": "pending",
+    "statusUrl": "/api/releases/rel_example/deletion",
+    "acceptedAt": 1784693156387,
+    "updatedAt": 1784693156387,
+    "retryAfterMs": 2000
+  }
+}
+```
+
+响应头：`Location`、`Retry-After`、`Cache-Control: private, no-store`。
+
+### 删除状态
+
+<ApiEndpoint method="GET" path="/api/releases/{releaseId}/deletion" auth="鉴权 · releases:delete">
+查询同一删除回执。未知、从未删除或无权一律 404。
+</ApiEndpoint>
+
+| `state` | 含义 |
+| --- | --- |
+| `pending` | 按 `Retry-After` 继续轮询 |
+| `completed` | 站内公开面已不可见 |
+| `failed` | 停止自动重试，记录 `failure.code` 与 `X-Request-ID` |
+
+`202` 只表示已受理。只有 `completed` 才表示主记录、公开读模型、缓存和对象存储已通过删除屏障。
