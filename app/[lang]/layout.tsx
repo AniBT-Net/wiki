@@ -1,5 +1,5 @@
 import '../global.css';
-import { display, mono, sans, serif } from '@/app/fonts';
+import { cjk, mono, sans } from '@/app/fonts';
 import { translations } from '@/lib/layout.shared';
 import { i18nProvider } from 'fumadocs-ui/i18n';
 import { RootProvider } from 'fumadocs-ui/provider/next';
@@ -42,7 +42,7 @@ export default async function RootLayout({
     <html
       lang={lang}
       suppressHydrationWarning
-      className={`${sans.variable} ${serif.variable} ${display.variable} ${mono.variable}`}
+      className={`${sans.variable} ${cjk.variable} ${mono.variable}`}
     >
       <head>
         <script
@@ -52,7 +52,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={`${sans.className} flex min-h-screen flex-col`}>
+      <body className="flex min-h-screen flex-col">
         <RootProvider i18n={i18nProvider(translations, lang)}>
           {children}
         </RootProvider>

@@ -43,7 +43,7 @@ export async function ProjectCard({
   links,
 }: ProjectCardProps) {
   return (
-    <div className="not-prose my-5 rounded-xl border border-fd-border bg-fd-card p-5 shadow-[0_1px_0_oklch(0.24_0.02_40_/_0.04)]">
+    <div className="anibt-project not-prose">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <a
           href={`https://github.com/${owner}/${repo}`}

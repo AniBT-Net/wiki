@@ -114,11 +114,11 @@ export function baseOptions(locale: string): BaseLayoutProps {
           <img
             src="/favicon.png"
             alt=""
-            className="size-5 rounded-[0.3rem]"
+            className="size-5"
             aria-hidden="true"
           />
           <span>
-            Ani<em>BT</em> Wiki
+            Ani<span>BT</span> Wiki
           </span>
         </span>
       ),

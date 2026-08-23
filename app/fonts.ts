@@ -1,24 +1,16 @@
-import { Fraunces, IBM_Plex_Mono, Noto_Sans_SC, Noto_Serif_SC } from 'next/font/google';
+import { IBM_Plex_Mono, IBM_Plex_Sans, Noto_Sans_SC } from 'next/font/google';
 
-export const sans = Noto_Sans_SC({
+export const sans = IBM_Plex_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '700'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-anibt-sans',
   display: 'swap',
 });
 
-export const serif = Noto_Serif_SC({
+export const cjk = Noto_Sans_SC({
   subsets: ['latin'],
-  weight: ['600', '700'],
-  variable: '--font-anibt-serif',
-  display: 'swap',
-});
-
-export const display = Fraunces({
-  subsets: ['latin'],
-  weight: ['600', '700'],
-  style: ['normal'],
-  variable: '--font-anibt-display',
+  weight: ['400', '500', '700'],
+  variable: '--font-anibt-cjk',
   display: 'swap',
 });
 
