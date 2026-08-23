@@ -2,6 +2,14 @@
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 
+#nd-docs-layout {
+  --fd-layout-width: 100vw;
+}
+
+#nd-docs-layout #nd-page {
+  max-width: none;
+}
+
 :root {
   color-scheme: light;
   --anibt-bg-base: #fafafa;
