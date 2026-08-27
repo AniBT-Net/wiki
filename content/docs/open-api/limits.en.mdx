@@ -32,7 +32,15 @@ Deletion also has a pre-auth abuse window. `Retry-After` on a `pending` receipt 
 
 On `/rss/magnets.xml` and `/rss/other/*`, `q` / `search` may be only one value, max 160 UTF-8 bytes. New-keyword search: 120 / 10 minutes and 1000 / 24 hours per subject; over limit returns `429`. Stable queries do not count.
 
-Public search is capped at 100 pages. `/magnets?page=` over that redirects to page 100. `/api/animes/search` `cursor` must be `ts_page:<page>`.
+`/magnets` paginates with an opaque previous/next `cursor`. Query param `page` is an accessible invalid state (`Cache-Control: no-store`) and does not redirect.
+
+<TypeTable
+  type={{
+    'cursor (/magnets)': { type: 'string', description: 'Opaque previous/next cursor' },
+    'page (/magnets)': { type: 'retired', required: false, description: 'Accessible no-store invalid state; no redirect' },
+    'cursor (/api/animes/search)': { type: 'string', description: 'Must be ts_page:<page>; public search is capped at 100 pages' },
+  }}
+/>
 
 Very tight filters may return fewer than `limit` items.
 

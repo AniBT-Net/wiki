@@ -32,7 +32,15 @@ description: 各端点的 limit 与速率窗口。
 
 `/rss/magnets.xml` 与 `/rss/other/*` 的 `q` / `search` 只能一个值，最多 160 UTF-8 bytes。新关键词搜索：每主题 120 次 / 10 分钟、1000 次 / 24 小时，超限 `429`。稳定查询不计入。
 
-公开搜索最多 100 页。`/magnets?page=` 超出重定向到第 100 页。`/api/animes/search` 的 `cursor` 只接受 `ts_page:<页码>`。
+`/magnets` 使用不透明 previous/next `cursor`。查询参数 `page` 是可访问的失效状态（`Cache-Control: no-store`），不会重定向。
+
+<TypeTable
+  type={{
+    'cursor (/magnets)': { type: 'string', description: '不透明 previous/next 游标' },
+    'page (/magnets)': { type: 'retired', required: false, description: '可访问的 no-store 失效状态，不重定向' },
+    'cursor (/api/animes/search)': { type: 'string', description: '只接受 ts_page:<页码>，最多 100 页' },
+  }}
+/>
 
 过滤过严时条数可能少于 `limit`。
 
