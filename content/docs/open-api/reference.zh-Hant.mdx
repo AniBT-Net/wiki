@@ -47,7 +47,7 @@ description: AniBT JSON 與 RSS 介面的方法、路徑、參數和回應。
 | 413 | 請求體過大 |
 | 422 | 校驗未通過 |
 | 429 | 按 `Retry-After` 退避 |
-| 503 | 部署中，按 `Retry-After` 重試 |
+| 503 | 服務暫時不可用或部署中，按 `Retry-After` 重試 |
 
 公開讀取超限同樣返回 `429`；Cloudflare 邊緣限流可能是 HTML `429`。
 
@@ -210,7 +210,12 @@ description: AniBT JSON 與 RSS 介面的方法、路徑、參數和回應。
   }}
 />
 
-未上架或隱藏返回 `404 ANIME_NOT_FOUND`。`magnet` 可能為 `null`。`subtitle`：`EMBEDDED` / `EXTERNAL` / `BUILT_IN` / `NONE`。
+只有公共讀模型中的 Anime 投影完整且為 live 時才回傳 `200`。明確的
+`ANIME_NOT_FOUND` 結果回傳 `404`；公共投影缺失或不一致、候選資源超過
+10,000 條、表示超過 2 MiB，或讀取暫時不可用時回傳 `503 SEARCH_UNAVAILABLE`，
+並帶 `Retry-After` 與 `Cache-Control: no-store`。成功回應的 JSON、`ETag`、
+`HEAD` 和 `304` 保持穩定；瀏覽器使用 `max-age=0`，邊緣按介面契約快取。
+`magnet` 可能為 `null`。`subtitle`：`EMBEDDED` / `EXTERNAL` / `BUILT_IN` / `NONE`。
 
 ```json title="200"
 {

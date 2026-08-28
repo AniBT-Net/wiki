@@ -56,4 +56,12 @@ Groups currently publishing a `bgmId`, plus the latest 30 items per group.
 https://anibt.net/api/anime/groups?bgmId=543360
 ```
 
-Unlisted or hidden anime returns `404 ANIME_NOT_FOUND`. `magnet` may be `null`. `slug` can go straight into `/rss/anime.xml?groupSlug=…`.
+The endpoint returns `200` only when the public Anime projection is complete and
+live. An explicit `ANIME_NOT_FOUND` result remains `404`; a missing or
+inconsistent public projection, more than 10,000 candidate releases, a
+representation over 2 MiB, or a temporary read failure returns `503
+SEARCH_UNAVAILABLE` with `Retry-After` and `Cache-Control: no-store` rather than
+pretending to be a 404 or an empty 200. Successful responses support `ETag`,
+`HEAD`, and `304`; browsers revalidate (`max-age=0`) while the edge may cache
+according to the endpoint contract. `magnet` may be `null`. `slug` can go
+straight into `/rss/anime.xml?groupSlug=…`.

@@ -56,4 +56,9 @@ https://anibt.net/api/seasons/anime?query=夏日口袋
 https://anibt.net/api/anime/groups?bgmId=543360
 ```
 
-未上架或隱藏回傳 `404 ANIME_NOT_FOUND`。`magnet` 可能為 `null`。`slug` 可直接用於 `/rss/anime.xml?groupSlug=…`。
+只有公共讀模型中的 Anime 投影完整且為 live 時才回傳 `200`。明確的
+`ANIME_NOT_FOUND` 結果仍為 `404`；公共投影缺失或不一致、候選資源超過
+10,000 條、表示超過 2 MiB，或讀取暫時不可用時回傳 `503 SEARCH_UNAVAILABLE`，
+並帶 `Retry-After` 與 `Cache-Control: no-store`，不會偽裝成 404 或 200 空結果。
+成功回應支援 `ETag`、`HEAD` 與 `304`；瀏覽器 `max-age=0`，邊緣可按介面契約快取。
+`magnet` 可能為 `null`。`slug` 可直接用於 `/rss/anime.xml?groupSlug=…`。

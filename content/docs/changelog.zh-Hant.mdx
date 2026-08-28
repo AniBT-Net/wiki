@@ -5,6 +5,13 @@ description: 功能變更。日期為北京時間（UTC+8）。
 
 只記錄使用者能用到的功能變化。較新的在前。
 
+## 2026 年 8 月 28 日
+
+- **公開番劇頁讀取收斂**
+  番劇詳情先返回元資料，水合後只請求一次字幕組資源包；首頁跨季周表改為一次視窗讀取。`/api/anime/groups` 的成功 JSON、`ETag`、`HEAD` 和 `304` 不變。
+- **公共讀模型不可用時明確回傳 503**
+  投影缺失、不一致、超出有界讀取或暫時不可用時回傳 `503 SEARCH_UNAVAILABLE`，帶 `Retry-After` 與 `no-store`，不再把 `missing_projection` 偽裝成 404 或 200 空結果。
+
 ## 2026 年 8 月 27 日
 
 - **`/magnets` 改為 previous/next 遊標**
