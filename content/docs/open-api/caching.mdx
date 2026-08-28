@@ -5,6 +5,11 @@ description: 公开读取用 If-None-Match。未变返回 304。轮询间隔 ≥
 
 公开 RSS 与 JSON 支持条件请求。写入、删除、`/me`、个人订阅不缓存。
 
+公开 JSON 成功响应让浏览器使用 `max-age=0`，由浏览器重新验证；边缘使用
+端点定义的 `s-maxage` 与 stale 窗口。`/api/anime/groups` 的成功响应保留
+原有 JSON、`ETag`、`HEAD` 和条件 `304`。公共读模型暂时不可用时返回
+`503 SEARCH_UNAVAILABLE`、`Retry-After` 与 `no-store`，不会把失败写入共享缓存。
+
 <Callout type="info">
   带上次的 `ETag`。未变化返回 `304`，无正文。优先 `If-None-Match`，不要依赖 `If-Modified-Since`。
 </Callout>

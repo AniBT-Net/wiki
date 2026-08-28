@@ -5,6 +5,13 @@ description: Feature changes. Dates are Beijing time (UTC+8).
 
 Only user-visible feature changes are recorded. Newest first.
 
+## August 28, 2026
+
+- **Public anime pages use bounded reads**
+  Anime detail SSR returns metadata first and hydration issues one release-groups bundle request. The home cross-season weekly view now uses one window read. Successful `/api/anime/groups` JSON, `ETag`, `HEAD`, and `304` behavior is unchanged.
+- **Unavailable public projections are explicit**
+  Missing or inconsistent projections, bounded-read overflow, and temporary read failures return `503 SEARCH_UNAVAILABLE` with `Retry-After` and `no-store`; `missing_projection` is no longer presented as a 404 or an empty 200.
+
 ## August 27, 2026
 
 - **`/magnets` uses previous/next cursors**

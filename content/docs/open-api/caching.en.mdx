@@ -5,6 +5,13 @@ description: Public reads use If-None-Match. Unchanged bodies return 304. Poll i
 
 Public RSS and JSON support conditional requests. Writes, deletes, `/me`, and personal subscriptions are not cached.
 
+Successful public JSON responses use `max-age=0` in browsers so they revalidate;
+the edge uses the endpoint's `s-maxage` and stale windows. `/api/anime/groups`
+keeps its existing JSON, `ETag`, `HEAD`, and conditional `304` behavior. When the
+public read model is temporarily unavailable, the response is `503
+SEARCH_UNAVAILABLE` with `Retry-After` and `no-store`; failures are never written
+to the shared cache.
+
 <Callout type="info">
   Send the last `ETag`. Unchanged → `304` with no body. Prefer `If-None-Match`. Do not rely on `If-Modified-Since`.
 </Callout>
