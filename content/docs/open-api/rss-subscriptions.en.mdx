@@ -9,6 +9,10 @@ Exports saved subscriptions as RSS. Use the full URL from the account dashboard.
 `Cache-Control: private, no-store`. No public ETag.
 </ApiEndpoint>
 
+When subscription content changes, the server advances the subscription feed
+version, making the old cache identity unreachable. Token cleanup is bounded
+garbage collection, not the correctness mechanism.
+
 <Callout type="warn">
   The URL carries credentials. Do not paste it into issues, screenshots, git, or chats. Reset it in the dashboard if leaked.
 </Callout>

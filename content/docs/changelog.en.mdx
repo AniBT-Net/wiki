@@ -5,6 +5,13 @@ description: Feature changes. Dates are Beijing time (UTC+8).
 
 Only user-visible feature changes are recorded. Newest first.
 
+## August 31, 2026
+
+- **Fixed RSS is current after publication**
+  Catalogued, unfiltered fixed RSS feeds (site-wide, group, anime-pair, and other categories) are served from the publication version. Every RSS reader request checks the current version; an unchanged `ETag` may return `304`, and an old Cloudflare object is never authoritative. Search, filtered, `limit`-bearing RSS, and arbitrary `/magnets` pages keep their existing behavior.
+- **Personal subscription RSS uses versioned cache identity**
+  Updating subscriptions advances the feed version, making the old cache identity unreachable. Credential cleanup is bounded garbage collection and is not the correctness mechanism.
+
 ## August 28, 2026
 
 - **Public anime pages use bounded reads**

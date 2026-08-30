@@ -11,6 +11,10 @@ Full fields: [API reference](/docs/open-api/reference).
 Same as `/rss/anime.xml?groupSlug=<slug>`. No tag filters.
 </ApiEndpoint>
 
+The canonical URL for a catalogued group slug without `limit` uses a fixed RSS
+publication version. Each request checks the current version; an unchanged
+`ETag` may return `304`. URLs with `limit` remain dynamic RSS.
+
 Path must end with `.xml`. Unknown slug returns `404`. `limit=1..100`. Invalid `limit` returns app `400`; production edge may return `403` first.
 
 ```txt title="Example"
@@ -22,6 +26,10 @@ https://anibt.net/rss/group/kirara-fantasia.xml
 <ApiEndpoint method="GET" path="/rss/magnets.xml" auth="public">
 Latest site-wide releases. Bound anime items include `<anibt:bgmId>`.
 </ApiEndpoint>
+
+`/rss/magnets.xml` with no query is a fixed RSS feed. Each request checks the
+current publication version and may return `304` for an unchanged `ETag`.
+`q`, `search`, filters, and `limit` variants keep the existing dynamic owner.
 
 ```txt title="Examples"
 https://anibt.net/rss/magnets.xml

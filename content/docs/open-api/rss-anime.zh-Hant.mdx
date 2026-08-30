@@ -13,6 +13,11 @@ description: GET /rss/anime.xml —— bgmId、字幕組 slug 與 Tag 過濾。�
   `limit` 預設 100，範圍 1–100。重複、為空、前導零或非整數：應用 `400`，生產邊緣可能先 `403`。與預設值等價的寫法會 `308` 到規範 URL，跟隨跳轉。
 </Callout>
 
+不帶 `limit`、Tag 或搜尋條件，且同時指定已收錄 `bgmId` 與 `groupSlug` 的規範
+anime-pair RSS 屬於 fixed feed。每次客戶端請求都會核對目前發布版本；未變更時
+可用 `ETag` 回傳 `304`，不會讀取 Cloudflare 的舊物件。帶 `limit`、Tag、搜尋或
+其他過濾條件的 URL 仍使用原有動態 RSS 處理。
+
 完整參數見 [API 參考](/docs/open-api/reference)。
 
 ```txt title="示例"

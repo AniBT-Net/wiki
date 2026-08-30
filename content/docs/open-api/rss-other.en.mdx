@@ -13,6 +13,11 @@ Categories: `manga` / `music` / `raw` / `stage` / `collection` / `movie` / `othe
   An empty category still returns a valid empty channel, not 404. No `<anibt:bgmId>`.
 </Callout>
 
+A category URL without `limit`, `q`, `search`, or another filter is a fixed RSS
+feed. Client requests check the current publication version and may return
+`304` for an unchanged `ETag`; URLs with `limit` or search keep the existing
+dynamic RSS owner.
+
 Full parameters: [API reference](/docs/open-api/reference).
 
 ```txt title="Examples"

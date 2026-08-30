@@ -9,6 +9,9 @@ description: GET /rss/subscriptions.xml —— 前端「我的订阅」合并成
 `Cache-Control: private, no-store`。无公开 ETag。
 </ApiEndpoint>
 
+订阅内容更新时，服务端会推进订阅 feed 版本；旧版本缓存身份随即失效。token
+清理只是有界回收，不承担内容正确性。
+
 <Callout type="warn">
   链接带身份凭证。不要贴到 issue、截图、仓库或群。泄露后立刻到后台重置。
 </Callout>

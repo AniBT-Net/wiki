@@ -32,6 +32,12 @@ Deletion also has a pre-auth abuse window. `Retry-After` on a `pending` receipt 
 
 On `/rss/magnets.xml` and `/rss/other/*`, `q` / `search` may be only one value, max 160 UTF-8 bytes. New-keyword search: 120 / 10 minutes and 1000 / 24 hours per subject; over limit returns `429`. Stable queries do not count.
 
+Canonical fixed RSS requests check the current publication version at the
+service; an unchanged `ETag` may return `304`. Search, filtered, `limit`-bearing
+dynamic RSS, and arbitrary `/magnets` pages are outside this fixed-feed
+contract. Clients should still poll at ≥5-minute intervals and send
+`If-None-Match`.
+
 `/magnets` paginates with an opaque previous/next `cursor`. Query param `page` is an accessible invalid state (`Cache-Control: no-store`) and does not redirect.
 
 <TypeTable

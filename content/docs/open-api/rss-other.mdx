@@ -13,6 +13,10 @@ description: GET /rss/other/<category>.xml —— 七个分类各自一份 RSS�
   空分类仍返回有效空 channel，不返回 404。无 `<anibt:bgmId>`。
 </Callout>
 
+不带 `limit`、`q`、`search` 或其他过滤条件的分类 URL 是 fixed RSS。客户端请求
+会核对当前发布版本，未变化时可用 `ETag` 返回 `304`；带 `limit` 或搜索条件的
+URL 继续走原有动态 RSS 处理。
+
 完整参数见 [接口参考](/docs/open-api/reference)。
 
 ```txt title="示例"
