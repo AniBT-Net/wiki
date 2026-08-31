@@ -15,8 +15,9 @@ Categories: `manga` / `music` / `raw` / `stage` / `collection` / `movie` / `othe
 
 A category URL without `limit`, `q`, `search`, or another filter is a fixed RSS
 feed. Client requests check the current publication version and may return
-`304` for an unchanged `ETag`; URLs with `limit` or search keep the existing
-dynamic RSS owner.
+`304` for an unchanged `ETag`; the response uses `no-store` so a shared cache
+does not retain an old body. URLs with `limit` or search keep their bounded
+refresh policy. RSS `<ttl>` is only a client polling hint.
 
 Full parameters: [API reference](/docs/open-api/reference).
 

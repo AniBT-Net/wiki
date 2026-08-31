@@ -15,8 +15,9 @@ description: GET /rss/anime.xml —— bgmId、字幕組 slug 與 Tag 過濾。�
 
 不帶 `limit`、Tag 或搜尋條件，且同時指定已收錄 `bgmId` 與 `groupSlug` 的規範
 anime-pair RSS 屬於 fixed feed。每次客戶端請求都會核對目前發布版本；未變更時
-可用 `ETag` 回傳 `304`，不會讀取 Cloudflare 的舊物件。帶 `limit`、Tag、搜尋或
-其他過濾條件的 URL 仍使用原有動態 RSS 處理。
+可用 `ETag` 回傳 `304`，不會使用舊共享快取正文。此類回應使用
+`no-store`，避免共享快取保存舊正文。帶 `limit`、Tag、搜尋或其他過濾條件的
+URL 仍使用有界更新策略。RSS `<ttl>` 只是客戶端輪詢提示。
 
 完整參數見 [API 參考](/docs/open-api/reference)。
 

@@ -16,8 +16,10 @@ Mikan aliases `bangumiId` and `subgroupid` work.
 An anime-pair RSS URL with no `limit`, tag, search, or other filter, and with both a
 catalogued `bgmId` and `groupSlug`, is a fixed feed. Every client request checks
 the current publication version; an unchanged `ETag` may return `304`, and an old
-Cloudflare object is never authoritative. URLs with `limit`, tags, search, or
-other filters keep the existing dynamic RSS owner.
+shared-cache body is never authoritative. These responses use `no-store` so a
+shared cache does not retain an old body. URLs with `limit`, tags, search, or
+other filters keep their bounded refresh policy. RSS `<ttl>` is only a client
+polling hint.
 
 Full parameters: [API reference](/docs/open-api/reference).
 

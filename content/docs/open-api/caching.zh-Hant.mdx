@@ -10,6 +10,11 @@ description: 公開讀取用 If-None-Match。未變回傳 304。輪詢間隔 ≥
 與條件式 `304` 行為。公共讀模型暫時不可用時回傳 `503 SEARCH_UNAVAILABLE`、
 `Retry-After` 與 `no-store`；失敗不會寫入共享快取。
 
+RSS 依 URL 身分分為兩類。不帶 `limit`、搜尋或過濾條件的 fixed RSS 每次核對目前
+發布版本；正文未變更時仍可回傳 `304`，並使用 `no-store` 避免共享快取保存
+舊正文。帶 `limit`、過濾或搜尋條件的 RSS 使用有界更新策略。RSS 的 `<ttl>`
+只是客戶端輪詢提示，不是伺服器推送。
+
 <Callout type="info">
   帶上次的 `ETag`。未變化回傳 `304`，無正文。優先 `If-None-Match`，不要依賴 `If-Modified-Since`。
 </Callout>

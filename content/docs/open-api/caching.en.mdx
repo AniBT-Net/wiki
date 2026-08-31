@@ -12,6 +12,12 @@ public read model is temporarily unavailable, the response is `503
 SEARCH_UNAVAILABLE` with `Retry-After` and `no-store`; failures are never written
 to the shared cache.
 
+RSS has two cache identities. A fixed RSS URL without `limit`, search, or filters
+checks the current publication version on every request; an unchanged body may
+still return `304`, and `no-store` prevents shared caches from retaining an old
+body. RSS URLs with `limit`, filters, or search use bounded refresh policies.
+RSS `<ttl>` is a client polling hint, not server push.
+
 <Callout type="info">
   Send the last `ETag`. Unchanged → `304` with no body. Prefer `If-None-Match`. Do not rely on `If-Modified-Since`.
 </Callout>

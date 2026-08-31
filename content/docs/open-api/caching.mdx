@@ -10,6 +10,11 @@ description: 公开读取用 If-None-Match。未变返回 304。轮询间隔 ≥
 原有 JSON、`ETag`、`HEAD` 和条件 `304`。公共读模型暂时不可用时返回
 `503 SEARCH_UNAVAILABLE`、`Retry-After` 与 `no-store`，不会把失败写入共享缓存。
 
+RSS 按 URL 身份分为两类。无 `limit`、搜索或过滤条件的 fixed RSS 每次核对当前
+发布版本；正文未变化时仍可返回 `304`，并使用 `no-store` 避免共享缓存保存
+旧正文。带 `limit`、过滤或搜索条件的 RSS 使用有界刷新策略。RSS 的 `<ttl>`
+只是客户端轮询提示，不是服务器推送。
+
 <Callout type="info">
   带上次的 `ETag`。未变化返回 `304`，无正文。优先 `If-None-Match`，不要依赖 `If-Modified-Since`。
 </Callout>
