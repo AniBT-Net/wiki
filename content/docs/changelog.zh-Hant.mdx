@@ -9,6 +9,8 @@ description: 功能變更。日期為北京時間（UTC+8）。
 
 - **圖床下線全球加速連結**
   圖床管理、上傳結果和圖片頁面現在只提供直鏈、BBCode、Markdown 和 HTML。現有圖片與直鏈不受影響。詳見 [圖床](/docs/image-host)。
+- **Fixed RSS 使用五分鐘邊緣快取**
+  無過濾 fixed RSS 成功回應由 CDN 共用最多 300 秒，發布後會執行精確失效。客戶端仍需以 `max-age=0` 驗證並傳送 `If-None-Match`；錯誤回應不進入共用快取。
 
 ## 2026 年 8 月 31 日
 

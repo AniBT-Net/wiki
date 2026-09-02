@@ -9,6 +9,8 @@ Only user-visible feature changes are recorded. Newest first.
 
 - **Image-host global accelerated links retired**
   Image-host management, upload results, and image pages now provide only direct links, BBCode, Markdown, and HTML. Existing images and direct links are unchanged. See [Image host](/docs/image-host).
+- **Fixed RSS uses a five-minute edge cache**
+  Successful unfiltered fixed RSS responses are shared by the CDN for up to 300 seconds, with exact invalidation after publication. Clients still revalidate with `max-age=0` and send `If-None-Match`; error responses are not shared.
 
 ## August 31, 2026
 

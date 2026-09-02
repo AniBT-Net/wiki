@@ -11,8 +11,9 @@ description: 字幕组短链 RSS、全站磁力 RSS、季度番剧 JSON、单番
 等价 `/rss/anime.xml?groupSlug=<slug>`。不支持 Tag 过滤。
 </ApiEndpoint>
 
-规范且无 `limit` 的已收录 group slug 使用 fixed RSS 发布版本；客户端请求会核对
-当前版本，未变化时可用 `ETag` 返回 `304`。带 `limit` 的 URL 仍是动态 RSS。
+规范且无 `limit` 的已收录 group slug 使用 fixed RSS 发布版本；成功响应由 CDN
+共享 300 秒并使用 `must-revalidate`，发布后的精确失效优先清掉旧对象。客户端
+仍为 `max-age=0`，未变化时可用 `ETag` 返回 `304`；带 `limit` 的 URL 仍是动态 RSS。
 
 路径必须以 `.xml` 结尾。未知 slug 返回 `404`。支持 `limit=1..100`。非法 `limit` 返回应用 `400`，生产边缘可能先 `403`。
 
@@ -26,8 +27,9 @@ https://anibt.net/rss/group/kirara-fantasia.xml
 全站最近发布。已绑定的 anime 条目带 `<anibt:bgmId>`。
 </ApiEndpoint>
 
-无查询参数的 `/rss/magnets.xml` 是 fixed RSS；每次请求核对当前发布版本，未变化
-时可用 `ETag` 返回 `304`。`q`、`search`、过滤和 `limit` 变体保持原有动态处理。
+无查询参数的 `/rss/magnets.xml` 是 fixed RSS；成功响应由 CDN 共享 300 秒并使用
+`must-revalidate`，发布后的精确失效优先清掉旧对象。客户端仍为 `max-age=0`，未
+变化时可用 `ETag` 返回 `304`。`q`、`search`、过滤和 `limit` 变体保持原有动态处理。
 
 ```txt title="示例"
 https://anibt.net/rss/magnets.xml

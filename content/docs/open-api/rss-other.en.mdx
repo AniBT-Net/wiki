@@ -14,9 +14,11 @@ Categories: `manga` / `music` / `raw` / `stage` / `collection` / `movie` / `othe
 </Callout>
 
 A category URL without `limit`, `q`, `search`, or another filter is a fixed RSS
-feed. Client requests check the current publication version and may return
-`304` for an unchanged `ETag`; the response uses `no-store` so a shared cache
-does not retain an old body. URLs with `limit` or search keep their bounded
+feed. Successful responses use a shared CDN cache for 300 seconds with
+`must-revalidate`; publication exact invalidation clears the old object first,
+while the TTL is the bounded fallback when invalidation is delayed. Clients
+still use `max-age=0`, and an unchanged `ETag` may return `304`; unready and
+error responses are not shared. URLs with `limit` or search keep their bounded
 refresh policy. RSS `<ttl>` is only a client polling hint.
 
 Full parameters: [API reference](/docs/open-api/reference).

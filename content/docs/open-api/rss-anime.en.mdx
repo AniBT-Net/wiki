@@ -14,12 +14,13 @@ Mikan aliases `bangumiId` and `subgroupid` work.
 </Callout>
 
 An anime-pair RSS URL with no `limit`, tag, search, or other filter, and with both a
-catalogued `bgmId` and `groupSlug`, is a fixed feed. Every client request checks
-the current publication version; an unchanged `ETag` may return `304`, and an old
-shared-cache body is never authoritative. These responses use `no-store` so a
-shared cache does not retain an old body. URLs with `limit`, tags, search, or
-other filters keep their bounded refresh policy. RSS `<ttl>` is only a client
-polling hint.
+catalogued `bgmId` and `groupSlug`, is a fixed feed. Successful responses use a
+shared CDN cache for 300 seconds with `must-revalidate`; publication exact
+invalidation clears the old object first, while the TTL is the bounded fallback
+when invalidation is delayed. Clients still use `max-age=0`, and an unchanged
+`ETag` may return `304`; unready and error responses are not shared. URLs with
+`limit`, tags, search, or other filters keep their bounded refresh policy. RSS
+`<ttl>` is only a client polling hint.
 
 Full parameters: [API reference](/docs/open-api/reference).
 

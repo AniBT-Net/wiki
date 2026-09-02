@@ -32,7 +32,9 @@ description: 各端点的 limit 与速率窗口。
 
 `/rss/magnets.xml` 与 `/rss/other/*` 的 `q` / `search` 只能一个值，最多 160 UTF-8 bytes。新关键词搜索：每主题 120 次 / 10 分钟、1000 次 / 24 小时，超限 `429`。稳定查询不计入。
 
-规范 fixed RSS 请求会在服务端核对当前发布版本；未变化时可用 `ETag` 返回 `304`。
+规范 fixed RSS 成功响应使用 CDN 共享的 300 秒 `must-revalidate` 缓存；发布后的
+精确失效会优先清掉旧对象，TTL 只作为失效延迟时的有界兜底。客户端侧仍为
+`max-age=0`，未变化时可用 `ETag` 返回 `304`；未准备好或错误响应不进入共享缓存。
 搜索、过滤、带 `limit` 的动态 RSS，以及 `/magnets` 任意分页不纳入这个 fixed
 RSS 约束。客户端仍应按 ≥5 分钟间隔轮询并发送 `If-None-Match`。
 

@@ -14,10 +14,11 @@ description: GET /rss/anime.xml —— bgmId、字幕组 slug 与 Tag 过滤。�
 </Callout>
 
 不带 `limit`、Tag 或搜索条件，且同时指定已收录 `bgmId` 与 `groupSlug` 的规范
-anime-pair RSS 属于 fixed feed。每次客户端请求都会核对当前发布版本；未变化时
-可用 `ETag` 返回 `304`，不会使用旧共享缓存正文。此类响应使用
-`no-store`，避免共享缓存保存旧正文。带 `limit`、Tag、搜索或其他过滤条件的
-URL 仍使用有界刷新策略。RSS `<ttl>` 只提示客户端轮询频率。
+anime-pair RSS 属于 fixed feed。成功响应由 CDN 共享 300 秒，并使用
+`must-revalidate`；发布后的精确失效优先清掉旧对象，TTL 只作为失效延迟时的有界
+兜底。客户端仍以 `max-age=0` 验证，未变化时可用 `ETag` 返回 `304`；未准备好或
+错误响应不进入共享缓存。带 `limit`、Tag、搜索或其他过滤条件的 URL 仍使用有界
+刷新策略。RSS `<ttl>` 只提示客户端轮询频率。
 
 完整参数见 [接口参考](/docs/open-api/reference)。
 

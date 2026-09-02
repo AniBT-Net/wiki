@@ -32,7 +32,9 @@ description: 各端點的 limit 與速率視窗。
 
 `/rss/magnets.xml` 與 `/rss/other/*` 的 `q` / `search` 只能一個值，最多 160 UTF-8 bytes。新關鍵詞搜尋：每主題 120 次 / 10 分鐘、1000 次 / 24 小時，超限 `429`。穩定查詢不計入。
 
-規範 fixed RSS 請求會在服務端核對目前發布版本；未變更時可用 `ETag` 回傳 `304`。
+規範 fixed RSS 成功回應使用 CDN 共用的 300 秒 `must-revalidate` 快取；發布後的
+精確失效會先清掉舊物件，TTL 只作為失效延遲時的有界後備。客戶端仍為
+`max-age=0`，內容未變更時可用 `ETag` 回傳 `304`；未準備好或錯誤回應不進入共用快取。
 搜尋、過濾、帶 `limit` 的動態 RSS，以及 `/magnets` 任意分頁不納入此 fixed
 RSS 約束。客戶端仍應按 ≥5 分鐘間隔輪詢並傳送 `If-None-Match`。
 
