@@ -7,6 +7,8 @@ Only user-visible feature changes are recorded. Newest first.
 
 ## August 31, 2026
 
+- **Fixed duplicate weekly cards across midnight**
+  The same episode airing on different platforms is now merged into one card, even when its times cross midnight in Shanghai. Different episodes remain separate.
 - **Fixed RSS is current after publication**
   Catalogued, unfiltered fixed RSS feeds (site-wide, group, anime-pair, and other categories) are served from the publication version. Every RSS reader request checks the current version; an unchanged `ETag` may return `304`, and an old body is never authoritative. RSS with `limit`, filters, or search keeps its bounded refresh policy.
 - **Personal subscription RSS uses versioned cache identity**
