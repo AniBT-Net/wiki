@@ -260,6 +260,7 @@ description: AniBT JSON 与 RSS 接口的方法、路径、参数和响应。
   type={{
     rawTitle: { type: 'string', required: true, description: '发布标题原文，1–1000 字符' },
     torrentName: { type: 'string', description: 'torrent 内部名，1–1000 字符' },
+    infoHashHex: { type: 'string', description: 'v1 infohash，40 位十六进制；用于绑定发布令牌' },
     publishedAt: { type: 'integer', description: '发布时间，毫秒' },
     groupId: { type: 'string', description: '字幕组 ID。传入则需会话' },
     limit: { type: 'integer', default: '10', description: '候选数，上限 50' },
@@ -281,6 +282,10 @@ description: AniBT JSON 与 RSS 接口的方法、路径、参数和响应。
   },
   "candidates": [],
   "search": { "candidateSetComplete": true, "generation": "match_v3_20260718_2040" },
+  "identityKey": "bocchi-the-rock|season=1",
+  "structure": { "season": 1 },
+  "decisionToken": "<signed-token>",
+  "decisionTokenExpiresAt": 1789091555737,
   "diagnostics": null
 }
 ```
@@ -499,6 +504,14 @@ Nyaa 代发要求种子含 `http://nyaa.tracker.wf:7777/announce`。分类代码
   }
 }
 ```
+
+### 下载种子
+
+<ApiEndpoint method="GET" path="/api/torrent/{releaseId}.torrent" auth="公开">
+返回该发布的公开种子。没有种子或未知发布返回 `404`；公开对象暂不可用返回 `503`，并带 `Retry-After`。
+</ApiEndpoint>
+
+成功响应的关键头部是 `ETag`、`X-Torrent-Content-SHA256`、`X-Torrent-Info-Hash`、`Content-Type: application/x-bittorrent` 和 `Cache-Control`。公开种子已包含站点 tracker；旧的 `X-AniBT-Torrent-Source` 与 policy revision 头已退役。
 
 ### 删除番剧发布
 

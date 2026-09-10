@@ -1,7 +1,19 @@
 ---
+
 title: 更新日志
 description: 功能变更。日期为北京时间（UTC+8）。
 ---
+
+## 2026 年 9 月 10 日
+
+- **固定 RSS 使用 60 秒邊緣快取窗口**
+  無過濾 fixed RSS 成功回應的邊緣共享快取上限為 60 秒；客戶端仍可使用 `ETag` 和 `304`。
+- **種子匹配回應增加可驗證欄位**
+  `/api/animes/torrent-match` 可返回 `identityKey`、`structure`、`decisionToken` 和 `decisionTokenExpiresAt`；發布端會驗證與種子 infohash 綁定的令牌。
+- **刪除回執完成語義收斂**
+  只有 `completed` 才表示主記錄、公開讀模型、快取和物件儲存都已通過刪除屏障。
+
+
 
 只记录用户能用到的功能变化。较新的在前。
 

@@ -14,8 +14,7 @@ description: GET /rss/other/<category>.xml —— 七个分类各自一份 RSS�
 </Callout>
 
 不带 `limit`、`q`、`search` 或其他过滤条件的分类 URL 是 fixed RSS。成功响应由
-CDN 共享 300 秒并使用 `must-revalidate`；发布后的精确失效优先清掉旧对象，TTL
-只作为失效延迟时的有界兜底。客户端仍为 `max-age=0`，未变化时可用 `ETag` 返回
+CDN 共享 60 秒并使用 `must-revalidate`；TTL 是边缘陈旧上限。客户端仍为 `max-age=0`，未变化时可用 `ETag` 返回
 `304`；未准备好或错误响应不进入共享缓存。带 `limit` 或搜索条件的 URL 继续走
 有界刷新策略。RSS `<ttl>` 只提示客户端轮询频率。
 

@@ -15,9 +15,7 @@ Mikan aliases `bangumiId` and `subgroupid` work.
 
 An anime-pair RSS URL with no `limit`, tag, search, or other filter, and with both a
 catalogued `bgmId` and `groupSlug`, is a fixed feed. Successful responses use a
-shared CDN cache for 300 seconds with `must-revalidate`; publication exact
-invalidation clears the old object first, while the TTL is the bounded fallback
-when invalidation is delayed. Clients still use `max-age=0`, and an unchanged
+shared CDN cache for 60 seconds with `must-revalidate`; the edge revalidates under this TTL. Clients still use `max-age=0`, and an unchanged
 `ETag` may return `304`; unready and error responses are not shared. URLs with
 `limit`, tags, search, or other filters keep their bounded refresh policy. RSS
 `<ttl>` is only a client polling hint.

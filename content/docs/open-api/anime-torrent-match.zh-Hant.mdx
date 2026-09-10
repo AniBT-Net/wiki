@@ -19,6 +19,7 @@ GET 回傳 `405 METHOD_NOT_ALLOWED`。
   type={{
     rawTitle: { type: 'string', required: true, description: '釋出標題原文，1–1000 字元' },
     torrentName: { type: 'string', description: 'torrent 內部名，1–1000 字元。與 rawTitle 指向不同番劇時禁止自動綁定' },
+    infoHashHex: { type: 'string', description: 'v1 infohash，40 位十六進位；用於綁定釋出令牌' },
     publishedAt: { type: 'integer', description: '釋出時間，毫秒' },
     groupId: { type: 'string', description: '字幕組 ID，最多 200 字元。傳入則需 session 且屬於該組，否則 403' },
     limit: { type: 'integer', default: '10', description: '候選數，上限 50。縮小 limit 不會放寬自動綁定門檻' },
@@ -52,6 +53,9 @@ JSON
 | `non_anime` | 非番劇 |
 | `unsupported` | 合集等無法用單番劇表達 |
 | `unavailable` | 檢索不可用，稍後重試 |
+
+
+傳入 `infoHashHex` 時，回應還會返回 `identityKey`、`structure`、`decisionToken` 和 `decisionTokenExpiresAt`。釋出介面只接受與該 infohash 綁定的有效令牌；令牌缺失、過期或不相符時回傳 `422 MATCH_DECISION_TOKEN_INVALID`。
 
 `candidates` 不是授權欄位。高 `matchScore` 不能代替 `decision.kind="auto"`。
 

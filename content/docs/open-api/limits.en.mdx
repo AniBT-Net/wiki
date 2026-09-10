@@ -33,9 +33,7 @@ Deletion also has a pre-auth abuse window. `Retry-After` on a `pending` receipt 
 On `/rss/magnets.xml` and `/rss/other/*`, `q` / `search` may be only one value, max 160 UTF-8 bytes. New-keyword search: 120 / 10 minutes and 1000 / 24 hours per subject; over limit returns `429`. Stable queries do not count.
 
 Successful canonical fixed RSS responses use a shared CDN cache with a
-300-second `must-revalidate` window. Publication exact invalidation clears the
-old object first; the TTL is only the bounded fallback when invalidation is
-delayed. Clients still use `max-age=0`, and an unchanged `ETag` may return
+60-second `must-revalidate` window. the edge revalidates under this TTL. Clients still use `max-age=0`, and an unchanged `ETag` may return
 `304`; unready and error responses are not shared. Search, filtered,
 `limit`-bearing dynamic RSS, and arbitrary `/magnets` pages are outside this
 fixed-feed contract. Clients should still poll at ≥5-minute intervals and send

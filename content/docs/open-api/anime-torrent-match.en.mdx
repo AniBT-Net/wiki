@@ -19,6 +19,7 @@ GET returns `405 METHOD_NOT_ALLOWED`.
   type={{
     rawTitle: { type: 'string', required: true, description: 'Release title as-is, 1–1000 characters' },
     torrentName: { type: 'string', description: 'Torrent internal name, 1–1000 characters. Auto-bind is forbidden if it points at a different anime than rawTitle' },
+    infoHashHex: { type: 'string', description: 'v1 infohash, 40 lowercase hex characters; binds the publish token' },
     publishedAt: { type: 'integer', description: 'Publish time, milliseconds' },
     groupId: { type: 'string', description: 'Group ID, max 200 characters. Requires a session in that group, else 403' },
     limit: { type: 'integer', default: '10', description: 'Candidate count, max 50. A smaller limit does not lower the auto-bind bar' },
@@ -52,6 +53,9 @@ JSON
 | `non_anime` | Not anime |
 | `unsupported` | Batch / multi-title that a single anime cannot express |
 | `unavailable` | Search unavailable; retry later |
+
+
+When `infoHashHex` is supplied, the response also returns `identityKey`, `structure`, `decisionToken`, and `decisionTokenExpiresAt`. The publish API accepts only a valid token bound to that infohash; missing, expired, or mismatched tokens return `422 MATCH_DECISION_TOKEN_INVALID`.
 
 `candidates` is not an authorization field. A high `matchScore` does not replace `decision.kind="auto"`.
 

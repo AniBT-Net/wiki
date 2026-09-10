@@ -12,9 +12,8 @@ Same as `/rss/anime.xml?groupSlug=<slug>`. No tag filters.
 </ApiEndpoint>
 
 The canonical URL for a catalogued group slug without `limit` uses a fixed RSS
-publication version. Successful responses are shared by the CDN for 300 seconds
-with `must-revalidate`, and publication exact invalidation clears the old object
-first. Clients still use `max-age=0`, and an unchanged `ETag` may return `304`.
+publication version. Successful responses are shared by the CDN for 60 seconds
+with `must-revalidate`, and the edge revalidates under this TTL. Clients still use `max-age=0`, and an unchanged `ETag` may return `304`.
 URLs with `limit` remain dynamic RSS.
 
 Path must end with `.xml`. Unknown slug returns `404`. `limit=1..100`. Invalid `limit` returns app `400`; production edge may return `403` first.
@@ -30,8 +29,7 @@ Latest site-wide releases. Bound anime items include `<anibt:bgmId>`.
 </ApiEndpoint>
 
 `/rss/magnets.xml` with no query is a fixed RSS feed. Successful responses are
-shared by the CDN for 300 seconds with `must-revalidate`, and publication exact
-invalidation clears the old object first. Clients still use `max-age=0`, and an
+shared by the CDN for 60 seconds with `must-revalidate`, and the edge revalidates under this TTL. Clients still use `max-age=0`, and an
 unchanged `ETag` may return `304`. `q`, `search`, filters, and `limit` variants
 keep the existing dynamic owner.
 

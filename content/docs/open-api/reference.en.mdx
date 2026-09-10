@@ -262,6 +262,7 @@ Parse the release title and torrent name; return auto / manual / …. `groupId` 
   type={{
     rawTitle: { type: 'string', required: true, description: 'Raw release title, 1–1000 chars' },
     torrentName: { type: 'string', description: 'Torrent internal name, 1–1000 chars' },
+    infoHashHex: { type: 'string', description: 'v1 infohash, 40 lowercase hex characters; binds the publish token' },
     publishedAt: { type: 'integer', description: 'Publish time, milliseconds' },
     groupId: { type: 'string', description: 'Group id; requires a session if set' },
     limit: { type: 'integer', default: '10', description: 'Candidates, max 50' },
@@ -283,6 +284,10 @@ Public route: `diagnostics=true` returns `403`. Body max 32 KiB. No store.
   },
   "candidates": [],
   "search": { "candidateSetComplete": true, "generation": "match_v3_20260718_2040" },
+  "identityKey": "bocchi-the-rock|season=1",
+  "structure": { "season": 1 },
+  "decisionToken": "<signed-token>",
+  "decisionTokenExpiresAt": 1789091555737,
   "diagnostics": null
 }
 ```
@@ -501,6 +506,14 @@ No `bgmId`. `category` and `title` required; at least one of `torrent` / `torren
   }
 }
 ```
+
+### Download a torrent
+
+<ApiEndpoint method="GET" path="/api/torrent/{releaseId}.torrent" auth="public">
+Returns the release's public torrent. A release without a torrent or an unknown release returns `404`; an unavailable public object returns `503` with `Retry-After`.
+</ApiEndpoint>
+
+Key success headers are `ETag`, `X-Torrent-Content-SHA256`, `X-Torrent-Info-Hash`, `Content-Type: application/x-bittorrent`, and `Cache-Control`. The public torrent already carries the site's tracker; the old `X-AniBT-Torrent-Source` and policy-revision headers are retired.
 
 ### Delete an anime release
 

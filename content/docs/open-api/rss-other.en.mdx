@@ -14,8 +14,8 @@ Categories: `manga` / `music` / `raw` / `stage` / `collection` / `movie` / `othe
 </Callout>
 
 A category URL without `limit`, `q`, `search`, or another filter is a fixed RSS
-feed. Successful responses use a shared CDN cache for 300 seconds with
-`must-revalidate`; publication exact invalidation clears the old object first,
+feed. Successful responses use a shared CDN cache for 60 seconds with
+`must-revalidate`; the edge revalidates under this TTL,
 while the TTL is the bounded fallback when invalidation is delayed. Clients
 still use `max-age=0`, and an unchanged `ETag` may return `304`; unready and
 error responses are not shared. URLs with `limit` or search keep their bounded
