@@ -6,6 +6,8 @@ description: 功能变更。日期为北京时间（UTC+8）。
 
 ## 2026 年 9 月 10 日
 
+- **字幕组仪表盘改为添加已注册成员**
+  成员页用邮箱或用户 ID 添加已经注册的账号。未注册会提示用户不存在；已是成员不会改角色。失败会显示错误提示。不发送邀请邮件。
 - **Open API 发布必须带种子**
   Open API 发布番剧和其他类资源都必须带种子。`POST /api/releases/publish` 与 `POST /api/other-releases/publish`：multipart 传 `torrent`，或 JSON 传 `torrentStorageId`。只传磁力返回 `422 TORRENT_REQUIRED`。preview 同样要求。
 - **固定 RSS 使用 60 秒边缘缓存窗口**
