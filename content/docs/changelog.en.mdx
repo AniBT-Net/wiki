@@ -6,6 +6,10 @@ description: Feature changes. Dates are Beijing time (UTC+8).
 
 ## September 10, 2026
 
+- **Group console delete refreshes the list**
+  After confirming a delete on the group releases page, completion copy stays in the UI locale and the row leaves the list without a refresh. Creating, updating, or deleting a group claim or title template also updates that list immediately.
+- **Open API deletion status can reach `completed`**
+  `GET /api/releases/{releaseId}/deletion` returns `completed` once cleanup finishes, instead of remaining `pending`.
 - **Fixed some release pages and torrent downloads that failed**
   Some movie/BD release pages returned an error, and their `.torrent` downloads were temporarily unavailable. Those pages and downloads work again.
 - **Subtitle-group dashboard adds registered members**
