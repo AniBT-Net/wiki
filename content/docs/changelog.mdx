@@ -6,6 +6,8 @@ description: 功能变更。日期为北京时间（UTC+8）。
 
 ## 2026 年 9 月 10 日
 
+- **Open API 发布必须带种子**
+  Open API 发布番剧和其他类资源都必须带种子。`POST /api/releases/publish` 与 `POST /api/other-releases/publish`：multipart 传 `torrent`，或 JSON 传 `torrentStorageId`。只传磁力返回 `422 TORRENT_REQUIRED`。preview 同样要求。
 - **固定 RSS 使用 60 秒边缘缓存窗口**
   无过滤 fixed RSS 成功响应的边缘共享缓存上限为 60 秒；客户端仍可使用 `ETag` 和 `304`。
 - **种子匹配响应增加可验证字段**

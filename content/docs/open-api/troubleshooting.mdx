@@ -20,6 +20,7 @@ curl -s https://anibt.net/api/subtitle-groups \
 | RSS 返回 `308` / `400` / `403` / `429` | `308`：跟随并保存最终 URL（常见于 `limit=100`、兼容别名）。`400`：`limit` 必须是单个 `1..100` 整数；`q` / `search` 只能一个值，不能空、不能含控制字符、最多 160 UTF-8 bytes。`403`：生产边缘可能先拦截非法 `limit`。`429`：按 `Retry-After` 退避，不要立刻重试 |
 | `episode=5` 对不上 | `episode` 是数字精确匹配，`episodeKey` 是字符串原样匹配。合集用 `episodeKey=BATCH` |
 | 发布 `200` 但 RSS 没有 | `200` 只表示已写入。用 `releaseId` 核对详情页或 RSS 正文。再等客户端轮询间隔 |
+| 只传磁力或未带种子发布 | 返回 `422` `TORRENT_REQUIRED`。multipart 传 `torrent`，或 JSON 传 `torrentStorageId` |
 | DELETE 返回 `202` | 轮询 `GET /api/releases/{releaseId}/deletion`，直到 `completed` |
 | Key 有效但删除 `403` | 缺 `releases:delete`。用 [`/me`](/docs/open-api/me) 查 `scopes` |
 | `completed` 后 Nyaa / Mikan 还在 | 不召回外站、Tracker、已下载文件和本地缓存 |

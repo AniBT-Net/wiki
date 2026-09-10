@@ -6,6 +6,8 @@ description: Feature changes. Dates are Beijing time (UTC+8).
 
 ## September 10, 2026
 
+- **Open API publish requires a torrent**
+  Both anime and other-release Open API publish endpoints require a torrent. `POST /api/releases/publish` and `POST /api/other-releases/publish`: send a multipart `torrent` part, or JSON `torrentStorageId`. Magnet-only returns `422 TORRENT_REQUIRED`. Preview has the same requirement.
 - **Fixed RSS now uses a 60-second edge cache window**
   Successful unfiltered fixed RSS responses are shared at the edge for up to 60 seconds; clients can still use `ETag` and `304`.
 - **Torrent matching exposes verifiable decision fields**

@@ -301,7 +301,7 @@ Public route: `diagnostics=true` returns `403`. Body max 32 KiB. No store.
 | `unsupported` | Batch/multi-title cannot be one subject |
 | `unavailable` | Search unavailable; retry later |
 
-Publish runs the same matcher when no anime id is sent. Do not send a caller-forged match result to publish.
+Publish requires `animeIdType` and `animeId`. The matcher is only `/api/animes/torrent-match`. Do not send a caller-forged match result to publish.
 
 ## RSS
 
@@ -408,26 +408,26 @@ Read-only. Does not require `releases:publish`.
 ### Publish anime
 
 <ApiEndpoint method="POST" path="/api/releases/publish" auth="auth · releases:publish">
-`multipart/form-data` with `.torrent` (preferred), or JSON magnet. `200` means the primary record is written, not that RSS / search / pages already show it.
+Multipart requires `torrent`; JSON requires `torrentStorageId`. Magnet is an optional extra, not a substitute. Preview also requires a torrent. `200` means the primary record is written, not that RSS / search / pages already show it.
 </ApiEndpoint>
 
 <TypeTable
   type={{
-    animeIdType: { type: 'enum', description: 'bgm / anilist / mal / anidb, with animeId' },
-    animeId: { type: 'string', description: 'Id on that site' },
+    animeIdType: { type: 'enum', required: true, description: 'bgm / anilist / mal / anidb; must be used with animeId' },
+    animeId: { type: 'string', required: true, description: 'Site anime id' },
     anime: { type: 'object', description: '{"source":"anidb","id":"17617"}' },
     bgmId: { type: 'number', description: 'Legacy field' },
-    title: { type: 'string', required: true, description: 'Required for JSON; multipart may fall back to torrent name' },
-    torrent: { type: 'file', required: true, description: 'Required for multipart' },
-    magnetBase64: { type: 'string', description: 'Raw magnet or Base64. Required for JSON' },
-    torrentStorageId: { type: 'string', description: 'Existing public storage key' },
+    title: { type: 'string', required: true, description: 'Release filename, e.g. [Group] Title - 01 [1080p].mkv. Required for JSON; multipart may fall back to the torrent internal name' },
+    torrent: { type: 'file', required: true, description: 'Torrent file. Magnet, title, and size are extracted. Required for multipart; JSON uses torrentStorageId instead' },
+    magnetBase64: { type: 'string', required: false, description: 'Optional; extracted from the torrent; not a substitute. Magnet-only JSON is rejected' },
+    torrentStorageId: { type: 'string', required: false, description: 'JSON alternative to uploading torrent' },
     episodeKey: { type: 'string', description: '01 / SP / MOVIE / BATCH' },
     resolution: { type: 'enum', description: '4K / 2160p / 1080p / 720p / 480p / 360p' },
     language: { type: 'enum[]', description: 'Repeatable. JSON array' },
     subtitle: { type: 'enum', description: 'EXTERNAL / INTERNAL / EMBEDDED / NONE' },
     format: { type: 'enum', description: 'MKV / MP4 / AVI / WEBM' },
     version: { type: 'string', description: 'Default v1' },
-    fileSize: { type: 'number', description: 'Bytes. Must be > 0 for magnet-only publish' },
+    fileSize: { type: 'number', required: false, description: 'Bytes. Optional; extracted from the torrent' },
     publishedAt: { type: 'number', description: 'Milliseconds. Default: server now' },
     notes: { type: 'string', description: 'Markdown + raw HTML, max 50000 chars, rendered as-is' },
     trackers: { type: 'string[]', description: 'Merged with site default trackers' },
@@ -462,7 +462,7 @@ Nyaa proxy requires `http://nyaa.tracker.wf:7777/announce` in the torrent. Categ
 | 403 | Missing `releases:publish` |
 | 409 | Same version exists; change `version` |
 | 413 | Torrent too large |
-| 422 | Validation, e.g. `EMPTY_RELEASE_CONTENT` |
+| 422 | `TORRENT_REQUIRED` (multipart missing `torrent`, or JSON missing `torrentStorageId`) |
 | 429 / 503 | Back off with `Retry-After` |
 
 ### Other-release whoami
@@ -474,18 +474,18 @@ Nyaa proxy requires `http://nyaa.tracker.wf:7777/announce` in the torrent. Categ
 ### Publish other releases
 
 <ApiEndpoint method="POST" path="/api/other-releases/publish" auth="auth · releases:publish">
-No `bgmId`. `category` and `title` required; at least one of `torrent` / `torrentStorageId` / `magnetLink` / `magnetBase64`.
+No `bgmId`. `category` and `title` required. Multipart requires `torrent`; JSON requires `torrentStorageId`. Magnets are optional extras. Magnet-only returns `422` / `TORRENT_REQUIRED`.
 </ApiEndpoint>
 
 <TypeTable
   type={{
     category: { type: 'enum', required: true, description: 'manga / music / raw / stage / collection / movie / other' },
     title: { type: 'string', required: true, description: 'Max 500 chars' },
-    torrent: { type: 'file', description: 'Preferred for multipart' },
-    magnetLink: { type: 'string', description: 'Raw magnet. Alias magnet' },
-    magnetBase64: { type: 'string', description: 'Raw magnet or Base64' },
-    torrentStorageId: { type: 'string', description: 'Existing public storage key' },
-    fileSize: { type: 'number', description: 'Bytes' },
+    torrent: { type: 'file', required: true, description: 'Torrent file. Magnet, title, size, and trackers are extracted. Required for multipart; JSON uses torrentStorageId instead' },
+    magnetLink: { type: 'string', required: false, description: 'Optional extra; not sufficient alone. Alias magnet' },
+    magnetBase64: { type: 'string', required: false, description: 'Optional extra; not sufficient alone' },
+    torrentStorageId: { type: 'string', required: false, description: 'JSON alternative to uploading torrent' },
+    fileSize: { type: 'number', required: false, description: 'Bytes. Optional; extracted from the torrent' },
     trackers: { type: 'string[]', description: 'Extra trackers' },
     notes: { type: 'string', description: 'Markdown + raw HTML, max 50000 chars' },
     customTags: { type: 'string[]', description: 'Max 20, each max 80 chars. Alias tags' },

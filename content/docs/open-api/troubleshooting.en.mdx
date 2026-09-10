@@ -20,6 +20,7 @@ curl -s https://anibt.net/api/subtitle-groups \
 | RSS returns `308` / `400` / `403` / `429` | `308`: follow and keep the final URL (often `limit=100` or aliases). `400`: `limit` must be a single integer `1..100`; `q` / `search` only one value, not empty, no control characters, max 160 UTF-8 bytes. `403`: production edge may reject illegal `limit` first. `429`: back off with `Retry-After`, do not retry immediately |
 | `episode=5` misses | `episode` is numeric exact match; `episodeKey` is string exact match. Batches use `episodeKey=BATCH` |
 | Publish `200` but RSS empty | `200` means written. Check `releaseId` on the detail page or in the RSS body. Then wait for the client poll interval |
+| Magnet-only / no torrent on publish | `422` `TORRENT_REQUIRED`. Send a multipart `torrent` part, or JSON `torrentStorageId` |
 | DELETE returns `202` | Poll `GET /api/releases/{releaseId}/deletion` until `completed` |
 | Key works but delete `403` | Missing `releases:delete`. Inspect `scopes` via [`/me`](/docs/open-api/me) |
 | Nyaa / Mikan still there after `completed` | External posts, Tracker, downloads, and local caches are not recalled |

@@ -299,7 +299,7 @@ description: AniBT JSON 与 RSS 接口的方法、路径、参数和响应。
 | `unsupported` | 合集等无法用单番剧表达 |
 | `unavailable` | 检索不可用，稍后重试 |
 
-发布接口未带番剧 ID 时会在服务端跑同一 matcher。不要把调用方伪造的匹配结果传给发布接口。
+发布接口必须带 `animeIdType` 与 `animeId`。Matcher 只在 `/api/animes/torrent-match`。不要把调用方伪造的匹配结果传给发布接口。
 
 ## RSS
 
@@ -406,26 +406,26 @@ Tag 可重复或逗号分隔：`?resolution=1080p&resolution=720p` 与 `?resolut
 ### 发布番剧资源
 
 <ApiEndpoint method="POST" path="/api/releases/publish" auth="鉴权 · releases:publish">
-`multipart/form-data` 上传 `.torrent`（推荐），或 JSON 传磁力。`200` 表示主记录已写入，不表示 RSS / 搜索 / 页面已可见。
+multipart 必填 `torrent`；JSON 必填 `torrentStorageId`。磁力为可选附加，不能单独发布。preview 同样要求种子。`200` 表示主记录已写入，不表示 RSS / 搜索 / 页面已可见。
 </ApiEndpoint>
 
 <TypeTable
   type={{
-    animeIdType: { type: 'enum', description: 'bgm / anilist / mal / anidb，与 animeId 一起用' },
-    animeId: { type: 'string', description: '对应站点 ID' },
+    animeIdType: { type: 'enum', required: true, description: 'bgm / anilist / mal / anidb，必须与 animeId 一起用' },
+    animeId: { type: 'string', required: true, description: '对应站点番剧 ID' },
     anime: { type: 'object', description: '{"source":"anidb","id":"17617"}' },
     bgmId: { type: 'number', description: '兼容字段' },
-    title: { type: 'string', required: true, description: 'JSON 必填；multipart 可从种子名回填' },
-    torrent: { type: 'file', required: true, description: 'multipart 必填' },
-    magnetBase64: { type: 'string', description: '原始 magnet 或 Base64。JSON 必填' },
-    torrentStorageId: { type: 'string', description: '已有公共存储 key' },
+    title: { type: 'string', required: true, description: '资源文件名，如 [字幕组] 番名 - 01 [1080p].mkv。JSON 必填；multipart 未传时可用种子内部名' },
+    torrent: { type: 'file', required: true, description: '种子文件。自动提取磁力、标题、大小。multipart 必填；JSON 改用 torrentStorageId' },
+    magnetBase64: { type: 'string', required: false, description: '可选；从种子提取，不能代替种子。只传磁力会被拒绝' },
+    torrentStorageId: { type: 'string', required: false, description: 'JSON 下代替上传 torrent 的已有公共存储 key' },
     episodeKey: { type: 'string', description: '01 / SP / MOVIE / BATCH' },
     resolution: { type: 'enum', description: '4K / 2160p / 1080p / 720p / 480p / 360p' },
     language: { type: 'enum[]', description: '可重复。JSON 用数组' },
     subtitle: { type: 'enum', description: 'EXTERNAL / INTERNAL / EMBEDDED / NONE' },
     format: { type: 'enum', description: 'MKV / MP4 / AVI / WEBM' },
     version: { type: 'string', description: '默认 v1' },
-    fileSize: { type: 'number', description: '字节。无 torrent 时正式发布必须 > 0' },
+    fileSize: { type: 'number', required: false, description: '字节。可选；从种子提取' },
     publishedAt: { type: 'number', description: '毫秒。默认服务端当前时间' },
     notes: { type: 'string', description: 'Markdown + 原始 HTML，最多 50000 字符，直接渲染' },
     trackers: { type: 'string[]', description: '与站点默认 tracker 合并去重' },
@@ -460,7 +460,7 @@ Nyaa 代发要求种子含 `http://nyaa.tracker.wf:7777/announce`。分类代码
 | 403 | 缺少 `releases:publish` |
 | 409 | 同版本已存在，换 `version` |
 | 413 | 种子过大 |
-| 422 | `EMPTY_RELEASE_CONTENT` 等校验失败 |
+| 422 | `TORRENT_REQUIRED`（multipart 未带 `torrent`，或 JSON 未带 `torrentStorageId`） |
 | 429 / 503 | 按 `Retry-After` 退避 |
 
 ### 其他类发布身份
@@ -472,18 +472,18 @@ Nyaa 代发要求种子含 `http://nyaa.tracker.wf:7777/announce`。分类代码
 ### 发布其他类资源
 
 <ApiEndpoint method="POST" path="/api/other-releases/publish" auth="鉴权 · releases:publish">
-不绑定 `bgmId`。`category` 与 `title` 必填；`torrent` / `torrentStorageId` / `magnetLink` / `magnetBase64` 至少一个。
+不绑定 `bgmId`。`category` 与 `title` 必填。multipart 必填 `torrent`；JSON 必填 `torrentStorageId`。磁力为可选附加。只传磁力返回 `422` / `TORRENT_REQUIRED`。
 </ApiEndpoint>
 
 <TypeTable
   type={{
     category: { type: 'enum', required: true, description: 'manga / music / raw / stage / collection / movie / other' },
     title: { type: 'string', required: true, description: '最长 500 字符' },
-    torrent: { type: 'file', description: 'multipart 推荐' },
-    magnetLink: { type: 'string', description: '原始 magnet。别名 magnet' },
-    magnetBase64: { type: 'string', description: '原始 magnet 或 Base64' },
-    torrentStorageId: { type: 'string', description: '已有公共存储 key' },
-    fileSize: { type: 'number', description: '字节' },
+    torrent: { type: 'file', required: true, description: '种子文件。自动提取磁力、标题、大小、tracker。multipart 必填；JSON 改用 torrentStorageId' },
+    magnetLink: { type: 'string', required: false, description: '可选附加，不能单独发布。别名 magnet' },
+    magnetBase64: { type: 'string', required: false, description: '可选附加，不能单独发布' },
+    torrentStorageId: { type: 'string', required: false, description: 'JSON 下代替上传 torrent 的已有公共存储 key' },
+    fileSize: { type: 'number', required: false, description: '字节。可选；从种子提取' },
     trackers: { type: 'string[]', description: '追加 tracker' },
     notes: { type: 'string', description: 'Markdown + 原始 HTML，最多 50000 字符' },
     customTags: { type: 'string[]', description: '最多 20 个，每个最长 80 字符。别名 tags' },

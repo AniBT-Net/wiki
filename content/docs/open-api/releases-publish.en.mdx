@@ -6,7 +6,7 @@ description: POST /api/releases/publish — publish a torrent with a group API k
 Writes an anime release. Both live publish and preview require `releases:publish`.
 
 <ApiEndpoint method="POST" path="/api/releases/publish" auth="auth · releases:publish">
-Prefer multipart `.torrent` upload, or JSON with a magnet.
+Multipart requires `torrent`; JSON requires `torrentStorageId`. Magnet is an optional extra, not a substitute. Preview also requires a torrent.
 </ApiEndpoint>
 
 <Callout type="warn">
@@ -43,7 +43,7 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
     ```
   </Tab>
   <Tab value="JSON">
-    ```bash title="JSON magnet"
+    ```bash title="JSON torrentStorageId"
     curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -H 'Content-Type: application/json' \
@@ -52,13 +52,13 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
       "animeIdType": "mal",
       "animeId": "52991",
       "title": "[Group] Frieren - 01 [1080p].mkv",
+      "torrentStorageId": "media/torrent/<stored-object-key>",
       "magnetBase64": "magnet:?xt=urn:btih:...",
       "episodeKey": "01",
       "resolution": "1080p",
       "language": ["CHS", "JP"],
       "subtitle": "EXTERNAL",
-      "format": "MKV",
-      "fileSize": 734003200
+      "format": "MKV"
     }
     JSON
     ```
@@ -68,11 +68,10 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
 ## Constraints
 
 - JSON requires `title`; multipart may fall back to the torrent internal name.
-- Multipart requires `torrent`. JSON requires `magnetBase64` (raw magnet or Base64).
-- Without a torrent, live publish needs `fileSize > 0`, else `422` / `EMPTY_RELEASE_CONTENT`.
+- Multipart requires `torrent`. JSON requires `torrentStorageId`. Magnet is an optional extra extracted from the torrent; magnet-only returns `422` / `TORRENT_REQUIRED`. Preview is not exempt.
+- `animeIdType` and `animeId` are required (`bgm` / `anilist` / `mal` / `anidb`). The matcher is only [`/api/animes/torrent-match`](/docs/open-api/anime-torrent-match); do not send a forged match.
 - `notes`: Markdown + raw HTML, max 50000 characters, rendered as-is.
 - `preview=true`: preview URL expires in 10 minutes and never enters public lists.
-- With no anime ID, the server runs the same matcher. Do not send a forged match. Only `auto` binds immediately.
 - If resolution and similar fields are omitted, defaults are `resolution=1080p`, `format=MKV`, `subtitle=INTERNAL`, `language=["CHS"]`, `version=v1`; final `format=MP4` leans to `EMBEDDED` subtitles.
 - Same version already exists → `409`; change `version`.
 
@@ -135,5 +134,5 @@ Structured fields such as `sitePublish.nyaa.enabled` / `sitePublish.nyaa.categor
 | 403 | Use a key with `releases:publish` |
 | 409 | Change `version`; do not retry the same payload |
 | 413 | Torrent too large |
-| 422 | Validation failed, e.g. `EMPTY_RELEASE_CONTENT` |
+| 422 | `TORRENT_REQUIRED` (multipart missing `torrent`, or JSON missing `torrentStorageId`) |
 | 429 / 503 | Back off with `Retry-After` |

@@ -10,7 +10,7 @@ GET 返回 `405 METHOD_NOT_ALLOWED`。
 </ApiEndpoint>
 
 <Callout type="warn">
-  不要把调用方伪造的匹配结果传给发布接口。未带番剧 ID 时，发布接口会在服务端跑同一 matcher。
+  发布接口必须带 `animeIdType` 与 `animeId`。不要把调用方伪造的匹配结果传给发布接口。Matcher 只在本接口。
 </Callout>
 
 ## 请求

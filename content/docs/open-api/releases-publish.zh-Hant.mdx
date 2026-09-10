@@ -6,7 +6,7 @@ description: POST /api/releases/publish —— 字幕組用 API Key 釋出種子
 寫入番劇資源。正式釋出與 preview 都要求 `releases:publish`。
 
 <ApiEndpoint method="POST" path="/api/releases/publish" auth="鑑權 · releases:publish">
-推薦 multipart 上傳 `.torrent`；或 JSON 傳磁力。
+multipart 必填 `torrent`；JSON 必填 `torrentStorageId`。磁力為可選附加，不能單獨釋出。preview 同樣要求種子。
 </ApiEndpoint>
 
 <Callout type="warn">
@@ -43,7 +43,7 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
     ```
   </Tab>
   <Tab value="JSON">
-    ```bash title="JSON 磁力"
+    ```bash title="JSON torrentStorageId"
     curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -H 'Content-Type: application/json' \
@@ -51,14 +51,14 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
     {
       "animeIdType": "mal",
       "animeId": "52991",
-      "title": "[字幕組] 葬送的芙莉莲 - 01 [1080p].mkv",
+      "title": "[字幕組] 葬送的芙莉蓮 - 01 [1080p].mkv",
+      "torrentStorageId": "media/torrent/<stored-object-key>",
       "magnetBase64": "magnet:?xt=urn:btih:...",
       "episodeKey": "01",
       "resolution": "1080p",
       "language": ["CHS", "JP"],
       "subtitle": "EXTERNAL",
-      "format": "MKV",
-      "fileSize": 734003200
+      "format": "MKV"
     }
     JSON
     ```
@@ -68,11 +68,10 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
 ## 約束
 
 - JSON 必填 `title`；multipart 未傳時可用種子內部名。
-- multipart 必填 `torrent`。JSON 必填 `magnetBase64`（原始 magnet 或 Base64）。
-- 無 torrent 時正式釋出必須 `fileSize > 0`，否則 `422` / `EMPTY_RELEASE_CONTENT`。
+- multipart 必填 `torrent`。JSON 必填 `torrentStorageId`。磁力為可選附加，從種子提取；只傳磁力回傳 `422` / `TORRENT_REQUIRED`。preview 不豁免。
+- `animeIdType` 與 `animeId` 必填（`bgm` / `anilist` / `mal` / `anidb`）。Matcher 只在 [`/api/animes/torrent-match`](/docs/open-api/anime-torrent-match)；不要傳偽造的匹配結果。
 - `notes`：Markdown + 原始 HTML，最多 50000 字元，頁面直接渲染。
 - `preview=true`：預覽連結 10 分鐘過期，不進入公開列表。
-- 未帶番劇 ID 時伺服端跑同一 matcher；不要傳偽造的匹配結果。只有 `auto` 才直接綁定。
 - 未傳解析度等欄位時，預設 `resolution=1080p`、`format=MKV`、`subtitle=INTERNAL`、`language=["CHS"]`、`version=v1`；最終 `format=MP4` 時字幕預設更傾向 `EMBEDDED`。
 - 同版本已存在回傳 `409`，換 `version`。
 
@@ -135,5 +134,5 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 | 403 | 改用含 `releases:publish` 的 Key |
 | 409 | 換 `version`，不要原樣重試 |
 | 413 | 種子過大 |
-| 422 | `EMPTY_RELEASE_CONTENT` 等校驗失敗 |
+| 422 | `TORRENT_REQUIRED`（multipart 未帶 `torrent`，或 JSON 未帶 `torrentStorageId`） |
 | 429 / 503 | 按 `Retry-After` 退避 |

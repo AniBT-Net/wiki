@@ -6,7 +6,7 @@ description: POST /api/other-releases/publish — publish any of the seven other
 Manga, music, RAW, stage, collection, movie, other. Requires `releases:publish`. Not mixed into anime lists.
 
 <ApiEndpoint method="POST" path="/api/other-releases/publish" auth="auth · releases:publish">
-`category` and `title` required; at least one of `torrent` / `torrentStorageId` / `magnetLink` / `magnetBase64`.
+`category` and `title` required. Multipart requires `torrent`; JSON requires `torrentStorageId`. Magnets are optional extras. Magnet-only returns `422` / `TORRENT_REQUIRED`.
 </ApiEndpoint>
 
 <Callout type="warn">
@@ -47,7 +47,7 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 
 - `title` max 500 characters.
 - `customTags` max 20, each max 80 characters. Alias `tags`.
-- Without a torrent, live publish needs `fileSize > 0`, else `422` / `EMPTY_RELEASE_CONTENT`.
+- Multipart requires `torrent`. JSON requires `torrentStorageId`. Magnets are optional extras; magnet-only returns `422` / `TORRENT_REQUIRED`.
 - Nyaa proxy rules match anime publish: allowlist, multipart, Nyaa tracker. Translated manga usually `3_2`, lossless music `2_1`, RAW / live capture `4_4`, anime RAW `1_4`.
 
 Detail page: `https://anibt.net/other-release/<releaseId>`.
@@ -56,8 +56,9 @@ Detail page: `https://anibt.net/other-release/<releaseId>`.
 
 | HTTP | What to do |
 | --- | --- |
-| 400 | Fill `category` / `title` / torrent or magnet |
+| 400 | Fill `category` / `title` / torrent or `torrentStorageId` |
 | 401 | Check Bearer / `X-API-Key` |
 | 403 | Use a key with `releases:publish` |
 | 404 | `torrentStorageId` missing; upload via multipart |
+| 422 | `TORRENT_REQUIRED` (multipart missing `torrent`, or JSON missing `torrentStorageId`) |
 | 429 / 503 | Back off with `Retry-After` |

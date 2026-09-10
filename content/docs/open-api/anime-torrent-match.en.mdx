@@ -10,7 +10,7 @@ GET returns `405 METHOD_NOT_ALLOWED`.
 </ApiEndpoint>
 
 <Callout type="warn">
-  Do not send a caller-forged match to the publish API. If no anime ID is provided, publish runs the same matcher on the server.
+  Publish requires `animeIdType` and `animeId`. Do not send a caller-forged match to the publish API. The matcher is only this endpoint.
 </Callout>
 
 ## Request

@@ -6,7 +6,7 @@ description: POST /api/releases/publish —— 字幕组用 API Key 发布种子
 写入番剧资源。正式发布与 preview 都要求 `releases:publish`。
 
 <ApiEndpoint method="POST" path="/api/releases/publish" auth="鉴权 · releases:publish">
-推荐 multipart 上传 `.torrent`；或 JSON 传磁力。
+multipart 必填 `torrent`；JSON 必填 `torrentStorageId`。磁力为可选附加，不能单独发布。preview 同样要求种子。
 </ApiEndpoint>
 
 <Callout type="warn">
@@ -43,7 +43,7 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
     ```
   </Tab>
   <Tab value="JSON">
-    ```bash title="JSON 磁力"
+    ```bash title="JSON torrentStorageId"
     curl -X POST 'https://anibt.net/api/releases/publish' \
       -H 'Authorization: Bearer <YOUR_API_KEY>' \
       -H 'Content-Type: application/json' \
@@ -52,13 +52,13 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
       "animeIdType": "mal",
       "animeId": "52991",
       "title": "[字幕组] 葬送的芙莉莲 - 01 [1080p].mkv",
+      "torrentStorageId": "media/torrent/<stored-object-key>",
       "magnetBase64": "magnet:?xt=urn:btih:...",
       "episodeKey": "01",
       "resolution": "1080p",
       "language": ["CHS", "JP"],
       "subtitle": "EXTERNAL",
-      "format": "MKV",
-      "fileSize": 734003200
+      "format": "MKV"
     }
     JSON
     ```
@@ -68,11 +68,10 @@ curl -X GET 'https://anibt.net/api/releases/publish' \
 ## 约束
 
 - JSON 必填 `title`；multipart 未传时可用种子内部名。
-- multipart 必填 `torrent`。JSON 必填 `magnetBase64`（原始 magnet 或 Base64）。
-- 无 torrent 时正式发布必须 `fileSize > 0`，否则 `422` / `EMPTY_RELEASE_CONTENT`。
+- multipart 必填 `torrent`。JSON 必填 `torrentStorageId`。磁力为可选附加，从种子提取；只传磁力返回 `422` / `TORRENT_REQUIRED`。preview 不豁免。
+- `animeIdType` 与 `animeId` 必填（`bgm` / `anilist` / `mal` / `anidb`）。Matcher 只在 [`/api/animes/torrent-match`](/docs/open-api/anime-torrent-match)；不要传伪造的匹配结果。
 - `notes`：Markdown + 原始 HTML，最多 50000 字符，页面直接渲染。
 - `preview=true`：预览链接 10 分钟过期，不进入公开列表。
-- 未带番剧 ID 时服务端跑同一 matcher；不要传伪造的匹配结果。只有 `auto` 才直接绑定。
 - 未传分辨率等字段时，默认 `resolution=1080p`、`format=MKV`、`subtitle=INTERNAL`、`language=["CHS"]`、`version=v1`；最终 `format=MP4` 时字幕默认更倾向 `EMBEDDED`。
 - 同版本已存在返回 `409`，换 `version`。
 
@@ -135,5 +134,5 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 | 403 | 改用含 `releases:publish` 的 Key |
 | 409 | 换 `version`，不要原样重试 |
 | 413 | 种子过大 |
-| 422 | `EMPTY_RELEASE_CONTENT` 等校验失败 |
+| 422 | `TORRENT_REQUIRED`（multipart 未带 `torrent`，或 JSON 未带 `torrentStorageId`） |
 | 429 / 503 | 按 `Retry-After` 退避 |

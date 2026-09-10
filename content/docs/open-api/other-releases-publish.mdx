@@ -6,7 +6,7 @@ description: POST /api/other-releases/publish —— 发布七类其他资源；
 漫画、音乐、RAW、舞台剧、合集、剧场版、其他。要求 `releases:publish`。不混入番剧列表。
 
 <ApiEndpoint method="POST" path="/api/other-releases/publish" auth="鉴权 · releases:publish">
-`category` 与 `title` 必填；`torrent` / `torrentStorageId` / `magnetLink` / `magnetBase64` 至少一个。
+`category` 与 `title` 必填。multipart 必填 `torrent`；JSON 必填 `torrentStorageId`。磁力为可选附加。只传磁力返回 `422` / `TORRENT_REQUIRED`。
 </ApiEndpoint>
 
 <Callout type="warn">
@@ -47,7 +47,7 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 
 - `title` 最长 500 字符。
 - `customTags` 最多 20 个，每个最长 80 字符。别名 `tags`。
-- 无 torrent 时正式发布必须 `fileSize > 0`，否则 `422` / `EMPTY_RELEASE_CONTENT`。
+- multipart 必填 `torrent`。JSON 必填 `torrentStorageId`。磁力为可选附加；只传磁力返回 `422` / `TORRENT_REQUIRED`。
 - Nyaa 代发规则与番剧发布相同：白名单、multipart、Nyaa tracker。漫画翻译常用 `3_2`，无损音乐 `2_1`，RAW / 实拍 `4_4`，动画 RAW `1_4`。
 
 `releaseId` 详情页：`https://anibt.net/other-release/<releaseId>`。
@@ -56,8 +56,9 @@ curl -X POST 'https://anibt.net/api/other-releases/publish' \
 
 | HTTP | 处理 |
 | --- | --- |
-| 400 | 补齐 `category` / `title` / 种子或磁力 |
+| 400 | 补齐 `category` / `title` / 种子或 `torrentStorageId` |
 | 401 | 检查 Bearer / `X-API-Key` |
 | 403 | 改用含 `releases:publish` 的 Key |
 | 404 | `torrentStorageId` 不存在；改用 multipart 上传 |
+| 422 | `TORRENT_REQUIRED`（multipart 未带 `torrent`，或 JSON 未带 `torrentStorageId`） |
 | 429 / 503 | 按 `Retry-After` 退避 |

@@ -6,6 +6,8 @@ description: 功能變更。日期為北京時間（UTC+8）。
 
 ## 2026 年 9 月 10 日
 
+- **Open API 釋出必須帶種子**
+  Open API 釋出番劇和其他類資源都必須帶種子。`POST /api/releases/publish` 與 `POST /api/other-releases/publish`：multipart 傳 `torrent`，或 JSON 傳 `torrentStorageId`。只傳磁力回傳 `422 TORRENT_REQUIRED`。preview 同樣要求。
 - **Fixed RSS 現在使用 60 秒邊緣快取窗口**
   無過濾 fixed RSS 成功回應的邊緣共用快取上限為 60 秒；客戶端仍可使用 `ETag` 和 `304`。
 - **種子匹配回應增加可驗證欄位**
