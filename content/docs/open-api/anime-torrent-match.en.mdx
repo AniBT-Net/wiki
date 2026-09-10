@@ -55,7 +55,7 @@ JSON
 | `unavailable` | Search unavailable; retry later |
 
 
-When `infoHashHex` is supplied, the response also returns `identityKey`, `structure`, `decisionToken`, and `decisionTokenExpiresAt`. The publish API accepts only a valid token bound to that infohash; missing, expired, or mismatched tokens return `422 MATCH_DECISION_TOKEN_INVALID`.
+When `infoHashHex` is supplied, the response also returns `identityKey`, `structure`, `decisionToken`, and `decisionTokenExpiresAt`. The web wizard `POST /api/releases/publish-web` requires `matchDecisionToken`; Open API `POST /api/releases/publish` does not. Missing, expired, or mismatched tokens on the wizard path return `422 MATCH_DECISION_TOKEN_INVALID`.
 
 `candidates` is not an authorization field. A high `matchScore` does not replace `decision.kind="auto"`.
 

@@ -9,7 +9,7 @@ description: Feature changes. Dates are Beijing time (UTC+8).
 - **Fixed RSS now uses a 60-second edge cache window**
   Successful unfiltered fixed RSS responses are shared at the edge for up to 60 seconds; clients can still use `ETag` and `304`.
 - **Torrent matching exposes verifiable decision fields**
-  `/api/animes/torrent-match` may return `identityKey`, `structure`, `decisionToken`, and `decisionTokenExpiresAt`; publishing validates a token bound to the torrent infohash.
+  `/api/animes/torrent-match` may return `identityKey`, `structure`, `decisionToken`, and `decisionTokenExpiresAt`. The web wizard `POST /api/releases/publish-web` validates `matchDecisionToken` bound to the torrent infohash; Open API `POST /api/releases/publish` does not require that token.
 - **Deletion receipts have one completion meaning**
   Only `completed` means the primary record, public read models, caches, and object storage passed the deletion barrier.
 

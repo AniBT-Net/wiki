@@ -6,12 +6,12 @@ description: 功能变更。日期为北京时间（UTC+8）。
 
 ## 2026 年 9 月 10 日
 
-- **固定 RSS 使用 60 秒邊緣快取窗口**
-  無過濾 fixed RSS 成功回應的邊緣共享快取上限為 60 秒；客戶端仍可使用 `ETag` 和 `304`。
-- **種子匹配回應增加可驗證欄位**
-  `/api/animes/torrent-match` 可返回 `identityKey`、`structure`、`decisionToken` 和 `decisionTokenExpiresAt`；發布端會驗證與種子 infohash 綁定的令牌。
-- **刪除回執完成語義收斂**
-  只有 `completed` 才表示主記錄、公開讀模型、快取和物件儲存都已通過刪除屏障。
+- **固定 RSS 使用 60 秒边缘缓存窗口**
+  无过滤 fixed RSS 成功响应的边缘共享缓存上限为 60 秒；客户端仍可使用 `ETag` 和 `304`。
+- **种子匹配响应增加可验证字段**
+  `/api/animes/torrent-match` 可返回 `identityKey`、`structure`、`decisionToken` 和 `decisionTokenExpiresAt`。网站向导 `POST /api/releases/publish-web` 会校验与种子 infohash 绑定的 `matchDecisionToken`；Open API `POST /api/releases/publish` 不要求该令牌。
+- **删除回执完成语义收敛**
+  只有 `completed` 才表示主记录、公开读模型、缓存和对象存储都已通过删除屏障。
 
 
 

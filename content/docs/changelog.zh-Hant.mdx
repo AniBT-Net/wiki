@@ -9,7 +9,7 @@ description: 功能變更。日期為北京時間（UTC+8）。
 - **Fixed RSS 現在使用 60 秒邊緣快取窗口**
   無過濾 fixed RSS 成功回應的邊緣共用快取上限為 60 秒；客戶端仍可使用 `ETag` 和 `304`。
 - **種子匹配回應增加可驗證欄位**
-  `/api/animes/torrent-match` 可回傳 `identityKey`、`structure`、`decisionToken` 和 `decisionTokenExpiresAt`；釋出端會驗證與種子 infohash 綁定的令牌。
+  `/api/animes/torrent-match` 可回傳 `identityKey`、`structure`、`decisionToken` 和 `decisionTokenExpiresAt`。網站嚮導 `POST /api/releases/publish-web` 會校驗與種子 infohash 綁定的 `matchDecisionToken`；Open API `POST /api/releases/publish` 不要求該令牌。
 - **刪除回執完成語義收斂**
   只有 `completed` 才表示主記錄、公開讀模型、快取和物件儲存都已通過刪除屏障。
 

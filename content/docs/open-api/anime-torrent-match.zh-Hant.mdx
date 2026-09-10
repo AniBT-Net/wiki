@@ -55,7 +55,7 @@ JSON
 | `unavailable` | 檢索不可用，稍後重試 |
 
 
-傳入 `infoHashHex` 時，回應還會返回 `identityKey`、`structure`、`decisionToken` 和 `decisionTokenExpiresAt`。釋出介面只接受與該 infohash 綁定的有效令牌；令牌缺失、過期或不相符時回傳 `422 MATCH_DECISION_TOKEN_INVALID`。
+傳入 `infoHashHex` 時，回應還會返回 `identityKey`、`structure`、`decisionToken` 和 `decisionTokenExpiresAt`。網站嚮導 `POST /api/releases/publish-web` 會校驗 `matchDecisionToken`；Open API `POST /api/releases/publish` 不要求該令牌。嚮導路徑上令牌缺失、過期或不相符時回傳 `422 MATCH_DECISION_TOKEN_INVALID`。
 
 `candidates` 不是授權欄位。高 `matchScore` 不能代替 `decision.kind="auto"`。
 
