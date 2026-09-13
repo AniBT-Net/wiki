@@ -8,6 +8,8 @@ description: Feature changes. Dates are Beijing time (UTC+8).
 
 - **Anime, release, and group pages serve a stale copy after the edge TTL**
   Successful `/anime/*`, `/release/*`, `/other-release/*`, `/group/*`, and `/magnets` pages may stay in the CDN for up to 120 seconds. After that window, visitors still get the just-expired page while the edge refreshes in the background. Browsers do not keep the HTML. New publishes usually show on these pages within 120 seconds.
+- **Anime and group page search snippets are more specific**
+  Anime detail descriptions now carry format, year, and episode count (e.g. "TV 动画 · 2026 年 · 全 12 话"); group profile descriptions carry work and release counts. The homepage adds site-level structured data. These only affect search-engine snippets and share cards — page content is unchanged.
 
 ## September 10, 2026
 
