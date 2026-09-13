@@ -4,6 +4,11 @@ title: Changelog
 description: Feature changes. Dates are Beijing time (UTC+8).
 ---
 
+## September 13, 2026
+
+- **Anime, release, and group pages serve a stale copy after the edge TTL**
+  Successful `/anime/*`, `/release/*`, `/other-release/*`, `/group/*`, and `/magnets` pages may stay in the CDN for up to 120 seconds. After that window, visitors still get the just-expired page while the edge refreshes in the background. Browsers do not keep the HTML. New publishes usually show on these pages within 120 seconds.
+
 ## September 10, 2026
 
 - **Group console delete refreshes the list**
