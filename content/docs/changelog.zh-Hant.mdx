@@ -4,6 +4,11 @@ title: 更新日誌
 description: 功能變更。日期為北京時間（UTC+8）。
 ---
 
+## 2026 年 9 月 14 日
+
+- **Open API 可查詢資源的外站同步狀態**
+  具有 `releases:sync:read` 權限的字幕組 API Key 可以透過 `GET /api/releases/{releaseId}/sync-status` 查詢普通資源在 Mikan、ACG.rip、萌番組、ACGNX、動漫花園和 Nyaa 的目前狀態、失敗資訊、外站連結與最近同步歷史。資源只對所屬字幕組可見。
+
 ## 2026 年 9 月 13 日
 
 - **番劇、資源和字幕組頁邊緣快取過期後先出舊頁**

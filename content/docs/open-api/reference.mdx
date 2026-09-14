@@ -17,7 +17,7 @@ description: AniBT JSON 与 RSS 接口的方法、路径、参数和响应。
 | --- | --- |
 | 公开读取 | 无需鉴权 |
 | 字幕组 API Key | `Authorization: Bearer <KEY>`，或 `X-API-Key`。Bearer 优先 |
-| Key scope | `releases:publish`、`releases:delete`，至少选一个 |
+| Key scope | `releases:publish`、`releases:delete`、`releases:sync:read`，至少选一个 |
 | 个人订阅 RSS | 账户后台生成的订阅链接 |
 
 ## 错误
@@ -109,12 +109,25 @@ description: AniBT JSON 与 RSS 接口的方法、路径、参数和响应。
     "createdAt": 1700000000000,
     "apiKeyId": "sgak_xxxxxxxx",
     "apiKeySuffix": "5c5d6fcd",
-    "scopes": ["releases:publish", "releases:delete"]
+    "scopes": ["releases:publish", "releases:delete", "releases:sync:read"]
   }
 }
 ```
 
 仅 `status=active` 可发布。`apiKeySuffix` 不能用于鉴权。
+
+### Release 外站同步状态
+
+<ApiEndpoint method="GET" path="/api/releases/{releaseId}/sync-status" auth="鉴权 · releases:sync:read">
+查询该 API Key 所属字幕组的普通 release 在六个外站的同步状态。
+</ApiEndpoint>
+
+请求只支持 `rel_...` 形式的 `releaseId`，且资源必须属于当前 Key 所属字幕组。不存在、已删除或跨组资源统一返回 `404 NOT_FOUND`。成功响应固定返回 `mikan`、`acgrip`、`bangumi`、`acgnx`、`dmhy`、`nyaa` 六个平台；每站提供当前状态、外站 ID/链接、错误、generation、attempt、时间戳和最近 50 条历史。状态包括 `not_started`、`pending`、`success`、`failed`、`ambiguous`、`deleted`；响应另含 `overall` 汇总和 `historyTruncated`。接口不会返回外站原始响应正文或凭据，响应使用 `Cache-Control: no-store`。
+
+```http
+GET https://anibt.net/api/releases/rel_xxxxxxxx/sync-status
+Authorization: Bearer <KEY>
+```
 
 ### Bangumi 搜索
 

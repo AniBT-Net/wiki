@@ -17,7 +17,7 @@ Rate limits, caching, and 304 details: [Limits](/docs/open-api/limits), [Caching
 | --- | --- |
 | Public reads | No auth |
 | Group API key | `Authorization: Bearer <KEY>`, or `X-API-Key`. Bearer wins |
-| Key scopes | `releases:publish`, `releases:delete`; at least one |
+| Key scopes | `releases:publish`, `releases:delete`, `releases:sync:read`; at least one |
 | Personal RSS | Subscription URL from the account dashboard |
 
 ## Errors
@@ -109,12 +109,25 @@ Group, scopes, and stats for the current key.
     "createdAt": 1700000000000,
     "apiKeyId": "sgak_xxxxxxxx",
     "apiKeySuffix": "5c5d6fcd",
-    "scopes": ["releases:publish", "releases:delete"]
+    "scopes": ["releases:publish", "releases:delete", "releases:sync:read"]
   }
 }
 ```
 
 Only `status=active` can publish. `apiKeySuffix` is not a credential.
+
+### Release external-site sync status
+
+<ApiEndpoint method="GET" path="/api/releases/{releaseId}/sync-status" auth="auth · releases:sync:read">
+Read the external-site sync status for a normal release owned by the current key's subtitle group.
+</ApiEndpoint>
+
+`releaseId` must use the `rel_...` form and belong to the key's group. Missing, deleted, and cross-group releases all return `404 NOT_FOUND`. The response always includes `mikan`, `acgrip`, `bangumi`, `acgnx`, `dmhy`, and `nyaa`; each site includes its current status, external ID/URL, error, generation, attempt, timestamps, and the latest 50 history entries. Statuses are `not_started`, `pending`, `success`, `failed`, `ambiguous`, or `deleted`. The response also includes `overall` and `historyTruncated`. Provider response bodies and credentials are never returned; responses use `Cache-Control: no-store`.
+
+```http
+GET https://anibt.net/api/releases/rel_xxxxxxxx/sync-status
+Authorization: Bearer <KEY>
+```
 
 ### Bangumi search
 

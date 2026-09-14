@@ -4,6 +4,11 @@ title: Changelog
 description: Feature changes. Dates are Beijing time (UTC+8).
 ---
 
+## September 14, 2026
+
+- **Open API exposes external-site sync status**
+  A subtitle-group API key with `releases:sync:read` can call `GET /api/releases/{releaseId}/sync-status` to read the current status, failure details, external links, and recent history for a normal release on Mikan, ACG.rip, Bangumi Moe, ACGNX, DMHY, and Nyaa. Releases remain visible only to their owning group.
+
 ## September 13, 2026
 
 - **Anime, release, and group pages serve a stale copy after the edge TTL**
