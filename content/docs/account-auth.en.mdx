@@ -28,3 +28,9 @@ Codes, CAPTCHA, and third-party sign-in callbacks are one-time. Do not refresh t
 | Forgot password | Use the entry on the sign-in page. Mail is sent in the background; a short delay does not mean failure. |
 
 The site does not provide TOTP / two-factor authentication.
+
+## Sign-in state
+
+Opening the sign-in page while already signed in returns you to the previous page. If the sign-in is no longer valid, the sign-in page stays put instead of bouncing to the home page and back.
+
+After you sign out on another device, this browser may still look signed in for up to about five minutes. Sensitive actions such as changing the password always follow the server session.
