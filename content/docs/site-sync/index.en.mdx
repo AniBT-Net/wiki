@@ -19,3 +19,28 @@ In the group admin at `/groups/<slug>/sync`, save credentials per site. Each sit
 | [Nyaa](/docs/site-sync/nyaa) | Username and password |
 
 Claims are on `/groups/<slug>/claims`, not the sync page.
+
+## Resend old anime releases
+
+<Callout type="warn">
+Group owners, group admins, and site admins can resend releases. A resend submits the content again and may create duplicate posts. Check existing results first.
+</Callout>
+
+<Steps>
+<Step>
+### Find the release
+Open all releases at `/groups/<slug>/releases`, or select an anime to open its release list.
+</Step>
+<Step>
+### View sync status
+Click **Sync** at the end of the release row. The dialog shows current configuration, progress, errors, external links, and recent attempts for Mikan, ACG.rip, Bangumi Moe, ACGNX, and DMHY.
+</Step>
+<Step>
+### Submit a resend
+Choose **Resend** for one site or **Resend to enabled sites**, then confirm. Resends use the group’s current saved settings. Disabled sites, missing credentials, and active sends are skipped.
+</Step>
+</Steps>
+
+Queued and running tasks refresh automatically. Regular members can view progress. The original AniBT release remains; resending does not create a new AniBT release.
+
+Nyaa has a separate **Resend to Nyaa** action. It requires platform proxy access and a tracker check of the original torrent. See [Nyaa proxy publishing](/docs/nyaa-proxy).
