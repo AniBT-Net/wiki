@@ -10,7 +10,7 @@ description: 白名單字幕組可在本站釋出時由平台提交到 Nyaa。
 ## 前提
 
 - 字幕組已加入白名單，否則釋出頁無開關，API 會拒絕。
-- `.torrent` 的 announce 必須包含 `http://nyaa.tracker.wf:7777/announce`。不會自動加入缺少的 tracker；既有 tracker 的排列可調整為 Nyaa 能識別的格式，infohash 不變。
+- `.torrent` 的 announce 必須包含 `http://nyaa.tracker.wf:7777/announce`。代發不改種子。
 - 每次必須選 Nyaa 分類。中文動畫字幕常用 `1_3`。
 - 提交到 Nyaa 的說明最多 20000 字。預設用本站 `notes`，也可單獨填寫。本站 `notes` 仍可更長。
 
@@ -40,26 +40,3 @@ curl -X POST 'https://anibt.net/api/releases/publish' \
 | 帳號 | 字幕組自己的 Nyaa 帳密 | 平台帳號 |
 | 入口 | [站點同步](/docs/site-sync/nyaa) | 本頁 |
 | 條件 | 自備帳號 | 白名單 + Nyaa tracker |
-
-## 補發舊釋出
-
-<Callout type="warn">
-僅字幕組擁有者、字幕組管理員和網站管理員可以操作。原始 `.torrent` 缺少所需 tracker 或無法解析時，補發失敗，不會上傳至 Nyaa。系統不會自動補齊缺少的 tracker。
-</Callout>
-
-<Steps>
-<Step>
-### 開啟補發
-在 `/groups/<slug>/releases` 找到番劇資源，點選行尾的「Nyaa 補發」。先前沒有選擇代發的舊釋出也可使用。
-</Step>
-<Step>
-### 確認代發選項
-檢查分類、合集、重製與說明。既有代發選項會自動帶入，說明可沿用本站簡介或單獨填寫。平台代發維持匿名釋出。
-</Step>
-<Step>
-### 查看結果
-確認補發後，在彈窗查看排隊、同步進度、失敗原因與外站連結。關閉彈窗後可重新開啟查看。
-</Step>
-</Steps>
-
-tracker 缺少時，請使用包含 `http://nyaa.tracker.wf:7777/announce` 的種子重新釋出。僅修改磁力連結或字幕組設定不能取代原始種子檢查。

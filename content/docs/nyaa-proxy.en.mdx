@@ -10,7 +10,7 @@ Apply after 10 cumulative publishes. With fewer than 10, a separate application 
 ## Requirements
 
 - The group is on the allowlist. Otherwise the publish page has no switch, and the API rejects the request.
-- The `.torrent` announce list must include `http://nyaa.tracker.wf:7777/announce`. Missing trackers are not added. Existing tracker placement may be normalized for Nyaa without changing the infohash.
+- The `.torrent` announce list must include `http://nyaa.tracker.wf:7777/announce`. Proxy publishing does not modify the torrent.
 - A Nyaa category is required every time. Chinese anime subtitles commonly use `1_3`.
 - Descriptions sent to Nyaa are limited to 20000 characters. The site `notes` are used by default; a separate description is optional. Site `notes` may still be longer.
 
@@ -40,26 +40,3 @@ Other releases use `/api/other-releases/publish` with the same parameters.
 | Account | The group's own Nyaa credentials | Platform account |
 | Entry | [Site sync](/docs/site-sync/nyaa) | This page |
 | Requirement | Own account | Allowlist + Nyaa tracker |
-
-## Resend an existing release
-
-<Callout type="warn">
-Only group owners, group admins, and site admins can resend. If the original `.torrent` is missing the required tracker or cannot be parsed, the resend fails without uploading to Nyaa. Missing trackers are never added automatically.
-</Callout>
-
-<Steps>
-<Step>
-### Open the resend action
-Find the anime release at `/groups/<slug>/releases` and click **Resend to Nyaa**. Old releases that did not originally request proxy publishing are supported.
-</Step>
-<Step>
-### Check publishing options
-Review the category, complete and remake flags, and description. Existing proxy options are loaded when available. Inherit the AniBT description or write a separate one. Platform proxy uploads remain anonymous.
-</Step>
-<Step>
-### View the result
-After confirming, use the dialog to follow queue and sync progress, errors, and external links. Reopen the dialog later to check the result.
-</Step>
-</Steps>
-
-If the tracker is missing, publish again with a torrent containing `http://nyaa.tracker.wf:7777/announce`. Changing the magnet link or group settings does not replace the original-torrent check.
