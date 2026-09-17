@@ -217,6 +217,10 @@ Anime listed for a season. `bgmId` overrides `season` and cannot be combined wit
 Groups currently releasing a `bgmId`, plus the latest 30 items per group.
 </ApiEndpoint>
 
+Each group’s `publishedEpisodes` is a sorted, deduplicated array of regular episode numbers published for this anime. It covers all public releases, independently of the latest 30 `items`. Numeric batch ranges mark each included episode; specials and fractional episode numbers do not count toward regular-episode progress. The expanded episode arrays across all groups contain at most 10,000 numbers in total; exceeding this limit returns `503 SEARCH_UNAVAILABLE`.
+
+The anime page marks actual episode numbers: publishing episode 12 marks episode 12, while missing episodes remain unmarked. A group is marked Complete only when every regular episode in a known total has been published. An unknown total never implies completion.
+
 <TypeTable
   type={{
     bgmId: { type: 'integer', required: true, description: 'Bangumi subject id' },
@@ -246,6 +250,7 @@ caches according to the endpoint contract. `magnet` may be `null`. `subtitle`:
         "name": "北宇治字幕组",
         "status": "ACTIVE",
         "lastUpdatedAt": 1776624843260,
+        "publishedEpisodes": [1, 2],
         "items": [
           {
             "releaseId": "rel_fItEHE7r1gR1",

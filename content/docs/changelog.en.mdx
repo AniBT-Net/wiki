@@ -6,6 +6,9 @@ description: Feature changes. Dates are Beijing time (UTC+8).
 
 ## September 17, 2026
 
+- **Group publication progress marks actual episodes**
+  Publishing episode 12 marks episode 12. Versions of the same episode count once, and publishing every regular episode marks the series Complete. Earlier episodes are no longer missed when a group has many releases. Each group in `GET /api/anime/groups` now includes the complete `publishedEpisodes` array.
+
 - **Image-host HTML includes image dimensions**
   Copied HTML includes width and height when known. Release notes reserve space for images with dimensions and recognized hosted images, reducing movement as they load. External images without dimensions can still shift the content.
 

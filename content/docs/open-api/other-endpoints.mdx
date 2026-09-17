@@ -60,6 +60,10 @@ https://anibt.net/api/seasons/anime?query=夏日口袋
 某 `bgmId` 正在发布的字幕组，以及每组最近 30 条资源。
 </ApiEndpoint>
 
+每个字幕组的 `publishedEpisodes` 是这部番已发布的正片集号数组，按升序去重，包含全部公开发布记录，不受 `items` 最近 30 条的限制。数字合集会标记对应的每一集；特别篇和小数集号不计入正片进度。 全部字幕组的正片集号展开后合计最多 10,000 个，超过时返回 `503 SEARCH_UNAVAILABLE`。
+
+番剧页按实际集号显示发布标记：发布第 12 集会标记第 12 集，缺集保持空白。已知总集数且正片全部发布后显示「完结」。总集数未知时不判断完结。
+
 ```txt title="示例"
 https://anibt.net/api/anime/groups?bgmId=543360
 ```
