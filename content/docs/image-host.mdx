@@ -5,7 +5,9 @@ description: 在字幕组后台上传图片并复制链接。
 
 入口：`/groups/<slug>/image-host`。仅该组成员可用。单张上限 10 MiB。
 
-上传后可复制直链、BBCode、Markdown、HTML。
+上传后可复制直链、BBCode、Markdown、HTML。图片尺寸已知时，HTML 代码包含 `width` 和 `height`。
+
+发布说明会为带尺寸的图片和已识别的站内图床图片预留空间，减少加载后的正文跳动。没有尺寸信息的外站图片仍可能发生位移。
 
 ## 删除
 

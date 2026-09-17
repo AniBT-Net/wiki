@@ -5,7 +5,9 @@ description: Upload images in the group admin and copy links.
 
 Entry: `/groups/<slug>/image-host`. Members of that group only. 10 MiB per image.
 
-After upload you can copy the direct link, BBCode, Markdown, and HTML.
+After upload you can copy the direct link, BBCode, Markdown, and HTML. When dimensions are known, the HTML includes `width` and `height`.
+
+Release notes reserve space for images with dimensions and recognized hosted images, reducing movement as they load. External images without dimensions can still shift the content.
 
 ## Delete
 
