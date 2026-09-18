@@ -295,7 +295,7 @@ const zhHant: HomeCopy = {
   heroPill: 'AniBT 官方文件',
   heroTitle: '釋出、同步、訂閱，都寫在這裡。',
   heroLead:
-    '字幕組怎麼入駐和釋出，觀眾怎麼用 RSS 自動追番，開發者怎麼呼叫介面。每一篇都對著線上實際行為寫。',
+    '字幕組怎麼入駐和釋出，觀眾怎麼用 RSS 自動追番，開發者怎麼呼叫 API。每一篇都對著線上實際行為寫。',
   heroPrimary: '開始閱讀',
   heroSecondary: '公開 API',
   h1Scale: CJK_H1,
@@ -312,7 +312,7 @@ const zhHant: HomeCopy = {
     toc: ['入駐流程', '郵件範本', '權限開通', '常見問題'],
   },
   statement: [
-    { text: 'AniBT Wiki 寫給三種人：要把資源釋出去的' },
+    { text: 'AniBT Wiki 寫給三種人：要把資源釋出的' },
     { text: '字幕組', accent: true },
     { text: '，想讓下載器自己追番的' },
     { text: '觀眾', accent: true },
@@ -326,7 +326,7 @@ const zhHant: HomeCopy = {
     tag: '試一下',
     command: 'curl https://anibt.net/api/seasons/anime',
     tabs: ['本季番劇', '訂閱一部番', '釋出一條資源'],
-    readNoAuth: '讀介面不用鑑權',
+    readNoAuth: '讀取介面不用鑑權',
     oneFeed: '一部番、一個字幕組，一條 RSS',
     qbSubscribe: 'qBittorrent：開啟 RSS 標籤頁，新建訂閱，貼上上面的位址',
     qbRule: '再建一條下載規則，新一集出來自動開始下',
