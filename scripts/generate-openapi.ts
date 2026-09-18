@@ -1,7 +1,14 @@
 import { generateFiles } from 'fumadocs-openapi';
-import { openapi } from '../lib/openapi';
-import { copyFile, mkdir } from 'node:fs/promises';
+import { createOpenAPI } from 'fumadocs-openapi/server';
+import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+
+const schemaPath = './openapi/anibt.yaml';
+
+const openapi = createOpenAPI({
+  input: [schemaPath],
+  proxyUrl: '/api/proxy',
+});
 
 const localeTitles: Record<
   string,
@@ -263,6 +270,13 @@ await generateFiles({
 });
 
 await mkdir('./public', { recursive: true });
-await copyFile('./openapi/anibt.yaml', './public/openapi.yaml');
+await copyFile(schemaPath, './public/openapi.yaml');
+
+const schemas = await openapi.getSchemas();
+const bundled = schemas[schemaPath]?.bundled;
+if (!bundled) {
+  throw new Error(`missing bundled schema for ${schemaPath}`);
+}
+await writeFile('./openapi/anibt.json', `${JSON.stringify(bundled)}\n`);
 
 console.log('generated OpenAPI docs');

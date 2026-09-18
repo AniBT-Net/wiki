@@ -3,6 +3,8 @@ import { getMDXComponents } from '@/components/mdx';
 import { openapi } from '@/lib/openapi';
 import { source } from '@/lib/source';
 import { notFound } from 'next/navigation';
+
+export const dynamic = 'force-static';
 import {
   DocsBody,
   DocsDescription,
