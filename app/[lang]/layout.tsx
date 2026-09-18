@@ -6,12 +6,12 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://anibt.net'),
+  metadataBase: new URL('https://wiki.anibt.net'),
   title: {
     default: 'AniBT Wiki',
     template: '%s | AniBT Wiki',
   },
-  description: 'AniBT 使用文档与站点同步指南。',
+  description: 'AniBT 使用文档、站点同步与公开 API。',
   manifest: '/site.webmanifest',
   icons: {
     icon: [
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'AniBT Wiki',
-    description: 'AniBT 使用文档与站点同步指南。',
+    description: 'AniBT 使用文档、站点同步与公开 API。',
     images: ['/og-image.webp'],
   },
 };

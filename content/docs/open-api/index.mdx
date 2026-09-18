@@ -1,6 +1,6 @@
 ---
 title: 总览
-description: AniBT 公开 RSS 与 JSON API 入口。契约见接口参考。
+description: AniBT 公开 RSS 与 JSON API 入口。接口页由 OpenAPI 生成，可在页面上试请求。
 ---
 
 AniBT 对外提供 **RSS**（订阅）和 **JSON**（程序读取）。公开读取可匿名，并按各端点缓存合同支持 **HTTP 304**。发布、删除、`/me` 必须带字幕组 API Key，响应不缓存。
@@ -9,7 +9,7 @@ AniBT 对外提供 **RSS**（订阅）和 **JSON**（程序读取）。公开读
   生产 base URL 为 `https://anibt.net`。只使用文档列出的主站路径。
 </Callout>
 
-请求、参数、响应见 [接口参考](/docs/open-api/reference)。
+鉴权、错误码见 [接口约定](/docs/open-api/reference)。每个接口页带 Try-it。机器可读契约：[openapi.yaml](/openapi.yaml)。
 
 qBittorrent / Sonarr / FlexGet 等 RSS 客户端无需额外配置。缓存、限流、排障仍在对应页。
 

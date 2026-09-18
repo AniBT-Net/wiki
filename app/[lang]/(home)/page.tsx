@@ -1,11 +1,25 @@
-import { localizedPath } from '@/lib/i18n';
-import { permanentRedirect } from 'next/navigation';
+import { HomePage } from '@/components/home-page';
+import { homeCopy } from '@/lib/home';
+import type { Metadata } from 'next';
 
-export default async function HomePage({
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  const t = homeCopy(lang);
+
+  return {
+    description: t.htmlDescription,
+  };
+}
+
+export default async function Page({
   params,
 }: {
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  permanentRedirect(localizedPath(lang, '/docs'));
+  return <HomePage locale={lang} />;
 }

@@ -1,20 +1,20 @@
 ---
 title: Overview
-description: Entry point for AniBT public RSS and JSON APIs. See the API reference for the contract.
+description: AniBT public RSS and JSON API. Endpoint pages are generated from OpenAPI and include Try-it.
 ---
 
-AniBT exposes **RSS** (subscribe) and **JSON** (programmatic reads). Public reads are anonymous and support **HTTP 304** per each route’s cache contract. Publish, delete, and `/me` require a group API key and are not cached.
+AniBT exposes **RSS** (subscribe) and **JSON** (programmatic reads). Public reads are anonymous, follow each endpoint's cache contract, and support **HTTP 304**. Publish, delete, and `/me` require a subtitle-group API Key and are not cached.
 
 <Callout type="warn">
-  Production base URL is `https://anibt.net`. Use only the main-site paths listed in the docs.
+  The production base URL is `https://anibt.net`. Use only the main-site paths listed in these docs.
 </Callout>
 
-Methods, parameters, and responses: [API reference](/docs/open-api/reference).
+Auth and error codes are in [API conventions](/docs/open-api/reference). Each endpoint page has Try-it. Machine-readable spec: [openapi.yaml](/openapi.yaml).
 
-qBittorrent / Sonarr / FlexGet need no extra RSS setup. Caching, limits, and troubleshooting stay on their own pages.
+qBittorrent / Sonarr / FlexGet need no extra RSS setup. Caching, rate limits, and troubleshooting stay on their own pages.
 
 ## Stability
 
-- Paths and query parameters will not change incompatibly; new parameters are additive.
-- Published `slug` values are kept stable when possible.
+- Paths and query parameters do not change incompatibly; new parameters are additive.
+- Keep `slug` stable once published.
 - Internal primary keys are not part of the public contract; always use `slug`.

@@ -1,4 +1,6 @@
+import { OpenAPIPage } from '@/components/api-page';
 import { getMDXComponents } from '@/components/mdx';
+import { openapi } from '@/lib/openapi';
 import { source } from '@/lib/source';
 import { notFound } from 'next/navigation';
 import {
@@ -25,7 +27,22 @@ export default async function Page({
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
-        <MDX components={getMDXComponents()} />
+        <MDX
+          components={getMDXComponents({
+            OpenAPIPage: async (props) => (
+              <OpenAPIPage
+                {...(await openapi.preloadOpenAPIPage(page))}
+                {...props}
+              />
+            ),
+            APIPage: async (props) => (
+              <OpenAPIPage
+                {...(await openapi.preloadOpenAPIPage(page))}
+                {...props}
+              />
+            ),
+          })}
+        />
       </DocsBody>
     </DocsPage>
   );

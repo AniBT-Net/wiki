@@ -1,6 +1,10 @@
 # AniBT Wiki
 
-AniBT 的 Fumadocs 文档站点。
+AniBT 的 Fumadocs 文档站点。公开 API 页由 `openapi/anibt.yaml` 生成。
+
+```bash
+pnpm gen:openapi
+```
 
 ## 开发
 

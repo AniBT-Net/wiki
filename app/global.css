@@ -1,11 +1,46 @@
 @import 'tailwindcss';
-@import 'fumadocs-ui/css/catppuccin.css';
+@import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+@import 'fumadocs-openapi/css/preset.css';
 
-#nd-docs-layout {
-  --fd-layout-width: 100vw;
+@theme {
+  --color-fd-background: #fffbfc;
+  --color-fd-foreground: #3a1020;
+  --color-fd-muted: #f7eef2;
+  --color-fd-muted-foreground: #8a6072;
+  --color-fd-popover: #fffbfc;
+  --color-fd-popover-foreground: #3a1020;
+  --color-fd-card: #fffbfc;
+  --color-fd-card-foreground: #3a1020;
+  --color-fd-border: #e4d2da;
+  --color-fd-primary: #c4295f;
+  --color-fd-primary-foreground: #fff;
+  --color-fd-secondary: #f7eef2;
+  --color-fd-secondary-foreground: #3a1020;
+  --color-fd-accent: #fbe4ec;
+  --color-fd-accent-foreground: #c4295f;
+  --color-fd-ring: #c4295f;
 }
 
-#nd-docs-layout #nd-page {
-  max-width: none;
+.dark {
+  --color-fd-background: #17101a;
+  --color-fd-foreground: #f6eef1;
+  --color-fd-muted: #231a25;
+  --color-fd-muted-foreground: #ad91a4;
+  --color-fd-popover: #231a25;
+  --color-fd-popover-foreground: #f6eef1;
+  --color-fd-card: #231a25;
+  --color-fd-card-foreground: #f6eef1;
+  --color-fd-border: #3d2e3f;
+  --color-fd-primary: #f48fb0;
+  --color-fd-primary-foreground: #1a0d14;
+  --color-fd-secondary: #231a25;
+  --color-fd-secondary-foreground: #f6eef1;
+  --color-fd-accent: #3a2030;
+  --color-fd-accent-foreground: #f48fb0;
+  --color-fd-ring: #f48fb0;
+}
+
+#nd-docs-layout {
+  --fd-layout-width: 1400px;
 }
