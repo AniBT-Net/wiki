@@ -499,6 +499,7 @@
 }
 .wk .pn.scene {
   border-radius: 20px;
+  background: var(--sky-bg);
 }
 
 /* 试一下 */
