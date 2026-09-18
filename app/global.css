@@ -22,6 +22,41 @@
   --color-fd-ring: #c4295f;
 }
 
+/* AniBT 首页场景与面板色板（明） */
+:root {
+  --canvas: #fffbfc;
+  --deep: #f7eef2;
+  --deep2: #efe1e7;
+  --ink: #3a1020;
+  --ink2: #7a4a5c;
+  --ink3: #8a6072;
+  --line: #efe1e7;
+  --line2: #e4d2da;
+  --accent: #c4295f;
+  --accent-ink: #fff;
+  --mark: #f0789c;
+  --wash: #fbe4ec;
+  --code: #2b1420;
+  --code-ink: #f6eef1;
+  --code-dim: #ad91a4;
+  --code-key: #f48fb0;
+  --code-str: #9fd8a8;
+  --code-url: #7cc6f2;
+  --card-shadow: 0 14px 34px rgba(58, 16, 32, 0.2);
+  --sky-bg: #d3ecff;
+  --sky-band: #e6f5ff;
+  --cloud: #ffffff;
+  --cloud-sh: #bfe0fb;
+  --sea1: #8fcdf7;
+  --sea2: #5fb2ee;
+  --foam: #ffffff;
+  --spark: #ffc94d;
+  --heart: #f0789c;
+  --p-sky: #dff1ff;
+  --p-cream: #fff3d6;
+  --p-mint: #dff5ea;
+}
+
 .dark {
   --color-fd-background: #17101a;
   --color-fd-foreground: #f6eef1;
@@ -39,6 +74,39 @@
   --color-fd-accent: #3a2030;
   --color-fd-accent-foreground: #f48fb0;
   --color-fd-ring: #f48fb0;
+
+  /* AniBT 首页场景与面板色板（暗） */
+  --canvas: #17101a;
+  --deep: #231a25;
+  --deep2: #302431;
+  --ink: #f6eef1;
+  --ink2: #c9a8b8;
+  --ink3: #ad91a4;
+  --line: #302431;
+  --line2: #3d2e3f;
+  --accent: #f48fb0;
+  --accent-ink: #1a0d14;
+  --mark: #f48fb0;
+  --wash: #3a2030;
+  --code: #0f0a11;
+  --code-ink: #f6eef1;
+  --code-dim: #ad91a4;
+  --code-key: #f48fb0;
+  --code-str: #9fd8a8;
+  --code-url: #7cc6f2;
+  --card-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+  --sky-bg: #1c2346;
+  --sky-band: #232c57;
+  --cloud: #3b4577;
+  --cloud-sh: #2b3360;
+  --sea1: #2b4788;
+  --sea2: #1f356c;
+  --foam: #9db8ee;
+  --spark: #ffe08a;
+  --heart: #f48fb0;
+  --p-sky: #1b2a3a;
+  --p-cream: #33291a;
+  --p-mint: #19302a;
 }
 
 #nd-docs-layout {

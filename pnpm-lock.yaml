@@ -8,6 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@fontsource-variable/noto-sans-sc':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/m-plus-1-code':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/zen-maru-gothic':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fumadocs/language':
         specifier: ^0.2.2
         version: 0.2.2(67x6s7zrjs6wr25ahimudqeaua)
@@ -883,6 +892,15 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
+
+  '@fontsource-variable/noto-sans-sc@5.3.0':
+    resolution: {integrity: sha512-lNar1dF7Ik/lHNPo/7JWG0TolXY29LtsqYgMvEysooZ5bsO9uH4shJmRrwyJ3PjyTPljhpMJEK0jDuLSU4vJ1w==}
+
+  '@fontsource/m-plus-1-code@5.3.0':
+    resolution: {integrity: sha512-v7X67lQVj7HUg0ihRaDfq4EIKm64NWIuorzzFCxYixkBsmNePZiMta7ga6JML1b2z74M9F+giu2eH4Lb4hXTrg==}
+
+  '@fontsource/zen-maru-gothic@5.3.0':
+    resolution: {integrity: sha512-BuigfmzszMR3AOyAMSocQZ9bEq9o5sGCMOC/laI4TMpba1/KB1jxsdNFXWMUz02wVPd4vAVuMhsV00AQizFj3w==}
 
   '@fuma-translate/react@1.0.2':
     resolution: {integrity: sha512-uOiOtBx3nRXR8Nu1GzBf1tApgF1FErDBTHxRIAQeyQdyOoZbrNRN6H4kDCWObY4qyGeGbHydG0DHzgeUgFDMIw==}
@@ -4865,6 +4883,12 @@ snapshots:
       react-dom: 19.2.8(react@19.2.8)
 
   '@floating-ui/utils@0.2.12': {}
+
+  '@fontsource-variable/noto-sans-sc@5.3.0': {}
+
+  '@fontsource/m-plus-1-code@5.3.0': {}
+
+  '@fontsource/zen-maru-gothic@5.3.0': {}
 
   '@fuma-translate/react@1.0.2(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:

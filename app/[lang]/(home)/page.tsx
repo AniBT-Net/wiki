@@ -1,6 +1,12 @@
 import { HomePage } from '@/components/home-page';
+import { recentChangelog } from '@/lib/changelog';
 import { homeCopy } from '@/lib/home';
+import { i18n } from '@/lib/i18n';
 import type { Metadata } from 'next';
+
+export function generateStaticParams() {
+  return i18n.languages.map((lang) => ({ lang }));
+}
 
 export async function generateMetadata({
   params,
@@ -11,6 +17,7 @@ export async function generateMetadata({
   const t = homeCopy(lang);
 
   return {
+    title: t.htmlTitle,
     description: t.htmlDescription,
   };
 }
@@ -21,5 +28,7 @@ export default async function Page({
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  return <HomePage locale={lang} />;
+  const changelog = await recentChangelog(lang);
+
+  return <HomePage locale={lang} changelog={changelog} />;
 }
