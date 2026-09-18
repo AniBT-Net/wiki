@@ -1,13 +1,15 @@
-/* AniBT Wiki 首页：场景、面板与自托管字体。仅首页路由加载。 */
+/* AniBT Wiki 首页：场景、面板与自托管拉丁字体。仅首页路由加载。
+   CJK 走系统字体。Noto Sans SC Variable 会打进 100+ 个 unicode-range 文件，
+   Cloudflare Worker 构建容易因字体文件数量失败。 */
 @import '@fontsource/zen-maru-gothic/latin-700.css';
 @import '@fontsource/zen-maru-gothic/latin-900.css';
-@import '@fontsource-variable/noto-sans-sc/wght.css';
 @import '@fontsource/m-plus-1-code/latin-500.css';
 
 .wk {
-  --display: 'Zen Maru Gothic', 'Noto Sans SC Variable', 'PingFang SC',
-    'Microsoft YaHei', sans-serif;
-  --sans: 'Noto Sans SC Variable', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --display: 'Zen Maru Gothic', 'PingFang SC', 'Hiragino Sans GB',
+    'Noto Sans SC', 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+  --sans: 'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC',
+    'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
   --mono: 'M PLUS 1 Code', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --h1-min: 19px;
   --h1-vw: 3.55vw;
@@ -21,6 +23,8 @@
   font-size: 15px;
   line-height: 1.65;
   color: var(--ink);
+  padding-top: 0.75rem;
+  padding-bottom: 1rem;
 }
 
 .wk h1,
@@ -55,10 +59,12 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.wk .wrap {
-  max-width: 1240px;
+.wk .wrap,
+.wk .wframe {
+  width: 100%;
+  max-width: var(--fd-layout-width, 1400px);
   margin-inline: auto;
-  padding-inline: clamp(16px, 3vw, 24px);
+  padding-inline: 1rem;
 }
 .wk .ell {
   white-space: nowrap;
@@ -249,9 +255,6 @@
 }
 
 /* ——— 首屏 ——— */
-.wk .wframe {
-  padding: 12px 12px 0;
-}
 .wk .whero {
   padding: 60px clamp(20px, 5vw, 72px) 0;
   display: grid;
@@ -809,7 +812,6 @@
 
 /* 收尾场景 */
 .wk .endp {
-  margin: 0 12px 12px;
   padding: 64px clamp(20px, 5vw, 72px) 120px;
   --sea-h: 64px;
   display: flex;
@@ -869,6 +871,10 @@
 }
 
 @media (max-width: 599px) {
+  .wk .whero h1,
+  .wk .endp h2 {
+    white-space: normal;
+  }
   .wk .clog {
     grid-template-columns: minmax(0, 1fr);
     gap: 2px;

@@ -10,6 +10,7 @@ import { RssBuilder } from '@/components/home/rss-builder';
 import { TryPanel } from '@/components/home/try-panel';
 import type { ChangelogEntry } from '@/lib/changelog';
 import { homeCopy, homeHref } from '@/lib/home';
+import { llmMarkdownPath } from '@/lib/i18n';
 import { ChevronRight, Search } from 'lucide-react';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
@@ -248,13 +249,18 @@ export function HomePage({
             <h3>{t.llmPanel.title}</h3>
             <p>{t.llmPanel.lead}</p>
             <div className="llm">
-              {t.llmPanel.lines.map((line) => (
-                <span key={line.path}>
-                  <i># {line.comment}</i>
-                  <br />
-                  <a href={line.path}>{line.path}</a>
-                </span>
-              ))}
+              {t.llmPanel.lines.map((line) => {
+                const path =
+                  line.path === 'page-md' ? llmMarkdownPath(locale) : line.path;
+
+                return (
+                  <span key={path}>
+                    <i># {line.comment}</i>
+                    <br />
+                    <a href={path}>{path}</a>
+                  </span>
+                );
+              })}
             </div>
             <div className="grow" style={{ minHeight: 14 }} />
             <Link className="btn sm" href={homeHref(locale, '/docs/llm')}>
@@ -313,22 +319,24 @@ export function HomePage({
         </div>
       </div>
 
-      <section className="scene endp">
-        <Deco items={CLOSING_DECO} />
-        <Sea />
-        <h2>{t.closing.title}</h2>
-        <div className="cta">
-          <Link className="btn pri" href={homeHref(locale, '/docs')}>
-            {t.closing.primary}
-          </Link>
-          <Link className="btn" href={homeHref(locale, '/docs/apply')}>
-            {t.closing.apply}
-          </Link>
-          <Link className="btn" href={homeHref(locale, '/docs/contact')}>
-            {t.closing.contact}
-          </Link>
-        </div>
-      </section>
+      <div className="wframe">
+        <section className="scene endp">
+          <Deco items={CLOSING_DECO} />
+          <Sea />
+          <h2>{t.closing.title}</h2>
+          <div className="cta">
+            <Link className="btn pri" href={homeHref(locale, '/docs')}>
+              {t.closing.primary}
+            </Link>
+            <Link className="btn" href={homeHref(locale, '/docs/apply')}>
+              {t.closing.apply}
+            </Link>
+            <Link className="btn" href={homeHref(locale, '/docs/contact')}>
+              {t.closing.contact}
+            </Link>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

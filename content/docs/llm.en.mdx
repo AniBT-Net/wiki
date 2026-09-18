@@ -1,50 +1,53 @@
 ---
 title: LLM & Agent Integration
-description: Learn about AniBT plain-text Markdown endpoints, the llms.txt standard, and machine-readable OpenAPI specifications.
+description: Plain-text Wiki endpoints, llms.txt, and the OpenAPI contract for models and agents.
 ---
 
-AniBT provides lightweight plain-text and structured endpoints optimized for modern LLMs, autonomous agents, and RAG pipelines.
+The Wiki exposes plain-text endpoints. Models and agents can fetch Markdown directly instead of parsing HTML.
 
 <Callout type="info">
-  AniBT documentation is licensed under **CC-BY-SA 4.0**. When using or citing these docs in AI tools and datasets, please attribute and link to the source pages.
+  Docs are licensed **CC-BY-SA 4.0**. Keep the original page URL when you quote or redistribute.
 </Callout>
 
-## Dedicated LLM Text Endpoints
-
-Bypass HTML DOM parsing entirely by consuming text endpoints pre-compiled for language models:
+## Text endpoints
 
 <TypeTable
   type={{
     '/llms.txt': {
       type: 'GET',
-      description: 'Site overview, structural outline, and core documentation index adhering to the llms.txt standard.',
+      description: 'Site summary, outline, and core doc index (llms.txt).',
     },
     '/llms-full.txt': {
       type: 'GET',
-      description: 'Full concatenation of all Simplified Chinese documentation in plain text for context windows and embeddings.',
+      description: 'All Simplified Chinese docs concatenated as one plain-text file.',
     },
     '/llms-full.en.txt': {
       type: 'GET',
-      description: 'Full concatenation of all English documentation in plain text.',
+      description: 'All English docs concatenated as one plain-text file.',
     },
     '/openapi.yaml': {
       type: 'GET',
-      description: 'Standard OpenAPI 3.1 specification for the AniBT REST API, ready to import into Agent tool registries.',
+      description: 'OpenAPI 3.1 contract for the AniBT public API.',
     },
     '/docs/<slug>.md': {
       type: 'GET',
-      description: 'Raw Markdown content for any individual doc page (add /en or /zh-Hant prefix for other locales).',
+      description:
+        'Raw Markdown for one doc page. Example: /docs/apply.md. Prefix /en or /zh-Hant for other locales.',
     },
   }}
 />
 
-## Markdown Content Negotiation on HTML Pages
+```bash title="Fetch one doc as Markdown"
+curl 'https://wiki.anibt.net/docs/apply.md'
+```
 
-Public HTML pages on AniBT (such as anime overview and release detail pages) support HTTP content negotiation. Supplying `Accept: text/markdown` returns clean Markdown text directly:
+## Markdown on the main site
 
-```bash title="Request anime page as Markdown"
+Public HTML pages on AniBT (anime pages, release details) support content negotiation. Send `Accept: text/markdown` to get cleaned Markdown.
+
+```bash title="Request an anime page as Markdown"
 curl 'https://anibt.net/anime/638151' \
   -H 'Accept: text/markdown'
 ```
 
-- **Note**: This content negotiation is active for public HTML pages. JSON API endpoints, RSS feeds, and static assets remain in their native formats.
+JSON APIs, RSS feeds, and static files keep their own formats.

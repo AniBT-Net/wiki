@@ -13,7 +13,6 @@
     "gen:openapi": "tsx scripts/generate-openapi.ts"
   },
   "dependencies": {
-    "@fontsource-variable/noto-sans-sc": "^5.3.0",
     "@fontsource/m-plus-1-code": "^5.3.0",
     "@fontsource/zen-maru-gothic": "^5.3.0",
     "@fumadocs/language": "^0.2.2",

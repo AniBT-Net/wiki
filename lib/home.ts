@@ -34,7 +34,8 @@ export type KitTile = {
 
 export type LlmLine = {
   comment: string;
-  path: string;
+  /** `'page-md'` 会换成当前语言的 `/docs/apply.md`。 */
+  path: string | 'page-md';
 };
 
 export type HomeCopy = {
@@ -231,7 +232,7 @@ const zhCN: HomeCopy = {
     lines: [
       { comment: '索引', path: '/llms.txt' },
       { comment: '全文', path: '/llms-full.txt' },
-      { comment: '单篇 Markdown', path: '/llms.mdx/zh-CN/docs/apply' },
+      { comment: '单篇 Markdown', path: 'page-md' },
       { comment: '接口契约', path: '/openapi.yaml' },
     ],
     cta: 'LLM 对接说明',
@@ -380,7 +381,7 @@ const zhHant: HomeCopy = {
     lines: [
       { comment: '索引', path: '/llms.txt' },
       { comment: '全文（簡體）', path: '/llms-full.txt' },
-      { comment: '單篇 Markdown', path: '/llms.mdx/zh-Hant/docs/apply' },
+      { comment: '單篇 Markdown', path: 'page-md' },
       { comment: '介面契約', path: '/openapi.yaml' },
     ],
     cta: 'LLM 對接說明',
@@ -533,7 +534,7 @@ const en: HomeCopy = {
     lines: [
       { comment: 'index', path: '/llms.txt' },
       { comment: 'full text', path: '/llms-full.en.txt' },
-      { comment: 'one page as Markdown', path: '/llms.mdx/en/docs/apply' },
+      { comment: 'one page as Markdown', path: 'page-md' },
       { comment: 'API contract', path: '/openapi.yaml' },
     ],
     cta: 'LLM integration',

@@ -2,7 +2,7 @@ import '../global.css';
 import { translations } from '@/lib/layout.shared';
 import { i18nProvider } from 'fumadocs-ui/i18n';
 import { RootProvider } from 'fumadocs-ui/provider/next';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
@@ -26,6 +26,13 @@ export const metadata: Metadata = {
     description: 'AniBT 使用文档、站点同步与公开 API。',
     images: ['/og-image.webp'],
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fffbfc' },
+    { media: '(prefers-color-scheme: dark)', color: '#17101a' },
+  ],
 };
 
 export default async function RootLayout({

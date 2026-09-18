@@ -1,4 +1,5 @@
 import './home.css';
+import { HomeFooter } from '@/components/home-footer';
 import { baseOptions } from '@/lib/layout.shared';
 import { HomeLayout } from 'fumadocs-ui/layouts/home';
 import type { ReactNode } from 'react';
@@ -12,5 +13,10 @@ export default async function Layout({
 }) {
   const { lang } = await params;
 
-  return <HomeLayout {...baseOptions(lang)}>{children}</HomeLayout>;
+  return (
+    <HomeLayout {...baseOptions(lang)}>
+      {children}
+      <HomeFooter locale={lang} />
+    </HomeLayout>
+  );
 }

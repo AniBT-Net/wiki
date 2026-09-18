@@ -1,7 +1,7 @@
 import { HomePage } from '@/components/home-page';
 import { recentChangelog } from '@/lib/changelog';
 import { homeCopy } from '@/lib/home';
-import { i18n } from '@/lib/i18n';
+import { i18n, languageAlternates, localizedPath } from '@/lib/i18n';
 import type { Metadata } from 'next';
 
 export function generateStaticParams() {
@@ -19,6 +19,10 @@ export async function generateMetadata({
   return {
     title: t.htmlTitle,
     description: t.htmlDescription,
+    alternates: {
+      canonical: localizedPath(lang, '/'),
+      languages: languageAlternates('/'),
+    },
   };
 }
 

@@ -1,50 +1,53 @@
 ---
 title: LLM 與 Agent 對接
-description: 瞭解 AniBT 提供的純文字 Markdown 入口、llms.txt 規範與 OpenAPI 機器可讀契約。
+description: Wiki 的純文字入口、llms.txt 與 OpenAPI 契約，給模型和 Agent 直接讀。
 ---
 
-AniBT 為現代 AI 模型、自主 Agent 與檢索增強生成（RAG）工具提供了輕量、無損的純文字與結構化數據接入規範。
+Wiki 提供純文字入口。模型和 Agent 可以直接拉取 Markdown，不必解析 HTML。
 
 <Callout type="info">
-  AniBT 文件內容基於 **CC-BY-SA 4.0** 協議開放。AI 應用與爬蟲在引用或衍生分發時，請保留原始頁面連結。
+  文件以 **CC-BY-SA 4.0** 釋出。引用或再分發時保留原始頁面連結。
 </Callout>
 
-## 專用 LLM 文字索引入口
-
-無需費力解析複雜的 HTML DOM 樹，直接使用 AniBT 為大語言模型預先產生的標準文字端點：
+## 文字入口
 
 <TypeTable
   type={{
     '/llms.txt': {
       type: 'GET',
-      description: '符合 llms.txt 規範的站點摘要、結構大綱與核心文件索引。',
+      description: '站點摘要、目錄和核心文件索引（llms.txt 規範）。',
     },
     '/llms-full.txt': {
       type: 'GET',
-      description: '全站 Wiki 文件的簡體中文完整拼接純文字，便於全量嵌入與上下文餵入。',
+      description: '全站簡體文件拼接成一份純文字。',
     },
     '/llms-full.en.txt': {
       type: 'GET',
-      description: '全站 Wiki 文件的英文完整拼接純文字。',
+      description: '全站英文文件拼接成一份純文字。',
     },
     '/openapi.yaml': {
       type: 'GET',
-      description: 'AniBT 公開 API 的標準 OpenAPI 3.1 契約定義，可直接匯入 Agent 工具庫。',
+      description: 'AniBT 公開 API 的 OpenAPI 3.1 契約。',
     },
     '/docs/<slug>.md': {
       type: 'GET',
-      description: '取得任意單篇文件的原始 Markdown 內容（英文加 /en 前綴，繁體加 /zh-Hant）。',
+      description:
+        '單篇文件的原始 Markdown。例：/docs/apply.md。英文加 /en 前綴，繁體加 /zh-Hant。',
     },
   }}
 />
 
-## 公開頁面的 Markdown 內容協商
+```bash title="取單篇文件 Markdown"
+curl 'https://wiki.anibt.net/docs/apply.md'
+```
 
-AniBT 主站的公開 HTML 詳情頁（如番劇頁、釋出詳情頁）支援 HTTP 內容協商。請求標頭中攜帶 `Accept: text/markdown` 即可直接取得清洗後的 Markdown 正文，避免冗餘樣式與腳本干擾：
+## 主站頁面的 Markdown
 
-```bash title="請求番劇頁純 Markdown 內容"
+AniBT 主站公開 HTML 頁（番劇頁、釋出詳情）支援內容協商。請求標頭帶 `Accept: text/markdown` 會回傳清洗後的 Markdown。
+
+```bash title="請求番劇頁 Markdown"
 curl 'https://anibt.net/anime/638151' \
   -H 'Accept: text/markdown'
 ```
 
-- **說明**：該協商機制僅對公開 HTML 頁面生效；JSON 介面、RSS feed 與靜態媒體檔案保持各自原始協議格式回傳。
+JSON 介面、RSS 和靜態檔案仍按各自格式回傳。

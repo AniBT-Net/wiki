@@ -38,7 +38,7 @@ export const translations = i18n
     },
   });
 
-const labels = {
+export const navLabels = {
   'zh-CN': {
     docs: '文档',
     api: '公开 API',
@@ -58,7 +58,7 @@ const labels = {
 
 export function baseOptions(locale: string): BaseLayoutProps {
   const t =
-    labels[locale as keyof typeof labels] ?? labels['zh-CN'];
+    navLabels[locale as keyof typeof navLabels] ?? navLabels['zh-CN'];
 
   return {
     i18n: true,
