@@ -1,42 +1,106 @@
 ---
-title: Nyaa 代发
-description: 白名单字幕组可在本站发布时由平台提交到 Nyaa。
+title: Nyaa 平台代发
+description: 了解 AniBT 针对白名单字幕组提供的 Nyaa 平台代发服务、申请门槛、制种要求与发布方式。
 ---
 
-平台使用站点 Nyaa 账号代发。字幕组需在白名单内。**发布超分资源者不能申请。**
+AniBT 为通过审核的优质字幕组提供「Nyaa 平台代发」服务，帮助团队解决因网络环境受限或海外账号门槛无法稳定分发资源的问题。
 
-累计发布满 10 次可申请。未满 10 次可单独申请，须提交自制资源图片和 BT 发布记录截图。
+<Callout type="warn">
+  **质量红线**：严禁任何利用 AI 超分辨率模型放大、画质劣化、低码率重编码的资源申请代发。一经发现存在滥用或违规分发，平台将永久吊销该字幕组的代发资格。
+</Callout>
 
-## 前提
+## 代发与自建同步的区别
 
-- 字幕组已加入白名单，否则发布页无开关，API 会拒绝。
-- `.torrent` 的 announce 必须包含 `http://nyaa.tracker.wf:7777/announce`。代发不改种子。
-- 每次必须选 Nyaa 分类。中文动画字幕常用 `1_3`。
-- 提交到 Nyaa 的说明最多 20000 字。默认用本站 `notes`，也可单独填写。本站 `notes` 仍可更长。
+在配置前，请明确「Nyaa 同步」与「Nyaa 代发」的适用场景：
 
-分类代码见 [发布资源](/docs/open-api/releases-publish#nyaa-代发字段和分类)。
+<TypeTable
+  type={{
+    '账号来源': {
+      type: '对比',
+      description: '【同步】使用字幕组自备的 Nyaa 账号密码；【代发】使用 AniBT 平台的官方认证 Nyaa 账号。',
+    },
+    '网络要求': {
+      type: '对比',
+      description: '【同步】需要字幕组自备能稳定登录 Nyaa 的凭据；【代发】由平台海外集群执行提交，无需自备节点。',
+    },
+    '门槛限制': {
+      type: '对比',
+      description: '【同步】自备账号即可在后台配置；【代发】需要向官方申请并列入安全白名单。',
+    },
+  }}
+/>
 
-## 发布
+## 白名单申请条件
 
-网页：`/groups/<slug>/publish`，打开 Nyaa 代发并选分类。
+字幕组需满足以下条件之一，由团队负责人向 [support@anibt.net](mailto:support@anibt.net) 提交申请：
 
-API：`nyaa=true`，`nyaaCategory` 必填。须 multipart 上传种子。
+1. **常规申请**：在 AniBT 累计正常发布满 10 次且无违规记录。
+2. **免除发布次数申请**：新入驻字幕组若急需海外分发，可在邮件中附带在动漫花园、蜜柑计划或其他知名 BT 站的近期发布记录截图，以及自制片源的制作证据。
 
-```bash
-curl -X POST 'https://anibt.net/api/releases/publish' \
-  -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  -F 'torrent=@release.torrent' \
-  -F 'title=[字幕组] 作品名 - 01 [1080p][CHS]' \
-  -F 'nyaa=true' \
-  -F 'nyaaCategory=1_3'
-```
+## 发布前制种要求
 
-其他类资源用 `/api/other-releases/publish`，同样参数。
+代发由后台任务根据你上传的原始种子直接提交至 Nyaa，平台不会修改种子文件的任何内容。因此，制种时必须满足以下技术规范：
 
-## 与 Nyaa 同步的区别
+<Steps>
+  <Step>
+    ### 种子必须包含 Nyaa 官方 Tracker
+    制种时，种子文件中的 `announce` 或 `announce-list` 必须包含以下地址：
 
-| | 同步 | 代发 |
-| --- | --- | --- |
-| 账号 | 字幕组自己的 Nyaa 账密 | 平台账号 |
-| 入口 | [站点同步](/docs/site-sync/nyaa) | 本页 |
-| 条件 | 自备账号 | 白名单 + Nyaa tracker |
+    ```txt title="Nyaa 官方 Tracker"
+    http://nyaa.tracker.wf:7777/announce
+    ```
+
+    若种子中缺少该 Tracker，发布请求会被平台安全屏障直接拒绝。
+  </Step>
+
+  <Step>
+    ### 明确选择 Nyaa 分类
+    提交发布时必须指定合规的分类代码。对于绝大多数中文翻译的日本动画资源，请选择 `1_3`（Anime - Non-English-translated）。常用分类代码见下方表格。
+  </Step>
+
+  <Step>
+    ### 发布说明字数规范
+    Nyaa 限制单篇发布说明长度不超过 20,000 字符。系统默认使用本站填写的 Notes，若本站说明较长，可在发布界面单独填写一份精简版 Nyaa 说明。
+  </Step>
+</Steps>
+
+## 常见 Nyaa 分类代码速查
+
+<TypeTable
+  type={{
+    '1_1': { type: '代码', description: 'Anime - AMV（动画音乐混剪视频）' },
+    '1_2': { type: '代码', description: 'Anime - English-translated（英文字幕动画）' },
+    '1_3': { type: '代码', description: 'Anime - Non-English-translated（非英文字幕动画，绝大多数中文组选用此项）' },
+    '1_4': { type: '代码', description: 'Anime - Raw（生肉/无字幕片源）' },
+    '2_1': { type: '代码', description: 'Audio - Lossless（无损音乐/广播剧）' },
+    '2_2': { type: '代码', description: 'Audio - Lossy（有损音频）' },
+  }}
+/>
+
+## 发布操作方式
+
+<Tabs items={['网页控制台发布', 'API 自动化发布']}>
+  <Tab value="网页控制台发布">
+    白名单字幕组成员打开 `/groups/<slug>/publish`，页面中会自动出现「代发至 Nyaa」选项：
+
+    1. 勾选 **代发至 Nyaa**。
+    2. 下拉菜单选择对应的分类（如 `1_3 - Non-English-translated`）。
+    3. 根据需要勾选 `Complete`（完结归档合集）或 `Remake`（修复重压版）。
+    4. 提交发布即可。
+  </Tab>
+
+  <Tab value="API 自动化发布">
+    调用 `POST /api/releases/publish` 时，必须使用 `multipart/form-data` 格式上传原始 `.torrent` 文件，并携带代发参数：
+
+    ```bash title="API 携带 Nyaa 代发示例"
+    curl -X POST 'https://anibt.net/api/releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -F 'torrent=@release.torrent' \
+      -F 'title=[字幕组] 动画名称 - 01 [1080p][CHS]' \
+      -F 'animeIdType=bgm' \
+      -F 'animeId=12345' \
+      -F 'nyaa=true' \
+      -F 'nyaaCategory=1_3'
+    ```
+  </Tab>
+</Tabs>

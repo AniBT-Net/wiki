@@ -1,18 +1,84 @@
 ---
 title: 開始使用
-description: 字幕組釋出，以及 RSS / JSON 取數。
+description: 歡迎使用 AniBT。瞭解如何作為字幕組釋出資源、作為觀眾下載追番，或作為開發者使用開放 API。
 ---
 
-AniBT 是面向動漫的公共 BitTorrent 追蹤器。
+AniBT 是面向動漫愛好者與字幕組的 BT 資源分發、索引與檢索平台。
 
-- **字幕組**：申請入駐 → 站點同步 → Tracker → 釋出。
-- **使用者 / 開發者**：匿名用 RSS 和 JSON；個人訂閱或釋出需要帳號。
+<Callout type="info">
+  瀏覽全站資源、複製磁力、下載種子以及使用公開 RSS 均無需登入。僅當需要收藏番劇、管理個人訂閱，或以字幕組成員身份釋出資源時，才需要註冊帳號。
+</Callout>
+
+無論你是製作動漫資源的字幕組、尋找高畫質動畫的追番黨，還是開發相關工具的技術愛好者，都可以在這裡找到對應的使用方式。
+
+## 快速導覽
+
+<Tabs items={['字幕組工作流程', '觀眾與追番', '開發者與 API']}>
+  <Tab value="字幕組工作流程">
+    字幕組在 AniBT 提交一次釋出後，後台會自動同步至全網各大 BT 站，並享有專屬圖床與 Tracker 通訊支援。
+
+    <Steps>
+      <Step>
+        ### 申請入駐
+        註冊主站帳號後，透過郵件提交字幕組資訊與以往作品證明，取得字幕組管理後台權限與釋出專屬 slug。詳見 [申請入駐](/zh-Hant/docs/apply)。
+      </Step>
+      <Step>
+        ### 設定外站同步與 Tracker
+        在字幕組控制台填入各 BT 分發站（萌番組、蜜柑計畫、動漫花園、末日站、ACG.rip、Nyaa）的憑據。製種時加入 [AniBT Tracker](/zh-Hant/docs/tracker)。詳見 [站點同步](/zh-Hant/docs/site-sync)。
+      </Step>
+      <Step>
+        ### 釋出資源
+        在後台頁面直接上傳種子製種釋出，或透過 [釋出 API](/zh-Hant/docs/open-api/releases-publish) 接入自動化壓制釋出腳本。支援釋出前效果預覽與專屬圖床配圖。
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="觀眾與追番">
+    無需繁瑣註冊，開箱即用的動漫搜尋與全自動追番體驗。
+
+    <Steps>
+      <Step>
+        ### 檢索與下載
+        在主站首頁或番劇頁面，可透過動畫中文名、日文原名、Bangumi 詞條或字幕組標籤精準檢索。每個資源詳情頁均提供磁力連結與標準 `.torrent` 檔案下載。
+      </Step>
+      <Step>
+        ### RSS 訂閱追番
+        複製番劇專屬的 [RSS 訂閱連結](/zh-Hant/docs/open-api/rss-anime)，填入 qBittorrent、Sonarr 或 FlexGet 等下載工具。新集數釋出後，下載工具會自動拉取種子並開始下載。
+      </Step>
+      <Step>
+        ### 個人訂閱管理（可選）
+        註冊登入後，可以在番劇頁面點選「關注追番」。系統會將你關注的所有番劇聚合產生一份私有專屬 RSS，只需新增一個訂閱連結即可追蹤整季新番。
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="開發者與 API">
+    全站數據公開透明，提供規範的 REST API 與標準 RSS 輸出。
+
+    <Steps>
+      <Step>
+        ### 探索公開端點
+        所有讀取介面無需申請 Token 或設定鑑權，涵蓋番劇查詢、搜尋召回、字幕組目錄與最新磁力聚合。詳見 [開放 API 總覽](/zh-Hant/docs/open-api)。
+      </Step>
+      <Step>
+        ### 啟用 304 條件請求
+        公開端點全面支援弱 ETag 與 `If-None-Match`。在輪詢腳本中攜帶 ETag 即可在內容無變更時直接回傳 `304 Not Modified`，大幅節省網路開銷。詳見 [HTTP 快取](/zh-Hant/docs/open-api/caching)。
+      </Step>
+      <Step>
+        ### 字幕組自動化接入
+        持有字幕組 API Key 的開發者可透過 REST API 完成資源釋出、元數據核對、外站同步狀態追蹤與資源撤回。
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## 常用文件索引
 
 <Cards>
-  <Card title="申請入駐" href="/docs/apply" description="support@anibt.net" />
-  <Card title="站點同步" href="/docs/site-sync" description="Nyaa、萌番組、末日站、Mikan、ACG.rip" />
-  <Card title="Tracker" href="/docs/tracker" description="https://tracker.anibt.net/announce" />
-  <Card title="公開 API" href="/docs/open-api" description="JSON、RSS 與 Try-it" />
-  <Card title="帳號" href="/docs/account-auth" description="註冊、登入、找回密碼" />
-  <Card title="聯絡" href="/docs/contact" description="support@anibt.net" />
+  <Card title="申請入駐" href="/zh-Hant/docs/apply" description="字幕組入駐申請流程、郵件範本與開通說明" />
+  <Card title="站點同步" href="/zh-Hant/docs/site-sync" description="一處釋出、六站同步：萌番組、蜜柑、花園、末日、ACG.rip、Nyaa" />
+  <Card title="Tracker 規範" href="/zh-Hant/docs/tracker" description="官方 announce 位址與製種白名單通訊機制" />
+  <Card title="開放 API" href="/zh-Hant/docs/open-api" description="公開端點規範、互動式 Try-it 控制台與 OpenAPI 契約" />
+  <Card title="帳號與認證" href="/zh-Hant/docs/account-auth" description="信箱驗證碼註冊、登入狀態與安全提示" />
+  <Card title="字幕組圖床" href="/zh-Hant/docs/image-host" description="釋出截圖託管、防抖外鏈格式與檔案生命週期" />
 </Cards>

@@ -1,22 +1,97 @@
 ---
-title: Subtitle group image host
-description: Upload images in the group admin and copy links.
+title: Fansub Image Hosting
+description: Learn about the AniBT dedicated image host for fansub groups, anti-shift HTML outputs, formatting rules, and image lifecycle management.
 ---
 
-Entry: `/groups/<slug>/image-host`. Members of that group only. 10 MiB per image.
+AniBT provides dedicated image hosting for approved fansub groups to host high-resolution posters, episode preview screenshots, and release notes graphics.
 
-After upload you can copy the direct link, BBCode, Markdown, and HTML. When dimensions are known, the HTML includes `width` and `height`.
+<Callout type="info">
+  The image host is accessible to fansub group members at `/groups/<slug>/image-host`. It supports all common image formats up to **10 MiB** per file.
+</Callout>
 
-Release notes reserve space for images with dimensions and recognized hosted images, reducing movement as they load. External images without dimensions can still shift the content.
+## Uploading and Preventing Layout Shifts (CLS)
 
-## Delete
+When release notes reference external images lacking dimension attributes, visitors with slower network connections will experience sudden content jumping (Cumulative Layout Shift, CLS) once images load.
 
-The uploader, group owner / administrators, or a site administrator can delete. The request returns `202`. Repeated deletes of the same image reuse the same operation.
+The AniBT image host automatically extracts the exact pixel dimensions upon upload and includes explicit `width` and `height` attributes when generating HTML snippets. The release notes renderer reserves the exact aspect-ratio space in advance, completely eliminating layout jumping.
 
-| Status | Meaning |
-| --- | --- |
-| `queued` | Accepted |
-| `complete` | On-site short links and `i.anibt.net` direct links return `404` / `410` |
-| `failed` | Failed |
+## How to Use
 
-`complete` does not include browser caches or third-party reposts.
+<Steps>
+  <Step>
+    ### Open Image Host Console
+    Sign in and navigate to your fansub console at `/groups/<slug>/image-host`. Drag and drop your image files into the upload zone.
+  </Step>
+
+  <Step>
+    ### Choose Your Preferred Embed Format
+    After upload, click to copy snippets in your desired format:
+
+    <Tabs items={['HTML (Anti-shift)', 'Markdown', 'BBCode', 'Direct URL']}>
+      <Tab value="HTML (Anti-shift)">
+        Includes explicit width and height attributes to prevent layout jumping across AniBT and HTML-enabled release sites:
+
+        ```html title="Anti-shift HTML snippet"
+        <img src="https://i.anibt.net/images/xxx.webp" width="1920" height="1080" alt="Preview" />
+        ```
+      </Tab>
+
+      <Tab value="Markdown">
+        Standard Markdown format suitable for GitHub-style editors:
+
+        ```markdown title="Markdown snippet"
+        ![Preview](https://i.anibt.net/images/xxx.webp)
+        ```
+      </Tab>
+
+      <Tab value="BBCode">
+        Suitable for legacy bulletin board BT trackers like DMHY and ACGNX:
+
+        ```txt title="BBCode snippet"
+        [img]https://i.anibt.net/images/xxx.webp[/img]
+        ```
+      </Tab>
+
+      <Tab value="Direct URL">
+        Standard HTTPS direct asset URL on the `i.anibt.net` domain:
+
+        ```txt title="Direct Image URL"
+        https://i.anibt.net/images/xxx.webp
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### Paste into Release Notes
+    Paste the copied snippet into the "Notes" field of your release draft, and click "Preview" to inspect the rendered layout before publishing.
+  </Step>
+</Steps>
+
+## Image Deletion and Lifecycle
+
+If an image was uploaded by mistake or is no longer needed, the original uploader, group owner, or group admin can delete it from the image host list.
+
+- Initiating deletion returns `202 Accepted` and enqueues the removal task.
+- Status states:
+
+<TypeTable
+  type={{
+    'queued': {
+      type: 'Status',
+      description: 'Deletion request accepted; pending purging from storage and edge caches.',
+    },
+    'complete': {
+      type: 'Status',
+      description: 'Purging finished; internal shortlinks and direct i.anibt.net links return 404 / 410.',
+    },
+    'failed': {
+      type: 'Status',
+      description: 'Purging failed due to temporary network or storage synchronization issues; retry available.',
+    },
+  }}
+/>
+
+<Callout type="warn">
+  Deletion only applies to AniBT-managed hosts and direct links. Local browser caches on visitor devices or copies re-hosted by third parties are not affected by this action.
+</Callout>

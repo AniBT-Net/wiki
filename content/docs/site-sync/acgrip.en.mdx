@@ -1,24 +1,56 @@
 ---
 title: ACG.rip Sync
-description: Enter the API Token.
+description: Learn how to retrieve your ACG.rip API Token, trim protocol prefixes, and configure automated cross-publishing.
 ---
 
-Copy the **API Token** from Personal Settings on the dashboard.
+Configuring ACG.rip sync automatically submits your anime releases from AniBT to the ACG.rip distribution site in the background.
 
 <Callout type="warn">
-  Do not include the `tpx://acg.rip/` prefix — only the string after it.
+  When copying the token, **do not include the `tpx://acg.rip/` prefix**; copy only the trailing token string.
 </Callout>
+
+## Setup Workflow
 
 <Steps>
   <Step>
-    ### Copy the token
-
-    Visit [https://acg.rip](https://acg.rip). Top-right **avatar** → **Dashboard**. In **Personal Settings** on the right, the second item is **API Token**. Paste it into AniBT and save.
+    ### Open ACG.rip Dashboard
+    Log in to [acg.rip](https://acg.rip) and click the **user profile icon** in the top-right navbar to enter the **Dashboard**.
 
     ![ACG.rip API Token](/images/site-sync/acgrip-api-token.webp)
+  </Step>
 
-    ```txt title="API Token format"
+  <Step>
+    ### Copy API Token
+    Under the **Personal Settings** section on the right side, find the second item: **API Token**. Copy the string, ensuring it matches the standard format without prefixes or surrounding spaces:
+
+    ```txt title="Standard API Token Format"
     7723-pxxxxxxxxxxxxxxp
     ```
   </Step>
+
+  <Step>
+    ### Save and Test in AniBT
+    Visit your fansub console at `/groups/<slug>/sync`, enter the token in the ACG.rip card, click **Save**, and execute **Test Connection**.
+  </Step>
 </Steps>
+
+## Field Descriptions
+
+<TypeTable
+  type={{
+    'API Token': {
+      type: 'string',
+      description: 'Release token from ACG.rip dashboard settings (omitting the tpx://acg.rip/ prefix).',
+    },
+  }}
+/>
+
+## Diagnostic Results
+
+<TypeTable
+  type={{
+    'Connection Successful': { type: 'Normal', description: 'Token verified successfully. Ready to cross-publish.' },
+    'Token Format Error': { type: 'Error', description: 'Check whether the tpx:// prefix was accidentally included or contains spaces.' },
+    'Authentication Expired': { type: 'Error', description: 'Token has been reset or account is restricted. Regenerate on ACG.rip.' },
+  }}
+/>

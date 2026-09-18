@@ -1,24 +1,59 @@
 ---
 title: DMHY Sync
-description: Enter username, password, and subtitle group name, then save and test.
+description: Learn how to configure publisher credentials, bind your fansub group name, and test connections for DMHY synchronization.
 ---
 
-Requires a DMHY username, password, and the subtitle group name used on DMHY.
+Configuring DMHY sync automatically submits your anime releases from AniBT to the DMHY platform in the background.
+
+<Callout type="warn">
+  The DMHY account used must already have release privileges. The fansub group name must exactly match the team registered to that account in the DMHY backend, otherwise submissions will be rejected.
+</Callout>
+
+## Setup Workflow
 
 <Steps>
   <Step>
-    ### Edit credentials
-
-    In sync settings, select **Edit credentials**.
+    ### Open DMHY Sync Settings
+    Navigate to your fansub console at `/groups/<slug>/sync`, find the **DMHY Sync** card, toggle it on, and click **Edit Credentials**.
   </Step>
-  <Step>
-    ### Fill in
 
-    Enter the username, password, and the subtitle group name used on DMHY.
+  <Step>
+    ### Enter Credentials & Group Name
+    Enter your DMHY publisher username, password, and the exact fansub group name registered on DMHY.
   </Step>
-  <Step>
-    ### Save and test
 
-    Select **Save**, then **Test connection**.
+  <Step>
+    ### Save and Test Connection
+    Click **Save**, then click **Test Connection**. This test verifies login credentials and fansub group assignment without posting any placeholder torrents.
   </Step>
 </Steps>
+
+## Field Descriptions
+
+<TypeTable
+  type={{
+    'Username': {
+      type: 'string',
+      description: 'DMHY publisher login username or account name.',
+    },
+    'Password': {
+      type: 'string',
+      description: 'DMHY account password.',
+    },
+    'Fansub Group Name': {
+      type: 'string',
+      description: 'Exact fansub team name registered in the DMHY system (case- and script-sensitive).',
+    },
+  }}
+/>
+
+## Diagnostic Results
+
+<TypeTable
+  type={{
+    'Connection Successful': { type: 'Normal', description: 'Account verified and group membership confirmed. Ready to publish.' },
+    'Login Failed': { type: 'Error', description: 'Invalid username or password. Verify credentials on the DMHY website.' },
+    'Group Not Matched': { type: 'Error', description: 'The fansub group name does not match the team assigned to your DMHY account.' },
+    'Connection Timeout': { type: 'Network', description: 'DMHY server timed out or is undergoing maintenance. Retry later.' },
+  }}
+/>

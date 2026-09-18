@@ -1,42 +1,106 @@
 ---
-title: Nyaa proxy publishing
-description: Allowlisted subtitle groups can have the platform submit to Nyaa when publishing here.
+title: Nyaa Platform Proxy
+description: Learn about the AniBT Nyaa upload proxy for whitelisted fansub groups, eligibility criteria, torrent creation rules, and publishing workflows.
 ---
 
-The platform submits with the site Nyaa account. The subtitle group must be allowlisted. **Groups that publish supersampled releases cannot apply.**
+AniBT provides an official "Nyaa Platform Proxy" service for verified fansub groups to resolve regional network restrictions and account barriers when distributing anime releases overseas.
 
-Apply after 10 cumulative publishes. With fewer than 10, a separate application is allowed; submit images of self-made releases and screenshots of BT publishing records.
+<Callout type="warn">
+  **Strict Quality Standard**: AI-upscaled, visually degraded, or low-bitrate re-encoded releases are strictly prohibited from applying for or using this proxy service. Any abuse will result in permanent revocation of proxy privileges.
+</Callout>
 
-## Requirements
+## Direct Sync vs. Platform Proxy
 
-- The group is on the allowlist. Otherwise the publish page has no switch, and the API rejects the request.
-- The `.torrent` announce list must include `http://nyaa.tracker.wf:7777/announce`. Proxy publishing does not modify the torrent.
-- A Nyaa category is required every time. Chinese anime subtitles commonly use `1_3`.
-- Descriptions sent to Nyaa are limited to 20000 characters. The site `notes` are used by default; a separate description is optional. Site `notes` may still be longer.
+Understand the differences between direct Nyaa sync and platform proxy before configuring:
 
-Category codes: [Publish a release](/docs/open-api/releases-publish#nyaa-proxy-fields-and-categories).
+<TypeTable
+  type={{
+    'Account Source': {
+      type: 'Comparison',
+      description: '[Sync] Uses the fansub group\'s own Nyaa credentials; [Proxy] Uses AniBT\'s official verified platform account.',
+    },
+    'Network Routing': {
+      type: 'Comparison',
+      description: '[Sync] Requires your team to maintain stable access to Nyaa; [Proxy] Handled completely by AniBT\'s background workers.',
+    },
+    'Eligibility': {
+      type: 'Comparison',
+      description: '[Sync] Available to any team with credentials; [Proxy] Requires manual whitelist approval by admins.',
+    },
+  }}
+/>
 
-## Publish
+## Whitelist Application Criteria
 
-Web: `/groups/<slug>/publish`. Turn on Nyaa proxy publishing and pick a category.
+Teams meeting either of the following criteria may apply by contacting [support@anibt.net](mailto:support@anibt.net):
 
-API: `nyaa=true`; `nyaaCategory` is required. Upload the torrent as multipart.
+1. **Standard Path**: At least 10 successful, compliant releases published on AniBT.
+2. **Accelerated Path**: New fansub groups needing immediate international distribution can submit recent release links from other major BT trackers (e.g., DMHY, Mikan) alongside proof of original fansub production.
 
-```bash
-curl -X POST 'https://anibt.net/api/releases/publish' \
-  -H 'Authorization: Bearer <YOUR_API_KEY>' \
-  -F 'torrent=@release.torrent' \
-  -F 'title=[Group] Title - 01 [1080p][CHS]' \
-  -F 'nyaa=true' \
-  -F 'nyaaCategory=1_3'
-```
+## Torrent Creation Requirements
 
-Other releases use `/api/other-releases/publish` with the same parameters.
+Platform proxy submits your original `.torrent` file directly to Nyaa without altering any bytes. Therefore, your torrent file must adhere to these technical rules:
 
-## Difference from Nyaa sync
+<Steps>
+  <Step>
+    ### Include the Official Nyaa Tracker
+    When generating the `.torrent`, its `announce` or `announce-list` must include:
 
-| | Sync | Proxy |
-| --- | --- | --- |
-| Account | The group's own Nyaa credentials | Platform account |
-| Entry | [Site sync](/docs/site-sync/nyaa) | This page |
-| Requirement | Own account | Allowlist + Nyaa tracker |
+    ```txt title="Nyaa Official Tracker"
+    http://nyaa.tracker.wf:7777/announce
+    ```
+
+    Torrents lacking this announce address will be rejected immediately by our ingestion guards.
+  </Step>
+
+  <Step>
+    ### Specify Valid Nyaa Category
+    You must provide an appropriate category code. For most non-English translated anime, choose `1_3` (Anime - Non-English-translated). See the table below for standard codes.
+  </Step>
+
+  <Step>
+    ### Respect Release Notes Limits
+    Nyaa limits release descriptions to 20,000 characters. By default, AniBT sends your release notes; if your notes exceed this length, enter a concise version in the designated Nyaa description field.
+  </Step>
+</Steps>
+
+## Standard Nyaa Category Codes
+
+<TypeTable
+  type={{
+    '1_1': { type: 'Code', description: 'Anime - AMV (Anime Music Videos)' },
+    '1_2': { type: 'Code', description: 'Anime - English-translated' },
+    '1_3': { type: 'Code', description: 'Anime - Non-English-translated (Default for non-English fansubs)' },
+    '1_4': { type: 'Code', description: 'Anime - Raw' },
+    '2_1': { type: 'Code', description: 'Audio - Lossless' },
+    '2_2': { type: 'Code', description: 'Audio - Lossy' },
+  }}
+/>
+
+## Publishing Methods
+
+<Tabs items={['Web Console', 'REST API']}>
+  <Tab value="Web Console">
+    Whitelisted group members opening `/groups/<slug>/publish` will see the "Proxy to Nyaa" toggle:
+
+    1. Check **Proxy to Nyaa**.
+    2. Select the category (e.g., `1_3 - Non-English-translated`).
+    3. Optionally mark `Complete` (batch/series completion) or `Remake`.
+    4. Submit your release.
+  </Tab>
+
+  <Tab value="REST API">
+    Call `POST /api/releases/publish` using `multipart/form-data` with the `.torrent` file and proxy flags:
+
+    ```bash title="REST API with Nyaa Proxy"
+    curl -X POST 'https://anibt.net/api/releases/publish' \
+      -H 'Authorization: Bearer <YOUR_API_KEY>' \
+      -F 'torrent=@release.torrent' \
+      -F 'title=[Fansub] Series Title - 01 [1080p][CHS]' \
+      -F 'animeIdType=bgm' \
+      -F 'animeId=12345' \
+      -F 'nyaa=true' \
+      -F 'nyaaCategory=1_3'
+    ```
+  </Tab>
+</Tabs>

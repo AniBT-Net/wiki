@@ -1,26 +1,83 @@
 ---
-title: 除錯與常見問題
-description: 接入失敗時怎麼處理。
+title: 排障與常見問題
+description: 解決接入 AniBT API 與 RSS 過程中的常見狀態碼、欄位報錯與偵錯方法。
 ---
 
-```bash title="看 RSS"
-curl -s 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&limit=3' \
-  | grep -E '<title>|<pubDate>'
-```
+在接入 AniBT 開放 API 或設定 RSS 自動化腳本時，如遇到異常回應或數據不符合預期，可參考本指南快速定位排查。
 
-```bash title="查 slug"
-curl -s https://anibt.net/api/subtitle-groups \
-  | jq '.data[] | {name, slug}'
-```
+<Callout type="info">
+  **快速定位秘訣**：所有非 2xx 的 API 回應均會附帶 `requestId` 欄位（回應標頭中亦有 `X-Request-ID`）。向平台管理員報告問題時，附帶該 ID 能在系統日誌中秒級定位原因。
+</Callout>
 
-| 現象 | 做什麼 |
-| --- | --- |
-| 用了 `organizationId` | 第三方一律用 `slug` |
-| `If-Modified-Since` 無效 | 用 `If-None-Match`。兩個條件頭同時發時只看 ETag |
-| RSS 回傳 `308` / `400` / `403` / `429` | `308`：跟隨並儲存最終 URL（常見於 `limit=100`、相容別名）。`400`：`limit` 必須是單個 `1..100` 整數；`q` / `search` 只能一個值，不能空、不能含控制字元、最多 160 UTF-8 bytes。`403`：生產邊緣可能先攔截非法 `limit`。`429`：按 `Retry-After` 退避，不要立刻重試 |
-| `episode=5` 對不上 | `episode` 是數字精確匹配，`episodeKey` 是字串原樣匹配。合集用 `episodeKey=BATCH` |
-| 釋出 `200` 但 RSS 沒有 | `200` 只表示已寫入。用 `releaseId` 核對詳情頁或 RSS 正文。再等客戶端輪詢間隔 |
-| 只傳磁力或未帶種子釋出 | 回傳 `422` `TORRENT_REQUIRED`。multipart 傳 `torrent`，或 JSON 傳 `torrentStorageId` |
-| DELETE 回傳 `202` | 輪詢 `GET /api/releases/{releaseId}/deletion`，直到 `completed` |
-| Key 有效但刪除 `403` | 缺 `releases:delete`。用 [`/me`](/docs/open-api/me) 查 `scopes` |
-| `completed` 後 Nyaa / Mikan 還在 | 不召回外站、Tracker、已下載檔案和本地快取 |
+## 常用排錯偵錯指令
+
+在排查問題時，建議先使用 `curl` 隔離排查，排除客戶端軟體自身的設定干擾：
+
+<Tabs items={['檢查 RSS 回應', '查詢字幕組 Slug', '核驗 API Key 身份']}>
+  <Tab value="檢查 RSS 回應">
+    直接檢視回傳的最新番劇標題與釋出時間戳記：
+
+    ```bash title="快速抓取 RSS 內容摘要"
+    curl -s 'https://anibt.net/rss/anime.xml?bgmId=543360&limit=3' \
+      | grep -E '<title>|<pubDate>|<enclosure'
+    ```
+  </Tab>
+
+  <Tab value="查詢字幕組 Slug">
+    取得全站字幕組的標準 `slug` 標識列表：
+
+    ```bash title="列出字幕組名稱與對應 slug"
+    curl -s https://anibt.net/api/subtitle-groups \
+      | jq '.data[] | {name, slug}'
+    ```
+  </Tab>
+
+  <Tab value="核驗 API Key 身份">
+    自檢目前 API Key 綁定的字幕組名稱、所屬 slug 與具備的權限 scopes：
+
+    ```bash title="自檢 API Key 身份"
+    curl -s https://anibt.net/api/subtitle-groups/me \
+      -H "Authorization: Bearer <YOUR_API_KEY>" \
+      | jq .
+    ```
+  </Tab>
+</Tabs>
+
+## 異常現象與處理對照表
+
+<TypeTable
+  type={{
+    '使用了內部主鍵報錯': {
+      type: '參數',
+      description: 'API 端點與 RSS 過濾一律使用穩定的 slug（如 kirara-fantasia）或 bgmId，請勿傳入內部資料庫主鍵。',
+    },
+    '304 快取未生效': {
+      type: '快取',
+      description: '請優先使用 If-None-Match 傳遞上次回應的 ETag。若同時發送了 If-Modified-Since，伺服端以 ETag 為準。',
+    },
+    'RSS 回傳 308 重新導向': {
+      type: 'URL 規範',
+      description: '請求使用了過時的相容路徑或顯式傳入了無意義的 limit=100。請將客戶端設定更新為重新導向的目標規範 URL。',
+    },
+    '釋出成功但 RSS 未更新': {
+      type: '時延',
+      description: '釋出回傳 200 表示主記錄已入庫，通常數秒至一兩分鐘內全網同步。請先用 releaseId 造訪詳情頁核實，並等待客戶端輪詢週期。',
+    },
+    '釋出報 TORRENT_REQUIRED': {
+      type: '必填項',
+      description: '釋出番劇必須附帶種子。multipart 請求必須上傳 torrent 種子檔案，JSON 請求必須提供已存種子的 torrentStorageId。',
+    },
+    '刪除回傳 202 Accepted': {
+      type: '非同步任務',
+      description: '刪除操作屬於非同步處理。請以 2 秒間隔輪詢 GET /api/releases/{releaseId}/deletion，直至回傳 state 為 completed。',
+    },
+    '刪除介面回傳 403': {
+      type: '權限不足',
+      description: 'API Key 有效但未勾選 releases:delete 權限。請在字幕組後台重新頒發包含該 scope 的 Key。',
+    },
+    '刪除後外站依然存在': {
+      type: '邊界說明',
+      description: 'AniBT 撤回刪除僅作用於本站庫表、Tracker 通訊與公開 RSS，無法召回已被第三方 BT 站（如 Nyaa、蜜柑）轉存的數據。',
+    },
+  }}
+/>

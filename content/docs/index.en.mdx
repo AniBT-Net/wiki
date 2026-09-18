@@ -1,18 +1,84 @@
 ---
-title: Getting started
-description: Subtitle-group publishing, and RSS / JSON data access.
+title: Getting Started
+description: Welcome to AniBT. Learn how to publish releases as a fansub group, download and automate episode tracking as an anime fan, or integrate with our open APIs.
 ---
 
-AniBT is a public BitTorrent tracker for anime.
+AniBT is a BitTorrent distribution, indexing, and search platform designed for anime fans and fansub groups.
 
-- **Subtitle groups**: apply for admission → site sync → Tracker → publish.
-- **Users / developers**: use RSS and JSON anonymously; an account is required for personal subscriptions or publishing.
+<Callout type="info">
+  Browsing resources, copying magnet links, downloading `.torrent` files, and using public RSS feeds do not require an account. Registration is only needed if you want to follow anime, manage personal subscriptions, or publish releases as a fansub group member.
+</Callout>
+
+Whether you are a fansub team distributing releases, an anime fan looking for high-quality torrents, or a developer building ACG tools, you will find relevant guides here.
+
+## Quick Navigation
+
+<Tabs items={['Fansub Workflow', 'Anime Fans & Tracking', 'Developers & API']}>
+  <Tab value="Fansub Workflow">
+    Submit a release once on AniBT, and the system automatically dispatches it to major BT sites, with dedicated screenshot hosting and tracker communication.
+
+    <Steps>
+      <Step>
+        ### Apply for Onboarding
+        Register an account on AniBT, then submit your group details and release portfolio via email to obtain publisher permissions and a dedicated slug. See [Fansub Onboarding](/en/docs/apply).
+      </Step>
+      <Step>
+        ### Configure Site Sync and Tracker
+        Fill in credentials for connected BT platforms (Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, Nyaa) in the group console. Include the [AniBT Tracker](/en/docs/tracker) when creating torrents. See [Site Sync](/en/docs/site-sync).
+      </Step>
+      <Step>
+        ### Publish Releases
+        Upload torrents directly via the web dashboard, or integrate your encoding pipelines using the [Release API](/en/docs/open-api/releases-publish). Supports pre-publish preview and dedicated image hosting.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="Anime Fans & Tracking">
+    Enjoy seamless anime searching and automated episode tracking without registration hurdles.
+
+    <Steps>
+      <Step>
+        ### Search and Download
+        Search anime titles by Chinese, Japanese, Bangumi subject ID, or fansub group tags. Each release detail page offers magnet links and standard `.torrent` downloads.
+      </Step>
+      <Step>
+        ### Track via RSS
+        Copy the anime-specific [RSS Feed URL](/en/docs/open-api/rss-anime) into your downloader (e.g., qBittorrent, Sonarr, FlexGet). New episodes will download automatically upon release.
+      </Step>
+      <Step>
+        ### Manage Personal Subscriptions (Optional)
+        After signing in, click "Follow" on anime pages. AniBT merges all your followed series into a single private RSS feed for tracking whole anime seasons in one link.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="Developers & API">
+    All public platform data is accessible through standard REST APIs and compliant RSS feeds.
+
+    <Steps>
+      <Step>
+        ### Explore Public Endpoints
+        Read-only endpoints require no API key or token, providing anime queries, search, fansub directories, and recent magnets. See [Open API Overview](/en/docs/open-api).
+      </Step>
+      <Step>
+        ### Leverage HTTP 304 Caching
+        All public feeds support weak ETags and `If-None-Match`. Include the previous ETag in polling loops to receive `304 Not Modified` when content is unchanged, saving bandwidth. See [HTTP Caching](/en/docs/open-api/caching).
+      </Step>
+      <Step>
+        ### Automate Fansub Releases
+        Developers with a Subtitle Group API Key can automate torrent uploads, metadata matching, external sync inspection, and release withdrawals via REST.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Document Index
 
 <Cards>
-  <Card title="Apply for admission" href="/docs/apply" description="support@anibt.net" />
-  <Card title="Site sync" href="/docs/site-sync" description="Nyaa, Bangumi Moe, ACGNX, Mikan, ACG.rip" />
-  <Card title="Tracker" href="/docs/tracker" description="https://tracker.anibt.net/announce" />
-  <Card title="Open API" href="/docs/open-api" description="JSON, RSS, and Try-it" />
-  <Card title="Account" href="/docs/account-auth" description="Register, sign in, recover password" />
-  <Card title="Contact" href="/docs/contact" description="support@anibt.net" />
+  <Card title="Fansub Onboarding" href="/en/docs/apply" description="Application process, email templates, and publisher privileges" />
+  <Card title="Site Sync" href="/en/docs/site-sync" description="Publish once, sync across Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, and Nyaa" />
+  <Card title="Tracker Rules" href="/en/docs/tracker" description="Official announce address and torrent whitelist policy" />
+  <Card title="Open API" href="/en/docs/open-api" description="API specifications, interactive Try-it console, and OpenAPI contract" />
+  <Card title="Account & Auth" href="/en/docs/account-auth" description="Email OTP sign-up, sign-in state, and security guidance" />
+  <Card title="Image Host" href="/en/docs/image-host" description="Screenshot hosting, anti-shift HTML tags, and file lifecycle" />
 </Cards>

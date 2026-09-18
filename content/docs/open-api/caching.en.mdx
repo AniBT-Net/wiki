@@ -1,34 +1,51 @@
 ---
-title: HTTP caching & 304
-description: Public reads use If-None-Match. Unchanged bodies return 304. Poll interval ≥ 5 minutes.
+title: HTTP Caching & 304 Validation
+description: Learn about the AniBT weak ETag caching mechanism, how to use If-None-Match to save bandwidth, and prevent rate limits.
 ---
 
-Public RSS and JSON support conditional requests. Writes, deletes, `/me`, and personal subscriptions are not cached.
-
-Successful public JSON responses use `max-age=0` in browsers so they revalidate;
-the edge uses the endpoint's `s-maxage` and stale windows. `/api/anime/groups`
-keeps its existing JSON, `ETag`, `HEAD`, and conditional `304` behavior. When the
-public read model is temporarily unavailable, the response is `503
-SEARCH_UNAVAILABLE` with `Retry-After` and `no-store`; failures are never written
-to the shared cache.
-
-RSS has two cache identities. A fixed RSS URL without `limit`, search, or filters
-checks the current publication version on every request; an unchanged body may
-still return `304`, and `no-store` prevents shared caches from retaining an old
-body. RSS URLs with `limit`, filters, or search use bounded refresh policies.
-RSS `<ttl>` is a client polling hint, not server push.
+AniBT public read endpoints and RSS feeds fully support standard HTTP conditional requests and negotiated caching.
 
 <Callout type="info">
-  Send the last `ETag`. Unchanged → `304` with no body. Prefer `If-None-Match`. Do not rely on `If-Modified-Since`.
+  **Best Practice**: When polling AniBT with scripts or background tasks, store the `ETag` from the previous response and provide it in subsequent requests via `If-None-Match`. If no new releases have been indexed, the server immediately returns `304 Not Modified` with an empty body, saving round-trip time and bandwidth.
 </Callout>
 
-Poll interval ≥ 5 minutes. Faster polling has no benefit and often hits 429.
+## Scope of Caching
 
-```bash title="If-None-Match"
-H=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360")
-ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+<TypeTable
+  type={{
+    'Public RSS Feeds': {
+      type: 'Supports 304',
+      description: 'Includes anime feeds, group feeds, and site-wide magnets. Validates via exact body-hash weak ETags.',
+    },
+    'Public JSON Read Endpoints': {
+      type: 'Supports 304',
+      description: 'Anime details, fansub group directories, seasonal catalogs, and other public query endpoints.',
+    },
+    'Write & Admin Endpoints': {
+      type: 'No Cache',
+      description: 'Release publishing, deletion, sync status inspection, /me info, and private user RSS feeds always bypass caching (no-store).',
+    },
+  }}
+/>
+
+## Polling Guidelines & Frequency
+
+1. **Reasonable Polling Intervals**: We strongly recommend polling intervals **no shorter than 5 minutes**. Anime torrents are published over hours or days; aggressive sub-minute polling provides zero benefit while risking IP rate limits.
+2. **Prioritize `If-None-Match`**: AniBT calculates ETags from the exact response body bytes. Rely on `If-None-Match` rather than `If-Modified-Since`.
+3. **Visibility After Publishing**: A `200` response from the publish endpoint confirms acceptance into the catalog, propagating to detail pages and feeds shortly thereafter. Verify new releases using the returned `releaseId` rather than hammering feed endpoints.
+
+## Example: Conditional Request with curl
+
+```bash title="Verifying 304 Caching with If-None-Match"
+# Step 1: Make initial request and extract ETag header
+RESPONSE_HEADERS=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360")
+ETAG=$(echo "$RESPONSE_HEADERS" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+
+echo "Captured ETag: $ETAG"
+
+# Step 2: Poll with If-None-Match header
 curl -sI -H "If-None-Match: $ETAG" \
   "https://anibt.net/rss/anime.xml?bgmId=543360"
 ```
 
-Publish `200` does not mean the item is already in RSS. Check the returned `releaseId` on the detail page or in the RSS body.
+- **Expected Result**: If no new releases have occurred for that anime, the server returns `HTTP/2 304` with a 0-byte body.

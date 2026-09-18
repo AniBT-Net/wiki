@@ -1,54 +1,91 @@
 ---
-title: API conventions
-description: Auth, error codes, and the public contract boundary.
+title: API Conventions & Auth
+description: Learn about the AniBT production base URL, request header standards, fansub API key scopes, and standardized error schemas.
 ---
 
-Production base URL: `https://anibt.net`. Paths and query parameters are the public contract: additive only, no incompatible changes. Internal primary keys (`organizationId`, `_id`) are not public; third parties use `slug`.
+This document establishes global conventions, authentication protocols, and standard error handling when consuming the AniBT Open API.
 
 <Callout type="warn">
-  Use only the main-site paths listed in these docs. Do not put publish/delete/`/me` API Keys in clients or repositories.
+  **Production Base URL**: `https://anibt.net`. Always use endpoints documented in the wiki and OpenAPI specification. Subtitle Group API Keys possess write and delete permissions; store them securely and never hardcode them into public repositories or client apps.
 </Callout>
 
-Methods, parameters, responses, and Try-it live on each endpoint page. Rate limits, caching, and 304 details are in [Limits](/docs/open-api/limits) and [Caching](/docs/open-api/caching).
+## Authentication Models
 
-Machine-readable spec: [openapi.yaml](/openapi.yaml).
+AniBT employs a tiered authentication architecture where most reads are completely keyless:
 
-## Auth
+<TypeTable
+  type={{
+    'Public Read Endpoints': {
+      type: 'Keyless',
+      description: 'Includes anime lookups, search queries, fansub directories, torrent matching, and public RSS. Make standard HTTP requests directly.',
+    },
+    'Subtitle Group API Key': {
+      type: 'Header',
+      description: 'Required for write operations (publish, delete, sync status, /me). Supports Authorization: Bearer <KEY> or X-API-Key: <KEY>.',
+    },
+    'Personal Subscription RSS': {
+      type: 'URL Token',
+      description: 'Private merged subscription URLs generated in the user dashboard, authenticated via embedded query tokens.',
+    },
+  }}
+/>
 
-| Type | Usage |
-| --- | --- |
-| Public reads | No auth |
-| Subtitle-group API Key | `Authorization: Bearer <KEY>`, or `X-API-Key`. Bearer wins |
-| Key scopes | `releases:publish`, `releases:delete`, `releases:sync:read`; pick at least one |
-| Personal subscription RSS | The full URL generated in account settings |
+### API Key Scopes
 
-## Errors
+When creating a Key in your fansub console at `/groups/<slug>/api-keys`, assign granular permissions:
 
-Write endpoints use one JSON shape:
+<TypeTable
+  type={{
+    'releases:publish': {
+      type: 'Scope',
+      description: 'Grants publishing privileges for anime and other categories, including preview and whoami inspection.',
+    },
+    'releases:delete': {
+      type: 'Scope',
+      description: 'Grants permission to revoke and delete published releases asynchronously.',
+    },
+    'releases:sync:read': {
+      type: 'Scope',
+      description: 'Grants access to query real-time external sync progress and URLs across six external BT platforms.',
+    },
+  }}
+/>
 
-```json title="Error"
+## Standard Error Response Schema
+
+All write operations and non-2xx responses adhere to a unified JSON error structure:
+
+```json title="Standard JSON Error Schema"
 {
   "ok": false,
   "error": {
-    "code": "RATE_LIMIT_EXCEEDED",
-    "message": "…",
-    "reason": "RATE_LIMITED",
-    "retryable": true,
-    "retryAfterMs": 2000,
-    "requestId": "req-…"
+    "code": "VALIDATION_ERROR",
+    "message": "Torrent file is missing in multipart request",
+    "reason": "TORRENT_REQUIRED",
+    "retryable": false,
+    "requestId": "req_01j7abc123456789"
   }
 }
 ```
 
-| HTTP | Meaning |
-| --- | --- |
-| 400 | Bad parameter or JSON |
-| 401 | Auth failed |
-| 403 | No permission or missing scope |
-| 404 | Missing, or same as missing when unauthorized |
-| 413 | Body too large |
-| 422 | Validation failed |
-| 429 | Back off using `Retry-After` |
-| 503 | Temporarily unavailable or deploying; retry using `Retry-After` |
+- **`code`**: Broad category of error (e.g., `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `VALIDATION_ERROR`, `RATE_LIMITED`).
+- **`reason`**: Machine-readable fine-grained error identifier (e.g., `EMPTY_RELEASE_CONTENT`, `TORRENT_REQUIRED`).
+- **`retryable`**: Boolean indicating whether this error might succeed on a subsequent retry (e.g., `true` for rate limits, `false` for parameter errors).
+- **`requestId`**: Unique distributed tracing identifier for the request, also returned in the `X-Request-ID` response header. Always provide this ID when reporting issues.
 
-Public reads also return `429` when limited; Cloudflare edge limits may be HTML `429`.
+## Common HTTP Status Codes
+
+<TypeTable
+  type={{
+    '200 OK': { type: 'Success', description: 'Request succeeded and payload returned. For release publishing, confirms acceptance into catalog.' },
+    '202 Accepted': { type: 'Accepted', description: 'Asynchronous task accepted (e.g., release deletion); poll status endpoint for final state.' },
+    '304 Not Modified': { type: 'Cache Hit', description: 'Conditional request matched weak ETag. Response body is empty; reuse cached local data.' },
+    '400 Bad Request': { type: 'Client Error', description: 'Malformed request or invalid arguments (e.g., limit parameter outside 1..100 range).' },
+    '401 Unauthorized': { type: 'Auth Failure', description: 'Missing, malformed, expired, or disabled API Key.' },
+    '403 Forbidden': { type: 'Forbidden', description: 'API Key is valid but lacks the required scope (e.g., attempting delete with publish-only key).' },
+    '404 Not Found': { type: 'Not Found', description: 'Resource does not exist, or does not belong to the fansub group bound to this API key.' },
+    '422 Unprocessable': { type: 'Validation', description: 'Semantic validation failed (e.g., missing torrent file, invalid Nyaa category code).' },
+    '429 Too Many Requests': { type: 'Rate Limited', description: 'Exceeded rate limits for this endpoint. Back off according to the Retry-After header.' },
+    '503 Service Unavailable': { type: 'Unavailable', description: 'Platform is deploying or temporary capacity issue. Back off according to Retry-After.' },
+  }}
+/>

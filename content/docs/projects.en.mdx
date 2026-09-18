@@ -1,18 +1,48 @@
 ---
-title: Related projects
-description: FontInAss and AniBT-Speed.
+title: Ecosystem & Community Projects
+description: Discover open-source companion tools built around AniBT and the anime fansub community, including font subsetting with FontInAss and automatic seeding via AniBT-Speed.
 ---
+
+AniBT encourages open-source collaboration and community development. Below are practical companion tools built by the community that integrate into fansub encoding workflows or personal downloading setups.
+
+<Callout type="info">
+  If you have developed a downloader plugin, release automation script, or desktop tool related to AniBT, feel free to submit a Pull Request to our [Wiki Repository](https://github.com/AniBT-Net/wiki) to be featured here.
+</Callout>
+
+## FontInAss — Subtitle Font Subsetting Tool
+
+When bundling external or muxed ASS/SRT subtitles into torrent releases, including complete font files can bloat release size by tens of megabytes. **FontInAss** scans the exact glyphs used across your subtitle files and cuts the original bulky fonts down to an optimal minimal subset.
 
 <GithubInfo owner="Yuri-NagaSaki" repo="FontInAss" />
 
-Subtitle font subsetting. Scans characters actually used in ASS / SRT, cuts a subset, and ships it with the release. Site: [font.anibt.net](https://font.anibt.net).
+- **Web Tool**: [font.anibt.net](https://font.anibt.net)
 
-1. Upload ASS / SRT and the original fonts.
-2. Generate subsets (`.ttf` / `.otf`).
-3. Put them in `Fonts/` and pack them into the torrent with the subtitles.
+### Workflow Steps
+
+<Steps>
+  <Step>
+    ### Load Subtitles and Original Fonts
+    In the FontInAss web interface or CLI, load all ASS / SRT subtitle files for your current episode release, and upload the corresponding font files referenced in the styles.
+  </Step>
+
+  <Step>
+    ### Extract and Generate Subsets
+    The program scans every character, kanji, kana, and symbol used, strips tens of thousands of unused glyphs, and compiles a clean, tiny `.ttf` / `.otf` subset font package of only a few hundred kilobytes.
+  </Step>
+
+  <Step>
+    ### Bundle into Torrent Release
+    Place the generated subset fonts into a `Fonts/` directory within your release folder and package it into your torrent. Viewers will enjoy the exact intended typography without needing full fonts pre-installed.
+  </Step>
+</Steps>
+
+## AniBT-Speed — RSS Automated Seeding Agent
+
+To ensure long-term torrent availability and high-speed downloading for anime fans, the community created **AniBT-Speed**, a lightweight auto-downloader and seeder built on AniBT public RSS feeds.
 
 <GithubInfo owner="Yuri-NagaSaki" repo="AniBT-Speed" />
 
-Downloads from RSS automatically and seeds long-term. Subscribe to [`/rss/anime.xml`](/docs/open-api/rss-anime) or [`/rss/magnets.xml`](/docs/open-api/rss-magnets).
-
-Adjacent tools can be added with a PR to the [wiki repo](https://github.com/AniBT-Net/wiki).
+- **Key Highlights**:
+  - Monitors and subscribes to AniBT [Anime RSS Feeds](/en/docs/open-api/rss-anime) or [Site-wide Magnets](/en/docs/open-api/rss-magnets).
+  - Honors standard HTTP conditional caching with 304 Not Modified, minimizing server overhead during polling.
+  - Interfaces directly with Aria2, qBittorrent, or Transmission for fully automated retrieval and persistent seeding.

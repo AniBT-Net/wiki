@@ -1,49 +1,79 @@
 ---
-title: Mikan（蜜柑计划）同步
-description: 填写 API Token；需要时再手动填字幕组 ID 与发布组 ID。
+title: 蜜柑计划同步
+description: 了解如何获取蜜柑计划（Mikan）API Token、自动查询字幕组与发布组 ID，以及排查发布配置。
 ---
 
-通常只需 **API Token**。保存后点查询即可带出字幕组 ID 与发布组 ID。自动查询失败时用本页末尾的手动方法。
+配置蜜柑计划（Mikan）同步后，AniBT 发布的番剧资源将自动分发至蜜柑计划并同步更新至蜜柑订阅流。
+
+<Callout type="info">
+  绝大多数情况下，只需填入 **API Token** 并保存，点击页面上的「自动查询」按钮即可自动获取字幕组 ID 与发布组 ID。仅当自动匹配失败时才需要手动查找。
+</Callout>
+
+## 快速配置流程
 
 <Steps>
   <Step>
-    ### 复制 API Token
-
-    登录 [https://mikanani.me](https://mikanani.me)，右上角 **账号设置** → **个人中心** → **编辑资料**，在 **基本资料** 下复制 **API Token**。没有则点右侧 **生成**。粘贴到 AniBT 蜜柑计划同步设置后 **保存**。
+    ### 获取蜜柑 API Token
+    登录 [蜜柑计划官网 (mikanani.me)](https://mikanani.me)，点击右上角头像进入 **账号设置** → **个人中心** → **编辑资料**。在「基本资料」区域复制 **API Token**（若尚无 Token，点击右侧的「生成」按钮）。
 
     ![蜜柑计划 API Token 与 ID 查询](/images/site-sync/mikan-api-token.webp)
   </Step>
-  <Step>
-    ### 查询 ID
 
-    点击 **【从蜜柑查询「XXXXXX」的 ID】**，取得 **字幕组 ID** 与 **发布组 ID**。
+  <Step>
+    ### 保存 Token 到 AniBT
+    打开 AniBT 字幕组控制台 `/groups/<slug>/sync`，在蜜柑计划同步卡片中开启开关并粘贴 API Token，点击 **保存**。
+  </Step>
+
+  <Step>
+    ### 一键自动识别组 ID
+    保存后，点击下方的 **【从蜜柑查询「字幕组名」的 ID】** 按钮。系统会自动匹配你在蜜柑加入的字幕组，并带出 **字幕组 ID** 与 **发布组 ID**。
   </Step>
 </Steps>
 
-## 手动获取 ID（可选）
+## 凭据字段说明
 
-仅在自动查询无法识别时使用。
+<TypeTable
+  type={{
+    'API Token': {
+      type: 'string',
+      description: '蜜柑个人中心编辑资料下生成的访问令牌，用于身份鉴权。',
+    },
+    '字幕组 ID': {
+      type: 'number',
+      description: '你在蜜柑所属字幕组的唯一编号，可自动查询或从主页 URL 提取。',
+    },
+    '发布组 ID': {
+      type: 'number',
+      description: '蜜柑分流发布的 Subgroup 标识，可自动查询或从 RSS 链接提取。',
+    },
+  }}
+/>
 
-<Tabs items={['字幕组 ID', '发布组 ID']}>
-  <Tab value="字幕组 ID">
-    字幕组 ID 是发布组页面 URL 末尾的数字。
+## 手动获取 ID 方法（备用）
 
-    ```txt title="字幕组页面 URL"
+如果自动查询未能识别你的组信息，可按照以下方式手动定位：
+
+<Tabs items={['获取字幕组 ID', '获取发布组 ID']}>
+  <Tab value="获取字幕组 ID">
+    在蜜柑网站打开你的字幕组主页（例如在任意发布资源的作者栏点击你的字幕组）：
+
+    ```txt title="字幕组页面 URL 示例"
     https://mikanani.me/Home/PublishGroup/359
     ```
 
-    其中 `359` 即字幕组 ID。在列表或作品简介中点击 **字幕组**，打开的就是字幕组页面。
+    - URL 末尾的数字（如 `359`）即为你字幕组的 **字幕组 ID**。
 
     ![蜜柑计划字幕组 ID 页面](/images/site-sync/mikan-publish-group-id.webp)
   </Tab>
-  <Tab value="发布组 ID">
-    以 LoliHouse 为例：打开任意以 LoliHouse 身份发布的动画列表，点击字幕组名字右侧的 **RSS 图标**：
 
-    ```txt title="RSS 链接"
+  <Tab value="获取发布组 ID">
+    以任意由你的字幕组发布的动画作品为例，在作品列表点击字幕组名称右侧的 **RSS 订阅图标**：
+
+    ```txt title="RSS 链接中的 subgroupid 参数"
     https://mikanani.me/RSS/Bangumi?bangumiId=3953&subgroupid=370
     ```
 
-    `subgroupid=370` 中的 `370` 就是发布组 ID。
+    - 参数 `subgroupid=370` 中的 `370` 即为该发布身份的 **发布组 ID**。
 
     ![蜜柑计划 RSS 中的发布组 ID](/images/site-sync/mikan-rss-subgroup-id.webp)
   </Tab>

@@ -1,21 +1,60 @@
 ---
-title: Site sync
-description: After publishing, sync to Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, and Nyaa.
+title: Multi-Site Sync Overview
+description: "Learn about AniBT multi-site automatic synchronization: publish once to dispatch across Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, and Nyaa."
 ---
 
-In the group admin at `/groups/<slug>/sync`, save credentials per site. Each site is configured separately. [Apply for admission](/docs/apply) first.
+AniBT supports seamless "publish once, synchronize everywhere" capabilities. Fansub groups only need to submit a release once on AniBT, and our background system automatically synchronizes the torrent file, title, category, and release notes to major external BT distribution sites.
 
-1. Enable the sites to sync.
-2. Enter credentials.
-3. Publish real releases only after the connection test succeeds.
+<Callout type="info">
+  Site sync is exclusively available to fansub groups. Complete [Fansub Onboarding](/en/docs/apply) before configuring. Credentials are encrypted and configured per site in your console at `/groups/<slug>/sync`.
+</Callout>
 
-| Site | Credentials |
-| --- | --- |
-| [Bangumi Moe](/docs/site-sync/bangumi) | Username or email and password of an activated account. Old Cookies no longer work |
-| [Mikan](/docs/site-sync/mikan) | API Token |
-| [DMHY](/docs/site-sync/dmhy) | Account, password, subtitle group name |
-| [ACGNX](/docs/site-sync/acgnx) | UID and API Token |
-| [ACG.rip](/docs/site-sync/acgrip) | API Token, without the `tpx://acg.rip/` prefix |
-| [Nyaa](/docs/site-sync/nyaa) | Username and password |
+## Sync Workflow & Status Tracking
 
-Claims are on `/groups/<slug>/claims`, not the sync page.
+Once a release is accepted on AniBT, asynchronous tasks are queued for each enabled external destination:
+
+<Steps>
+  <Step>
+    ### Save and Test Credentials
+    Visit `/groups/<slug>/sync` in your fansub console and enter credentials for your chosen sites. Always click "Test Connection" to ensure valid credentials before publishing.
+  </Step>
+
+  <Step>
+    ### Automated Dispatch on Release
+    When submitting anime or other releases, AniBT automatically schedules uploads to all enabled external sites. Each upload is processed independently in background queues; temporary connection dips on one site do not affect others.
+  </Step>
+
+  <Step>
+    ### Inspect Status & One-Click Resync
+    Click the "Site Sync" status badge on any release card in your console to view real-time sync progress, external URLs, and error diagnostics. If an upload fails due to network issues, click "Resync" to retry immediately.
+  </Step>
+</Steps>
+
+## Supported Distribution Platforms
+
+<Cards>
+  <Card title="Bangumi Moe" href="/en/docs/site-sync/bangumi" description="Username/email and password with email activation; supports Personal and Team identities" />
+  <Card title="Mikan Project" href="/en/docs/site-sync/mikan" description="Account API Token; automatically detects Subgroup and Publish Group IDs" />
+  <Card title="DMHY" href="/en/docs/site-sync/dmhy" description="DMHY publisher username, password, and registered fansub team name" />
+  <Card title="ACGNX" href="/en/docs/site-sync/acgnx" description="Account UID and API Token from the ACGNX User Control Center" />
+  <Card title="ACG.rip" href="/en/docs/site-sync/acgrip" description="API Token from dashboard user preferences for direct dispatch" />
+  <Card title="Nyaa" href="/en/docs/site-sync/nyaa" description="Direct sync with your own Nyaa account or use our platform-assisted proxy" />
+</Cards>
+
+## Standard Sync States
+
+When inspecting progress in the console or via the [Sync Status API](/en/docs/open-api/releases-sync-status), each platform returns one of the following states:
+
+<TypeTable
+  type={{
+    'not_started': { type: 'Status', description: 'Site sync is disabled in settings or unchecked for this release.' },
+    'pending': { type: 'Status', description: 'Queued or actively uploading to the destination site.' },
+    'success': { type: 'Status', description: 'Successfully published externally; response includes the external release URL.' },
+    'failed': { type: 'Status', description: 'Upload failed due to bad credentials, invalid category, or external downtime.' },
+    'ambiguous': { type: 'Status', description: 'Network timeout before final confirmation; system holds for retry or manual check.' },
+  }}
+/>
+
+<Callout type="warn">
+  Anime claims (binding a seasonal anime to your group and custom title templates) are managed in `/groups/<slug>/claims`, separate from site sync credentials.
+</Callout>

@@ -1,20 +1,90 @@
 ---
-title: Apply for admission
-description: Email from the registered address to request subtitle-group publishing access.
+title: Fansub Onboarding
+description: Learn about the onboarding application process, email templates, and publishing permissions for fansub groups on AniBT.
 ---
 
-Publishing access is not self-serve. Send from the **AniBT registered email** to [support@anibt.net](mailto:support@anibt.net), subject: `字幕组入驻申请 - <组名>`.
+AniBT welcomes original anime translation, encoding, and distribution teams to join and build a clean, reliable BitTorrent ecosystem.
 
-## Email contents
+<Callout type="warn">
+  To ensure authenticated release authorship, publishing privileges cannot be self-activated. Group leaders must apply using their **registered AniBT email address**. If you have not registered yet, complete [Account Registration](/en/docs/account-auth) first.
+</Callout>
 
-- **Group name**
-- **slug**: a stable English identifier, e.g. `sakura-sub`. It appears in public URLs after approval and should not be changed.
-- **Intro**: kinds of works, activity.
-- **Contact**: a channel that can reach the subtitle group.
-- **Identity proof (one of)**: an account on another BT site, admin proof on a public channel, or equivalent.
+Once approved, you will receive full access to your group management console `/groups/<slug>`, automated release API keys, one-click multi-site sync, and a dedicated image host.
 
-If you have not registered yet, finish [Account](/docs/account-auth) first.
+## Application Process
 
-Replies usually arrive within a few working days. If there is no reply after a week, check spam and send once more.
+<Steps>
+  <Step>
+    ### Register an Account on AniBT
+    Visit the [Registration Page](https://anibt.net/auth/sign-up) and create an account with your group's official or lead email. Upon approval, this account will be bound as the Owner of your fansub group.
+  </Step>
 
-After approval, the slug is bound, an API Key is issued, and the group appears in the on-site list and RSS. Then configure [Site sync](/docs/site-sync), [Tracker](/docs/tracker), and the [Publish API](/docs/open-api/releases-publish).
+  <Step>
+    ### Prepare Application Details
+    Gather your group's profile information and previous release history. Refer to [Field Descriptions](#field-descriptions) below for requirements.
+  </Step>
+
+  <Step>
+    ### Send the Application Email
+    From the exact email address registered on AniBT, send your application to our official support email:
+
+    - **Recipient**: [support@anibt.net](mailto:support@anibt.net)
+    - **Subject**: `Fansub Group Onboarding - <Your Group Name>`
+    - **Body**: Use the reference template below
+
+    ```txt title="Application Email Template"
+    Hello AniBT Team,
+
+    We would like to apply for fansub publishing permissions on AniBT. Our details are as follows:
+
+    1. Group Name: Sakura Sub
+    2. Dedicated slug: sakura-sub
+    3. Profile: Active team primarily translating and encoding seasonal TV anime (bilingual JP/EN or JP/CN).
+    4. Proof of authorship:
+       - DMHY publisher profile: https://share.dmhy.org/topics/list/user_id/...
+       - Mikan group page: https://mikanani.me/Home/PublishGroup/...
+       - (Or attach a screenshot of your dashboard on another BT tracker)
+    5. Contact channel: Telegram @sakura_lead / Discord @sakura_group
+    ```
+  </Step>
+
+  <Step>
+    ### Await Review and Activation
+    Admins typically review and reply within 1 to 3 business days. If you do not hear back after one week, check your spam folder before sending a follow-up inquiry.
+  </Step>
+</Steps>
+
+## Field Descriptions
+
+<TypeTable
+  type={{
+    'Group Name': {
+      type: 'string',
+      description: 'Official name of the fansub group, displayed on anime release pages and group directories.',
+    },
+    'slug': {
+      type: 'string',
+      description: 'Permanent English identifier (e.g., sakura-sub), used in URLs and API calls. Cannot be easily changed once set.',
+    },
+    'Profile': {
+      type: 'string',
+      description: 'Overview of your team, release categories, and translation activity.',
+    },
+    'Proof of Authorship': {
+      type: 'string',
+      description: 'Link or screenshot proving previous releases on other BT platforms (DMHY, Mikan, ACGNX, Nyaa, etc.).',
+    },
+    'Contact': {
+      type: 'string',
+      description: 'Direct communication channel (Telegram, Discord, QQ) for admin correspondence if needed.',
+    },
+  }}
+/>
+
+## Next Steps After Approval
+
+Once approved, you will see the Group Console option in the site navigation. We recommend configuring your group in this order:
+
+1. **[Configure Site Sync](/en/docs/site-sync)**: Enter credentials for Bangumi Moe, Mikan, DMHY, ACGNX, and Nyaa to enable automatic cross-site publishing.
+2. **[Set Up Tracker](/en/docs/tracker)**: Add `https://tracker.anibt.net/announce` to your torrent creation software.
+3. **[Explore Image Host & APIs](/en/docs/image-host)**: Host release screenshots or integrate your pipeline with the [Release API](/en/docs/open-api/releases-publish).

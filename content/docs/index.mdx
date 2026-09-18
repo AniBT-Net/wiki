@@ -1,18 +1,84 @@
 ---
 title: 开始使用
-description: 字幕组发布，以及 RSS / JSON 取数。
+description: 欢迎使用 AniBT。了解如何作为字幕组发布资源、作为观众下载追番，或作为开发者使用开放 API。
 ---
 
-AniBT 是面向动漫的公共 BitTorrent 追踪器。
+AniBT 是面向动漫爱好者与字幕组的 BT 资源分发、索引与检索平台。
 
-- **字幕组**：申请入驻 → 站点同步 → Tracker → 发布。
-- **用户 / 开发者**：匿名用 RSS 和 JSON；个人订阅或发布需要账号。
+<Callout type="info">
+  浏览全站资源、复制磁力、下载种子以及使用公开 RSS 均无需登录。仅当需要收藏番剧、管理个人订阅，或以字幕组成员身份发布资源时，才需要注册账号。
+</Callout>
+
+无论你是制作动漫资源的字幕组、寻找高清动画的追番党，还是开发相关工具的技术爱好者，都可以在这里找到对应的使用方式。
+
+## 快速导航
+
+<Tabs items={['字幕组工作流', '观众与追番', '开发者与 API']}>
+  <Tab value="字幕组工作流">
+    字幕组在 AniBT 提交一次发布后，后台会自动同步至全网各大 BT 站，并享有专属图床与 Tracker 通信支持。
+
+    <Steps>
+      <Step>
+        ### 申请入驻
+        注册主站账号后，通过邮件提交字幕组信息与以往作品证明，获取字幕组管理后台权限与发布专属 slug。详见 [申请入驻](/docs/apply)。
+      </Step>
+      <Step>
+        ### 配置外站同步与 Tracker
+        在字幕组控制台填入各 BT 分发站（萌番组、蜜柑计划、动漫花园、末日站、ACG.rip、Nyaa）的凭据。制种时加入 [AniBT Tracker](/docs/tracker)。详见 [站点同步](/docs/site-sync)。
+      </Step>
+      <Step>
+        ### 发布资源
+        在后台页面直接上传种子制种发布，或通过 [发布 API](/docs/open-api/releases-publish) 接入自动化压制发布脚本。支持发布前效果预览与专属图床配图。
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="观众与追番">
+    无需繁琐注册，开箱即用的动漫搜索与全自动追番体验。
+
+    <Steps>
+      <Step>
+        ### 检索与下载
+        在主站首页或番剧页面，可通过动画中文名、日文原名、Bangumi 词条或字幕组标签精准检索。每个资源详情页均提供磁力链接与标准 `.torrent` 文件下载。
+      </Step>
+      <Step>
+        ### RSS 订阅追番
+        复制番剧专属的 [RSS 订阅链接](/docs/open-api/rss-anime)，填入 qBittorrent、Sonarr 或 FlexGet 等下载工具。新集数发布后，下载工具会自动拉取种子并开始下载。
+      </Step>
+      <Step>
+        ### 个人订阅管理（可选）
+        注册登录后，可以在番剧页面点击「关注追番」。系统会将你关注的所有番剧聚合生成一份私有专属 RSS，只需添加一个订阅链接即可追踪整季新番。
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="开发者与 API">
+    全站数据公开透明，提供规范的 REST API 与标准 RSS 输出。
+
+    <Steps>
+      <Step>
+        ### 探索公开端点
+        所有读取接口无需申请 Token 或配置鉴权，涵盖番剧查询、搜索召回、字幕组目录与最新磁力聚合。详见 [开放 API 总览](/docs/open-api)。
+      </Step>
+      <Step>
+        ### 启用 304 条件请求
+        公开端点全面支持弱 ETag 与 `If-None-Match`。在轮询脚本中携带 ETag 即可在内容无变更时直接返回 `304 Not Modified`，大幅节省网络开销。详见 [HTTP 缓存](/docs/open-api/caching)。
+      </Step>
+      <Step>
+        ### 字幕组自动化接入
+        持有字幕组 API Key 的开发者可通过 REST API 完成资源发布、元数据核对、外站同步状态追踪与资源撤回。
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## 常用文档索引
 
 <Cards>
-  <Card title="申请入驻" href="/docs/apply" description="support@anibt.net" />
-  <Card title="站点同步" href="/docs/site-sync" description="Nyaa、萌番组、末日站、Mikan、ACG.rip" />
-  <Card title="Tracker" href="/docs/tracker" description="https://tracker.anibt.net/announce" />
-  <Card title="公开 API" href="/docs/open-api" description="JSON、RSS 与 Try-it" />
-  <Card title="账号" href="/docs/account-auth" description="注册、登录、找回密码" />
-  <Card title="联系" href="/docs/contact" description="support@anibt.net" />
+  <Card title="申请入驻" href="/docs/apply" description="字幕组入驻申请流程、邮件模板与开通说明" />
+  <Card title="站点同步" href="/docs/site-sync" description="一处发布、六站同步：萌番组、蜜柑、花园、末日、ACG.rip、Nyaa" />
+  <Card title="Tracker 规范" href="/docs/tracker" description="官方 announce 地址与制种白名单通信机制" />
+  <Card title="开放 API" href="/docs/open-api" description="公开端点规范、交互式 Try-it 控制台与 OpenAPI 契约" />
+  <Card title="账号与认证" href="/docs/account-auth" description="邮箱验证码注册、登录状态与安全提示" />
+  <Card title="字幕组图床" href="/docs/image-host" description="发布截图托管、防抖外链格式与文件生命周期" />
 </Cards>

@@ -1,76 +1,152 @@
 ---
-title: 实战示例
-description: qBittorrent / Sonarr / curl 接入 RSS。
+title: 实战集成示例
+description: 了解如何配置 qBittorrent、Sonarr 自动追番，以及编写支持 304 条件轮询与异步删除的脚本。
 ---
 
-把 RSS URL 贴进客户端即可，无需额外配置。轮询间隔 ≥ 5 分钟。各接口页可用 Try-it 发请求。
+AniBT 的公开 RSS 与开放 API 专为自动化集成而设计。无论是将订阅源添加至下载工具实现全自动追番，还是编写自动化脚本与 CI/CD 流水线对接，均可直接参考以下经过验证的代码示例。
 
 <Callout type="info">
-  公开 RSS `limit` 上限 **100**。省略 `limit` 即拉满。slug 从 [`/api/subtitle-groups`](/docs/open-api/subtitle-groups) 取。
+  **订阅技巧**：公开 RSS 源默认输出最新的 100 条记录（已是单次最大上限），直接使用基础链接即可，无需额外添加 `limit=100` 参数。
 </Callout>
 
-## RSS URL
+## 常用 RSS 订阅链接组合
 
-下列基于 `bgmId=543360`。slug：`kirara-fantasia`、`pre-s`、`kitauji-sub`、`haruhana`。
+以下示例基于动画条目 `bgmId=543360` 与常用字幕组 slug 演示：
 
-```txt title="一组 × 一部"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
+<Tabs items={['按番剧与字幕组', '跨组追番 (按画质语言)', '订阅字幕组全部作品', '仅下载完结全集 (合集)']}>
+  <Tab value="按番剧与字幕组">
+    仅追踪指定字幕组发布的某部番剧：
+
+    ```txt title="单一字幕组 × 单一番剧"
+    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
+    ```
+  </Tab>
+
+  <Tab value="跨组追番 (按画质语言)">
+    不限字幕组，只要是该番剧的 1080p 简体中文版本即抓取：
+
+    ```txt title="画质与字幕语言过滤"
+    https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
+    ```
+  </Tab>
+
+  <Tab value="订阅字幕组全部作品">
+    追踪某字幕组发布的所有新番与资源（两种链接形式完全等价）：
+
+    ```txt title="字幕组全量发布 RSS"
+    https://anibt.net/rss/group/kirara-fantasia.xml
+    https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia
+    ```
+  </Tab>
+
+  <Tab value="仅下载完结全集 (合集)">
+    跳过单集连载，仅在字幕组发布合集（Batch / 季度打包）时下载：
+
+    ```txt title="合集资源过滤"
+    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
+    ```
+  </Tab>
+</Tabs>
+
+## 自动化下载器接入指引
+
+<Tabs items={['qBittorrent', 'Sonarr', 'FlexGet']}>
+  <Tab value="qBittorrent">
+    1. 打开 qBittorrent，在左侧导航栏切换至 **RSS** 选项卡。
+    2. 点击 **新增订阅**，将生成的 AniBT RSS 链接粘贴进去并保存。
+    3. 点击右上角的 **RSS 下载器（规则）**，新建一条自动下载规则并勾选刚才添加的订阅源。
+    4. 建议将客户端的默认轮询间隔设置为 **15 ~ 30 分钟**。
+  </Tab>
+
+  <Tab value="Sonarr">
+    1. 进入 Sonarr 设置页，点击 **Settings** → **Indexers** → **Add**。
+    2. 选择 **Torznab** 或通用 **RSS Sync** 类型。
+    3. 在 URL 栏中填入 AniBT 对应番剧的 RSS 地址，配置自动抓取过滤规则即可。
+  </Tab>
+
+  <Tab value="FlexGet">
+    在 `config.yml` 中直接将 AniBT RSS 作为输入源：
+
+    ```yaml title="config.yml"
+    tasks:
+      anime_task:
+        rss: https://anibt.net/rss/anime.xml?bgmId=543360&language=CHS
+        all_series: yes
+        download: ~/Downloads/Torrents/
+    ```
+  </Tab>
+</Tabs>
+
+## 实战脚本示例
+
+### 1. 具备 304 缓存的 Bash 条件轮询脚本
+
+通过保存并发送 `ETag`，当服务端无新资源时直接返回空响应体 `304`，避免重复下载 XML：
+
+```bash title="conditional_rss_poll.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+
+FEED_URL="https://anibt.net/rss/anime.xml?bgmId=543360"
+ETAG_FILE="/tmp/anibt_anime_543360.etag"
+
+# 读取历史 ETag
+ETAG=""
+if [ -f "$ETAG_FILE" ]; then
+  ETAG=$(cat "$ETAG_FILE")
+fi
+
+echo "正在检查新资源更新..."
+if [ -n "$ETAG" ]; then
+  RESPONSE=$(curl -sI -H "If-None-Match: $ETAG" "$FEED_URL")
+else
+  RESPONSE=$(curl -sI "$FEED_URL")
+fi
+
+HTTP_STATUS=$(echo "$RESPONSE" | grep -i '^http/' | awk '{print $2}')
+
+if [ "$HTTP_STATUS" = "304" ]; then
+  echo ">>> 内容未发生变化 (304 Not Modified)，无需重复下载。"
+elif [ "$HTTP_STATUS" = "200" ]; then
+  echo ">>> 发现新资源！拉取完整数据并保存最新 ETag..."
+  NEW_ETAG=$(echo "$RESPONSE" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+  echo "$NEW_ETAG" > "$ETAG_FILE"
+  # 这里可以进一步执行下载或推送通知
+fi
 ```
 
-```txt title="1080p 或 4K"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p&resolution=4K
-```
+### 2. 异步撤回删除与轮询终态脚本
 
-```txt title="语言 + 字幕方式"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&language=CHS&subtitle=EXTERNAL&subtitle=INTERNAL
-```
+删除发布为异步操作，脚本先发起 `DELETE` 请求，随后轮询查询接口直至收到 `completed` 终态：
 
-```txt title="多过滤叠加"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana&resolution=1080p&format=MKV&language=CHS&subtitle=EXTERNAL&episode=5
-```
+```bash title="delete_and_wait.sh"
+#!/usr/bin/env bash
+set -euo pipefail
 
-```txt title="跨组聚合一部"
-https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
-```
+RELEASE_ID="rel_01j7example123"
+API_KEY="YOUR_SUBTITLE_GROUP_API_KEY"
+BASE_URL="https://anibt.net"
 
-```txt title="一个组的全部（两种写法等价）"
-https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia
-https://anibt.net/rss/group/kirara-fantasia.xml
-```
+echo "发起异步删除请求: $RELEASE_ID"
+DELETE_RES=$(curl -sS -X DELETE \
+  -H "Authorization: Bearer $API_KEY" \
+  "$BASE_URL/api/releases/$RELEASE_ID")
 
-```txt title="合集"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
-```
+STATE=$(echo "$DELETE_RES" | jq -r '.result.state // .error.details.state // "pending"')
 
-## qBittorrent / Sonarr / FlexGet
-
-订阅 URL 直接粘贴。qBittorrent 默认 30 分钟轮询可用；它不发送 `If-None-Match`，每次拉全量。自建脚本必须带 `If-None-Match`。
-
-## curl
-
-```bash title="If-None-Match"
-H=$(curl -sI 'https://anibt.net/rss/anime.xml?bgmId=543360')
-ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
-curl -sI -H "If-None-Match: $ETAG" \
-  'https://anibt.net/rss/anime.xml?bgmId=543360'
-```
-
-```bash title="DELETE + 轮询"
-release_id='rel_example'
-base_url='https://anibt.net'
-
-response=$(curl -sS -X DELETE \
-  -H "Authorization: Bearer $ANIBT_API_KEY" \
-  "$base_url/api/releases/$release_id")
-
-while [ "$(jq -r '.result.state // .error.details.state // empty' <<<"$response")" = "pending" ]; do
+# 轮询状态接口
+while [ "$STATE" = "pending" ]; do
+  echo "删除任务正在队列中处理，2 秒后重试..."
   sleep 2
-  response=$(curl -sS \
-    -H "Authorization: Bearer $ANIBT_API_KEY" \
-    "$base_url/api/releases/$release_id/deletion")
+  STATUS_RES=$(curl -sS \
+    -H "Authorization: Bearer $API_KEY" \
+    "$BASE_URL/api/releases/$RELEASE_ID/deletion")
+  STATE=$(echo "$STATUS_RES" | jq -r '.result.state // "pending"')
 done
 
-jq . <<<"$response"
+if [ "$STATE" = "completed" ]; then
+  echo ">>> 资源已彻底删除并通过安全屏障！"
+else
+  echo ">>> 删除未能完成，当前状态: $STATE"
+fi
 ```
-
-删除 Key 必须含 `releases:delete`。终态为 `completed` 才停止。

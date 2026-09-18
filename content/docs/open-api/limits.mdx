@@ -1,59 +1,62 @@
 ---
-title: 限流与上限
-description: 各端点的 limit 与速率窗口。
+title: 限流与分页上限
+description: 了解 AniBT 各端点的默认调用频率、每页上限、分页游标规则与超限退避策略。
 ---
 
-数字与状态码是公开契约。超限返回 `429`，按 `Retry-After` 退避。
-
-## 各端点
-
-| 端点 | `limit` 默认 | `limit` 上限 | 速率限制（默认） |
-| --- | --- | --- | --- |
-| `/rss/anime.xml` | **100** | **100** | 120 次 / 60 秒 / IP |
-| `/rss/group/<slug>.xml` | 100 | **100** | 120 次 / 60 秒 / IP |
-| `/rss/magnets.xml` | 100 | **100** | 120 次 / 60 秒 / IP |
-| `/rss/other/<category>.xml` | 100 | **100** | 120 次 / 60 秒 / IP |
-| `/api/bgm/search` | 5 | **25** | 60 次 / 60 秒 / IP |
-| `/api/animes/search` | 24 | **50** | 120 次 / 60 秒 / IP |
-| `/api/animes/torrent-match` | 10 | **50** | 180 次 / 60 秒 / IP |
-| `/api/anime/lookup` | — | — | 60 次 / 60 秒 / IP |
-| `/api/mikan/group-lookup` | — | — | 60 次 / 60 秒 / IP |
-| `/api/subtitle-groups` | — | 全量返回 | 60 次 / 60 秒 / IP |
-| `/api/seasons/anime` | — | — | 30 次 / 60 秒 / IP |
-| `/api/anime/groups` | — | — | 30 次 / 60 秒 / IP |
-| `DELETE /api/releases/{releaseId}` | — | — | 30 次 / 60 秒 / API Key |
-| `GET /api/releases/{releaseId}/deletion` | — | — | 120 次 / 60 秒 / API Key |
-
-删除另有认证前防滥用窗口。`pending` 回执里的 `Retry-After` 是状态轮询建议；真正超限是 `429`。
+为了保障公共服务的高可用性，防止爬虫异常死循环或恶意刷流对站点造成冲击，AniBT 在不同端点实施了透明的速率限制（Rate Limiting）与单次拉取条数上限。
 
 <Callout type="warn">
-  公开 RSS 的 `limit` 只接受单个 `1..100` 整数。非法值应用返回 `400`，生产边缘可能先 `403`。默认就是 100，不要传 `limit=100`，否则可能 `308`。
+  **速率超限**：当请求频次超过限制时，接口会返回 `429 Too Many Requests`。响应头中会包含 `Retry-After: <秒数>`，客户端脚本应捕获该状态码并等待指定秒数后再行重试，切勿在报错后立即发起重试风暴。
 </Callout>
 
-`/rss/magnets.xml` 与 `/rss/other/*` 的 `q` / `search` 只能一个值，最多 160 UTF-8 bytes。新关键词搜索：每主题 120 次 / 10 分钟、1000 次 / 24 小时，超限 `429`。稳定查询不计入。
-
-规范 fixed RSS 成功响应使用 CDN 共享的 60 秒 `must-revalidate` 缓存；发布后的
-边缘按 TTL 重新验证。客户端侧仍为
-`max-age=0`，未变化时可用 `ETag` 返回 `304`；未准备好或错误响应不进入共享缓存。
-搜索、过滤、带 `limit` 的动态 RSS，以及 `/magnets` 任意分页不纳入这个 fixed
-RSS 约束。客户端仍应按 ≥5 分钟间隔轮询并发送 `If-None-Match`。
-
-`/magnets` 使用不透明 previous/next `cursor`。查询参数 `page` 是可访问的失效状态（`Cache-Control: no-store`），不会重定向。
+## 各端点限制速查表
 
 <TypeTable
   type={{
-    'cursor (/magnets)': { type: 'string', description: '不透明 previous/next 游标' },
-    'page (/magnets)': { type: 'retired', required: false, description: '可访问的 no-store 失效状态，不重定向' },
-    'cursor (/api/animes/search)': { type: 'string', description: '只接受 ts_page:<页码>，最多 100 页' },
+    '公开 RSS 订阅源': {
+      type: '120 次 / 60 秒 / IP',
+      description: '包括 /rss/anime.xml、/rss/group/ 等。单次 limit 默认 100，上限 100 条。',
+    },
+    '/api/animes/torrent-match': {
+      type: '180 次 / 60 秒 / IP',
+      description: '种子标题解析匹配。单次 limit 默认 10，上限 50 条。',
+    },
+    '/api/animes/search': {
+      type: '120 次 / 60 秒 / IP',
+      description: '全站番剧综合搜索。单次 limit 默认 24，上限 50 条。',
+    },
+    '/api/bgm/search': {
+      type: '60 次 / 60 秒 / IP',
+      description: '通过标题检索 Bangumi ID。单次 limit 默认 5，上限 25 条。',
+    },
+    '/api/subtitle-groups': {
+      type: '60 次 / 60 秒 / IP',
+      description: '全站字幕组完整目录，单次调用全量返回，建议客户端在本地长效缓存。',
+    },
+    '/api/seasons/anime': {
+      type: '30 次 / 60 秒 / IP',
+      description: '季度番剧归档列表。建议客户端长效缓存。',
+    },
+    'DELETE /api/releases/{id}': {
+      type: '30 次 / 60 秒 / Key',
+      description: '字幕组资源异步撤回删除。建议串行逐条发起，切勿高并发并发调用。',
+    },
+    'GET .../deletion 状态': {
+      type: '120 次 / 60 秒 / Key',
+      description: '轮询单条资源的删除终态。建议轮询间隔 ≥ 2 秒。',
+    },
   }}
 />
 
-过滤过严时条数可能少于 `limit`。
+## 分页与 limit 参数规范
 
-## 客户端
+1. **`limit` 默认即最大**：公开 RSS 源默认即输出 100 条记录（系统支持的最大单页量）。调用时**无需显式传入 `limit=100`**，直接省略该参数即可拉满。
+2. **合法参数范围**：若需获取较少条数（如最新 3 条），可传入 `1..100` 的整数。传入非法格式或超出范围的值将返回 `400 Bad Request`。
+3. **分页游标（Cursor）**：主站资源列表及部分接口采用不透明的前进/后退游标（`cursor`）进行分页。传统的数字页码参数（`page`）已废弃，建议全面适配游标机制。
+4. **搜索关键词长度**：搜索接口的查询词（`q` / `search`）单次传入最长不超过 160 个 UTF-8 字节，且禁止包含控制字符。
 
-- 省略 `limit` 即 100 条。
-- 带 `If-None-Match`。
-- 间隔 ≥ 5 分钟。
-- 不要对同一 URL 并发。
-- 不要间隔 &lt; 1 分钟。
+## 友好调用规范
+
+- **按需拉取**：对于固定字幕组或番剧，使用过滤条件精准订阅，避免拉取全量全站数据。
+- **避免并发**：不要针对同一端点 URL 并发发起多个轮询请求。
+- **轮询间隔**：普通追番轮询建议间隔 ≥ 5 分钟，且务必配合 `If-None-Match` 条件请求。

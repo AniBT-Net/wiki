@@ -1,20 +1,56 @@
 ---
-title: 末日站同步
-description: 填写 UID 与 API Token。
+title: 末日站（ACGNX）同步
+description: 了解如何获取末日动漫资源库（ACGNX）UID 与 API Token，配置跨站自动同步与连接校验。
 ---
 
-在末日站账户 API 设置页复制 **UID** 和 **API Token**。
+配置末日站（ACGNX / 末日动漫资源库）同步后，AniBT 发布的动漫资源将在后台自动同步提交至末日站。
 
 <Callout type="warn">
-  粘贴后检查前后是否有空格。
+  末日站使用独立的 API Token 认证。粘贴 UID 与 Token 时，请仔细核对并去除开头和末尾误复制的多余空格。
 </Callout>
+
+## 配置流程
 
 <Steps>
   <Step>
-    ### 复制并保存
-
-    访问 [https://share.acgnx.se](https://share.acgnx.se)，左上角 **發佈資源**，侧边栏 **帳戶控制中心** → **帳戶API設置**。把 **UID** 和 **API Token** 填到 AniBT 后保存。
+    ### 打开末日站 API 设置页面
+    访问 [末日站主页 (share.acgnx.se)](https://share.acgnx.se) 并登录，点击页面左上角 **發佈資源**。在左侧边栏找到 **帳戶控制中心** → **帳戶API設置**。
 
     ![末日站账户 API 设置](/images/site-sync/acgnx-api-settings.webp)
   </Step>
+
+  <Step>
+    ### 复制 UID 与 API Token
+    在 API 设置页面中复制你的数字 **UID** 与 **API Token**。若此前未启用，按页面提示生成专属令牌。
+  </Step>
+
+  <Step>
+    ### 填入 AniBT 并保存测试
+    打开 AniBT 字幕组控制台 `/groups/<slug>/sync`，在末日站同步卡片中填入 **UID** 与 **API Token**，点击 **保存** 并进行 **测试连接**。
+  </Step>
 </Steps>
+
+## 凭据字段说明
+
+<TypeTable
+  type={{
+    'UID': {
+      type: 'string',
+      description: '末日站在账户控制中心显示的纯数字用户标识。',
+    },
+    'API Token': {
+      type: 'string',
+      description: '末日站为账户颁发的发布专用 API 密钥。',
+    },
+  }}
+/>
+
+## 连接测试结果排查
+
+<TypeTable
+  type={{
+    '连接成功': { type: '正常', description: 'UID 与 Token 匹配成功，已具备末日站同步发布权限。' },
+    '认证失败': { type: '异常', description: 'Token 无效或已重置，请回到末日站控制中心重新生成并更新。' },
+    'UID 不匹配': { type: '异常', description: 'UID 与 Token 不属于同一账户，请核实后重新录入。' },
+  }}
+/>

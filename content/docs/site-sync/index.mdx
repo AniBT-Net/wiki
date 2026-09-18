@@ -1,21 +1,60 @@
 ---
-title: 站点同步
-description: 发布后同步到萌番组、Mikan、动漫花园、末日站、ACG.rip、Nyaa。
+title: 站点同步总览
+description: 了解 AniBT 多站自动同步机制，一处发布自动推送至萌番组、蜜柑计划、动漫花园、末日站、ACG.rip 与 Nyaa。
 ---
 
-在字幕组后台 `/groups/<slug>/sync` 按站点保存凭据。每个站点单独配置。使用前需 [申请入驻](/docs/apply)。
+AniBT 核心支持「一处发布、多站自动同步」能力。字幕组只需在 AniBT 提交一次资源，系统即可在后台自动将种子、标题、分类与发布说明分发至各大主流动漫 BT 站点。
 
-1. 启用要同步的站点。
-2. 填写凭据。
-3. 测试连接通过后再发正式资源。
+<Callout type="info">
+  站点同步为字幕组专属功能，使用前需先完成 [字幕组入驻申请](/docs/apply)。凭据在字幕组控制台 `/groups/<slug>/sync` 按站点独立配置，并通过安全加密存储。
+</Callout>
 
-| 站点 | 凭据 |
-| --- | --- |
-| [萌番组](/docs/site-sync/bangumi) | 已激活账号的用户名或邮箱和密码。旧 Cookie 已失效 |
-| [Mikan](/docs/site-sync/mikan) | API Token |
-| [动漫花园](/docs/site-sync/dmhy) | 账号、密码、字幕组名称 |
-| [末日站](/docs/site-sync/acgnx) | UID 与 API Token |
-| [ACG.rip](/docs/site-sync/acgrip) | API Token，不要带 `tpx://acg.rip/` 前缀 |
-| [Nyaa](/docs/site-sync/nyaa) | 用户名和密码 |
+## 同步机制与状态追踪
 
-开坑在 `/groups/<slug>/claims`，不在同步页。
+在 AniBT 成功提交发布后，系统后台会自动为每个启用的同步站点派发异步发布任务：
+
+<Steps>
+  <Step>
+    ### 保存并测试凭据
+    首次使用前，进入控制台 `/groups/<slug>/sync`，分别配置各站点的账号或 API Token。每个站点均提供「测试连接」按钮，请务必测试通过后再进行正式发布。
+  </Step>
+
+  <Step>
+    ### 发布时自动派发
+    正常发布番剧或其它资源时，系统会自动携带已启用的外站配置。在后台异步队列中，各个站点的提交互相独立，单个站点的网络波动不会影响本站及其他站点的正常发布。
+  </Step>
+
+  <Step>
+    ### 查看状态与一键重试
+    发布后，在字幕组资源列表点击「外站同步」状态徽章，可查看各站点的同步进度、外站详情页链接以及失败报错。若某站因瞬时网络异常失败，可直接点击「重试（Resync）」重新触发。
+  </Step>
+</Steps>
+
+## 支持的分发站点一览
+
+<Cards>
+  <Card title="萌番组 (Bangumi Moe)" href="/docs/site-sync/bangumi" description="使用已完成邮箱激活的账号与密码，支持个人或 Team 身份" />
+  <Card title="蜜柑计划 (Mikan)" href="/docs/site-sync/mikan" description="使用个人中心 API Token，自动带出字幕组 ID 与发布组 ID" />
+  <Card title="动漫花园 (DMHY)" href="/docs/site-sync/dmhy" description="使用花园发布账号、密码以及登记的字幕组名称" />
+  <Card title="末日站 (ACGNX)" href="/docs/site-sync/acgnx" description="使用末日动漫资源库控制中心的 UID 与 API Token" />
+  <Card title="ACG.rip" href="/docs/site-sync/acgrip" description="使用仪表盘个人设置中的 API Token，支持直接分发" />
+  <Card title="Nyaa" href="/docs/site-sync/nyaa" description="使用字幕组自备 Nyaa 账号同步，或使用免账号的平台代发" />
+</Cards>
+
+## 常见同步状态说明
+
+在管理后台或通过 [同步状态 API](/docs/open-api/releases-sync-status) 查询时，各站点返回的状态含义如下：
+
+<TypeTable
+  type={{
+    'not_started': { type: '状态', description: '该站点未在后台启用同步，或本次发布未勾选该站。' },
+    'pending': { type: '状态', description: '正在后台队列中排队或正在向目标站点提交上传。' },
+    'success': { type: '状态', description: '外站已成功受理发布，响应中包含该资源在外站的详情页 URL。' },
+    'failed': { type: '状态', description: '外站提交失败，通常由于凭据失效、分类错误或对方站点网络维护导致。' },
+    'ambiguous': { type: '状态', description: '网络超时未收到明确确认，系统会进入安全重试或人工核验。' },
+  }}
+/>
+
+<Callout type="warn">
+  开坑认领（将番剧与本字幕组绑定、自动匹配标题模板）位于控制台 `/groups/<slug>/claims`，不在站点同步设置中。
+</Callout>

@@ -1,22 +1,97 @@
 ---
-title: 字幕组图床
-description: 在字幕组后台上传图片并复制链接。
+title: 字幕组专属图床
+description: 了解 AniBT 字幕组图片托管服务、防抖格式输出、配图排版规范与图片生命周期管理。
 ---
 
-入口：`/groups/<slug>/image-host`。仅该组成员可用。单张上限 10 MiB。
+AniBT 为入驻字幕组提供专属的图片托管服务，方便在发布动画资源时上传高清海报、剧集预览截图以及版本说明图。
 
-上传后可复制直链、BBCode、Markdown、HTML。图片尺寸已知时，HTML 代码包含 `width` 和 `height`。
+<Callout type="info">
+  图床服务仅对字幕组成员开放，入口位于控制台 `/groups/<slug>/image-host`。支持主流常见图片格式，单张上传上限为 **10 MiB**。
+</Callout>
 
-发布说明会为带尺寸的图片和已识别的站内图床图片预留空间，减少加载后的正文跳动。没有尺寸信息的外站图片仍可能发生位移。
+## 图片上传与排版防抖
 
-## 删除
+发布页面如果直接引用无尺寸信息的外部图床图片，当用户网络较慢时，图片加载完成后会导致页面高度突然拉长（发生累积布局偏移 CLS），影响阅读体验。
 
-上传者、组 owner / 管理员或站点管理员可删。请求返回 `202`。同一图片的重复删除走同一操作。
+AniBT 图床在上传后会自动解析图片的真实像素宽高，并在生成 HTML 代码时自动带上 `width` 和 `height` 属性。发布说明渲染器会预先计算比例并留出占位空间，彻底杜绝正文跳动。
 
-| 状态 | 含义 |
-| --- | --- |
-| `queued` | 已受理 |
-| `complete` | 站内短链和 `i.anibt.net` 直链返回 `404` / `410` |
-| `failed` | 失败 |
+## 使用流程
 
-`complete` 不包括浏览器缓存和第三方转载。
+<Steps>
+  <Step>
+    ### 打开图床管理控制台
+    登录后访问你的字幕组控制台 `/groups/<slug>/image-host`，将准备好的海报或截图拖拽至上传区域。
+  </Step>
+
+  <Step>
+    ### 选择适用的引用格式
+    上传成功后，在图片卡片上可一键复制多种格式的代码：
+
+    <Tabs items={['HTML (推荐防抖)', 'Markdown', 'BBCode', '图片直链']}>
+      <Tab value="HTML (推荐防抖)">
+        自动包含宽度与高度属性，在 AniBT 及支持 HTML 的发布站中能完美防止页面加载抖动：
+
+        ```html title="防抖 HTML 代码"
+        <img src="https://i.anibt.net/images/xxx.webp" width="1920" height="1080" alt="预览图" />
+        ```
+      </Tab>
+
+      <Tab value="Markdown">
+        适用于标准 Markdown 编辑器或 GitHub 风格的发布说明：
+
+        ```markdown title="Markdown 格式"
+        ![预览图](https://i.anibt.net/images/xxx.webp)
+        ```
+      </Tab>
+
+      <Tab value="BBCode">
+        适用于动漫花园（DMHY）、末日站（ACGNX）等基于传统论坛系统的 BT 站：
+
+        ```txt title="BBCode 格式"
+        [img]https://i.anibt.net/images/xxx.webp[/img]
+        ```
+      </Tab>
+
+      <Tab value="图片直链">
+        以 `i.anibt.net` 开头的标准 HTTPS 图片直接访问地址：
+
+        ```txt title="图片直链"
+        https://i.anibt.net/images/xxx.webp
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ### 粘贴至发布说明
+    将复制的代码粘贴至发布页面的「发布说明（Notes）」中，点击页面上的「预览」按钮即可实时查看排版渲染效果。
+  </Step>
+</Steps>
+
+## 图片删除与生命周期
+
+如果图片上传有误或不再需要，上传者本人、字幕组 Owner / 管理员均可在图床列表中发起删除。
+
+- 发起删除后，接口会返回 `202 Accepted` 并将删除操作加入任务队列。
+- 删除状态流转：
+
+<TypeTable
+  type={{
+    'queued': {
+      type: '状态',
+      description: '删除请求已受理，正在从对象存储与缓存中排队清理。',
+    },
+    'complete': {
+      type: '状态',
+      description: '清理已完成，站内短链与 i.anibt.net 直链将返回 404 / 410 状态码。',
+    },
+    'failed': {
+      type: '状态',
+      description: '清理失败，通常由瞬时网络或存储同步异常导致，可重试操作。',
+    },
+  }}
+/>
+
+<Callout type="warn">
+  删除仅对 AniBT 官方节点及直链生效。访客本地浏览器的强缓存或已被第三方站点转载下载的副本不受本站删除控制。
+</Callout>

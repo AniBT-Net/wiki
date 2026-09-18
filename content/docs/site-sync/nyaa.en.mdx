@@ -1,18 +1,61 @@
 ---
-title: Nyaa Sync
-description: Enter the Nyaa username and password.
+title: Nyaa Direct Sync
+description: Learn how to configure your fansub group's own Nyaa credentials, test login sessions, and understand differences from platform proxy.
 ---
 
-Sync uses the group's own Nyaa account. This is not [Nyaa proxy publishing](/en/docs/nyaa-proxy): proxy publishing uses the platform account and requires allowlist access.
+Configuring Nyaa direct sync automatically submits your anime releases from AniBT to Nyaa using your group's own account credentials.
 
 <Callout type="warn">
-  Use a dedicated Nyaa publishing account. Do not reuse a personal main-account password.
+  **Security Recommendation**: Please register a dedicated bot account on Nyaa for AniBT sync rather than reusing personal account passwords.
 </Callout>
+
+## Direct Sync vs. Platform Proxy
+
+Before configuring, determine which method fits your team:
+
+- **Direct Sync (This Page)**: Uses your team's own Nyaa username and password. No whitelist approval needed from AniBT; works immediately if your account can post on Nyaa.
+- **[Platform Proxy](/en/docs/nyaa-proxy)**: AniBT's official account uploads to Nyaa on your behalf. Ideal for teams without a Nyaa account or facing regional network blocks. Requires whitelist approval.
+
+## Setup Workflow
 
 <Steps>
   <Step>
-    ### Enter credentials and test
+    ### Verify Nyaa Account Access
+    Sign in to [nyaa.si](https://nyaa.si) in your browser and ensure the account has active posting privileges and is in good standing.
+  </Step>
 
-    Confirm the account can publish on Nyaa. Subtitle group sync settings → **Nyaa Sync**, enter username and password, then save. Select **Test account**; the test does not upload a real release.
+  <Step>
+    ### Enter Credentials in AniBT
+    Navigate to your fansub console at `/groups/<slug>/sync`, find the **Nyaa Sync** card, toggle it on, enter your Nyaa username and password, and click **Save**.
+  </Step>
+
+  <Step>
+    ### Test Account Connection
+    Click the **Test Account** button. AniBT will verify the login session. This test only checks authentication validity and does not upload any test torrents to Nyaa.
   </Step>
 </Steps>
+
+## Field Descriptions
+
+<TypeTable
+  type={{
+    'Username': {
+      type: 'string',
+      description: 'Registered Nyaa account username.',
+    },
+    'Password': {
+      type: 'string',
+      description: 'Password for the specified Nyaa account.',
+    },
+  }}
+/>
+
+## Diagnostic Results
+
+<TypeTable
+  type={{
+    'Connection Successful': { type: 'Normal', description: 'Credentials verified. Automatic synchronization to Nyaa is active.' },
+    'Login Failed': { type: 'Error', description: 'Incorrect username or password. Check credentials on Nyaa.' },
+    'Anti-Bot Challenge': { type: 'Error', description: 'Nyaa presented a CAPTCHA or blocked automated login. Retry later or apply for platform proxy.' },
+  }}
+/>

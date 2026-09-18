@@ -1,26 +1,83 @@
 ---
-title: Debugging & FAQ
-description: What to do when integration fails.
+title: Troubleshooting & FAQs
+description: Resolve common status codes, validation errors, and debugging scenarios when integrating with AniBT API and RSS feeds.
 ---
 
-```bash title="Inspect RSS"
-curl -s 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&limit=3' \
-  | grep -E '<title>|<pubDate>'
-```
+When integrating with the AniBT Open API or configuring automated RSS downloaders, use this troubleshooting guide to resolve common issues.
 
-```bash title="List slugs"
-curl -s https://anibt.net/api/subtitle-groups \
-  | jq '.data[] | {name, slug}'
-```
+<Callout type="info">
+  **Debugging Tip**: All non-2xx API error responses include a `requestId` field (also mirrored in the `X-Request-ID` response header). Always supply this ID when contacting support for instant log tracing.
+</Callout>
 
-| Symptom | What to do |
-| --- | --- |
-| Used `organizationId` | Third parties always use `slug` |
-| `If-Modified-Since` does nothing | Use `If-None-Match`. When both condition headers are sent, only ETag is honoured |
-| RSS returns `308` / `400` / `403` / `429` | `308`: follow and keep the final URL (often `limit=100` or aliases). `400`: `limit` must be a single integer `1..100`; `q` / `search` only one value, not empty, no control characters, max 160 UTF-8 bytes. `403`: production edge may reject illegal `limit` first. `429`: back off with `Retry-After`, do not retry immediately |
-| `episode=5` misses | `episode` is numeric exact match; `episodeKey` is string exact match. Batches use `episodeKey=BATCH` |
-| Publish `200` but RSS empty | `200` means written. Check `releaseId` on the detail page or in the RSS body. Then wait for the client poll interval |
-| Magnet-only / no torrent on publish | `422` `TORRENT_REQUIRED`. Send a multipart `torrent` part, or JSON `torrentStorageId` |
-| DELETE returns `202` | Poll `GET /api/releases/{releaseId}/deletion` until `completed` |
-| Key works but delete `403` | Missing `releases:delete`. Inspect `scopes` via [`/me`](/docs/open-api/me) |
-| Nyaa / Mikan still there after `completed` | External posts, Tracker, downloads, and local caches are not recalled |
+## Common Debugging Commands
+
+Before debugging client-side configurations, run these isolated `curl` commands to inspect direct server responses:
+
+<Tabs items={['Inspect RSS Output', 'Query Fansub Slugs', 'Check API Key Identity']}>
+  <Tab value="Inspect RSS Output">
+    Directly view returned episode titles and publication timestamps:
+
+    ```bash title="Fast RSS summary inspection"
+    curl -s 'https://anibt.net/rss/anime.xml?bgmId=543360&limit=3' \
+      | grep -E '<title>|<pubDate>|<enclosure'
+    ```
+  </Tab>
+
+  <Tab value="Query Fansub Slugs">
+    List all active fansub group names and permanent `slug` identifiers:
+
+    ```bash title="List fansub names and slugs"
+    curl -s https://anibt.net/api/subtitle-groups \
+      | jq '.data[] | {name, slug}'
+    ```
+  </Tab>
+
+  <Tab value="Check API Key Identity">
+    Verify the group name, slug, and granted permission scopes bound to your API key:
+
+    ```bash title="Verify API Key identity"
+    curl -s https://anibt.net/api/subtitle-groups/me \
+      -H "Authorization: Bearer <YOUR_API_KEY>" \
+      | jq .
+    ```
+  </Tab>
+</Tabs>
+
+## Common Symptoms & Solutions
+
+<TypeTable
+  type={{
+    'Error on internal IDs': {
+      type: 'Arguments',
+      description: 'API endpoints and RSS feeds always use permanent slugs (e.g., kirara-fantasia) or bgmId. Never pass internal database IDs.',
+    },
+    '304 cache not triggering': {
+      type: 'Caching',
+      description: 'Supply the ETag from the prior response using If-None-Match. If both conditional headers are sent, the server evaluates ETag.',
+    },
+    'RSS returns 308 redirect': {
+      type: 'Canonical URL',
+      description: 'Request hit a deprecated alias or supplied limit=100 redundantly. Follow and update your client to the redirected target URL.',
+    },
+    'Published but missing in RSS': {
+      type: 'Latency',
+      description: 'A 200 response means the release is accepted; it propagates across feeds within a brief period. Verify using the release detail URL.',
+    },
+    'TORRENT_REQUIRED error': {
+      type: 'Validation',
+      description: 'Releasing requires torrent bytes. Upload the .torrent file via multipart/form-data or provide torrentStorageId in JSON.',
+    },
+    'Deletion returns 202': {
+      type: 'Async Task',
+      description: 'Deletion is processed asynchronously. Poll GET /api/releases/{releaseId}/deletion every 2s until state reports completed.',
+    },
+    'Delete endpoint returns 403': {
+      type: 'Permissions',
+      description: 'The API Key is missing the releases:delete scope. Re-issue an API key in your console with this scope enabled.',
+    },
+    'Torrent remains on external sites': {
+      type: 'Scope Boundary',
+      description: 'AniBT release revocation removes records from our database and tracker, but cannot delete copies cached on external sites like Nyaa or Mikan.',
+    },
+  }}
+/>

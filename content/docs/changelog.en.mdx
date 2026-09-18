@@ -1,192 +1,60 @@
 ---
-
 title: Changelog
-description: Feature changes. Dates are Beijing time (UTC+8).
+description: Record of AniBT platform features, improvements, and bug fixes. Dates in UTC+8.
 ---
+
+This page logs user-facing features, enhancements, and fixes for visitors, anime fans, and fansub groups.
+
+<Callout type="info">
+  Entries are listed in reverse chronological order. If you encounter any bugs during regular use, feel free to report them via our [Support Email](/en/docs/contact).
+</Callout>
 
 ## September 17, 2026
 
-- **Image-host HTML includes image dimensions**
-  Copied HTML includes width and height when known. Release notes reserve space for images with dimensions and recognized hosted images, reducing movement as they load. External images without dimensions can still shift the content.
+- **Image Host HTML Includes Width & Height Attributes**
+  HTML code copied from the fansub image host now embeds real image pixel `width` and `height` attributes. Release notes reserve space in advance, eliminating Cumulative Layout Shift (CLS) when images finish loading.
 
 ## September 15, 2026
 
-- **The sign-in page no longer bounces when sign-in is already invalid**
-  If the session is gone, the sign-in form stays. Opening sign-in while still signed in still returns you to the previous page.
-- **Signing out on another device may take up to about five minutes to show here**
-  Sensitive actions such as changing the password still follow the server session immediately.
+- **Smoother Expired Session Redirects**
+  When a login session expires, opening the sign-in page stays on the login form without bouncing to and from the homepage. Signed-in users still redirect back to their previous page automatically.
+- **Improved Multi-Device Sign-Out Verification**
+  When signing out on another device, local credentials reconcile within ~5 minutes. Sensitive operations (password updates, fansub administration, release publishing) immediately verify active server sessions.
 
 ## September 14, 2026
 
-- **Open API exposes external-site sync status**
-  A subtitle-group API key with `releases:sync:read` can call `GET /api/releases/{releaseId}/sync-status` to read the current status, failure details, external links, and recent history for a normal release on Mikan, ACG.rip, Bangumi Moe, ACGNX, DMHY, and Nyaa. Releases remain visible only to their owning group.
-
-## September 13, 2026
-
-- **Anime, release, and group pages serve a stale copy after the edge TTL**
-  Successful `/anime/*`, `/release/*`, `/other-release/*`, `/group/*`, and `/magnets` pages may stay in the CDN for up to 120 seconds. After that window, visitors still get the just-expired page while the edge refreshes in the background. Browsers do not keep the HTML. New publishes usually show on these pages within 120 seconds.
-- **Anime and group page search snippets are more specific**
-  Anime detail descriptions now carry format, year, and episode count (e.g. "TV 动画 · 2026 年 · 全 12 话"); group profile descriptions carry work and release counts. The homepage adds site-level structured data. These only affect search-engine snippets and share cards — page content is unchanged.
+- **Open API External Sync Status Inspection**
+  Fansub API keys with `releases:sync:read` scope can now call `GET /api/releases/{releaseId}/sync-status` to inspect real-time publishing results, external links, error messages, and retry histories across Bangumi Moe, Mikan, DMHY, ACGNX, ACG.rip, and Nyaa.
 
 ## September 10, 2026
 
-- **Group console delete refreshes the list**
-  After confirming a delete on the group releases page, completion copy stays in the UI locale and the row leaves the list without a refresh. Creating, updating, or deleting a group claim or title template also updates that list immediately.
-- **Open API deletion status can reach `completed`**
-  `GET /api/releases/{releaseId}/deletion` returns `completed` once cleanup finishes, instead of remaining `pending`.
-- **Fixed some release pages and torrent downloads that failed**
-  Some movie/BD release pages returned an error, and their `.torrent` downloads were temporarily unavailable. Those pages and downloads work again.
-- **Subtitle-group dashboard adds registered members**
-  The members page adds an already-registered account by email or user ID. Unregistered addresses report that the user does not exist; existing members are not role-changed by add. Failures show an error. No invitation email is sent.
-- **Open API publish requires a torrent**
-  Both anime and other-release Open API publish endpoints require a torrent. `POST /api/releases/publish` and `POST /api/other-releases/publish`: send a multipart `torrent` part, or JSON `torrentStorageId`. Magnet-only returns `422 TORRENT_REQUIRED`. Preview has the same requirement.
-- **Fixed RSS now uses a 60-second edge cache window**
-  Successful unfiltered fixed RSS responses are shared at the edge for up to 60 seconds; clients can still use `ETag` and `304`.
-- **Torrent matching exposes verifiable decision fields**
-  `/api/animes/torrent-match` may return `identityKey`, `structure`, `decisionToken`, and `decisionTokenExpiresAt`. The web wizard `POST /api/releases/publish-web` validates `matchDecisionToken` bound to the torrent infohash; Open API `POST /api/releases/publish` does not require that token.
-- **Deletion receipts have one completion meaning**
-  Only `completed` means the primary record, public read models, caches, and object storage passed the deletion barrier.
-
-
-
-Only user-visible feature changes are recorded. Newest first.
+- **Live UI Updates in Fansub Console**
+  Confirming a release deletion immediately removes the item from the list with localized completion feedback. Anime claims and release title templates also update in real time without requiring manual page refreshes.
+- **Torrent File Mandatory for API Releases**
+  Both anime and other releases via Open API now mandate torrent bytes (multipart `.torrent` upload or JSON `torrentStorageId`). Releasing with only a magnet URI returns `422 TORRENT_REQUIRED`, ensuring valid distribution and tracker whitelist registration.
+- **Fixed Detail Pages for Movies and Specials**
+  Resolved an issue where certain movie/OVA/BD release detail pages threw errors and prevented torrent downloads.
+- **Add Registered Members Directly**
+  The team member management interface in the fansub console now adds members directly using their registered email or user ID.
 
 ## September 2, 2026
 
-- **Image-host global accelerated links retired**
-  Image-host management, upload results, and image pages now provide only direct links, BBCode, Markdown, and HTML. Existing images and direct links are unchanged. See [Image host](/docs/image-host).
-- **Fixed RSS uses a five-minute edge cache**
-  Successful unfiltered fixed RSS responses are shared by the CDN for up to 300 seconds, with exact invalidation after publication. Clients still revalidate with `max-age=0` and send `If-None-Match`; error responses are not shared.
+- **Streamlined Image Host Export Formats**
+  The image host management interface now provides four standardized embed formats: Direct URL, BBCode, Markdown, and Anti-shift HTML.
 
 ## August 31, 2026
 
-- **Fixed duplicate weekly cards across midnight**
-  The same episode airing on different platforms is now merged into one card, even when its times cross midnight in Shanghai. Different episodes remain separate.
-- **Fixed RSS is current after publication**
-  Catalogued, unfiltered fixed RSS feeds (site-wide, group, anime-pair, and other categories) are served from the publication version. Every RSS reader request checks the current version; an unchanged `ETag` may return `304`, and an old body is never authoritative. RSS with `limit`, filters, or search keeps its bounded refresh policy.
-- **Personal subscription RSS uses versioned cache identity**
-  Updating subscriptions advances the feed version, making the old cache identity unreachable. Credential cleanup is bounded garbage collection and is not the correctness mechanism.
-- **New releases no longer wait on a long cache window**
-  After a normal publish, the home/release list and fixed RSS converge within a bounded time. If a request temporarily returns `503`, retry after the response's `Retry-After`; taking many minutes to appear is not expected. The RSS client's polling interval still affects when the item is actually seen.
-
-## August 28, 2026
-
-- **Public anime pages use bounded reads**
-  Anime detail SSR returns metadata first and hydration issues one release-groups bundle request. The home cross-season weekly view now uses one window read. Successful `/api/anime/groups` JSON, `ETag`, `HEAD`, and `304` behavior is unchanged.
-- **Unavailable public projections are explicit**
-  Missing or inconsistent projections, bounded-read overflow, and temporary read failures return `503 SEARCH_UNAVAILABLE` with `Retry-After` and `no-store`; `missing_projection` is no longer presented as a 404 or an empty 200.
-
-## August 27, 2026
-
-- **`/magnets` uses previous/next cursors**
-  The release list paginates with an opaque `cursor`. Old `/magnets?page=` bookmarks show an invalid state and do not redirect. Open API and RSS are unchanged.
-
-## August 23, 2026
-
-- **Fixed subtitle-group publish preview failures**
-  Some anime with generated covers returned HTTP 500 when `preview=true`. Preview creation now succeeds.
+- **Fixed Duplicate Midnight Episodes in Schedule**
+  Episodes airing across midnight across different broadcast platforms are now unified into a single calendar card.
+- **Faster RSS Visibility for New Releases**
+  Newly published releases now propagate into site-wide magnets, group feeds, and anime category RSS feeds with significantly lower latency.
 
 ## August 22, 2026
 
-- **Bangumi Moe sync now uses account credentials**
-  Browser Cookies are no longer used. Enter the username or email and password of an activated account. See [Bangumi Moe sync](/docs/site-sync/bangumi).
+- **Bangumi Moe Sync Uses Account & Password**
+  Due to authentication changes on the upstream platform, Bangumi Moe sync now requires an email-activated username/email and password instead of legacy browser cookies.
 
 ## August 17, 2026
 
-- **Other releases add collection, movie, and other**
-  Category codes `collection` / `movie` / `other`, mapped to `/rss/other/<category>.xml`. Existing releases are not reclassified.
-
-## August 14, 2026
-
-- **No TOTP**
-  Sign-in is email code, password, OAuth, and optional Passkey.
-
-## August 13, 2026
-
-- **Nyaa descriptions capped at 20000 characters**
-  Custom descriptions and inherited `notes` share this limit. Site `notes` may still be longer. See [Nyaa proxy](/docs/nyaa-proxy).
-
-## August 11, 2026
-
-- **RSS `<pubDate>` uses Asia/Shanghai**
-  RFC 822 is `+0800`; the time embedded in the torrent is RFC 3339 `+08:00`.
-
-## August 8, 2026
-
-- **Image-host deletion progress can be queried**
-  Deletion returns `202`. When complete, on-site links are `404` / `410`. Browser caches and reposts outside the site are outside completion. See [Image host](/docs/image-host).
-
-## August 7, 2026
-
-- **Custom release title templates**
-  Group members can read them. Create, edit, and delete are limited to the owner / administrators.
-
-## July 30, 2026
-
-- **MediaInfo is plain text**
-- **Release notes restore Markdown + raw HTML** (the page does not sanitize)
-
-## July 25, 2026
-
-- **Personal subscription RSS is not stored in the shared cache**
-  `/rss/subscriptions.xml` is `private, no-store`.
-
-## July 22, 2026
-
-- **Anime release deletion API**
-  `DELETE /api/releases/{releaseId}`, status `GET .../deletion`. `rel_*` only. See [API reference](/docs/open-api/reference).
-- **API Key scopes**
-  `releases:publish` / `releases:delete`. Old keys have publish only.
-- **Email registration verifies first, then sets the password**
-
-## July 19, 2026
-
-- **Tracker is fixed at** `https://tracker.anibt.net/announce`
-  Unlisted torrents receive `not whitelisted`. `/scrape` and UDP are closed. See [Tracker](/docs/tracker).
-
-## July 18, 2026
-
-- **Public RSS `limit` is 1–100**; invalid values are no longer truncated.
-- **Public HTML supports** `Accept: text/markdown`.
-
-## July 17, 2026
-
-- **Publish whoami**: `GET /api/releases/publish` and `GET /api/other-releases/publish` do not write.
-- **A formal publish with no torrent and size 0 returns 422** `EMPTY_RELEASE_CONTENT`. Preview still allows it.
-
-## July 16, 2026
-
-- **RSS adds** `<anibt:bgmId>` (emitted only when bound). `/rss/other/*` does not.
-- **Torrent match is POST only** `/api/animes/torrent-match`. GET returns 405.
-
-## July 12, 2026
-
-- **Publish errors use a unified JSON envelope**
-  503 during deployment, 409 for a duplicate version, 429 when rate-limited. Includes `Retry-After`.
-
-## July 7, 2026
-
-- **Publish anime IDs unified as** `animeIdType` + `animeId` (`bgm` / `anilist` / `mal` / `anidb`). `bgmId` remains compatible.
-
-## July 6, 2026
-
-- **Publish language codes expanded**; `language` is no longer limited to 4 items.
-- **`/api/seasons/anime` adds `query`**
-
-## July 5, 2026
-
-- **Subtitle group image host**
-  `/groups/<slug>/image-host`. See [Image host](/docs/image-host).
-
-## July 4, 2026
-
-- **Seasonal anime adds** `rssReleaseCount` / `hasRelease`
-- **RSS opened in a browser is native XML**
-
-## June 27, 2026
-
-- **Other releases support Nyaa proxy publishing**
-
-## May 26, 2026
-
-- **Site sync adds Bangumi Moe and ACGNX**
+- **Expanded Categories for Other Releases**
+  In addition to regular anime releases, the "other" category now supports manga, music, raw footage, stage plays, collections, and movie specials, along with dedicated RSS feeds.

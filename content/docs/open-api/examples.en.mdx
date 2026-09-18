@@ -1,76 +1,152 @@
 ---
-title: Examples
-description: Wire qBittorrent / Sonarr / curl to RSS.
+title: Integration Examples
+description: Learn how to configure automated episode downloading with qBittorrent and Sonarr, and write Bash scripts supporting 304 conditional polling and async deletion.
 ---
 
-Paste the RSS URL into the client. No extra setup. Poll interval ≥ 5 minutes. Each endpoint page has Try-it.
+AniBT public RSS feeds and REST APIs are designed from the ground up for seamless integration with third-party downloaders and automated workflows.
 
 <Callout type="info">
-  Public RSS `limit` cap is **100**. Omit `limit` to take the full page. Get slugs from [`/api/subtitle-groups`](/docs/open-api/subtitle-groups).
+  **Subscription Tip**: Public RSS feeds return up to 100 items by default (the maximum batch supported by the server). You do not need to append `limit=100` to the feed URL.
 </Callout>
 
-## RSS URLs
+## Common RSS Feed Combinations
 
-All examples use `bgmId=543360`. Slugs: `kirara-fantasia`, `pre-s`, `kitauji-sub`, `haruhana`.
+The following examples demonstrate query combinations using anime `bgmId=543360` and fansub group slugs:
 
-```txt title="One group × one show"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
+<Tabs items={['Anime & Fansub Group', 'Multi-Group Filtering (Quality & Language)', 'All Releases by Group', 'Complete Series Batches Only']}>
+  <Tab value="Anime & Fansub Group">
+    Track a specific anime released by a single fansub team:
+
+    ```txt title="Single Fansub × Single Anime"
+    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
+    ```
+  </Tab>
+
+  <Tab value="Multi-Group Filtering (Quality & Language)">
+    Aggregate across all fansub groups for a specific series, filtering by 1080p and language:
+
+    ```txt title="Resolution & Language Filtering"
+    https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
+    ```
+  </Tab>
+
+  <Tab value="All Releases by Group">
+    Subscribe to all releases across all series by a specific fansub group (both URL forms are equivalent):
+
+    ```txt title="Full Fansub Group Feed"
+    https://anibt.net/rss/group/kirara-fantasia.xml
+    https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia
+    ```
+  </Tab>
+
+  <Tab value="Complete Series Batches Only">
+    Ignore ongoing weekly episodes and download only completed season packs or batches:
+
+    ```txt title="Batch / Complete Season Pack Filter"
+    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
+    ```
+  </Tab>
+</Tabs>
+
+## Automated Downloader Configuration
+
+<Tabs items={['qBittorrent', 'Sonarr', 'FlexGet']}>
+  <Tab value="qBittorrent">
+    1. Open qBittorrent and switch to the **RSS** tab in the sidebar.
+    2. Click **New subscription**, paste your AniBT RSS feed URL, and save.
+    3. Click **RSS Downloader (Rules)** in the upper right, create a rule, and check your new feed.
+    4. Set your client's default polling interval to **15 to 30 minutes**.
+  </Tab>
+
+  <Tab value="Sonarr">
+    1. Navigate to **Settings** → **Indexers** → **Add** in Sonarr.
+    2. Choose **Torznab** or a generic **RSS Sync** indexer.
+    3. Enter the AniBT anime-specific RSS URL and configure your quality profiles and filters.
+  </Tab>
+
+  <Tab value="FlexGet">
+    Add the AniBT RSS feed as an input task in your `config.yml`:
+
+    ```yaml title="config.yml"
+    tasks:
+      anime_task:
+        rss: https://anibt.net/rss/anime.xml?bgmId=543360&language=CHS
+        all_series: yes
+        download: ~/Downloads/Torrents/
+    ```
+  </Tab>
+</Tabs>
+
+## Production Script Snippets
+
+### 1. Bash Conditional Polling with HTTP 304 Caching
+
+Caches and sends the `ETag` to receive empty `304 Not Modified` responses when no new releases exist:
+
+```bash title="conditional_rss_poll.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+
+FEED_URL="https://anibt.net/rss/anime.xml?bgmId=543360"
+ETAG_FILE="/tmp/anibt_anime_543360.etag"
+
+# Load previous ETag
+ETAG=""
+if [ -f "$ETAG_FILE" ]; then
+  ETAG=$(cat "$ETAG_FILE")
+fi
+
+echo "Checking for new releases..."
+if [ -n "$ETAG" ]; then
+  RESPONSE=$(curl -sI -H "If-None-Match: $ETAG" "$FEED_URL")
+else
+  RESPONSE=$(curl -sI "$FEED_URL")
+fi
+
+HTTP_STATUS=$(echo "$RESPONSE" | grep -i '^http/' | awk '{print $2}')
+
+if [ "$HTTP_STATUS" = "304" ]; then
+  echo ">>> No new content (304 Not Modified). Skipping download."
+elif [ "$HTTP_STATUS" = "200" ]; then
+  echo ">>> New releases found! Saving new ETag..."
+  NEW_ETAG=$(echo "$RESPONSE" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+  echo "$NEW_ETAG" > "$ETAG_FILE"
+  # Trigger downloader or notification hooks here
+fi
 ```
 
-```txt title="1080p or 4K"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&resolution=1080p&resolution=4K
-```
+### 2. Asynchronous Release Deletion with Polling Loop
 
-```txt title="Language + subtitle type"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&language=CHS&subtitle=EXTERNAL&subtitle=INTERNAL
-```
+Initiates release deletion via `DELETE` and polls the status endpoint until receiving `completed`:
 
-```txt title="Stacked filters"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=haruhana&resolution=1080p&format=MKV&language=CHS&subtitle=EXTERNAL&episode=5
-```
+```bash title="delete_and_wait.sh"
+#!/usr/bin/env bash
+set -euo pipefail
 
-```txt title="One show across groups"
-https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
-```
+RELEASE_ID="rel_01j7example123"
+API_KEY="YOUR_SUBTITLE_GROUP_API_KEY"
+BASE_URL="https://anibt.net"
 
-```txt title="Everything from one group (equivalent)"
-https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia
-https://anibt.net/rss/group/kirara-fantasia.xml
-```
+echo "Initiating asynchronous deletion for: $RELEASE_ID"
+DELETE_RES=$(curl -sS -X DELETE \
+  -H "Authorization: Bearer $API_KEY" \
+  "$BASE_URL/api/releases/$RELEASE_ID")
 
-```txt title="Batch"
-https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
-```
+STATE=$(echo "$DELETE_RES" | jq -r '.result.state // .error.details.state // "pending"')
 
-## qBittorrent / Sonarr / FlexGet
-
-Paste the subscribe URL. qBittorrent’s 30-minute default is fine; it does not send `If-None-Match` and always pulls the full body. Custom scripts must send `If-None-Match`.
-
-## curl
-
-```bash title="If-None-Match"
-H=$(curl -sI 'https://anibt.net/rss/anime.xml?bgmId=543360')
-ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
-curl -sI -H "If-None-Match: $ETAG" \
-  'https://anibt.net/rss/anime.xml?bgmId=543360'
-```
-
-```bash title="DELETE + poll"
-release_id='rel_example'
-base_url='https://anibt.net'
-
-response=$(curl -sS -X DELETE \
-  -H "Authorization: Bearer $ANIBT_API_KEY" \
-  "$base_url/api/releases/$release_id")
-
-while [ "$(jq -r '.result.state // .error.details.state // empty' <<<"$response")" = "pending" ]; do
+# Poll deletion task state
+while [ "$STATE" = "pending" ]; do
+  echo "Deletion task processing in queue; retrying in 2 seconds..."
   sleep 2
-  response=$(curl -sS \
-    -H "Authorization: Bearer $ANIBT_API_KEY" \
-    "$base_url/api/releases/$release_id/deletion")
+  STATUS_RES=$(curl -sS \
+    -H "Authorization: Bearer $API_KEY" \
+    "$BASE_URL/api/releases/$RELEASE_ID/deletion")
+  STATE=$(echo "$STATUS_RES" | jq -r '.result.state // "pending"')
 done
 
-jq . <<<"$response"
+if [ "$STATE" = "completed" ]; then
+  echo ">>> Release successfully purged from database and edge caches!"
+else
+  echo ">>> Deletion ended with state: $STATE"
+fi
 ```
-
-The delete key must include `releases:delete`. Stop only on `completed`.

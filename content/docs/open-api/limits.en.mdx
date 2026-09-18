@@ -1,60 +1,62 @@
 ---
-title: Rate limits & caps
-description: Per-endpoint limit and rate windows.
+title: Rate Limits & Pagination
+description: Learn about AniBT per-endpoint rate limits, pagination maximums, cursor mechanisms, and exponential backoff strategies.
 ---
 
-Numbers and status codes are the public contract. Over limit returns `429`; back off with `Retry-After`.
-
-## Per endpoint
-
-| Endpoint | `limit` default | `limit` cap | Rate limit (default) |
-| --- | --- | --- | --- |
-| `/rss/anime.xml` | **100** | **100** | 120 req / 60 s / IP |
-| `/rss/group/<slug>.xml` | 100 | **100** | 120 req / 60 s / IP |
-| `/rss/magnets.xml` | 100 | **100** | 120 req / 60 s / IP |
-| `/rss/other/<category>.xml` | 100 | **100** | 120 req / 60 s / IP |
-| `/api/bgm/search` | 5 | **25** | 60 req / 60 s / IP |
-| `/api/animes/search` | 24 | **50** | 120 req / 60 s / IP |
-| `/api/animes/torrent-match` | 10 | **50** | 180 req / 60 s / IP |
-| `/api/anime/lookup` | — | — | 60 req / 60 s / IP |
-| `/api/mikan/group-lookup` | — | — | 60 req / 60 s / IP |
-| `/api/subtitle-groups` | — | full list | 60 req / 60 s / IP |
-| `/api/seasons/anime` | — | — | 30 req / 60 s / IP |
-| `/api/anime/groups` | — | — | 30 req / 60 s / IP |
-| `DELETE /api/releases/{releaseId}` | — | — | 30 req / 60 s / API key |
-| `GET /api/releases/{releaseId}/deletion` | — | — | 120 req / 60 s / API key |
-
-Deletion also has a pre-auth abuse window. `Retry-After` on a `pending` receipt is poll guidance; a real rate limit is `429`.
+To safeguard public service availability and prevent runaway crawlers or traffic spikes from degrading platform performance, AniBT implements transparent rate limits and page size ceilings across its endpoints.
 
 <Callout type="warn">
-  Public RSS `limit` accepts a single integer `1..100`. Invalid values return app `400`; production edge may return `403` first. Default is already 100 — do not send `limit=100` or you may get `308`.
+  **Rate Limit Exceeded**: When request frequency exceeds allowed quotas, the server responds with `429 Too Many Requests`. The response header includes `Retry-After: <seconds>`. Client scripts must catch this status code and wait the specified seconds before retrying, rather than immediately re-requesting.
 </Callout>
 
-On `/rss/magnets.xml` and `/rss/other/*`, `q` / `search` may be only one value, max 160 UTF-8 bytes. New-keyword search: 120 / 10 minutes and 1000 / 24 hours per subject; over limit returns `429`. Stable queries do not count.
-
-Successful canonical fixed RSS responses use a shared CDN cache with a
-60-second `must-revalidate` window. the edge revalidates under this TTL. Clients still use `max-age=0`, and an unchanged `ETag` may return
-`304`; unready and error responses are not shared. Search, filtered,
-`limit`-bearing dynamic RSS, and arbitrary `/magnets` pages are outside this
-fixed-feed contract. Clients should still poll at ≥5-minute intervals and send
-`If-None-Match`.
-
-`/magnets` paginates with an opaque previous/next `cursor`. Query param `page` is an accessible invalid state (`Cache-Control: no-store`) and does not redirect.
+## Limits by Endpoint
 
 <TypeTable
   type={{
-    'cursor (/magnets)': { type: 'string', description: 'Opaque previous/next cursor' },
-    'page (/magnets)': { type: 'retired', required: false, description: 'Accessible no-store invalid state; no redirect' },
-    'cursor (/api/animes/search)': { type: 'string', description: 'Must be ts_page:<page>; public search is capped at 100 pages' },
+    'Public RSS Feeds': {
+      type: '120 req / 60s / IP',
+      description: 'Includes /rss/anime.xml, /rss/group/, etc. Default and max limit is 100 entries.',
+    },
+    '/api/animes/torrent-match': {
+      type: '180 req / 60s / IP',
+      description: 'Torrent title parsing. Default limit is 10; max is 50 entries.',
+    },
+    '/api/animes/search': {
+      type: '120 req / 60s / IP',
+      description: 'Comprehensive anime search. Default limit is 24; max is 50 entries.',
+    },
+    '/api/bgm/search': {
+      type: '60 req / 60s / IP',
+      description: 'Search Bangumi ID by anime title. Default limit is 5; max is 25 entries.',
+    },
+    '/api/subtitle-groups': {
+      type: '60 req / 60s / IP',
+      description: 'Complete fansub group directory returned in full; clients should cache locally long term.',
+    },
+    '/api/seasons/anime': {
+      type: '30 req / 60s / IP',
+      description: 'Seasonal anime archives. Long-term caching is strongly recommended.',
+    },
+    'DELETE /api/releases/{id}': {
+      type: '30 req / 60s / Key',
+      description: 'Release revocation. Execute serially; do not fire high-concurrency bursts.',
+    },
+    'GET .../deletion Status': {
+      type: '120 req / 60s / Key',
+      description: 'Poll deletion task lifecycle. Recommended polling interval ≥ 2 seconds.',
+    },
   }}
 />
 
-Very tight filters may return fewer than `limit` items.
+## Pagination & Limit Parameter Rules
 
-## Clients
+1. **Default Limit is Maximum**: Public RSS feeds default to 100 items (the maximum supported single-page batch). You **do not need to supply `limit=100`**; simply omit the parameter.
+2. **Valid Range**: When requesting smaller batches (e.g., latest 3 items), provide an integer between `1..100`. Out-of-bounds or non-numeric values return `400 Bad Request`.
+3. **Cursor Pagination**: Resource feeds and certain APIs use opaque previous/next `cursor` tokens. Legacy numeric `page` parameters are discontinued; adapt your scripts to use cursors.
+4. **Query Length**: The search term parameter (`q` / `search`) accepts up to 160 UTF-8 bytes and rejects control characters.
 
-- Omit `limit` for 100 items.
-- Send `If-None-Match`.
-- Interval ≥ 5 minutes.
-- Do not fan out concurrent requests to the same URL.
-- Do not poll more often than once a minute.
+## Good Neighbor Best Practices
+
+- **Filter Targeted Data**: When tracking a specific series or fansub group, use specific filter parameters rather than scraping the entire catalog.
+- **Avoid Concurrency**: Do not issue concurrent requests for the exact same URL.
+- **Sensible Polling**: Polling intervals of ≥ 5 minutes combined with `If-None-Match` conditional requests keep both client and server healthy.

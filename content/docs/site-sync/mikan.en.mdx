@@ -1,50 +1,80 @@
 ---
-title: Mikan Sync
-description: Enter the API Token; fill publish group and release group IDs only if auto-query fails.
+title: Mikan Project Sync
+description: Learn how to retrieve your Mikan Project API Token, auto-detect Subgroup and Publish Group IDs, and troubleshoot publishing issues.
 ---
 
-Usually only the **API Token** is required. After saving, query to fill the publish group ID and release group ID. If auto-query fails, use the manual steps at the bottom.
+Configuring Mikan Project sync automatically dispatches your anime releases from AniBT to Mikan and updates Mikan subscriber feeds.
+
+<Callout type="info">
+  In most cases, you only need to enter your **API Token** and save; clicking the "Auto Query" button will instantly detect your Subgroup ID and Publish Group ID. Manual lookup is only needed as a fallback.
+</Callout>
+
+## Setup Steps
 
 <Steps>
   <Step>
-    ### Copy the API Token
+    ### Get Your Mikan API Token
+    Log in to [mikanani.me](https://mikanani.me), click your avatar in the upper right, and go to **Account Settings** → **User Center** → **Edit Profile**. In the "Basic Info" section, copy your **API Token** (click "Generate" if you do not have one yet).
 
-    Sign in at [https://mikanani.me](https://mikanani.me). Top-right **Account Settings** → **Personal Center** → **Edit Profile**, then copy **API Token** under **Basic Profile**. If none is shown, select **Generate** on the right. Paste into AniBT Mikan sync settings and **Save**.
-
-    ![Mikan API Token and ID query](/images/site-sync/mikan-api-token.webp)
+    ![Mikan API Token and ID Query](/images/site-sync/mikan-api-token.webp)
   </Step>
-  <Step>
-    ### Query IDs
 
-    Select **【Query the ID of "XXXXXX" from Mikan】** to get the **publish group ID** and **release group ID**.
+  <Step>
+    ### Save Token to AniBT
+    Open your fansub console at `/groups/<slug>/sync`, enable Mikan sync, paste your API Token into the field, and click **Save**.
+  </Step>
+
+  <Step>
+    ### Auto-Detect Group IDs
+    Once saved, click the **[Query Mikan IDs for "Your Group"]** button below. The system queries Mikan on your behalf and automatically populates both your **Subgroup ID** and **Publish Group ID**.
   </Step>
 </Steps>
 
-## Manual ID lookup (optional)
+## Field Descriptions
 
-Use only when auto-query cannot identify the IDs.
+<TypeTable
+  type={{
+    'API Token': {
+      type: 'string',
+      description: 'Personal token generated in Mikan profile settings for API authentication.',
+    },
+    'Subgroup ID': {
+      type: 'number',
+      description: 'Numeric ID of your fansub team on Mikan, detected automatically or from group page URL.',
+    },
+    'Publish Group ID': {
+      type: 'number',
+      description: 'Mikan feed distribution identifier, detected automatically or from RSS subscription link.',
+    },
+  }}
+/>
 
-<Tabs items={['Publish Group ID', 'Release Group ID']}>
-  <Tab value="Publish Group ID">
-    The publish group ID is the trailing number in the publish group page URL.
+## Fallback Manual Lookup
 
-    ```txt title="Publish group page URL"
+If auto-detection cannot locate your group credentials, find the numeric IDs manually:
+
+<Tabs items={['Finding Subgroup ID', 'Finding Publish Group ID']}>
+  <Tab value="Finding Subgroup ID">
+    Visit your fansub team's page on Mikan (e.g., by clicking your group's name on any published torrent):
+
+    ```txt title="Fansub Page URL Example"
     https://mikanani.me/Home/PublishGroup/359
     ```
 
-    Here `359` is the publish group ID. Select **subtitle group** in a list or anime description — that page is the publish group page.
+    - The number at the end of the URL (e.g., `359`) is your **Subgroup ID**.
 
-    ![Mikan publish group ID page](/images/site-sync/mikan-publish-group-id.webp)
+    ![Mikan Publish Group ID Page](/images/site-sync/mikan-publish-group-id.webp)
   </Tab>
-  <Tab value="Release Group ID">
-    Using LoliHouse: open any anime list published as LoliHouse, then select the **RSS icon** next to the subtitle group name:
 
-    ```txt title="RSS link"
+  <Tab value="Finding Publish Group ID">
+    Open any anime release listing under your group's profile, and click the orange **RSS icon** next to your fansub name:
+
+    ```txt title="RSS Link subgroupid Parameter"
     https://mikanani.me/RSS/Bangumi?bangumiId=3953&subgroupid=370
     ```
 
-    In `subgroupid=370`, `370` is the release group ID.
+    - The value of `subgroupid=370` is your **Publish Group ID**.
 
-    ![Release group ID in Mikan RSS](/images/site-sync/mikan-rss-subgroup-id.webp)
+    ![Mikan RSS Publish Group ID](/images/site-sync/mikan-rss-subgroup-id.webp)
   </Tab>
 </Tabs>

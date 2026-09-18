@@ -1,20 +1,56 @@
 ---
 title: ACGNX Sync
-description: Enter UID and API Token.
+description: Learn how to retrieve your ACGNX UID and API Token, configure automated cross-publishing, and test connection credentials.
 ---
 
-Copy **UID** and **API Token** from the ACGNX account API settings page.
+Configuring ACGNX sync automatically submits your anime releases from AniBT to the ACGNX distribution platform.
 
 <Callout type="warn">
-  After pasting, check for extra spaces at either end.
+  ACGNX utilizes independent API Token authentication. When copying your UID and Token, ensure no leading or trailing whitespace is accidentally included.
 </Callout>
+
+## Setup Workflow
 
 <Steps>
   <Step>
-    ### Copy and save
+    ### Open ACGNX API Settings
+    Log in to [ACGNX (share.acgnx.se)](https://share.acgnx.se) and click **Publish Resources** in the upper left. In the left navigation, navigate to **User Control Center** → **Account API Settings**.
 
-    Visit [https://share.acgnx.se](https://share.acgnx.se). Top-left **發佈資源**, then sidebar **帳戶控制中心** → **帳戶API設置**. Paste **UID** and **API Token** into AniBT and save.
+    ![ACGNX Account API Settings](/images/site-sync/acgnx-api-settings.webp)
+  </Step>
 
-    ![ACGNX account API settings](/images/site-sync/acgnx-api-settings.webp)
+  <Step>
+    ### Copy UID & API Token
+    Locate your numeric **UID** and the accompanying **API Token**. Generate a token if one is not already assigned.
+  </Step>
+
+  <Step>
+    ### Save and Test in AniBT
+    Open your fansub console at `/groups/<slug>/sync`, enter your **UID** and **API Token** in the ACGNX card, click **Save**, and run **Test Connection**.
   </Step>
 </Steps>
+
+## Field Descriptions
+
+<TypeTable
+  type={{
+    'UID': {
+      type: 'string',
+      description: 'Numeric user identifier displayed in the ACGNX User Control Center.',
+    },
+    'API Token': {
+      type: 'string',
+      description: 'Publisher API key issued by ACGNX for remote submission.',
+    },
+  }}
+/>
+
+## Diagnostic Results
+
+<TypeTable
+  type={{
+    'Connection Successful': { type: 'Normal', description: 'UID and Token validated successfully. Cross-publishing is active.' },
+    'Authentication Failed': { type: 'Error', description: 'Invalid or reset token. Regenerate the token in ACGNX and update here.' },
+    'UID Mismatch': { type: 'Error', description: 'The UID and API Token do not belong to the same account. Verify credentials.' },
+  }}
+/>

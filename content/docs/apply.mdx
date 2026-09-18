@@ -1,20 +1,88 @@
 ---
 title: 申请入驻
-description: 用注册邮箱发邮件申请字幕组发布权限。
+description: 了解字幕组入驻 AniBT 的申请流程、邮件模板与权限开通说明。
 ---
 
-发布权限不自助开通。用 **AniBT 注册邮箱** 发到 [support@anibt.net](mailto:support@anibt.net)，主题：`字幕组入驻申请 - <组名>`。
+AniBT 欢迎各类原创动漫翻译、压制与分享团队入驻，共同维护纯净、高效的动漫 BT 资源生态。
 
-## 邮件内容
+<Callout type="warn">
+  为了确保发布身份真实可靠，发布权限暂不支持自助开通，必须由团队负责人使用 **AniBT 注册邮箱** 发送申请邮件。尚未注册者请先完成 [账号注册](/docs/account-auth)。
+</Callout>
 
-- **组名**
-- **slug**：稳定英文标识，例如 `sakura-sub`。开通后会出现在公开 URL 中，不宜更改。
-- **简介**：作品类型、活跃情况。
-- **联系方式**：可反向联系到字幕组的渠道。
-- **身份证明（任选一项）**：其它 BT 站账号、公开频道管理员证明，或等价材料。
+入驻审核通过后，你将获得专属字幕组管理后台 `/groups/<slug>`、自动化发布 API Key、多站一键同步与专属图床等完整权益。
 
-尚未注册时，先完成 [账号](/docs/account-auth)。
+## 申请流程
 
-通常几个工作日内回复。一周无回复时检查垃圾邮件后可再发一次。
+<Steps>
+  <Step>
+    ### 注册 AniBT 主站账号
+    访问 [主站注册页面](https://anibt.net/auth/sign-up)，使用团队官方公用邮箱或负责人的常用邮箱完成注册。后续审核通过后，该账号将直接绑定为该字幕组的拥有者（Owner）。
+  </Step>
 
-开通后会绑定 slug、发放 API Key，字幕组出现在站内列表和 RSS。接着配置 [站点同步](/docs/site-sync)、[Tracker](/docs/tracker)、[发布 API](/docs/open-api/releases-publish)。
+  <Step>
+    ### 准备申请材料
+    整理字幕组的基本信息与历史作品凭证。字段详细要求参见下方的 [字段说明](#申请字段说明)。
+  </Step>
+
+  <Step>
+    ### 发送申请邮件
+    使用你在 AniBT 注册的同一邮箱，向官方支持邮箱发送申请：
+
+    - **收件人**：[support@anibt.net](mailto:support@anibt.net)
+    - **邮件主题**：`字幕组入驻申请 - <你的字幕组名称>`
+    - **邮件正文**：参考下方提供的模板填写
+
+    ```txt title="申请邮件参考模板"
+    你好，我们申请入驻 AniBT 字幕组发布平台，信息如下：
+
+    1. 字幕组名称：樱花字幕组 (Sakura Sub)
+    2. 专属 slug：sakura-sub
+    3. 字幕组简介：主要负责当季新番日汉双语翻译与压制，团队活跃。
+    4. 身份凭证：
+       - 动漫花园发布主页：https://share.dmhy.org/topics/list/user_id/...
+       - 蜜柑计划发布组页：https://mikanani.me/Home/PublishGroup/...
+       - （或附上管理后台登录截图附件）
+    5. 团队联系渠道：Telegram @sakura_lead / QQ 频道 123456
+    ```
+  </Step>
+
+  <Step>
+    ### 等待审核与开通
+    管理员通常会在 1 到 3 个工作日内完成审核并邮件回复。若超过一周未收到回信，请先检查垃圾邮件箱，然后可发邮件提醒。
+  </Step>
+</Steps>
+
+## 申请字段说明
+
+<TypeTable
+  type={{
+    '组名': {
+      type: 'string',
+      description: '字幕组的正式中文或英文名称，将展示在番剧详情页与字幕组列表。',
+    },
+    'slug': {
+      type: 'string',
+      description: '永久英文唯一标识（如 sakura-sub），用于 URL 路径及 API 调用，开通后不宜更改。',
+    },
+    '简介': {
+      type: 'string',
+      description: '字幕组主要制作方向、作品类型、活跃频次等基本背景。',
+    },
+    '身份证明': {
+      type: 'string',
+      description: '在其他 BT 站（花园、蜜柑、末日站等）的发布者链接、后台管理截图或官方社交账号。',
+    },
+    '联系方式': {
+      type: 'string',
+      description: '便于平台管理员必要时反向沟通的即时联系渠道（如 QQ、TG、Discord）。',
+    },
+  }}
+/>
+
+## 审核通过后的下一步
+
+审核通过后，你在登录 AniBT 后即可在顶栏看到字幕组管理控制台入口。接下来推荐按以下顺序完成初始化配置：
+
+1. **[配置站点同步](/docs/site-sync)**：录入萌番组、蜜柑、花园、末日站等凭据，实现一键跨站分发。
+2. **[设置 Tracker](/docs/tracker)**：在制种工具中配置 `https://tracker.anibt.net/announce`。
+3. **[探索图床与 API](/docs/image-host)**：使用专属图床上传发布海报截图，或通过 [API 发布](/docs/open-api/releases-publish) 接入自动化工作流。

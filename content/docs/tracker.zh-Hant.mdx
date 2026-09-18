@@ -1,21 +1,57 @@
 ---
-title: Tracker
-description: 製種時使用的 AniBT announce 地址。
+title: Tracker 規範與位址
+description: 瞭解 AniBT 官方 Tracker announce 位址、製種設定、白名單機制與種子下載方式。
 ---
 
-只接受已在 AniBT 釋出的種子。
+AniBT 運行著專為本站釋出的動漫資源提供高速對等連線服務的自建 BitTorrent Tracker。
 
-```txt
+<Callout type="warn">
+  **白名單通訊機制**：為了防範惡意刷流與垃圾種子濫用，AniBT Tracker 啟用了 infohash 白名單機制。只有在 AniBT 成功釋出的種子才會自動加入通訊白名單。未在本站釋出的種子回報時會回傳 `not whitelisted`。
+</Callout>
+
+## 官方 Tracker 位址
+
+在製作 `.torrent` 檔案或在下載客戶端中設定 Tracker 時，請使用以下標準位址：
+
+```txt title="AniBT Tracker Announce URL"
 https://tracker.anibt.net/announce
 ```
 
-製種時加入該地址。站內釋出會把它寫入 magnet。未在本站釋出的種子會返回 `not whitelisted`。
+- **通訊協定**：支援標準 HTTP / HTTPS（連接埠 443），全面支援 IPv4 與 IPv6 雙棧通訊。
+- **已關閉功能**：為了保障服務高可用與防範拒絕服務攻擊，Tracker 永久關閉了 `/scrape` 抓取介面、UDP 協定支援以及歷史舊版 `/announce/v1/*` 路徑。
 
-下載 `.torrent`：
+## 製種與釋出流程
 
-| 類型 | 路徑 |
-| --- | --- |
-| 番劇 | `/api/torrent/{rel_*}.torrent` |
-| 其他類 | `/api/other-torrent/{orel_*}.torrent` |
+<Steps>
+  <Step>
+    ### 在製種工具中新增 Tracker
+    使用 qBittorrent、Transmission、mktorrent 等製種工具建立種子時，將 `https://tracker.anibt.net/announce` 填入 Tracker 伺服器列表第一行。
+  </Step>
 
-已關閉：`/scrape`、UDP、`/announce/v1/*`。
+  <Step>
+    ### 在 AniBT 平台提交釋出
+    透過字幕組後台頁面或 [釋出 API](/zh-Hant/docs/open-api/releases-publish) 上傳產生的 `.torrent` 檔案。平台成功受理入庫後，會自動將該種子的 infohash 寫入 Tracker 通訊白名單，同時產生攜帶該 Tracker 的磁力連結。
+  </Step>
+
+  <Step>
+    ### 客戶端做種上傳
+    在下載客戶端中載入該種子，確認 Tracker 狀態顯示為 `working`（正常通訊）。此後其他從 AniBT 取得磁力或種子的觀眾即可透過該 Tracker 與你建立對等連線。
+  </Step>
+</Steps>
+
+## 種子檔案下載介面
+
+AniBT 為全站公開資源提供直接的 `.torrent` 二進位檔案下載路徑，第三方工具與腳本可按需呼叫：
+
+<TypeTable
+  type={{
+    '番劇資源種子': {
+      type: 'GET',
+      description: 'https://anibt.net/api/torrent/{releaseId}.torrent（releaseId 以 rel_ 開頭）',
+    },
+    '其他類資源種子': {
+      type: 'GET',
+      description: 'https://anibt.net/api/other-torrent/{releaseId}.torrent（releaseId 以 orel_ 開頭）',
+    },
+  }}
+/>

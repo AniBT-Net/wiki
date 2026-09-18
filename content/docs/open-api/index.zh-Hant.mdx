@@ -1,20 +1,59 @@
 ---
-title: 總覽
-description: AniBT 公開 RSS 與 JSON API 入口。介面頁由 OpenAPI 產生，可在頁面上試請求。
+title: 開放 API 總覽
+description: 瞭解 AniBT 公開 REST API 與標準 RSS 體系，探索無需鑑權的讀取介面與字幕組自動化工作流程。
 ---
 
-AniBT 對外提供 **RSS**（訂閱）和 **JSON**（程式讀取）。公開讀取可匿名，並按各端點快取合同支援 **HTTP 304**。釋出、刪除、`/me` 必須帶字幕組 API Key，回應不快取。
+AniBT 秉持開放的社群理念，將全站番劇資訊、釋出資源、字幕組目錄與最新磁力連結全面對外開放。
 
-<Callout type="warn">
-  生產 base URL 為 `https://anibt.net`。只使用文件列出的主站路徑。
+<Callout type="info">
+  **生產 Base URL**：`https://anibt.net`。除特別說明外，所有數據均透過標準 HTTPS 提供服務。所有公開讀取介面均可匿名呼叫，無需申請 Token 或設定複雜憑證。
 </Callout>
 
-鑑權、錯誤碼見 [介面約定](/docs/open-api/reference)。每個介面頁帶 Try-it。機器可讀契約：[openapi.yaml](/openapi.yaml)。
+每個介面文件頁面均內嵌了基於 OpenAPI 契約產生的 **Try-it 互動測試面板**，你可以在瀏覽器中直接填寫參數並發起真實請求，快速驗證回應結構。
 
-qBittorrent / Sonarr / FlexGet 等 RSS 用戶端無需額外設定。快取、限流、排障仍在對應頁。
+## 體系架構與核心能力
 
-## 穩定性
+<Tabs items={['公開讀取 (免鑑權)', '字幕組自動化 (需 API Key)', '標準 RSS 體系']}>
+  <Tab value="公開讀取 (免鑑權)">
+    面向普通開發者、第三方動漫客戶端、機器人與數據分析腳本：
 
-- 路徑與查詢參數不會做不相容變更；新參數只做擴充。
-- `slug` 一旦釋出盡量保持穩定。
-- 內部主鍵不屬於公開契約，一律使用 `slug`。
+    - **番劇檢索與詳情**：透過動畫名稱、日文原名或 Bangumi ID 取得結構化條目數據
+    - **字幕組目錄**：查詢全站活躍字幕組列表及其穩定英文 `slug`
+    - **種子匹配**：呼叫標題解析引擎，自動分析動畫集數、解析度與字幕語言
+    - **條件快取**：全面支援 HTTP 弱 ETag 與 304 協商，輪詢極大節省流量
+  </Tab>
+
+  <Tab value="字幕組自動化 (需 API Key)">
+    面向入駐字幕組的 CI/CD 自動壓制釋出流程與管理腳本：
+
+    - **資源釋出**：透過 `POST /api/releases/publish` 自動提交 `.torrent` 種子
+    - **身份核驗**：透過 `GET /api/releases/publish` 執行 whoami 自檢
+    - **外站同步追蹤**：即時查詢六大 BT 站的同步釋出結果與外站連結
+    - **非同步刪除**：透過 `DELETE /api/releases/{id}` 撤回釋出並追蹤清理終態
+  </Tab>
+
+  <Tab value="標準 RSS 體系">
+    面向 qBittorrent、Sonarr、FlexGet 等主流自動化下載器：
+
+    - **單番劇訂閱**：按 Bangumi ID 聚合訂閱，支援疊加字幕組、畫質、字幕語言過濾
+    - **字幕組訂閱**：按字幕組 `slug` 訂閱該組全部最新作品
+    - **全站磁力**：全站最新入庫資源的即時磁力推送來源
+    - **標準協議**：完整支援 RFC 規範與 BitTorrent BEP 36 擴充標籤
+  </Tab>
+</Tabs>
+
+## 介面穩定性與規範承諾
+
+1. **向下相容保證**：已公開的端點路徑與參數不會進行不相容修改，新功能僅透過追加參數實現。
+2. **識別碼規範**：第三方在呼叫與持久化時請務必使用 **`slug`**（如 `kirara-fantasia`）或 **`bgmId`**，避免依賴易變的內部主鍵。
+3. **機器可讀契約**：標準 OpenAPI 3.1 規範檔案可在 [/openapi.yaml](/openapi.yaml) 直接取得。
+
+## 開發者快速指引
+
+<Cards>
+  <Card title="介面約定與鑑權" href="/zh-Hant/docs/open-api/reference" description="Base URL、請求標頭規範、字幕組 API Key 權限與標準錯誤碼" />
+  <Card title="HTTP 快取與 304" href="/zh-Hant/docs/open-api/caching" description="利用 ETag 與條件請求減少網路開銷與防止限流的最佳實踐" />
+  <Card title="限流與分頁上限" href="/zh-Hant/docs/open-api/limits" description="各端點速率限制視窗、分頁限制與重試退避策略" />
+  <Card title="排障與常見問題" href="/zh-Hant/docs/open-api/troubleshooting" description="常見 HTTP 報錯原因、curl 偵錯技巧與問題速查表" />
+  <Card title="實戰整合範例" href="/zh-Hant/docs/open-api/examples" description="qBittorrent / Sonarr 接入與自動化 Bash 腳本範例" />
+</Cards>

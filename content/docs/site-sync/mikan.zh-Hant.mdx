@@ -1,49 +1,79 @@
 ---
-title: Mikan（蜜柑計畫）同步
-description: 填寫 API Token；需要時再手動填字幕組 ID 與釋出組 ID。
+title: 蜜柑計畫同步
+description: 瞭解如何取得蜜柑計畫（Mikan）API Token、自動查詢字幕組與釋出組 ID，以及排查釋出設定。
 ---
 
-通常只需 **API Token**。儲存後點查詢即可帶出字幕組 ID 與釋出組 ID。自動查詢失敗時用本頁末尾的手動方法。
+設定蜜柑計畫（Mikan）同步後，AniBT 釋出的番劇資源將自動分發至蜜柑計畫並同步更新至蜜柑訂閱流。
+
+<Callout type="info">
+  絕大多數情況下，只需填入 **API Token** 並儲存，點選頁面上的「自動查詢」按鈕即可自動取得字幕組 ID 與釋出組 ID。僅當自動匹配失敗時才需要手動尋找。
+</Callout>
+
+## 快速設定流程
 
 <Steps>
   <Step>
-    ### 複製 API Token
-
-    登入 [https://mikanani.me](https://mikanani.me)，右上角 **帳號設定** → **個人中心** → **編輯資料**，在 **基本資料** 下複製 **API Token**。沒有則點右側 **生成**。貼上到 AniBT 蜜柑計畫同步設定後 **儲存**。
+    ### 取得蜜柑 API Token
+    登入 [蜜柑計畫官網 (mikanani.me)](https://mikanani.me)，點選右上角頭像進入 **帳號設定** → **個人中心** → **編輯資料**。在「基本資料」區域複製 **API Token**（若尚無 Token，點選右側的「產生」按鈕）。
 
     ![蜜柑計畫 API Token 與 ID 查詢](/images/site-sync/mikan-api-token.webp)
   </Step>
-  <Step>
-    ### 查詢 ID
 
-    點選 **【從蜜柑查詢「XXXXXX」的 ID】**，取得 **字幕組 ID** 與 **釋出組 ID**。
+  <Step>
+    ### 儲存 Token 到 AniBT
+    開啟 AniBT 字幕組控制台 `/groups/<slug>/sync`，在蜜柑計畫同步卡片中開啟開關並貼上 API Token，點選 **儲存**。
+  </Step>
+
+  <Step>
+    ### 一鍵自動辨識組 ID
+    儲存後，點選下方的 **【從蜜柑查詢「字幕組名」的 ID】** 按鈕。系統會自動匹配你在蜜柑加入的字幕組，並帶出 **字幕組 ID** 與 **釋出組 ID**。
   </Step>
 </Steps>
 
-## 手動取得 ID（可選）
+## 憑據欄位說明
 
-僅在自動查詢無法識別時使用。
+<TypeTable
+  type={{
+    'API Token': {
+      type: 'string',
+      description: '蜜柑個人中心編輯資料下產生的存取權杖，用於身份鑑權。',
+    },
+    '字幕組 ID': {
+      type: 'number',
+      description: '你在蜜柑所屬字幕組的唯一編號，可自動查詢或從首頁 URL 擷取。',
+    },
+    '釋出組 ID': {
+      type: 'number',
+      description: '蜜柑分流釋出的 Subgroup 標識，可自動查詢或從 RSS 連結擷取。',
+    },
+  }}
+/>
 
-<Tabs items={['字幕組 ID', '釋出組 ID']}>
-  <Tab value="字幕組 ID">
-    字幕組 ID 是釋出組頁面 URL 末尾的數字。
+## 手動取得 ID 方法（備用）
 
-    ```txt title="字幕組頁面 URL"
+如果自動查詢未能辨識你的組資訊，可按照以下方式手動定位：
+
+<Tabs items={['取得字幕組 ID', '取得釋出組 ID']}>
+  <Tab value="取得字幕組 ID">
+    在蜜柑網站開啟你的字幕組首頁（例如在任意釋出資源的作者欄點選你的字幕組）：
+
+    ```txt title="字幕組頁面 URL 範例"
     https://mikanani.me/Home/PublishGroup/359
     ```
 
-    其中 `359` 即字幕組 ID。在列表或作品簡介中點選 **字幕組**，開啟的就是字幕組頁面。
+    - URL 末尾的數字（如 `359`）即為你字幕組的 **字幕組 ID**。
 
     ![蜜柑計畫字幕組 ID 頁面](/images/site-sync/mikan-publish-group-id.webp)
   </Tab>
-  <Tab value="釋出組 ID">
-    以 LoliHouse 為例：開啟任意以 LoliHouse 身份釋出的動畫列表，點選字幕組名字右側的 **RSS 圖示**：
 
-    ```txt title="RSS 連結"
+  <Tab value="取得釋出組 ID">
+    以任意由你的字幕組釋出的動畫作品為例，在作品列表點選字幕組名稱右側的 **RSS 訂閱圖示**：
+
+    ```txt title="RSS 連結中的 subgroupid 參數"
     https://mikanani.me/RSS/Bangumi?bangumiId=3953&subgroupid=370
     ```
 
-    `subgroupid=370` 中的 `370` 就是釋出組 ID。
+    - 參數 `subgroupid=370` 中的 `370` 即為該釋出身份的 **釋出組 ID**。
 
     ![蜜柑計畫 RSS 中的釋出組 ID](/images/site-sync/mikan-rss-subgroup-id.webp)
   </Tab>

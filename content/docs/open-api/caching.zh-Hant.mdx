@@ -1,31 +1,51 @@
 ---
-title: HTTP 快取與 304
-description: 公開讀取用 If-None-Match。未變回傳 304。輪詢間隔 ≥ 5 分鐘。
+title: HTTP 快取與 304 協商
+description: 瞭解 AniBT 公開端點的弱 ETag 機制，如何使用 If-None-Match 節省頻寬並防止觸發頻率限制。
 ---
 
-公開 RSS 與 JSON 支援條件請求。寫入、刪除、`/me`、個人訂閱不快取。
-
-公開 JSON 成功回應讓瀏覽器使用 `max-age=0` 並重新驗證；邊緣使用介面定義的
-`s-maxage` 與 stale 視窗。`/api/anime/groups` 保留原有 JSON、`ETag`、`HEAD`
-與條件式 `304` 行為。公共讀模型暫時不可用時回傳 `503 SEARCH_UNAVAILABLE`、
-`Retry-After` 與 `no-store`；失敗不會寫入共享快取。
-
-RSS 依 URL 身分分為兩類。不帶 `limit`、搜尋或過濾條件的 fixed RSS 每次核對目前
-發布版本；正文未變更時仍可回傳 `304`，並使用 `no-store` 避免共享快取保存
-舊正文。帶 `limit`、過濾或搜尋條件的 RSS 使用有界更新策略。RSS 的 `<ttl>`
-只是客戶端輪詢提示，不是伺服器推送。
+AniBT 的公開讀取介面與全站 RSS 訂閱全面支援 HTTP 條件請求（Conditional Requests）與協商快取機制。
 
 <Callout type="info">
-  帶上次的 `ETag`。未變化回傳 `304`，無正文。優先 `If-None-Match`，不要依賴 `If-Modified-Since`。
+  **最佳實踐**：自建腳本或排程任務在輪詢 AniBT 時，請務必儲存上一次回應的 `ETag` 並在下次請求中透過 `If-None-Match` 攜帶。當無新番劇或新資源入庫時，伺服端將直接回傳 `304 Not Modified`（無正文），回應極快且不浪費下行頻寬。
 </Callout>
 
-輪詢間隔 ≥ 5 分鐘。更短沒有收益，且容易 429。
+## 快取機制與適用範圍
 
-```bash title="If-None-Match"
-H=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360")
-ETAG=$(echo "$H" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+<TypeTable
+  type={{
+    '公開 RSS 訂閱來源': {
+      type: '支援 304',
+      description: '包括番劇 RSS、字幕組 RSS、全站磁力 RSS 等。支援基於正文雜湊的弱 ETag 協商驗證。',
+    },
+    '公開 JSON 讀取介面': {
+      type: '支援 304',
+      description: '番劇詳情、字幕組目錄、季度番劇等公開讀取端點，支援條件請求複用。',
+    },
+    '寫入操作與管理介面': {
+      type: '不快取',
+      description: '資源釋出、刪除、外站同步查詢、/me 自身資訊與個人專屬 RSS，始終保持即時無快取（no-store）。',
+    },
+  }}
+/>
+
+## 輪詢頻率與建議規範
+
+1. **合理輪詢間隔**：建議客戶端輪詢間隔 **不小於 5 分鐘**。動漫 BT 資源通常以小時或天為單位釋出，過密的高頻輪詢不僅毫無收益，還極易觸發系統 IP 速率限制。
+2. **優先使用 `If-None-Match`**：AniBT 的快取標識基於精準的回應正文計算產生，因此請優先使用 `If-None-Match` 傳遞 ETag，避免單獨依賴可能受時區或傳輸影響的 `If-Modified-Since`。
+3. **釋出後可見性**：釋出介面回傳 `200` 表示主記錄已成功受理入庫，通常在極短時間內即可反映在詳情頁與 RSS 中。建議透過回傳的 `releaseId` 核驗詳情，而非高頻重新整理首頁。
+
+## 實戰：使用 curl 發送條件請求
+
+```bash title="使用 If-None-Match 驗證 304 快取"
+# 第一步：首次請求並擷取回應中的 ETag
+RESPONSE_HEADERS=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360")
+ETAG=$(echo "$RESPONSE_HEADERS" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
+
+echo "取得的 ETag: $ETAG"
+
+# 第二步：攜帶 If-None-Match 發起後續輪詢
 curl -sI -H "If-None-Match: $ETAG" \
   "https://anibt.net/rss/anime.xml?bgmId=543360"
 ```
 
-釋出介面的 `200` 不表示 RSS 立刻包含該條。用回傳的 `releaseId` 在詳情頁或 RSS 正文核對。
+- **預期回應**：若期間該番劇沒有新釋出的資源，伺服器將立即回傳 `HTTP/2 304`，且回應體長度為 0 位元組。

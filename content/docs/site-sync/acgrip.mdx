@@ -1,24 +1,56 @@
 ---
 title: ACG.rip 同步
-description: 填写 API Token。
+description: 了解如何从 ACG.rip 仪表盘获取 API Token、去除协议前缀并配置跨站自动发布。
 ---
 
-从仪表盘个人设定复制 **API Token**。
+配置 ACG.rip 同步后，AniBT 发布的动漫资源将在后台自动同步提交至 ACG.rip 分发站点。
 
 <Callout type="warn">
-  不要带前缀 `tpx://acg.rip/`，只复制后面的字符串。
+  复制 Token 时，**切勿包含 `tpx://acg.rip/` 协议前缀**，仅需复制后面的实际字符串。
 </Callout>
+
+## 配置流程
 
 <Steps>
   <Step>
-    ### 复制 Token
-
-    访问 [https://acg.rip](https://acg.rip)，顶栏右上角 **人头图标** → **仪表盘**。右侧 **个人设定** 第二项是 **API Token**。粘贴到 AniBT 后保存。
+    ### 访问 ACG.rip 仪表盘
+    登录 [ACG.rip 官网 (acg.rip)](https://acg.rip)，点击顶栏右上角的 **用户头像图标** 进入 **仪表盘**。
 
     ![ACG.rip API Token](/images/site-sync/acgrip-api-token.webp)
+  </Step>
 
-    ```txt title="API Token 格式"
+  <Step>
+    ### 复制 API Token
+    在右侧 **个人设定** 区域的第二项找到 **API Token**。复制该字符串，确保格式类似 `7723-pxxxxxxxxxxxxxxp`，不含任何前缀或额外空格。
+
+    ```txt title="标准 API Token 字符串格式"
     7723-pxxxxxxxxxxxxxxp
     ```
   </Step>
+
+  <Step>
+    ### 填入 AniBT 并测试
+    访问 AniBT 字幕组控制台 `/groups/<slug>/sync`，在 ACG.rip 卡片中填入 Token，点击 **保存** 并执行 **测试连接**。
+  </Step>
 </Steps>
+
+## 凭据字段说明
+
+<TypeTable
+  type={{
+    'API Token': {
+      type: 'string',
+      description: 'ACG.rip 仪表盘个人设定中提供的发布令牌（不含 tpx://acg.rip/ 前缀）。',
+    },
+  }}
+/>
+
+## 连接测试结果排查
+
+<TypeTable
+  type={{
+    '连接成功': { type: '正常', description: 'Token 校验通过，可以开始同步发布。' },
+    'Token 格式错误': { type: '异常', description: '检查是否误带了 tpx://acg.rip/ 前缀或包含前后空格。' },
+    '认证失效': { type: '异常', description: 'Token 已被重置或账号已被封禁，请在 ACG.rip 重新生成。' },
+  }}
+/>

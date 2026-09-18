@@ -1,21 +1,60 @@
 ---
-title: 站點同步
-description: 釋出後同步到萌番組、Mikan、動漫花園、末日站、ACG.rip、Nyaa。
+title: 站點同步總覽
+description: 瞭解 AniBT 多站自動同步機制，一處釋出自動推送到萌番組、蜜柑計畫、動漫花園、末日站、ACG.rip 與 Nyaa。
 ---
 
-在字幕組後台 `/groups/<slug>/sync` 按站點儲存憑據。每個站點單獨配置。使用前需 [申請入駐](/docs/apply)。
+AniBT 核心支援「一處釋出、多站自動同步」能力。字幕組只需在 AniBT 提交一次資源，系統即可在後台自動將種子、標題、分類與釋出說明分發至各大主流動漫 BT 站點。
 
-1. 啟用要同步的站點。
-2. 填寫憑據。
-3. 測試連線通過後再發正式資源。
+<Callout type="info">
+  站點同步為字幕組專屬功能，使用前需先完成 [字幕組入駐申請](/zh-Hant/docs/apply)。憑據在字幕組控制台 `/groups/<slug>/sync` 按站點獨立設定，並透過安全加密儲存。
+</Callout>
 
-| 站點 | 憑據 |
-| --- | --- |
-| [萌番組](/docs/site-sync/bangumi) | 已啟用帳號的使用者名稱或郵箱和密碼。舊 Cookie 已失效 |
-| [Mikan](/docs/site-sync/mikan) | API Token |
-| [動漫花園](/docs/site-sync/dmhy) | 帳號、密碼、字幕組名稱 |
-| [末日站](/docs/site-sync/acgnx) | UID 與 API Token |
-| [ACG.rip](/docs/site-sync/acgrip) | API Token，不要帶 `tpx://acg.rip/` 前綴 |
-| [Nyaa](/docs/site-sync/nyaa) | 使用者名稱和密碼 |
+## 同步機制與狀態追蹤
 
-開坑在 `/groups/<slug>/claims`，不在同步頁。
+在 AniBT 成功提交釋出後，系統後台會自動為每個啟用的同步站點派發非同步釋出任務：
+
+<Steps>
+  <Step>
+    ### 儲存並測試憑據
+    首次使用前，進入控制台 `/groups/<slug>/sync`，分別設定各站點的帳號或 API Token。每個站點均提供「測試連線」按鈕，請務必測試通過後再進行正式釋出。
+  </Step>
+
+  <Step>
+    ### 釋出時自動派發
+    正常釋出番劇或其它資源時，系統會自動攜帶已啟用的外站設定。在後台非同步佇列中，各個站點的提交互相獨立，單個站點的網路波動不會影響本站及其他站點的正常釋出。
+  </Step>
+
+  <Step>
+    ### 檢視狀態與一鍵重試
+    釋出後，在字幕組資源列表點選「外站同步」狀態徽章，可檢視各站點的同步進度、外站詳情頁連結以及失敗報錯。若某站因瞬時網路異常失敗，可直接點選「重試（Resync）」重新觸發。
+  </Step>
+</Steps>
+
+## 支援的分發站點一覽
+
+<Cards>
+  <Card title="萌番組 (Bangumi Moe)" href="/zh-Hant/docs/site-sync/bangumi" description="使用已完成信箱啟用的帳號與密碼，支援個人或 Team 身份" />
+  <Card title="蜜柑計畫 (Mikan)" href="/zh-Hant/docs/site-sync/mikan" description="使用個人中心 API Token，自動帶出字幕組 ID 與釋出組 ID" />
+  <Card title="動漫花園 (DMHY)" href="/zh-Hant/docs/site-sync/dmhy" description="使用花園釋出帳號、密碼以及登記的字幕組名稱" />
+  <Card title="末日站 (ACGNX)" href="/zh-Hant/docs/site-sync/acgnx" description="使用末日動漫資源庫控制中心的 UID 與 API Token" />
+  <Card title="ACG.rip" href="/zh-Hant/docs/site-sync/acgrip" description="使用儀表板個人設定中的 API Token，支援直接分發" />
+  <Card title="Nyaa" href="/zh-Hant/docs/site-sync/nyaa" description="使用字幕組自備 Nyaa 帳號同步，或使用免帳號的平台代發" />
+</Cards>
+
+## 常見同步狀態說明
+
+在管理後台或透過 [同步狀態 API](/zh-Hant/docs/open-api/releases-sync-status) 查詢時，各站點回傳的狀態含義如下：
+
+<TypeTable
+  type={{
+    'not_started': { type: '狀態', description: '該站點未在後台啟用同步，或本次釋出未勾選該站。' },
+    'pending': { type: '狀態', description: '正在後台佇列中排隊或正在向目標站點提交上傳。' },
+    'success': { type: '狀態', description: '外站已成功受理釋出，回應中包含該資源在外站的詳情頁 URL。' },
+    'failed': { type: '狀態', description: '外站提交失敗，通常由於憑據失效、分類錯誤或對方站點網路維護導致。' },
+    'ambiguous': { type: '狀態', description: '網路逾時未收到明確確認，系統會進入安全重試或人工核驗。' },
+  }}
+/>
+
+<Callout type="warn">
+  開坑認領（將番劇與本字幕組綁定、自動匹配標題範本）位於控制台 `/groups/<slug>/claims`，不在站點同步設定中。
+</Callout>

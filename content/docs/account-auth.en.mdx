@@ -1,36 +1,68 @@
 ---
-title: Account
-description: Register, sign in, and recover the password.
+title: Account & Authentication
+description: Learn about AniBT account registration, email OTP sign-in, password recovery, and session lifecycle.
 ---
 
-Register: [anibt.net/auth/sign-up](https://anibt.net/auth/sign-up)
+AniBT provides modern email OTP and session authentication to support anime tracking and fansub workflows.
 
-Sign in: [anibt.net/auth/sign-in](https://anibt.net/auth/sign-in)
+<Callout type="info">
+  Browsing releases, downloading `.torrent` files, copying magnet links, and subscribing to public RSS feeds **do not require an account**. Registration is only needed if you want to follow anime, use private merged RSS feeds, or publish releases as a fansub group member.
+</Callout>
 
-Subtitle-group publishing still requires a separate [admission application](/docs/apply).
+## Quick Links
 
-## Register
+- **Register New Account**: [anibt.net/auth/sign-up](https://anibt.net/auth/sign-up)
+- **Sign In to Account**: [anibt.net/auth/sign-in](https://anibt.net/auth/sign-in)
 
-1. Enter an email, complete human verification, and get a 6-digit code (valid for 10 minutes).
-2. Enter a display name, password, and the code.
-3. After verification succeeds, the password is registered. If this step is interrupted, retry in the same tab. Do not reuse a consumed code.
+## Registration Steps
 
-A registered address still shows a send-success message, but no new registration code is sent. Use sign-in or password recovery.
+<Steps>
+  <Step>
+    ### Request Email Verification Code
+    Enter your active email address on the sign-up page and pass the bot verification. The system will send a 6-digit verification code to your inbox, valid for **10 minutes**.
+  </Step>
 
-Codes, CAPTCHA, and third-party sign-in callbacks are one-time. Do not refresh the callback page repeatedly.
+  <Step>
+    ### Fill In Profile Information
+    Enter your desired nickname, password, and the 6-digit code received, then submit to create your account.
+  </Step>
 
-## Sign in
+  <Step>
+    ### Automatic Sign-In
+    Upon successful registration, you will be automatically signed in. If the process is interrupted, retry in the same browser tab without reusing an expired or consumed verification code.
+  </Step>
+</Steps>
 
-| Method | Notes |
-| --- | --- |
-| Email and password | Email + password + human verification. Repeated failures are rate-limited. |
-| Third-party | The sign-in page shows currently enabled providers. On failure, return to the sign-in page and start again. |
-| Forgot password | Use the entry on the sign-in page. Mail is sent in the background; a short delay does not mean failure. |
+<Callout type="warn">
+  If the entered email is already registered, the page will still report "Verification code sent" for security protection against account enumeration, but no new registration email will be dispatched. In this scenario, proceed to sign in or reset your password.
+</Callout>
 
-The site does not provide TOTP / two-factor authentication.
+## Sign-In Methods
 
-## Sign-in state
+<Tabs items={['Email & Password', 'Third-Party Auth', 'Forgot Password']}>
+  <Tab value="Email & Password">
+    Enter your registered email and password, complete the bot verification, and submit.
 
-Opening the sign-in page while already signed in returns you to the previous page. If the sign-in is no longer valid, the sign-in page stays put instead of bouncing to the home page and back.
+    - Consecutive failed attempts will trigger rate limiting; wait before retrying.
+    - Standalone TOTP authenticator apps and 2FA are not currently enabled.
+  </Tab>
 
-After you sign out on another device, this browser may still look signed in for up to about five minutes. Sensitive actions such as changing the password always follow the server session.
+  <Tab value="Third-Party Auth">
+    The sign-in page displays currently supported third-party providers (e.g., GitHub / OIDC).
+
+    - Click the provider icon to authorize and connect.
+    - OAuth callback links are one-time credentials. If redirect errors occur, return to the sign-in page and start over rather than refreshing the callback URL.
+  </Tab>
+
+  <Tab value="Forgot Password">
+    If you forget your password, click "Forgot password" on the sign-in page.
+
+    - Enter your registered email to receive a password reset link.
+    - Emails usually arrive within seconds. Brief queue delays do not mean delivery failure.
+  </Tab>
+</Tabs>
+
+## Session State & Multi-Device Security
+
+- **Page Redirects**: Visiting the sign-in page while already signed in redirects back to your previous page. When an existing session expires, the page stays on the sign-in form without bouncing.
+- **Cross-Device Sign-Out**: When signing out on another device, this device may still appear signed in for up to ~5 minutes due to local credential caching. However, sensitive operations (password changes, fansub management, publishing) immediately verify active server sessions.

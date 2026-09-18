@@ -1,26 +1,83 @@
 ---
-title: 调试与常见问题
-description: 接入失败时怎么处理。
+title: 排障与常见问题
+description: 解决接入 AniBT API 与 RSS 过程中的常见状态码、字段报错与调试方法。
 ---
 
-```bash title="看 RSS"
-curl -s 'https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia&limit=3' \
-  | grep -E '<title>|<pubDate>'
-```
+在接入 AniBT 开放 API 或配置 RSS 自动化脚本时，如遇到异常响应或数据不符合预期，可参考本指南快速定位排查。
 
-```bash title="查 slug"
-curl -s https://anibt.net/api/subtitle-groups \
-  | jq '.data[] | {name, slug}'
-```
+<Callout type="info">
+  **快速定位秘诀**：所有非 2xx 的 API 响应均会附带 `requestId` 字段（响应头中亦有 `X-Request-ID`）。向平台管理员报告问题时，附带该 ID 能在系统日志中秒级定位原因。
+</Callout>
 
-| 现象 | 做什么 |
-| --- | --- |
-| 用了 `organizationId` | 第三方一律用 `slug` |
-| `If-Modified-Since` 无效 | 用 `If-None-Match`。两个条件头同时发时只看 ETag |
-| RSS 返回 `308` / `400` / `403` / `429` | `308`：跟随并保存最终 URL（常见于 `limit=100`、兼容别名）。`400`：`limit` 必须是单个 `1..100` 整数；`q` / `search` 只能一个值，不能空、不能含控制字符、最多 160 UTF-8 bytes。`403`：生产边缘可能先拦截非法 `limit`。`429`：按 `Retry-After` 退避，不要立刻重试 |
-| `episode=5` 对不上 | `episode` 是数字精确匹配，`episodeKey` 是字符串原样匹配。合集用 `episodeKey=BATCH` |
-| 发布 `200` 但 RSS 没有 | `200` 只表示已写入。用 `releaseId` 核对详情页或 RSS 正文。再等客户端轮询间隔 |
-| 只传磁力或未带种子发布 | 返回 `422` `TORRENT_REQUIRED`。multipart 传 `torrent`，或 JSON 传 `torrentStorageId` |
-| DELETE 返回 `202` | 轮询 `GET /api/releases/{releaseId}/deletion`，直到 `completed` |
-| Key 有效但删除 `403` | 缺 `releases:delete`。用 [`/me`](/docs/open-api/me) 查 `scopes` |
-| `completed` 后 Nyaa / Mikan 还在 | 不召回外站、Tracker、已下载文件和本地缓存 |
+## 常用排错调试命令
+
+在排查问题时，建议先使用 `curl` 隔离排查，排除客户端软件自身的配置干扰：
+
+<Tabs items={['检查 RSS 响应', '查询字幕组 Slug', '核验 API Key 身份']}>
+  <Tab value="检查 RSS 响应">
+    直接查看返回的最新番剧标题与发布时间戳：
+
+    ```bash title="快速抓取 RSS 内容摘要"
+    curl -s 'https://anibt.net/rss/anime.xml?bgmId=543360&limit=3' \
+      | grep -E '<title>|<pubDate>|<enclosure'
+    ```
+  </Tab>
+
+  <Tab value="查询字幕组 Slug">
+    获取全站字幕组的标准 `slug` 标识列表：
+
+    ```bash title="列出字幕组名称与对应 slug"
+    curl -s https://anibt.net/api/subtitle-groups \
+      | jq '.data[] | {name, slug}'
+    ```
+  </Tab>
+
+  <Tab value="核验 API Key 身份">
+    自检当前 API Key 绑定的字幕组名称、所属 slug 与具备的权限 scopes：
+
+    ```bash title="自检 API Key 身份"
+    curl -s https://anibt.net/api/subtitle-groups/me \
+      -H "Authorization: Bearer <YOUR_API_KEY>" \
+      | jq .
+    ```
+  </Tab>
+</Tabs>
+
+## 异常现象与处理对照表
+
+<TypeTable
+  type={{
+    '使用了内部主键报错': {
+      type: '参数',
+      description: 'API 端点与 RSS 过滤一律使用稳定的 slug（如 kirara-fantasia）或 bgmId，请勿传入内部数据库主键。',
+    },
+    '304 缓存未生效': {
+      type: '缓存',
+      description: '请优先使用 If-None-Match 传递上次响应的 ETag。若同时发送了 If-Modified-Since，服务端以 ETag 为准。',
+    },
+    'RSS 返回 308 重定向': {
+      type: 'URL 规范',
+      description: '请求使用了过时的兼容路径或显式传入了无意义的 limit=100。请将客户端配置更新为重定向的目标规范 URL。',
+    },
+    '发布成功但 RSS 未更新': {
+      type: '时延',
+      description: '发布返回 200 表示主记录已入库，通常数秒至一两分钟内全网同步。请先用 releaseId 访问详情页核实，并等待客户端轮询周期。',
+    },
+    '发布报 TORRENT_REQUIRED': {
+      type: '必填项',
+      description: '发布番剧必须附带种子。multipart 请求必须上传 torrent 种子文件，JSON 请求必须提供已存种子的 torrentStorageId。',
+    },
+    '删除返回 202 Accepted': {
+      type: '异步任务',
+      description: '删除操作属于异步处理。请以 2 秒间隔轮询 GET /api/releases/{releaseId}/deletion，直至返回 state 为 completed。',
+    },
+    '删除接口返回 403': {
+      type: '权限不足',
+      description: 'API Key 有效但未勾选 releases:delete 权限。请在字幕组后台重新颁发包含该 scope 的 Key。',
+    },
+    '删除后外站依然存在': {
+      type: '边界说明',
+      description: 'AniBT 撤回删除仅作用于本站库表、Tracker 通信与公开 RSS，无法召回已被第三方 BT 站（如 Nyaa、蜜柑）转存的数据。',
+    },
+  }}
+/>

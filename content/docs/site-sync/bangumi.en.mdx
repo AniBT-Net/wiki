@@ -1,55 +1,65 @@
 ---
 title: Bangumi Moe Sync
-description: Configure sync with an activated account username or email and password.
+description: Learn how to configure credentials, bind team identities, and test connections for Bangumi Moe synchronization.
 ---
 
-Sign in with a Bangumi Moe username or email and password, then sync publishes.
+Configuring Bangumi Moe sync automatically cross-publishes new releases from AniBT to the Bangumi Moe platform.
 
 <Callout type="warn">
-  Activate the account by email first. Pasted browser Cookies no longer work; groups that only stored a Cookie must enter a username and password.
+  Bangumi Moe accounts must be **email activated**; unverified accounts cannot authenticate. Legacy browser cookie configurations are discontinued; enter your actual username or email alongside your password.
 </Callout>
+
+## Setup Workflow
 
 <Steps>
   <Step>
-    ### Enter credentials
-
-    Subtitle group dashboard `/groups/<slug>/sync` → **Bangumi Moe Sync**. Enable it, select **Change credentials**, and enter the username or email and password.
+    ### Open Bangumi Moe Sync Settings
+    Navigate to your fansub console at `/groups/<slug>/sync`, find the **Bangumi Moe** card, toggle it on, and click **Edit Credentials**.
   </Step>
-  <Step>
-    ### Publishing identity and save
 
-    To publish as a Team, enter the publishing identity name or Team ID. Leave both empty to publish as the account. Select **Save**.
+  <Step>
+    ### Enter Credentials & Publishing Identity
+    Enter the username or email and password for Bangumi Moe. If publishing under a fansub Team, specify the Team Name or Team ID; leave blank if publishing under a personal account.
+  </Step>
+
+  <Step>
+    ### Save and Test Connection
+    Click **Save**, then click **Test Connection**. This test only validates authentication and team permissions without uploading any torrents.
   </Step>
 </Steps>
 
+## Field Descriptions
+
 <TypeTable
   type={{
-    'Username or email': {
-      description: 'Bangumi Moe sign-in username or email.',
+    'Username or Email': {
       type: 'string',
+      description: 'Registered Bangumi Moe username or verified account email address.',
     },
     'Password': {
-      description: 'Bangumi Moe password. The account must already be activated by email.',
       type: 'string',
+      description: 'Bangumi Moe account password (account must be email activated).',
     },
-    'Publishing Identity Name': {
-      description: 'Bangumi Moe Team name. Leave empty to publish as the account.',
+    'Team Name': {
       type: 'string',
-      default: 'optional',
+      default: 'Optional',
+      description: 'Name of the Bangumi Moe fansub Team. Leave blank to publish under personal profile.',
     },
     'Team ID': {
-      description: 'Pin a specific Team. Takes priority over name matching.',
       type: 'string',
-      default: 'optional',
+      default: 'Optional',
+      description: 'Exact ID of the Bangumi Moe team; prioritized over name matching if both provided.',
     },
   }}
 />
 
-After saving, select **Test Connection**:
+## Connection Diagnostic Results
 
-| Result | Action |
-| --- | --- |
-| Connection successful | Publishing is available |
-| Account not activated | Activate the account by email on Bangumi Moe first |
-| Login failed | Check the username or email and password |
-| Login too frequent | Wait, then test again. Do not sign in repeatedly |
+<TypeTable
+  type={{
+    'Connection Successful': { type: 'Normal', description: 'Credentials verified and publishing identity confirmed. Ready to sync.' },
+    'Account Not Activated': { type: 'Error', description: 'Log in to Bangumi Moe and complete email verification first.' },
+    'Login Failed': { type: 'Error', description: 'Invalid username, email, or password. Check and re-enter.' },
+    'Too Many Login Attempts': { type: 'Rate Limit', description: 'Triggered upstream rate limiting. Please wait 15 minutes before testing again.' },
+  }}
+/>

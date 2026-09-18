@@ -1,21 +1,57 @@
 ---
-title: Tracker
-description: 制种时使用的 AniBT announce 地址。
+title: Tracker 规范与地址
+description: 了解 AniBT 官方 Tracker announce 地址、制种配置、白名单机制与种子下载方式。
 ---
 
-只接受已在 AniBT 发布的种子。
+AniBT 运行着专为本站发布的动漫资源提供高速对等连接服务的自建 BitTorrent Tracker。
 
-```txt
+<Callout type="warn">
+  **白名单通信机制**：为了防范恶意刷流与垃圾种子滥用，AniBT Tracker 启用了 infohash 白名单机制。只有在 AniBT 成功发布的种子才会自动加入通信白名单。未在本站发布的种子汇报时会返回 `not whitelisted`。
+</Callout>
+
+## 官方 Tracker 地址
+
+在制作 `.torrent` 文件或在下载客户端中配置 Tracker 时，请使用以下标准地址：
+
+```txt title="AniBT Tracker Announce URL"
 https://tracker.anibt.net/announce
 ```
 
-制种时加入该地址。站内发布会把它写入 magnet。未在本站发布的种子会返回 `not whitelisted`。
+- **通信协议**：支持标准 HTTP / HTTPS（端口 443），全面支持 IPv4 与 IPv6 双栈通信。
+- **已关闭功能**：为了保障服务高可用与防范拒绝服务攻击，Tracker 永久关闭了 `/scrape` 抓取接口、UDP 协议支持以及历史旧版 `/announce/v1/*` 路径。
 
-下载 `.torrent`：
+## 制种与发布流程
 
-| 类型 | 路径 |
-| --- | --- |
-| 番剧 | `/api/torrent/{rel_*}.torrent` |
-| 其他类 | `/api/other-torrent/{orel_*}.torrent` |
+<Steps>
+  <Step>
+    ### 在制种工具中添加 Tracker
+    使用 qBittorrent、Transmission、mktorrent 等制种工具创建种子时，将 `https://tracker.anibt.net/announce` 填入 Tracker 服务器列表第一行。
+  </Step>
 
-已关闭：`/scrape`、UDP、`/announce/v1/*`。
+  <Step>
+    ### 在 AniBT 平台提交发布
+    通过字幕组后台页面或 [发布 API](/docs/open-api/releases-publish) 上传生成的 `.torrent` 文件。平台成功受理入库后，会自动将该种子的 infohash 写入 Tracker 通信白名单，同时生成携带该 Tracker 的磁力链接。
+  </Step>
+
+  <Step>
+    ### 客户端做种上传
+    在下载客户端中加载该种子，确认 Tracker 状态显示为 `working`（正常通信）。此后其他从 AniBT 获取磁力或种子的观众即可通过该 Tracker 与你建立对等连接。
+  </Step>
+</Steps>
+
+## 种子文件下载接口
+
+AniBT 为全站公开资源提供直接的 `.torrent` 二进制文件下载路径，第三方工具与脚本可按需调用：
+
+<TypeTable
+  type={{
+    '番剧资源种子': {
+      type: 'GET',
+      description: 'https://anibt.net/api/torrent/{releaseId}.torrent（releaseId 以 rel_ 开头）',
+    },
+    '其他类资源种子': {
+      type: 'GET',
+      description: 'https://anibt.net/api/other-torrent/{releaseId}.torrent（releaseId 以 orel_ 开头）',
+    },
+  }}
+/>

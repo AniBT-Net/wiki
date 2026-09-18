@@ -1,20 +1,59 @@
 ---
-title: Overview
-description: AniBT public RSS and JSON API. Endpoint pages are generated from OpenAPI and include Try-it.
+title: Open API Overview
+description: Learn about the AniBT REST API and standard RSS feeds, covering keyless public read endpoints and fansub automation workflows.
 ---
 
-AniBT exposes **RSS** (subscribe) and **JSON** (programmatic reads). Public reads are anonymous, follow each endpoint's cache contract, and support **HTTP 304**. Publish, delete, and `/me` require a subtitle-group API Key and are not cached.
+AniBT embraces open community data, offering complete programmatic access to anime information, releases, fansub directories, and recent magnet links.
 
-<Callout type="warn">
-  The production base URL is `https://anibt.net`. Use only the main-site paths listed in these docs.
+<Callout type="info">
+  **Production Base URL**: `https://anibt.net`. All data is served over standard HTTPS. All public read endpoints can be called anonymously without API keys or token setups.
 </Callout>
 
-Auth and error codes are in [API conventions](/docs/open-api/reference). Each endpoint page has Try-it. Machine-readable spec: [openapi.yaml](/openapi.yaml).
+Each endpoint page includes an embedded **Try-it interactive console** generated directly from our OpenAPI schema, allowing you to run live requests and inspect responses right in your browser.
 
-qBittorrent / Sonarr / FlexGet need no extra RSS setup. Caching, rate limits, and troubleshooting stay on their own pages.
+## Architecture & Core Capabilities
 
-## Stability
+<Tabs items={['Public Read (Keyless)', 'Fansub Automation (API Key)', 'Standard RSS Feeds']}>
+  <Tab value="Public Read (Keyless)">
+    For general developers, anime clients, bots, and indexing scripts:
 
-- Paths and query parameters do not change incompatibly; new parameters are additive.
-- Keep `slug` stable once published.
-- Internal primary keys are not part of the public contract; always use `slug`.
+    - **Anime Queries & Details**: Retrieve structured metadata by title, alias, or Bangumi subject ID.
+    - **Fansub Directory**: Fetch active fansub teams and their stable English `slug`.
+    - **Torrent Matching**: Parse release titles to extract episode numbers, resolutions, and subtitle languages.
+    - **Conditional Caching**: Full support for weak ETags and HTTP 304 Not Modified, drastically saving bandwidth during polling.
+  </Tab>
+
+  <Tab value="Fansub Automation (API Key)">
+    For fansub CI/CD encoding pipelines and release automation:
+
+    - **Publish Releases**: Upload `.torrent` files via `POST /api/releases/publish`.
+    - **Identity Verification**: Perform whoami sanity checks via `GET /api/releases/publish`.
+    - **Sync Tracking**: Inspect real-time status and external URLs across six external BT platforms.
+    - **Asynchronous Deletion**: Revoke releases via `DELETE /api/releases/{id}` and track deletion lifecycle.
+  </Tab>
+
+  <Tab value="Standard RSS Feeds">
+    For downloaders like qBittorrent, Sonarr, and FlexGet:
+
+    - **Anime Feeds**: Feeds aggregated by Bangumi ID, with optional filters for group, resolution, and language.
+    - **Fansub Feeds**: All releases published by a specific fansub group.
+    - **Site-wide Magnets**: Real-time firehose of recent releases across the entire site.
+    - **Standards Compliant**: RFC compliant XML with BitTorrent BEP 36 enclosure and infohash tags.
+  </Tab>
+</Tabs>
+
+## Stability Guarantees & Best Practices
+
+1. **Backward Compatibility**: Public endpoint paths and query arguments are strictly append-only.
+2. **Stable Identifiers**: Always reference entities using permanent **`slug`** strings (e.g., `kirara-fantasia`) or **`bgmId`** rather than ephemeral internal database keys.
+3. **Machine-Readable Contract**: Our official OpenAPI 3.1 specification is available at [/openapi.yaml](/openapi.yaml).
+
+## Developer Guides
+
+<Cards>
+  <Card title="API Conventions & Auth" href="/en/docs/open-api/reference" description="Base URL, headers, fansub API key scopes, and error payloads" />
+  <Card title="HTTP Caching & 304" href="/en/docs/open-api/caching" description="Using ETags and conditional requests to minimize overhead and avoid rate limits" />
+  <Card title="Rate Limits & Pagination" href="/en/docs/open-api/limits" description="Per-endpoint rate limits, pagination windows, and backoff strategies" />
+  <Card title="Troubleshooting & FAQs" href="/en/docs/open-api/troubleshooting" description="Common error codes, curl diagnostic one-liners, and debugging tips" />
+  <Card title="Integration Examples" href="/en/docs/open-api/examples" description="qBittorrent / Sonarr setup and production Bash script snippets" />
+</Cards>

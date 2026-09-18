@@ -1,18 +1,48 @@
 ---
-title: 相關專案
-description: FontInAss 與 AniBT-Speed。
+title: 生態與周邊專案
+description: 瞭解圍繞 AniBT 與動漫字幕生態打造的開源工具，包括字體子集化 FontInAss 與自動做種腳本 AniBT-Speed。
 ---
+
+AniBT 鼓勵開源協作與社群生態共建。以下是由社群與開發者打造的實用周邊工具，可直接融入字幕組壓制釋出或個人追番流程。
+
+<Callout type="info">
+  如果你開發了與 AniBT 相關的下載器外掛、自動化釋出腳本或桌面工具，歡迎向 [Wiki 倉庫](https://github.com/AniBT-Net/wiki) 提交 Pull Request，收錄到本頁面。
+</Callout>
+
+## FontInAss —— 字幕字體子集化工具
+
+在分發外掛字幕或 MKV 內封字幕時，打包完整字體檔案往往會導致體積膨脹數十兆。**FontInAss** 專門用於掃描字幕實際用到的字元，並將原始龐大的字體檔案精確裁剪為最小子集包。
 
 <GithubInfo owner="Yuri-NagaSaki" repo="FontInAss" />
 
-字幕字型子集化。掃描 ASS / SRT 實際用到的字元，裁出子集隨片分發。站點：[font.anibt.net](https://font.anibt.net)。
+- **線上使用**：[font.anibt.net](https://font.anibt.net)
 
-1. 上傳 ASS / SRT 與原字型。
-2. 生成子集（`.ttf` / `.otf`）。
-3. 放入 `Fonts/`，與字幕一併打進種子。
+### 使用步驟
+
+<Steps>
+  <Step>
+    ### 上傳字幕與原字體
+    在 FontInAss 網頁端或命令列工具中，載入本次釋出的所有 ASS / SRT 字幕檔案，並上傳對應使用到的中日文字體檔案。
+  </Step>
+
+  <Step>
+    ### 自動擷取並產生子集
+    程式會全量掃描字幕中的每一個漢字、平假名、片假名與符號，剔除未使用的數萬個漢字字形，裁切出僅幾百 KB 的微型 `.ttf` / `.otf` 字體。
+  </Step>
+
+  <Step>
+    ### 打包隨片分發
+    將產生的子集字體放入種子的 `Fonts/` 資料夾內，與影片或字幕一併打包釋出。觀眾播放時無需安裝龐大的系統字體，即可獲得與壓制組完全一致的排版效果。
+  </Step>
+</Steps>
+
+## AniBT-Speed —— RSS 自動下載與長期做種
+
+為了幫助優質動漫資源能夠持久做種、保障新老觀眾的高速下載體驗，社群開發了基於 AniBT 公開 RSS 的輕量級自動下載與做種工具 **AniBT-Speed**。
 
 <GithubInfo owner="Yuri-NagaSaki" repo="AniBT-Speed" />
 
-按 RSS 自動下載並長期做種。訂閱 [`/rss/anime.xml`](/docs/open-api/rss-anime) 或 [`/rss/magnets.xml`](/docs/open-api/rss-magnets)。
-
-周邊工具可向 [wiki 倉庫](https://github.com/AniBT-Net/wiki) 提 PR。
+- **主要特性**：
+  - 監控並訂閱 AniBT 的 [番劇 RSS](/zh-Hant/docs/open-api/rss-anime) 或 [全站磁力 RSS](/zh-Hant/docs/open-api/rss-magnets)
+  - 遵循 HTTP 條件請求規範，原生支援 304 快取協商，避免對主站造成頻繁輪詢壓力
+  - 配合 Aria2、qBittorrent 或 Transmission 實現全自動拉取與長期保種
