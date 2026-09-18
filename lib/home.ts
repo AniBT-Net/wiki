@@ -140,7 +140,7 @@ const SYNC_DOMAINS: Record<string, string> = {
 };
 
 const zhCN: HomeCopy = {
-  htmlTitle: 'AniBT 使用指南与文档',
+  htmlTitle: '使用指南与文档',
   htmlDescription:
     'AniBT 官方文档：字幕组入驻与发布、多站同步配置、Tracker 说明、全站 RSS 订阅与开放 API。',
   heroPill: 'AniBT 官方文档',
@@ -289,7 +289,7 @@ const zhCN: HomeCopy = {
 };
 
 const zhHant: HomeCopy = {
-  htmlTitle: 'AniBT 使用指南與文件',
+  htmlTitle: '使用指南與文件',
   htmlDescription:
     'AniBT 官方文件：字幕組入駐與釋出、多站同步設定、Tracker 說明、全站 RSS 訂閱與開放 API。',
   heroPill: 'AniBT 官方文件',
@@ -438,7 +438,7 @@ const zhHant: HomeCopy = {
 };
 
 const en: HomeCopy = {
-  htmlTitle: 'AniBT Wiki & Docs',
+  htmlTitle: 'Guides and Open API',
   htmlDescription:
     'Official AniBT documentation: fansub onboarding, multi-site sync, tracker setup, RSS feeds, and open APIs.',
   heroPill: 'AniBT Docs',
