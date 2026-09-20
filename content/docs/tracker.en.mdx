@@ -17,8 +17,14 @@ When creating `.torrent` files or configuring trackers in your BitTorrent client
 https://tracker.anibt.net/announce
 ```
 
-- **Protocol**: Standard HTTP / HTTPS (Port 443), fully dual-stack IPv4 and IPv6 enabled.
-- **Disabled Endpoints**: To ensure high availability and prevent DDoS attacks, the `/scrape` endpoint, UDP protocol, and deprecated `/announce/v1/*` paths are permanently closed.
+- **Protocol**: Connect using HTTPS on port 443.
+- **Currently unavailable**: UDP is not enabled. Public `/scrape` and legacy `/announce/v1/*` paths remain closed.
+
+## Check service status
+
+Visit the [Tracker status page](https://tracker.anibt.net/) to view seeders, leechers, tracked torrents, completed downloads, and connections. Select a 30-, 60-, or 90-minute history window and switch between peer, torrent, completion, and connection views.
+
+Data updates every minute. Outdated or unavailable snapshots are clearly marked. Missing measurements display `—`, and charts never invent missing history. Peers are counted per torrent swarm, not as unique users. Connections include idle connections and are not counts of seeders or leechers.
 
 ## Torrent Creation and Publishing Workflow
 
