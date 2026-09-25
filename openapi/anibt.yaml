@@ -691,8 +691,11 @@ paths:
         查询该 API Key 所属字幕组的普通 release 在六个外站的同步状态。
         请求只支持 `rel_...` 形式的 `releaseId`，且资源必须属于当前 Key 所属字幕组。
         不存在、已删除或跨组资源统一返回 `404 NOT_FOUND`。
-        成功响应固定返回 `mikan`、`acgrip`、`bangumi`、`acgnx`、`dmhy`、`nyaa` 六个平台；每站提供当前状态、外站 ID/链接、错误、generation、attempt、时间戳和最近 50 条历史。
-        状态包括 `not_started`、`pending`、`success`、`failed`、`ambiguous`、`deleted`；响应另含 `overall` 汇总和 `historyTruncated`。
+        成功响应为 `{ ok: true, data: { releaseId, title, publishedAt, overall, sites } }`。
+        `data.sites` 是数组，固定包含 `mikan`、`acgrip`、`bangumi`、`acgnx`、`dmhy`、`nyaa` 六个平台。遍历数组并用每项的 `site` 字段识别平台；不要读取 `data.mikan` 或 `data.nyaa`。
+        每站提供当前状态、`externalId`、`externalUrl`、错误、`generation`、`attempt`、时间戳、最近 50 条 `history` 和该站的 `historyTruncated`。所有时间戳均为 Unix 毫秒。
+        站点状态为 `not_started`、`pending`、`success`、`failed`、`ambiguous` 或 `deleted`。
+        `data.overall` 是字符串：任一站为 `failed` 或 `ambiguous` 时为 `failed`；全部成功时为 `success`；全部未开始时为 `not_started`；其余情况有 `pending` 时为 `pending`，否则为 `partial`。
         接口不会返回外站原始响应正文或凭据，响应使用 `Cache-Control: no-store`。
         需要 `releases:sync:read`。
       security:
@@ -712,6 +715,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SyncStatusResponse'
+              example:
+                ok: true
+                data:
+                  releaseId: rel_example
+                  title: '[Example] Example Anime - 01'
+                  publishedAt: 1790294400000
+                  overall: not_started
+                  sites:
+                    - site: mikan
+                      status: not_started
+                      externalId: null
+                      externalUrl: null
+                      error: null
+                      generation: null
+                      attempt: 0
+                      createdAt: null
+                      updatedAt: null
+                      completedAt: null
+                      history: []
+                      historyTruncated: false
+                    - site: acgrip
+                      status: not_started
+                      externalId: null
+                      externalUrl: null
+                      error: null
+                      generation: null
+                      attempt: 0
+                      createdAt: null
+                      updatedAt: null
+                      completedAt: null
+                      history: []
+                      historyTruncated: false
+                    - site: bangumi
+                      status: not_started
+                      externalId: null
+                      externalUrl: null
+                      error: null
+                      generation: null
+                      attempt: 0
+                      createdAt: null
+                      updatedAt: null
+                      completedAt: null
+                      history: []
+                      historyTruncated: false
+                    - site: acgnx
+                      status: not_started
+                      externalId: null
+                      externalUrl: null
+                      error: null
+                      generation: null
+                      attempt: 0
+                      createdAt: null
+                      updatedAt: null
+                      completedAt: null
+                      history: []
+                      historyTruncated: false
+                    - site: dmhy
+                      status: not_started
+                      externalId: null
+                      externalUrl: null
+                      error: null
+                      generation: null
+                      attempt: 0
+                      createdAt: null
+                      updatedAt: null
+                      completedAt: null
+                      history: []
+                      historyTruncated: false
+                    - site: nyaa
+                      status: not_started
+                      externalId: null
+                      externalUrl: null
+                      error: null
+                      generation: null
+                      attempt: 0
+                      createdAt: null
+                      updatedAt: null
+                      completedAt: null
+                      history: []
+                      historyTruncated: false
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1641,49 +1724,88 @@ components:
                   type: string
     SyncPlatformStatus:
       type: object
+      required: [site, status, externalId, externalUrl, error, generation, attempt, createdAt, updatedAt, completedAt, history, historyTruncated]
       properties:
+        site:
+          type: string
+          enum: [mikan, acgrip, bangumi, acgnx, dmhy, nyaa]
         status:
           type: string
           enum: [not_started, pending, success, failed, ambiguous, deleted]
+          description: 当前站点状态；无同步记录时为 not_started。
         externalId:
           type: ['string', 'null']
-        url:
+          description: 外站返回的标识或链接；未保存时为 null。
+        externalUrl:
           type: ['string', 'null']
+          description: externalId 为 HTTP 或 HTTPS 链接时返回该链接，否则为 null。
         error:
           type: ['string', 'null']
+          description: 错误说明；无错误时为 null。
         generation:
-          type: ['string', 'number', 'null']
+          type: ['number', 'null']
+          description: 当前同步代次；无同步记录时为 null。
         attempt:
-          type: ['integer', 'null']
+          type: integer
+          description: 当前尝试次数；无同步记录时为 0。
+        createdAt:
+          type: ['number', 'null']
+          description: 当前同步记录的创建时间，Unix 毫秒；无记录时为 null。
         updatedAt:
           type: ['number', 'null']
+          description: 当前同步记录的更新时间，Unix 毫秒；无记录时为 null。
+        completedAt:
+          type: ['number', 'null']
+          description: 当前终态记录的更新时间，Unix 毫秒；未开始或 pending 时为 null。
         history:
           type: array
-          items: {}
-          description: 最近 50 条
+          maxItems: 50
+          items:
+            type: object
+            required: [status, occurredAt]
+            properties:
+              status:
+                type: string
+                description: 该历史记录的状态。
+              error:
+                type: string
+                description: 错误说明；无错误时省略。
+              occurredAt:
+                type: number
+                description: 记录发生时间，Unix 毫秒。
+              attempt:
+                type: number
+                description: 记录中的尝试次数；无有效值时省略。
+          description: 该站最近 50 条历史记录；无历史时为空数组。
+        historyTruncated:
+          type: boolean
+          description: 该站历史记录超过 50 条时为 true。
     SyncStatusResponse:
       type: object
+      required: [ok, data]
       properties:
         ok:
           type: boolean
           enum: [true]
         data:
           type: object
+          required: [releaseId, title, publishedAt, overall, sites]
           properties:
-            mikan:
-              $ref: '#/components/schemas/SyncPlatformStatus'
-            acgrip:
-              $ref: '#/components/schemas/SyncPlatformStatus'
-            bangumi:
-              $ref: '#/components/schemas/SyncPlatformStatus'
-            acgnx:
-              $ref: '#/components/schemas/SyncPlatformStatus'
-            dmhy:
-              $ref: '#/components/schemas/SyncPlatformStatus'
-            nyaa:
-              $ref: '#/components/schemas/SyncPlatformStatus'
+            releaseId:
+              type: string
+            title:
+              type: string
+            publishedAt:
+              type: ['number', 'null']
+              description: 资源发布时间，Unix 毫秒；无值时为 null。
             overall:
-              type: object
-              additionalProperties: true
-            historyTruncated:
-              type: boolean
+              type: string
+              enum: [not_started, pending, partial, success, failed]
+              description: 六站状态汇总；仅全部站点成功时为 success。
+            sites:
+              type: array
+              minItems: 6
+              maxItems: 6
+              items:
+                $ref: '#/components/schemas/SyncPlatformStatus'
+              description: 六站状态数组，通过每项的 site 字段识别平台。

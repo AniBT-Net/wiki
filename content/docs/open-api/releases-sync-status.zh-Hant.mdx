@@ -18,12 +18,21 @@ _openapi:
 
           不存在、已删除或跨组资源统一返回 `404 NOT_FOUND`。
 
-          成功响应固定返回 `mikan`、`acgrip`、`bangumi`、`acgnx`、`dmhy`、`nyaa`
-          六个平台；每站提供当前状态、外站 ID/链接、错误、generation、attempt、时间戳和最近 50 条历史。
+          成功响应为 `{ ok: true, data: { releaseId, title, publishedAt, overall,
+          sites } }`。
 
-          状态包括
-          `not_started`、`pending`、`success`、`failed`、`ambiguous`、`deleted`；响应另含
-          `overall` 汇总和 `historyTruncated`。
+          `data.sites` 是数组，固定包含 `mikan`、`acgrip`、`bangumi`、`acgnx`、`dmhy`、`nyaa`
+          六个平台。遍历数组并用每项的 `site` 字段识别平台；不要读取 `data.mikan` 或 `data.nyaa`。
+
+          每站提供当前状态、`externalId`、`externalUrl`、错误、`generation`、`attempt`、时间戳、最近
+          50 条 `history` 和该站的 `historyTruncated`。所有时间戳均为 Unix 毫秒。
+
+          站点状态为 `not_started`、`pending`、`success`、`failed`、`ambiguous` 或
+          `deleted`。
+
+          `data.overall` 是字符串：任一站为 `failed` 或 `ambiguous` 时为 `failed`；全部成功时为
+          `success`；全部未开始时为 `not_started`；其余情况有 `pending` 时为 `pending`，否则为
+          `partial`。
 
           接口不会返回外站原始响应正文或凭据，响应使用 `Cache-Control: no-store`。
 
