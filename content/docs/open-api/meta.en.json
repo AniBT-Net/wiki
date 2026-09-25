@@ -29,6 +29,7 @@
     "other-torrent",
     "---Integrate---",
     "torznab",
+    "torznab-api",
     "examples",
     "caching",
     "limits",

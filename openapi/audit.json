@@ -1,0 +1,371 @@
+{
+  "issue": "https://github.com/AniBT-Net/wiki/issues/8",
+  "sourceGitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+  "productionVersionVerified": true,
+  "operations": [
+    {
+      "operationId": "subtitle-groups",
+      "method": "get",
+      "path": "/api/subtitle-groups",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/routes/api/subtitle-groups.ts"
+      ]
+    },
+    {
+      "operationId": "me",
+      "method": "get",
+      "path": "/api/subtitle-groups/me",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/routes/api/subtitle-groups.me.ts",
+        "src/routes/api/subtitle-groups.me.bun.test.ts"
+      ]
+    },
+    {
+      "operationId": "bgm-search",
+      "method": "get",
+      "path": "/api/bgm/search",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/routes/api/bgm/search.ts",
+        "src/lib/public-catalog-query-admission.ts",
+        "src/lib/public-serving-catalog/bgm-search.server.ts"
+      ]
+    },
+    {
+      "operationId": "seasons-anime",
+      "method": "get",
+      "path": "/api/seasons/anime",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/routes/api/seasons/anime.ts",
+        "src/lib/public-serving-catalog/season-anime.server.ts",
+        "src/lib/public-catalog-types.ts"
+      ]
+    },
+    {
+      "operationId": "anime-groups",
+      "method": "get",
+      "path": "/api/anime/groups",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/routes/api/anime/groups.ts",
+        "src/lib/public-serving-catalog/anime-groups.server.ts",
+        "src/lib/public-catalog-types.ts"
+      ]
+    },
+    {
+      "operationId": "anime-torrent-match",
+      "method": "post",
+      "path": "/api/animes/torrent-match",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/routes/api/animes/torrent-match.ts",
+        "shared/anime-match/torrentMatchRequest.ts",
+        "shared/anime-match/torrentMatchV3.ts"
+      ]
+    },
+    {
+      "operationId": "rss-anime",
+      "method": "get",
+      "path": "/rss/anime.xml",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/public-delivery/rss/routes/anime.server.ts",
+        "src/lib/public-delivery/rss/request-policy.ts"
+      ]
+    },
+    {
+      "operationId": "rss-group",
+      "method": "get",
+      "path": "/rss/group/{slug}.xml",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/public-delivery/rss/routes/group.server.ts",
+        "src/lib/public-delivery/rss/fixed-feed.server.ts"
+      ]
+    },
+    {
+      "operationId": "rss-magnets",
+      "method": "get",
+      "path": "/rss/magnets.xml",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/public-delivery/rss/routes/magnets.server.ts",
+        "src/lib/public-delivery/rss/request-policy.ts"
+      ]
+    },
+    {
+      "operationId": "rss-other",
+      "method": "get",
+      "path": "/rss/other/{category}.xml",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/public-delivery/rss/routes/other.server.ts",
+        "src/lib/public-delivery/rss/request-policy.ts"
+      ]
+    },
+    {
+      "operationId": "rss-subscriptions",
+      "method": "get",
+      "path": "/rss/subscriptions.xml",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/routes/rss/subscriptions[.]xml.ts",
+        "src/lib/subscription-rss_impl/response.ts"
+      ]
+    },
+    {
+      "operationId": "releases-publish-whoami",
+      "method": "get",
+      "path": "/api/releases/publish",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/torrent-publish-ingest_impl/api-channel.ts"
+      ]
+    },
+    {
+      "operationId": "releases-publish",
+      "method": "post",
+      "path": "/api/releases/publish",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/torrent-publish-ingest_impl/api-channel.ts",
+        "src/lib/torrent-publish-ingest_impl/payload.ts",
+        "shared/release-domain/api-publish.ts",
+        "shared/release-domain/service.ts",
+        "shared/release-domain/preview.ts"
+      ]
+    },
+    {
+      "operationId": "other-releases-publish-whoami",
+      "method": "get",
+      "path": "/api/other-releases/publish",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/torrent-publish-ingest_impl/api-channel.ts"
+      ]
+    },
+    {
+      "operationId": "other-releases-publish",
+      "method": "post",
+      "path": "/api/other-releases/publish",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/torrent-publish-ingest_impl/api-channel.ts",
+        "src/lib/torrent-publish-ingest_impl/payload.ts",
+        "shared/release-domain/api-publish.ts",
+        "shared/release-domain/service.ts"
+      ]
+    },
+    {
+      "operationId": "releases-delete",
+      "method": "delete",
+      "path": "/api/releases/{releaseId}",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/release-deletion-api.server.ts",
+        "shared/release-domain/deletion-contract.ts",
+        "shared/release-domain/deletion.ts"
+      ]
+    },
+    {
+      "operationId": "releases-deletion",
+      "method": "get",
+      "path": "/api/releases/{releaseId}/deletion",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/release-deletion-api.server.ts",
+        "shared/release-domain/deletion-contract.ts"
+      ]
+    },
+    {
+      "operationId": "releases-sync-status",
+      "method": "get",
+      "path": "/api/releases/{releaseId}/sync-status",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/release-sync-status-api.server.ts",
+        "src/lib/external-publish-ledger.ts"
+      ]
+    },
+    {
+      "operationId": "torrent",
+      "method": "get",
+      "path": "/api/torrent/{releaseId}.torrent",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/routes/api/torrent/$.ts",
+        "src/lib/public-torrent-artifact.server.ts",
+        "src/lib/torrent-download-error.ts"
+      ]
+    },
+    {
+      "operationId": "other-torrent",
+      "method": "get",
+      "path": "/api/other-torrent/{releaseId}.torrent",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/routes/api/other-torrent/$.ts",
+        "src/lib/public-torrent-artifact.server.ts",
+        "src/lib/torrent-download-error.ts"
+      ]
+    },
+    {
+      "operationId": "torznab-api",
+      "method": "get",
+      "path": "/torznab/api",
+      "reviewed": [
+        "request",
+        "authentication",
+        "success",
+        "errors",
+        "cache"
+      ],
+      "sources": [
+        "src/lib/public-delivery/torznab/api.server.ts",
+        "src/lib/public-delivery/torznab/request.ts",
+        "src/lib/public-delivery/torznab/representation.ts"
+      ]
+    }
+  ],
+  "relatedPages": [
+    "open-api/index",
+    "open-api/reference",
+    "open-api/limits",
+    "open-api/caching",
+    "open-api/troubleshooting",
+    "open-api/examples",
+    "open-api/torznab",
+    "llm",
+    "tracker",
+    "nyaa-proxy",
+    "site-sync/index"
+  ],
+  "limits": [
+    "No authenticated production writes or private production success requests were performed.",
+    "Private response witnesses test HTTP handlers with substituted external boundaries.",
+    "Default limits are source defaults, not live configuration measurements."
+  ]
+}

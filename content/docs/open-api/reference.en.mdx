@@ -1,91 +1,50 @@
 ---
-title: API Conventions & Auth
-description: Learn about the AniBT production base URL, request header standards, fansub API key scopes, and standardized error schemas.
+title: "Conventions and authentication"
+description: "Authentication, response envelopes, and error formats by endpoint."
 ---
 
-This document establishes global conventions, authentication protocols, and standard error handling when consuming the AniBT Open API.
+Check each endpoint’s authentication and response shape before integrating.
 
-<Callout type="warn">
-  **Production Base URL**: `https://anibt.net`. Always use endpoints documented in the wiki and OpenAPI specification. Subtitle Group API Keys possess write and delete permissions; store them securely and never hardcode them into public repositories or client apps.
+<Callout type="info">
+  https://anibt.net · [OpenAPI 3.1](/openapi.yaml)
 </Callout>
 
-## Authentication Models
-
-AniBT employs a tiered authentication architecture where most reads are completely keyless:
-
-<TypeTable
-  type={{
-    'Public Read Endpoints': {
-      type: 'Keyless',
-      description: 'Includes anime lookups, search queries, fansub directories, torrent matching, and public RSS. Make standard HTTP requests directly.',
-    },
-    'Subtitle Group API Key': {
-      type: 'Header',
-      description: 'Required for write operations (publish, delete, sync status, /me). Supports Authorization: Bearer <KEY> or X-API-Key: <KEY>.',
-    },
-    'Personal Subscription RSS': {
-      type: 'URL Token',
-      description: 'Private merged subscription URLs generated in the user dashboard, authenticated via embedded query tokens.',
-    },
-  }}
-/>
-
-### API Key Scopes
-
-When creating a Key in your fansub console at `/groups/<slug>/api-keys`, assign granular permissions:
-
-<TypeTable
-  type={{
-    'releases:publish': {
-      type: 'Scope',
-      description: 'Grants publishing privileges for anime and other categories, including preview and whoami inspection.',
-    },
-    'releases:delete': {
-      type: 'Scope',
-      description: 'Grants permission to revoke and delete published releases asynchronously.',
-    },
-    'releases:sync:read': {
-      type: 'Scope',
-      description: 'Grants access to query real-time external sync progress and URLs across six external BT platforms.',
-    },
-  }}
-/>
-
-## Standard Error Response Schema
-
-All write operations and non-2xx responses adhere to a unified JSON error structure:
-
-```json title="Standard JSON Error Schema"
-{
-  "ok": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Torrent file is missing in multipart request",
-    "reason": "TORRENT_REQUIRED",
-    "retryable": false,
-    "requestId": "req_01j7abc123456789"
+<TypeTable type={{
+  "Public queries": {
+    "type": "Anonymous",
+    "description": "Group directory, Bangumi search, seasonal anime, anime groups, public RSS, and torrent downloads do not require an API Key."
+  },
+  "Publishing, deletion, sync status and identity": {
+    "type": "Group API Key",
+    "description": "Use Authorization: Bearer <KEY> or X-API-Key. Bearer takes precedence."
+  },
+  "Personal RSS": {
+    "type": "Personal RSS token",
+    "description": "Use the full account-generated URL. key is the credential; token is an alias. This is not a group API Key."
+  },
+  "Title matching with groupId": {
+    "type": "Signed-in session",
+    "description": "Omit groupId for anonymous matching. Supplying it requires a session and membership in that group; an API Key does not replace the session."
   }
-}
-```
+}} />
 
-- **`code`**: Broad category of error (e.g., `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `VALIDATION_ERROR`, `RATE_LIMITED`).
-- **`reason`**: Machine-readable fine-grained error identifier (e.g., `EMPTY_RELEASE_CONTENT`, `TORRENT_REQUIRED`).
-- **`retryable`**: Boolean indicating whether this error might succeed on a subsequent retry (e.g., `true` for rate limits, `false` for parameter errors).
-- **`requestId`**: Unique distributed tracing identifier for the request, also returned in the `X-Request-ID` response header. Always provide this ID when reporting issues.
+<TypeTable type={{
+  "releases:publish": {
+    "type": "Scope",
+    "description": "POST anime or other releases, including anime preview. GET whoami and /me only require a valid key, without this scope."
+  },
+  "releases:delete": {
+    "type": "Scope",
+    "description": "DELETE /api/releases/{releaseId} and GET its /deletion status."
+  },
+  "releases:sync:read": {
+    "type": "Scope",
+    "description": "Read six-site sync status for rel_* releases belonging to the key’s group."
+  }
+}} />
 
-## Common HTTP Status Codes
+Parse success responses per endpoint: catalog queries, /me, and sync status use `data`; publishing, whoami, and deletion use `result`; title matching directly returns `version`, `decision`, and `candidates`. Anime preview returns a top-level `previewUrl`.
 
-<TypeTable
-  type={{
-    '200 OK': { type: 'Success', description: 'Request succeeded and payload returned. For release publishing, confirms acceptance into catalog.' },
-    '202 Accepted': { type: 'Accepted', description: 'Asynchronous task accepted (e.g., release deletion); poll status endpoint for final state.' },
-    '304 Not Modified': { type: 'Cache Hit', description: 'Conditional request matched weak ETag. Response body is empty; reuse cached local data.' },
-    '400 Bad Request': { type: 'Client Error', description: 'Malformed request or invalid arguments (e.g., limit parameter outside 1..100 range).' },
-    '401 Unauthorized': { type: 'Auth Failure', description: 'Missing, malformed, expired, or disabled API Key.' },
-    '403 Forbidden': { type: 'Forbidden', description: 'API Key is valid but lacks the required scope (e.g., attempting delete with publish-only key).' },
-    '404 Not Found': { type: 'Not Found', description: 'Resource does not exist, or does not belong to the fansub group bound to this API key.' },
-    '422 Unprocessable': { type: 'Validation', description: 'Semantic validation failed (e.g., missing torrent file, invalid Nyaa category code).' },
-    '429 Too Many Requests': { type: 'Rate Limited', description: 'Exceeded rate limits for this endpoint. Back off according to the Retry-After header.' },
-    '503 Service Unavailable': { type: 'Unavailable', description: 'Platform is deploying or temporary capacity issue. Back off according to Retry-After.' },
-  }}
-/>
+Application JSON errors contain `ok: false` and `error.code`, `error.message`, and `error.requestId`. `reason`, `retryable`, `retryAfterMs`, and `details` are optional. A missing retryable flag does not authorize retries. Public RSS errors are usually plain text. Torznab protocol errors are XML and may have HTTP 200. Edge blocks may be HTML. Check status and Content-Type before parsing.
+
+Before publishing, GET the same endpoint and check groupSlug and scopes. A publish receipt guarantees releaseId and revision, with an optional torrentObjectId; it does not include group identity or fileSize. Use rel_* or orel_* as required. Group filters usually take a slug; other-category RSS groupId takes an organization ID.

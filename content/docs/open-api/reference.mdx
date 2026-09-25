@@ -1,91 +1,50 @@
 ---
-title: 接口约定与鉴权
-description: 了解 AniBT 生产 Base URL、请求头规范、字幕组 API Key 权限体系与统一错误响应结构。
+title: "接口约定与鉴权"
+description: "按端点识别鉴权、响应包装和错误正文。"
 ---
 
-本文档规定了调用 AniBT 开放 API 的全局约定、身份鉴权方式以及标准的错误处理格式。
+调用公开 API 前，先确认对应端点的鉴权方式和响应结构。
 
-<Callout type="warn">
-  **生产 Base URL**：`https://anibt.net`。请始终使用文档和 OpenAPI 规范中列出的路径。字幕组 API Key 拥有写操作与删除权限，请妥善保管，切勿硬编码提交至公开仓库或客户端代码中。
+<Callout type="info">
+  https://anibt.net · [OpenAPI 3.1](/openapi.yaml)
 </Callout>
 
-## 身份鉴权机制
-
-AniBT 采用分层授权模型，绝大多数数据读取完全免鉴权：
-
-<TypeTable
-  type={{
-    '公开读取接口': {
-      type: '免鉴权',
-      description: '包括番剧查询、搜索、字幕组目录、种子匹配及公开 RSS。直接发送 HTTP 请求即可。',
-    },
-    '字幕组 API Key': {
-      type: '请求头',
-      description: '写操作（发布、删除、外站同步查询、/me）必须携带。支持 Authorization: Bearer <KEY> 或 X-API-Key: <KEY>。',
-    },
-    '个人订阅 RSS': {
-      type: 'URL 令牌',
-      description: '在用户后台「我的订阅」生成的专属私人订阅链接，通过 URL 参数内置私有 Token。',
-    },
-  }}
-/>
-
-### API Key 权限范围 (Scopes)
-
-在字幕组管理控制台 `/groups/<slug>/api-keys` 创建 Key 时，可勾选以下细粒度权限：
-
-<TypeTable
-  type={{
-    'releases:publish': {
-      type: 'Scope',
-      description: '允许发布番剧或其它分类资源，包括调用预览与 whoami 接口。',
-    },
-    'releases:delete': {
-      type: 'Scope',
-      description: '允许调用异步删除接口撤回已发布的资源条目。',
-    },
-    'releases:sync:read': {
-      type: 'Scope',
-      description: '允许查询该字幕组资源在各大 BT 站的实时同步进度与外站链接。',
-    },
-  }}
-/>
-
-## 统一错误响应结构
-
-所有写操作与非 2xx 的 JSON 响应均遵循统一的错误结构，便于程序解析与重试判定：
-
-```json title="标准 JSON 错误格式"
-{
-  "ok": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Torrent file is missing in multipart request",
-    "reason": "TORRENT_REQUIRED",
-    "retryable": false,
-    "requestId": "req_01j7abc123456789"
+<TypeTable type={{
+  "公开目录与查询": {
+    "type": "匿名",
+    "description": "字幕组目录、Bangumi 搜索、季度番剧、单番剧字幕组，以及公开 RSS 和种子下载不需要 API Key。"
+  },
+  "发布、删除、同步状态与身份查询": {
+    "type": "字幕组 API Key",
+    "description": "Authorization: Bearer <KEY> 或 X-API-Key；同时提供时 Bearer 优先。"
+  },
+  "个人订阅 RSS": {
+    "type": "个人 RSS 令牌",
+    "description": "使用账户生成的完整 URL，key 为凭证，token 为兼容别名。不是字幕组 API Key。"
+  },
+  "标题匹配 groupId": {
+    "type": "登录会话",
+    "description": "不传 groupId 可匿名匹配；传 groupId 需要登录且属于该组，API Key 不能替代会话。"
   }
-}
-```
+}} />
 
-- **`code`**：粗粒度错误类别（如 `BAD_REQUEST`、`UNAUTHORIZED`、`FORBIDDEN`、`VALIDATION_ERROR`、`RATE_LIMITED`）。
-- **`reason`**：机器可读的精确错误原因（如 `EMPTY_RELEASE_CONTENT`、`TORRENT_REQUIRED`）。
-- **`retryable`**：布尔值，指示当前错误是否可通过延时重试恢复（例如限流为 `true`，参数错误为 `false`）。
-- **`requestId`**：当前请求的全局唯一追踪标识，同时会通过响应头 `X-Request-ID` 返回。在向管理员反馈问题时请务必附带此 ID。
+<TypeTable type={{
+  "releases:publish": {
+    "type": "权限",
+    "description": "POST 番剧或其他类发布，包括番剧 preview。GET whoami 与 /me 只要求有效 Key，不要求此 scope。"
+  },
+  "releases:delete": {
+    "type": "权限",
+    "description": "DELETE /api/releases/{releaseId} 及 GET 对应 /deletion。"
+  },
+  "releases:sync:read": {
+    "type": "权限",
+    "description": "查询本组 rel_* 资源的六站同步状态。"
+  }
+}} />
 
-## 常见 HTTP 状态码说明
+成功响应按端点解析：目录、查询、/me 和同步状态使用 `data`；发布、whoami、删除使用 `result`；标题匹配直接返回 `version`、`decision`、`candidates`。番剧预览使用顶层 `previewUrl`，不能按普通发布回执读取。
 
-<TypeTable
-  type={{
-    '200 OK': { type: '成功', description: '请求处理成功并返回数据。对于发布接口，表示主记录已成功受理入库。' },
-    '202 Accepted': { type: '处理中', description: '异步操作已排队受理（如删除资源或删除图片），可通过对应查询端点轮询终态。' },
-    '304 Not Modified': { type: '缓存命中', description: '条件请求命中弱 ETag，响应体为空，直接复用本地缓存。' },
-    '400 Bad Request': { type: '客户端错误', description: '请求参数格式错误或不合规（例如 limit 超出 1..100）。' },
-    '401 Unauthorized': { type: '认证失败', description: '缺少 API Key、Key 格式错误或 Key 已被禁用失效。' },
-    '403 Forbidden': { type: '权限不足', description: 'Key 有效但缺少对应操作的 Scope（例如用仅有发布权的 Key 调用删除）。' },
-    '404 Not Found': { type: '不存在', description: '请求的资源或字幕组不存在，或该资源不属于当前 API Key 绑定的字幕组。' },
-    '422 Unprocessable': { type: '业务校验失败', description: '提交的数据未通过业务规则检查（如缺少种子文件、分类代码无效）。' },
-    '429 Too Many Requests': { type: '速率限制', description: '超出当前端点的调用频率上限，响应头包含 Retry-After 指示等待秒数。' },
-    '503 Service Unavailable': { type: '服务繁忙', description: '系统正在部署或上游服务瞬时不可用，请按 Retry-After 适度退避后重试。' },
-  }}
-/>
+应用 JSON 错误包含 `ok: false` 和 `error.code`、`error.message`、`error.requestId`；`reason`、`retryable`、`retryAfterMs`、`details` 为可选字段。缺少 `retryable` 不表示可以重试。公开 RSS 的错误通常是纯文本；Torznab 协议错误是 XML，HTTP 状态仍可能为 200；边缘拦截还可能返回 HTML。先检查 HTTP 状态与 Content-Type，再解析正文。
+
+发布前用 GET 同一路径核验 `groupSlug` 和 `scopes`。发布成功回执只保证 `releaseId`、`revision`，可能含 `torrentObjectId`，不包含字幕组身份或 `fileSize`。资源 ID 使用端点要求的 `rel_*` 或 `orel_*`；字幕组通常用 `slug`，但其他类 RSS 的 `groupId` 使用组织 ID。

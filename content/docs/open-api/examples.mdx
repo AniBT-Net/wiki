@@ -1,152 +1,107 @@
 ---
-title: 实战集成示例
-description: 了解如何配置 qBittorrent、Sonarr 自动追番，以及编写支持 304 条件轮询与异步删除的脚本。
+title: "集成示例"
+description: "可执行的 RSS 条件请求和有界删除轮询。"
 ---
 
-AniBT 的公开 RSS 与开放 API 专为自动化集成而设计。无论是将订阅源添加至下载工具实现全自动追番，还是编写自动化脚本与 CI/CD 流水线对接，均可直接参考以下经过验证的代码示例。
+公开 RSS 返回带 .torrent 下载链接的 XML。番剧与字幕组过滤可组合；其他类资源使用独立分类 RSS。
 
 <Callout type="info">
-  **订阅技巧**：公开 RSS 源默认输出最新的 100 条记录（已是单次最大上限），直接使用基础链接即可，无需额外添加 `limit=100` 参数。
+  [Torznab: Sonarr / Radarr / Prowlarr](/docs/open-api/torznab)
 </Callout>
 
-## 常用 RSS 订阅链接组合
-
-以下示例基于动画条目 `bgmId=543360` 与常用字幕组 slug 演示：
-
-<Tabs items={['按番剧与字幕组', '跨组追番 (按画质语言)', '订阅字幕组全部作品', '仅下载完结全集 (合集)']}>
-  <Tab value="按番剧与字幕组">
-    仅追踪指定字幕组发布的某部番剧：
-
-    ```txt title="单一字幕组 × 单一番剧"
-    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
-    ```
-  </Tab>
-
-  <Tab value="跨组追番 (按画质语言)">
-    不限字幕组，只要是该番剧的 1080p 简体中文版本即抓取：
-
-    ```txt title="画质与字幕语言过滤"
-    https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
-    ```
-  </Tab>
-
-  <Tab value="订阅字幕组全部作品">
-    追踪某字幕组发布的所有新番与资源（两种链接形式完全等价）：
-
-    ```txt title="字幕组全量发布 RSS"
-    https://anibt.net/rss/group/kirara-fantasia.xml
-    https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia
-    ```
-  </Tab>
-
-  <Tab value="仅下载完结全集 (合集)">
-    跳过单集连载，仅在字幕组发布合集（Batch / 季度打包）时下载：
-
-    ```txt title="合集资源过滤"
-    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
-    ```
-  </Tab>
-</Tabs>
-
-## 自动化下载器接入指引
-
-<Tabs items={['qBittorrent', 'Sonarr', 'FlexGet']}>
-  <Tab value="qBittorrent">
-    1. 打开 qBittorrent，在左侧导航栏切换至 **RSS** 选项卡。
-    2. 点击 **新增订阅**，将生成的 AniBT RSS 链接粘贴进去并保存。
-    3. 点击右上角的 **RSS 下载器（规则）**，新建一条自动下载规则并勾选刚才添加的订阅源。
-    4. 建议将客户端的默认轮询间隔设置为 **15 ~ 30 分钟**。
-  </Tab>
-
-  <Tab value="Sonarr">
-    1. 进入 Sonarr 设置页，点击 **Settings** → **Indexers** → **Add**。
-    2. 选择 **Torznab**，**URL** 填 `https://anibt.net/torznab`，**API Path** 保持 `/api`，**Anime Categories** 选择 `5070`。完整步骤见 [Torznab 接口](/docs/open-api/torznab)。
-    3. 只想订阅固定的番剧或字幕组时，也可以选择 **Torrent RSS Feed**，URL 填上面的 RSS 地址。
-  </Tab>
-
-  <Tab value="FlexGet">
-    在 `config.yml` 中直接将 AniBT RSS 作为输入源：
-
-    ```yaml title="config.yml"
-    tasks:
-      anime_task:
-        rss: https://anibt.net/rss/anime.xml?bgmId=543360&language=CHS
-        all_series: yes
-        download: ~/Downloads/Torrents/
-    ```
-  </Tab>
-</Tabs>
-
-## 实战脚本示例
-
-### 1. 具备 304 缓存的 Bash 条件轮询脚本
-
-通过保存并发送 `ETag`，当服务端无新资源时直接返回空响应体 `304`，避免重复下载 XML：
-
-```bash title="conditional_rss_poll.sh"
-#!/usr/bin/env bash
-set -euo pipefail
-
-FEED_URL="https://anibt.net/rss/anime.xml?bgmId=543360"
-ETAG_FILE="/tmp/anibt_anime_543360.etag"
-
-# 读取历史 ETag
-ETAG=""
-if [ -f "$ETAG_FILE" ]; then
-  ETAG=$(cat "$ETAG_FILE")
-fi
-
-echo "正在检查新资源更新..."
-if [ -n "$ETAG" ]; then
-  RESPONSE=$(curl -sI -H "If-None-Match: $ETAG" "$FEED_URL")
-else
-  RESPONSE=$(curl -sI "$FEED_URL")
-fi
-
-HTTP_STATUS=$(echo "$RESPONSE" | grep -i '^http/' | awk '{print $2}')
-
-if [ "$HTTP_STATUS" = "304" ]; then
-  echo ">>> 内容未发生变化 (304 Not Modified)，无需重复下载。"
-elif [ "$HTTP_STATUS" = "200" ]; then
-  echo ">>> 发现新资源！拉取完整数据并保存最新 ETag..."
-  NEW_ETAG=$(echo "$RESPONSE" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
-  echo "$NEW_ETAG" > "$ETAG_FILE"
-  # 这里可以进一步执行下载或推送通知
-fi
+```txt title="RSS URLs"
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
+https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
+https://anibt.net/rss/group/kirara-fantasia.xml
+https://anibt.net/rss/other/music.xml
 ```
 
-### 2. 异步撤回删除与轮询终态脚本
+以下脚本使用 Python 3 标准库。先保存正文，再保存 ETag；304 只复用本地已有正文。
 
-删除发布为异步操作，脚本先发起 `DELETE` 请求，随后轮询查询接口直至收到 `completed` 终态：
+```python title="conditional_rss_poll.py"
+import os
+from pathlib import Path
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
-```bash title="delete_and_wait.sh"
-#!/usr/bin/env bash
-set -euo pipefail
+url = os.environ.get("FEED_URL", "https://anibt.net/rss/anime.xml?bgmId=543360")
+feed_file = Path("feed.xml")
+etag_file = Path("feed.etag")
+headers = {"User-Agent": "AniBT-RSS-example/1.0"}
+if feed_file.exists() and etag_file.exists():
+    headers["If-None-Match"] = etag_file.read_text().strip()
+try:
+    with urlopen(Request(url, headers=headers), timeout=30) as response:
+        body = response.read()
+        etag = response.headers.get("ETag", "")
+        status = response.status
+except HTTPError as error:
+    if error.code == 304:
+        print("Unchanged; reuse feed.xml")
+        raise SystemExit(0)
+    raise SystemExit(f"HTTP {error.code}; Retry-After={error.headers.get('Retry-After', 'unknown')}")
+if status != 200:
+    raise SystemExit(f"Unexpected HTTP {status}")
+# Commit the body before its validator; never mark an undownloaded body current.
+feed_file.with_suffix(".tmp").write_bytes(body)
+feed_file.with_suffix(".tmp").replace(feed_file)
+etag_file.write_text(etag)
+print("Saved feed.xml")
+```
 
-RELEASE_ID="rel_01j7example123"
-API_KEY="YOUR_SUBTITLE_GROUP_API_KEY"
-BASE_URL="https://anibt.net"
+删除示例从环境变量读取 RELEASE_ID 和 ANIBT_API_KEY，最多轮询 180 秒。只把明确的 completed 当作完成，HTTP 错误、failed 或无效正文都会停止。
 
-echo "发起异步删除请求: $RELEASE_ID"
-DELETE_RES=$(curl -sS -X DELETE \
-  -H "Authorization: Bearer $API_KEY" \
-  "$BASE_URL/api/releases/$RELEASE_ID")
+```python title="delete_and_wait.py"
+import json
+import os
+import time
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
-STATE=$(echo "$DELETE_RES" | jq -r '.result.state // .error.details.state // "pending"')
+base = os.environ.get("ANIBT_BASE_URL", "https://anibt.net").rstrip("/")
+release_id = os.environ["RELEASE_ID"]
+key = os.environ["ANIBT_API_KEY"]
+deadline = time.monotonic() + 180
 
-# 轮询状态接口
-while [ "$STATE" = "pending" ]; do
-  echo "删除任务正在队列中处理，2 秒后重试..."
-  sleep 2
-  STATUS_RES=$(curl -sS \
-    -H "Authorization: Bearer $API_KEY" \
-    "$BASE_URL/api/releases/$RELEASE_ID/deletion")
-  STATE=$(echo "$STATUS_RES" | jq -r '.result.state // "pending"')
-done
+def call(method, path):
+    request = Request(base + path, method=method, headers={"Authorization": f"Bearer {key}"})
+    try:
+        response = urlopen(request, timeout=20)
+    except HTTPError as error:
+        response = error
+    with response:
+        raw = response.read()
+        status = response.status
+        retry_after = response.headers.get("Retry-After")
+        request_id = response.headers.get("X-Request-ID", "unknown")
+    if status == 429:
+        wait = int(retry_after) if retry_after and retry_after.isdigit() else 5
+        return None, max(1, wait)
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        raise SystemExit(f"Non-JSON response: HTTP {status}, requestId={request_id}")
+    if status not in (200, 202) or data.get("ok") is not True:
+        code = data.get("error", {}).get("code", "unknown")
+        raise SystemExit(f"HTTP {status}: {code}, requestId={request_id}")
+    result = data.get("result")
+    if not isinstance(result, dict) or result.get("state") not in ("pending", "completed", "failed"):
+        raise SystemExit("Invalid deletion receipt")
+    wait = int(retry_after) if retry_after and retry_after.isdigit() else 2
+    return result, max(1, wait)
 
-if [ "$STATE" = "completed" ]; then
-  echo ">>> 资源已彻底删除并通过安全屏障！"
-else
-  echo ">>> 删除未能完成，当前状态: $STATE"
-fi
+receipt, wait = call("DELETE", f"/api/releases/{release_id}")
+if receipt is None:
+    raise SystemExit(f"DELETE rate limited; retry after {wait} seconds")
+while True:
+    if receipt is not None and receipt["state"] == "completed":
+        print("Deletion completed")
+        break
+    if receipt is not None and receipt["state"] == "failed":
+        raise SystemExit(f"Deletion failed: {receipt.get('failure', {}).get('code', 'unknown')}")
+    remaining = deadline - time.monotonic()
+    if remaining <= wait:
+        raise SystemExit("Polling timed out; keep the releaseId and check its status later")
+    time.sleep(wait)
+    receipt, wait = call("GET", f"/api/releases/{release_id}/deletion")
 ```

@@ -1,152 +1,107 @@
 ---
-title: Integration Examples
-description: Learn how to configure automated episode downloading with qBittorrent and Sonarr, and write Bash scripts supporting 304 conditional polling and async deletion.
+title: "Integration examples"
+description: "Executable conditional RSS reads and bounded deletion polling."
 ---
 
-AniBT public RSS feeds and REST APIs are designed from the ground up for seamless integration with third-party downloaders and automated workflows.
+Public RSS returns XML with .torrent enclosures. Combine anime and group filters; use separate category feeds for other releases.
 
 <Callout type="info">
-  **Subscription Tip**: Public RSS feeds return up to 100 items by default (the maximum batch supported by the server). You do not need to append `limit=100` to the feed URL.
+  [Torznab: Sonarr / Radarr / Prowlarr](/en/docs/open-api/torznab)
 </Callout>
 
-## Common RSS Feed Combinations
-
-The following examples demonstrate query combinations using anime `bgmId=543360` and fansub group slugs:
-
-<Tabs items={['Anime & Fansub Group', 'Multi-Group Filtering (Quality & Language)', 'All Releases by Group', 'Complete Series Batches Only']}>
-  <Tab value="Anime & Fansub Group">
-    Track a specific anime released by a single fansub team:
-
-    ```txt title="Single Fansub × Single Anime"
-    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
-    ```
-  </Tab>
-
-  <Tab value="Multi-Group Filtering (Quality & Language)">
-    Aggregate across all fansub groups for a specific series, filtering by 1080p and language:
-
-    ```txt title="Resolution & Language Filtering"
-    https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
-    ```
-  </Tab>
-
-  <Tab value="All Releases by Group">
-    Subscribe to all releases across all series by a specific fansub group (both URL forms are equivalent):
-
-    ```txt title="Full Fansub Group Feed"
-    https://anibt.net/rss/group/kirara-fantasia.xml
-    https://anibt.net/rss/anime.xml?groupSlug=kirara-fantasia
-    ```
-  </Tab>
-
-  <Tab value="Complete Series Batches Only">
-    Ignore ongoing weekly episodes and download only completed season packs or batches:
-
-    ```txt title="Batch / Complete Season Pack Filter"
-    https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kitauji-sub&episodeKey=BATCH
-    ```
-  </Tab>
-</Tabs>
-
-## Automated Downloader Configuration
-
-<Tabs items={['qBittorrent', 'Sonarr', 'FlexGet']}>
-  <Tab value="qBittorrent">
-    1. Open qBittorrent and switch to the **RSS** tab in the sidebar.
-    2. Click **New subscription**, paste your AniBT RSS feed URL, and save.
-    3. Click **RSS Downloader (Rules)** in the upper right, create a rule, and check your new feed.
-    4. Set your client's default polling interval to **15 to 30 minutes**.
-  </Tab>
-
-  <Tab value="Sonarr">
-    1. Navigate to **Settings** → **Indexers** → **Add** in Sonarr.
-    2. Choose **Torznab**, set **URL** to `https://anibt.net/torznab`, keep **API Path** as `/api`, and select `5070` under **Anime Categories**. See [Torznab API](/en/docs/open-api/torznab) for the full steps.
-    3. To follow only a fixed anime or group, you can instead choose **Torrent RSS Feed** and enter one of the RSS URLs above.
-  </Tab>
-
-  <Tab value="FlexGet">
-    Add the AniBT RSS feed as an input task in your `config.yml`:
-
-    ```yaml title="config.yml"
-    tasks:
-      anime_task:
-        rss: https://anibt.net/rss/anime.xml?bgmId=543360&language=CHS
-        all_series: yes
-        download: ~/Downloads/Torrents/
-    ```
-  </Tab>
-</Tabs>
-
-## Production Script Snippets
-
-### 1. Bash Conditional Polling with HTTP 304 Caching
-
-Caches and sends the `ETag` to receive empty `304 Not Modified` responses when no new releases exist:
-
-```bash title="conditional_rss_poll.sh"
-#!/usr/bin/env bash
-set -euo pipefail
-
-FEED_URL="https://anibt.net/rss/anime.xml?bgmId=543360"
-ETAG_FILE="/tmp/anibt_anime_543360.etag"
-
-# Load previous ETag
-ETAG=""
-if [ -f "$ETAG_FILE" ]; then
-  ETAG=$(cat "$ETAG_FILE")
-fi
-
-echo "Checking for new releases..."
-if [ -n "$ETAG" ]; then
-  RESPONSE=$(curl -sI -H "If-None-Match: $ETAG" "$FEED_URL")
-else
-  RESPONSE=$(curl -sI "$FEED_URL")
-fi
-
-HTTP_STATUS=$(echo "$RESPONSE" | grep -i '^http/' | awk '{print $2}')
-
-if [ "$HTTP_STATUS" = "304" ]; then
-  echo ">>> No new content (304 Not Modified). Skipping download."
-elif [ "$HTTP_STATUS" = "200" ]; then
-  echo ">>> New releases found! Saving new ETag..."
-  NEW_ETAG=$(echo "$RESPONSE" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
-  echo "$NEW_ETAG" > "$ETAG_FILE"
-  # Trigger downloader or notification hooks here
-fi
+```txt title="RSS URLs"
+https://anibt.net/rss/anime.xml?bgmId=543360&groupSlug=kirara-fantasia
+https://anibt.net/rss/anime.xml?bgmId=543360&resolution=1080p&language=CHS
+https://anibt.net/rss/group/kirara-fantasia.xml
+https://anibt.net/rss/other/music.xml
 ```
 
-### 2. Asynchronous Release Deletion with Polling Loop
+These scripts use the Python 3 standard library. Save the body before its ETag; a 304 only reuses an existing local body.
 
-Initiates release deletion via `DELETE` and polls the status endpoint until receiving `completed`:
+```python title="conditional_rss_poll.py"
+import os
+from pathlib import Path
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
-```bash title="delete_and_wait.sh"
-#!/usr/bin/env bash
-set -euo pipefail
+url = os.environ.get("FEED_URL", "https://anibt.net/rss/anime.xml?bgmId=543360")
+feed_file = Path("feed.xml")
+etag_file = Path("feed.etag")
+headers = {"User-Agent": "AniBT-RSS-example/1.0"}
+if feed_file.exists() and etag_file.exists():
+    headers["If-None-Match"] = etag_file.read_text().strip()
+try:
+    with urlopen(Request(url, headers=headers), timeout=30) as response:
+        body = response.read()
+        etag = response.headers.get("ETag", "")
+        status = response.status
+except HTTPError as error:
+    if error.code == 304:
+        print("Unchanged; reuse feed.xml")
+        raise SystemExit(0)
+    raise SystemExit(f"HTTP {error.code}; Retry-After={error.headers.get('Retry-After', 'unknown')}")
+if status != 200:
+    raise SystemExit(f"Unexpected HTTP {status}")
+# Commit the body before its validator; never mark an undownloaded body current.
+feed_file.with_suffix(".tmp").write_bytes(body)
+feed_file.with_suffix(".tmp").replace(feed_file)
+etag_file.write_text(etag)
+print("Saved feed.xml")
+```
 
-RELEASE_ID="rel_01j7example123"
-API_KEY="YOUR_SUBTITLE_GROUP_API_KEY"
-BASE_URL="https://anibt.net"
+The deletion example reads RELEASE_ID and ANIBT_API_KEY from environment variables and polls for at most 180 seconds. Only completed means success. HTTP errors, failed receipts, and malformed bodies stop the script.
 
-echo "Initiating asynchronous deletion for: $RELEASE_ID"
-DELETE_RES=$(curl -sS -X DELETE \
-  -H "Authorization: Bearer $API_KEY" \
-  "$BASE_URL/api/releases/$RELEASE_ID")
+```python title="delete_and_wait.py"
+import json
+import os
+import time
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
-STATE=$(echo "$DELETE_RES" | jq -r '.result.state // .error.details.state // "pending"')
+base = os.environ.get("ANIBT_BASE_URL", "https://anibt.net").rstrip("/")
+release_id = os.environ["RELEASE_ID"]
+key = os.environ["ANIBT_API_KEY"]
+deadline = time.monotonic() + 180
 
-# Poll deletion task state
-while [ "$STATE" = "pending" ]; do
-  echo "Deletion task processing in queue; retrying in 2 seconds..."
-  sleep 2
-  STATUS_RES=$(curl -sS \
-    -H "Authorization: Bearer $API_KEY" \
-    "$BASE_URL/api/releases/$RELEASE_ID/deletion")
-  STATE=$(echo "$STATUS_RES" | jq -r '.result.state // "pending"')
-done
+def call(method, path):
+    request = Request(base + path, method=method, headers={"Authorization": f"Bearer {key}"})
+    try:
+        response = urlopen(request, timeout=20)
+    except HTTPError as error:
+        response = error
+    with response:
+        raw = response.read()
+        status = response.status
+        retry_after = response.headers.get("Retry-After")
+        request_id = response.headers.get("X-Request-ID", "unknown")
+    if status == 429:
+        wait = int(retry_after) if retry_after and retry_after.isdigit() else 5
+        return None, max(1, wait)
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        raise SystemExit(f"Non-JSON response: HTTP {status}, requestId={request_id}")
+    if status not in (200, 202) or data.get("ok") is not True:
+        code = data.get("error", {}).get("code", "unknown")
+        raise SystemExit(f"HTTP {status}: {code}, requestId={request_id}")
+    result = data.get("result")
+    if not isinstance(result, dict) or result.get("state") not in ("pending", "completed", "failed"):
+        raise SystemExit("Invalid deletion receipt")
+    wait = int(retry_after) if retry_after and retry_after.isdigit() else 2
+    return result, max(1, wait)
 
-if [ "$STATE" = "completed" ]; then
-  echo ">>> Release successfully purged from database and edge caches!"
-else
-  echo ">>> Deletion ended with state: $STATE"
-fi
+receipt, wait = call("DELETE", f"/api/releases/{release_id}")
+if receipt is None:
+    raise SystemExit(f"DELETE rate limited; retry after {wait} seconds")
+while True:
+    if receipt is not None and receipt["state"] == "completed":
+        print("Deletion completed")
+        break
+    if receipt is not None and receipt["state"] == "failed":
+        raise SystemExit(f"Deletion failed: {receipt.get('failure', {}).get('code', 'unknown')}")
+    remaining = deadline - time.monotonic()
+    if remaining <= wait:
+        raise SystemExit("Polling timed out; keep the releaseId and check its status later")
+    time.sleep(wait)
+    receipt, wait = call("GET", f"/api/releases/{release_id}/deletion")
 ```

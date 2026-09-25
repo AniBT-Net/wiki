@@ -1,51 +1,37 @@
 ---
-title: HTTP 缓存与 304 协商
-description: 了解 AniBT 公开端点的弱 ETag 机制，如何使用 If-None-Match 节省带宽并防止触发频率限制。
+title: "HTTP 缓存与条件请求"
+description: "明确哪些端点支持 ETag，以及何时复用正文。"
 ---
 
-AniBT 的公开读取接口与全站 RSS 订阅全面支持 HTTP 条件请求（Conditional Requests）与协商缓存机制。
+保存完整响应正文及其 ETag，下次请求通过 If-None-Match 验证。
 
 <Callout type="info">
-  **最佳实践**：自建脚本或定时任务在轮询 AniBT 时，请务必保存上一次响应的 `ETag` 并在下次请求中通过 `If-None-Match` 携带。当无新番剧或新资源入库时，服务端将直接返回 `304 Not Modified`（无正文），响应极快且不浪费下行带宽。
+  https://anibt.net · [OpenAPI 3.1](/openapi.yaml)
 </Callout>
 
-## 缓存机制与适用范围
+<TypeTable type={{
+  "公开 JSON 目录与查询": {
+    "type": "GET / HEAD / 304",
+    "description": "字幕组目录、Bangumi 搜索、季度番剧和单番剧字幕组支持 ETag。"
+  },
+  "公开 RSS": {
+    "type": "GET / HEAD / 304",
+    "description": "番剧、字幕组、磁力和其他类 RSS 支持条件请求；308 时使用 Location 中的规范 URL。"
+  },
+  "种子下载": {
+    "type": "GET / HEAD / 304",
+    "description": "返回二进制 .torrent，ETag 不变可复用已下载文件。下载 URL 不允许添加 query。"
+  },
+  "身份、发布、删除、同步状态、标题匹配": {
+    "type": "no-store",
+    "description": "不要跨用户缓存，也不要假定每个公开端点都支持 304。"
+  },
+  "个人 RSS 与 Torznab": {
+    "type": "no-store",
+    "description": "个人 RSS 没有公开 ETag。Torznab 的 HTTP 响应不允许缓存，不能据此推断每次都生成新结果。"
+  }
+}} />
 
-<TypeTable
-  type={{
-    '公开 RSS 订阅源': {
-      type: '支持 304',
-      description: '包括番剧 RSS、字幕组 RSS、全站磁力 RSS 等。支持基于正文哈希的弱 ETag 协商验证。',
-    },
-    '公开 JSON 读取接口': {
-      type: '支持 304',
-      description: '番剧详情、字幕组目录、季度番剧等公开读取端点，支持条件请求复用。',
-    },
-    '写操作与管理接口': {
-      type: '不缓存',
-      description: '资源发布、删除、外站同步查询、/me 自身信息与个人专属 RSS，始终保持实时无缓存（no-store）。',
-    },
-  }}
-/>
+304 没有正文，只能复用同一个 URL 先前保存的表示。首次请求或本地正文丢失时，不要只发送旧 ETag。优先使用 If-None-Match；条件请求仍可能消耗限流额度。
 
-## 轮询频率与建议规范
-
-1. **合理轮询间隔**：建议客户端轮询间隔 **不小于 5 分钟**。动漫 BT 资源通常以小时或天为单位发布，过密的高频轮询不仅毫无收益，还极易触发系统 IP 速率限制。
-2. **优先使用 `If-None-Match`**：AniBT 的缓存标识基于精准的响应正文计算生成，因此请优先使用 `If-None-Match` 传递 ETag，避免单独依赖可能受时区或传输影响的 `If-Modified-Since`。
-3. **发布后可见性**：发布接口返回 `200` 表示主记录已成功受理入库，通常在极短时间内即可反映在详情页与 RSS 中。建议通过返回的 `releaseId` 核验详情，而非高频刷新首页。
-
-## 实战：使用 curl 发送条件请求
-
-```bash title="使用 If-None-Match 验证 304 缓存"
-# 第一步：首次请求并提取响应中的 ETag
-RESPONSE_HEADERS=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360")
-ETAG=$(echo "$RESPONSE_HEADERS" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
-
-echo "获取到的 ETag: $ETAG"
-
-# 第二步：携带 If-None-Match 发起后续轮询
-curl -sI -H "If-None-Match: $ETAG" \
-  "https://anibt.net/rss/anime.xml?bgmId=543360"
-```
-
-- **预期响应**：若期间该番剧没有新发布的资源，服务器将立即返回 `HTTP/2 304`，且响应体长度为 0 字节。
+发布返回 200 不代表外站同步、搜索和 RSS 已完成更新。外站进度应查询同步状态接口；不要把一次观测到的延迟当作完成时限。

@@ -1,0 +1,456 @@
+[
+  {
+    "name": "deletion-delete-pending",
+    "path": "/api/releases/{releaseId}",
+    "method": "delete",
+    "status": 202,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": true,
+      "result": {
+        "operationId": "rdel_example",
+        "releaseId": "rel_example",
+        "state": "pending",
+        "statusUrl": "/api/releases/rel_example/deletion",
+        "acceptedAt": 1790294400000,
+        "updatedAt": 1790294400000,
+        "retryAfterMs": 2000
+      }
+    }
+  },
+  {
+    "name": "deletion-status-pending",
+    "path": "/api/releases/{releaseId}/deletion",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": true,
+      "result": {
+        "operationId": "rdel_example",
+        "releaseId": "rel_example",
+        "state": "pending",
+        "statusUrl": "/api/releases/rel_example/deletion",
+        "acceptedAt": 1790294400000,
+        "updatedAt": 1790294400000,
+        "retryAfterMs": 2000
+      }
+    }
+  },
+  {
+    "name": "deletion-delete-completed",
+    "path": "/api/releases/{releaseId}",
+    "method": "delete",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": true,
+      "result": {
+        "operationId": "rdel_example",
+        "releaseId": "rel_example",
+        "state": "completed",
+        "statusUrl": "/api/releases/rel_example/deletion",
+        "acceptedAt": 1790294400000,
+        "updatedAt": 1790294410000,
+        "completedAt": 1790294410000
+      }
+    }
+  },
+  {
+    "name": "deletion-status-completed",
+    "path": "/api/releases/{releaseId}/deletion",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": true,
+      "result": {
+        "operationId": "rdel_example",
+        "releaseId": "rel_example",
+        "state": "completed",
+        "statusUrl": "/api/releases/rel_example/deletion",
+        "acceptedAt": 1790294400000,
+        "updatedAt": 1790294410000,
+        "completedAt": 1790294410000
+      }
+    }
+  },
+  {
+    "name": "deletion-delete-failed",
+    "path": "/api/releases/{releaseId}",
+    "method": "delete",
+    "status": 500,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "RELEASE_DELETION_FAILED",
+        "message": "Internal error",
+        "requestId": "7296a854-a51a-49a0-b08f-a822b179aa3c",
+        "details": {
+          "operationId": "rdel_example",
+          "releaseId": "rel_example",
+          "state": "failed",
+          "statusUrl": "/api/releases/rel_example/deletion",
+          "acceptedAt": 1790294400000,
+          "updatedAt": 1790294410000,
+          "failedAt": 1790294410000,
+          "failure": {
+            "code": "RELEASE_DELETION_FAILED",
+            "message": "Example cleanup failure"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "deletion-status-failed",
+    "path": "/api/releases/{releaseId}/deletion",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": true,
+      "result": {
+        "operationId": "rdel_example",
+        "releaseId": "rel_example",
+        "state": "failed",
+        "statusUrl": "/api/releases/rel_example/deletion",
+        "acceptedAt": 1790294400000,
+        "updatedAt": 1790294410000,
+        "failedAt": 1790294410000,
+        "failure": {
+          "code": "RELEASE_DELETION_FAILED",
+          "message": "Example cleanup failure"
+        }
+      }
+    }
+  },
+  {
+    "name": "sync-not-started",
+    "path": "/api/releases/{releaseId}/sync-status",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": true,
+      "data": {
+        "releaseId": "rel_example",
+        "title": "Example Release",
+        "publishedAt": 1790294400000,
+        "overall": "not_started",
+        "sites": [
+          {
+            "site": "mikan",
+            "status": "not_started",
+            "externalId": null,
+            "externalUrl": null,
+            "error": null,
+            "generation": null,
+            "attempt": 0,
+            "createdAt": null,
+            "updatedAt": null,
+            "completedAt": null,
+            "history": [],
+            "historyTruncated": false
+          },
+          {
+            "site": "acgrip",
+            "status": "not_started",
+            "externalId": null,
+            "externalUrl": null,
+            "error": null,
+            "generation": null,
+            "attempt": 0,
+            "createdAt": null,
+            "updatedAt": null,
+            "completedAt": null,
+            "history": [],
+            "historyTruncated": false
+          },
+          {
+            "site": "bangumi",
+            "status": "not_started",
+            "externalId": null,
+            "externalUrl": null,
+            "error": null,
+            "generation": null,
+            "attempt": 0,
+            "createdAt": null,
+            "updatedAt": null,
+            "completedAt": null,
+            "history": [],
+            "historyTruncated": false
+          },
+          {
+            "site": "acgnx",
+            "status": "not_started",
+            "externalId": null,
+            "externalUrl": null,
+            "error": null,
+            "generation": null,
+            "attempt": 0,
+            "createdAt": null,
+            "updatedAt": null,
+            "completedAt": null,
+            "history": [],
+            "historyTruncated": false
+          },
+          {
+            "site": "dmhy",
+            "status": "not_started",
+            "externalId": null,
+            "externalUrl": null,
+            "error": null,
+            "generation": null,
+            "attempt": 0,
+            "createdAt": null,
+            "updatedAt": null,
+            "completedAt": null,
+            "history": [],
+            "historyTruncated": false
+          },
+          {
+            "site": "nyaa",
+            "status": "not_started",
+            "externalId": null,
+            "externalUrl": null,
+            "error": null,
+            "generation": null,
+            "attempt": 0,
+            "createdAt": null,
+            "updatedAt": null,
+            "completedAt": null,
+            "history": [],
+            "historyTruncated": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "whoami-anime",
+    "path": "/api/releases/publish",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": true,
+      "result": {
+        "groupId": "org_example",
+        "groupName": "Example Group",
+        "groupSlug": "example",
+        "apiKeyId": "sgak_example",
+        "apiKeySuffix": "abcd1234",
+        "scopes": [
+          "releases:publish",
+          "releases:delete",
+          "releases:sync:read"
+        ],
+        "kind": "anime"
+      }
+    }
+  },
+  {
+    "name": "whoami-other",
+    "path": "/api/other-releases/publish",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": true,
+      "result": {
+        "groupId": "org_example",
+        "groupName": "Example Group",
+        "groupSlug": "example",
+        "apiKeyId": "sgak_example",
+        "apiKeySuffix": "abcd1234",
+        "scopes": [
+          "releases:publish",
+          "releases:delete",
+          "releases:sync:read"
+        ],
+        "kind": "other"
+      }
+    }
+  },
+  {
+    "name": "publish-anime",
+    "path": "/api/releases/publish",
+    "method": "post",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "boundaries": "DB reads, publish transaction and preview receipt substituted; real parser/planner/envelope",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "request": {
+      "animeIdType": "bgm",
+      "animeId": "543360",
+      "title": "[Example] Anime - 01",
+      "magnetBase64": "magnet:?xt=urn:btih:0123456789012345678901234567890123456789",
+      "torrentStorageId": "example.torrent"
+    },
+    "body": {
+      "ok": true,
+      "result": {
+        "releaseId": "rel_example",
+        "revision": 1,
+        "torrentObjectId": "obj_example"
+      }
+    }
+  },
+  {
+    "name": "publish-preview",
+    "path": "/api/releases/publish",
+    "method": "post",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "boundaries": "DB reads, publish transaction and preview receipt substituted; real parser/planner/envelope",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "request": {
+      "animeIdType": "bgm",
+      "animeId": "543360",
+      "title": "[Example] Anime - 01",
+      "magnetBase64": "magnet:?xt=urn:btih:0123456789012345678901234567890123456789",
+      "torrentStorageId": "example.torrent",
+      "preview": true
+    },
+    "body": {
+      "ok": true,
+      "preview": true,
+      "previewUrl": "https://anibt.example/release/preview/example-preview-token",
+      "previewToken": "example-preview-token",
+      "expiresAt": 1790295000000,
+      "groupId": "org_example",
+      "groupName": "Example Group",
+      "groupSlug": "example",
+      "apiKeyId": "sgak_example",
+      "apiKeySuffix": "abcd1234"
+    }
+  },
+  {
+    "name": "publish-other",
+    "path": "/api/other-releases/publish",
+    "method": "post",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "boundaries": "DB reads, publish transaction and preview receipt substituted; real parser/planner/envelope",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "request": {
+      "category": "music",
+      "title": "Example Album",
+      "torrentStorageId": "example.torrent"
+    },
+    "body": {
+      "ok": true,
+      "result": {
+        "releaseId": "orel_example",
+        "revision": 1,
+        "torrentObjectId": "obj_example"
+      }
+    }
+  },
+  {
+    "name": "publish-rate-limited",
+    "path": "/api/releases/publish",
+    "method": "post",
+    "status": 500,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "boundaries": "DB reads, publish transaction and preview receipt substituted; real parser/planner/envelope",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "request": {
+      "animeIdType": "bgm",
+      "animeId": "543360",
+      "title": "[Example] Anime - 01",
+      "magnetBase64": "magnet:?xt=urn:btih:0123456789012345678901234567890123456789",
+      "torrentStorageId": "example.torrent"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "UPLOAD_FAILED",
+        "message": "Internal error",
+        "requestId": "9cccadb8-ef36-48a7-a7ca-3908562f2ec7"
+      }
+    }
+  },
+  {
+    "name": "me-success",
+    "path": "/api/subtitle-groups/me",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "isolated-http-handler",
+      "boundaries": "SQL result and limiter substituted; real projection/envelope",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038"
+    },
+    "body": {
+      "ok": true,
+      "data": {
+        "organizationId": "org_example",
+        "name": "Example Group",
+        "slug": "example",
+        "status": "ACTIVE",
+        "createdAt": 1790294400000,
+        "stats": {
+          "totalReleases": 12,
+          "totalAnimes": 2,
+          "memberCount": 3
+        },
+        "apiKeyId": "sgak_example",
+        "apiKeySuffix": "abcd1234",
+        "scopes": [
+          "releases:sync:read"
+        ]
+      }
+    }
+  }
+]

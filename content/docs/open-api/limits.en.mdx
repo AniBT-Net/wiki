@@ -1,66 +1,59 @@
 ---
-title: Rate Limits & Pagination
-description: Learn about AniBT per-endpoint rate limits, pagination maximums, cursor mechanisms, and exponential backoff strategies.
+title: "Rate limits and parameter bounds"
+description: "Default application limits and retry behavior."
 ---
 
-To safeguard public service availability and prevent runaway crawlers or traffic spikes from degrading platform performance, AniBT implements transparent rate limits and page size ceilings across its endpoints.
+These are application defaults; deployment settings and edge rules may impose different limits.
 
-<Callout type="warn">
-  **Rate Limit Exceeded**: When request frequency exceeds allowed quotas, the server responds with `429 Too Many Requests`. The response header includes `Retry-After: <seconds>`. Client scripts must catch this status code and wait the specified seconds before retrying, rather than immediately re-requesting.
+<Callout type="info">
+  https://anibt.net · [OpenAPI 3.1](/openapi.yaml)
 </Callout>
 
-## Limits by Endpoint
+<TypeTable type={{
+  "Public RSS": {
+    "type": "120 / 60 seconds / IP",
+    "description": "Anime, group, magnet and other-category feeds: limit defaults to 100, maximum 100; no pagination cursor."
+  },
+  "Personal RSS": {
+    "type": "30 / 60 seconds / IP",
+    "description": "limit defaults to 50, maximum 200; repeated invalid tokens have an additional limit."
+  },
+  "Torznab": {
+    "type": "60 / 60 seconds / IP",
+    "description": "limit defaults to 100, maximum 100; offset + limit is bounded to 300 for latest releases and 100 for text search."
+  },
+  "Bangumi search": {
+    "type": "60 / 60 seconds / IP",
+    "description": "limit defaults to 5, range 1–25; trimmed q is at most 100 characters."
+  },
+  "Group directory": {
+    "type": "60 / 60 seconds / IP",
+    "description": "Returns the full directory without limit or pagination."
+  },
+  "Seasonal anime and anime groups": {
+    "type": "Shared 30 / 60 seconds / IP",
+    "description": "Season query: at most 120 characters. Anime groups: up to 30 recent releases per group."
+  },
+  "Title matching": {
+    "type": "180 / 60 seconds / IP",
+    "description": "limit defaults to 10, range 1–50; rawTitle/torrentName: up to 1000 characters; body: 32 KiB."
+  },
+  "API publishing": {
+    "type": "120 per kind / 60 seconds / IP",
+    "description": "Default body limits: JSON 1 MiB; multipart 8 MiB. Application throttling currently returns 500 UPLOAD_FAILED. GET whoami does not spend this limit."
+  },
+  "Deletion and deletion status": {
+    "type": "30 / 120 per 60 seconds / key",
+    "description": "DELETE defaults to 30; GET /deletion defaults to 120."
+  },
+  "Sync status": {
+    "type": "120 / 60 seconds / key",
+    "description": "GET /sync-status."
+  }
+}} />
 
-<TypeTable
-  type={{
-    'Public RSS Feeds': {
-      type: '120 req / 60s / IP',
-      description: 'Includes /rss/anime.xml, /rss/group/, etc. Default and max limit is 100 entries.',
-    },
-    '/torznab/api': {
-      type: '60 req / 60s / IP',
-      description: 'Torznab API. Default and max limit is 100 entries.',
-    },
-    '/api/animes/torrent-match': {
-      type: '180 req / 60s / IP',
-      description: 'Torrent title parsing. Default limit is 10; max is 50 entries.',
-    },
-    '/api/animes/search': {
-      type: '120 req / 60s / IP',
-      description: 'Comprehensive anime search. Default limit is 24; max is 50 entries.',
-    },
-    '/api/bgm/search': {
-      type: '60 req / 60s / IP',
-      description: 'Search Bangumi ID by anime title. Default limit is 5; max is 25 entries.',
-    },
-    '/api/subtitle-groups': {
-      type: '60 req / 60s / IP',
-      description: 'Complete fansub group directory returned in full; clients should cache locally long term.',
-    },
-    '/api/seasons/anime': {
-      type: '30 req / 60s / IP',
-      description: 'Seasonal anime archives. Long-term caching is strongly recommended.',
-    },
-    'DELETE /api/releases/{id}': {
-      type: '30 req / 60s / Key',
-      description: 'Release revocation. Execute serially; do not fire high-concurrency bursts.',
-    },
-    'GET .../deletion Status': {
-      type: '120 req / 60s / Key',
-      description: 'Poll deletion task lifecycle. Recommended polling interval ≥ 2 seconds.',
-    },
-  }}
-/>
+Public RSS limit accepts a single decimal integer from 1 to 100 without leading zeros. Duplicate, empty, or malformed values return 400. Explicit limit=100 is normalized to a URL without the default parameter. Personal RSS has separate defaults and rules.
 
-## Pagination & Limit Parameter Rules
+RSS q/search and Torznab q are limited to 160 UTF-8 bytes after normalization. Bangumi search, seasonal title queries, and title matching have their own character limits. Public RSS has no cursor/page pagination; Torznab uses bounded offset.
 
-1. **Default Limit is Maximum**: Public RSS feeds default to 100 items (the maximum supported single-page batch). You **do not need to supply `limit=100`**; simply omit the parameter.
-2. **Valid Range**: When requesting smaller batches (e.g., latest 3 items), provide an integer between `1..100`. Out-of-bounds or non-numeric values return `400 Bad Request`.
-3. **Cursor Pagination**: Resource feeds and certain APIs use opaque previous/next `cursor` tokens. Legacy numeric `page` parameters are discontinued; adapt your scripts to use cursors.
-4. **Query Length**: The search term parameter (`q` / `search`) accepts up to 160 UTF-8 bytes and rejects control characters.
-
-## Good Neighbor Best Practices
-
-- **Filter Targeted Data**: When tracking a specific series or fansub group, use specific filter parameters rather than scraping the entire catalog.
-- **Avoid Concurrency**: Do not issue concurrent requests for the exact same URL.
-- **Sensible Polling**: Polling intervals of ≥ 5 minutes combined with `If-None-Match` conditional requests keep both client and server healthy.
+For 429, honor Retry-After in seconds. Do not assume every error includes it. Poll normal RSS at intervals of at least five minutes and avoid concurrent requests. Conditional requests returning 304 may still consume rate limits.

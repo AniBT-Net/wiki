@@ -1,0 +1,738 @@
+[
+  {
+    "name": "groups",
+    "path": "/api/subtitle-groups",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "requestPath": "/api/subtitle-groups",
+      "arraySampleLimit": 2
+    },
+    "body": {
+      "ok": true,
+      "data": [
+        {
+          "slug": "alicia",
+          "name": "艾莉希婭",
+          "organizationId": "org_qplE6hvOXjvT",
+          "status": "ACTIVE",
+          "totalReleases": 4,
+          "totalAnimes": 5,
+          "createdAt": 1781416887567
+        },
+        {
+          "slug": "ani",
+          "name": "ANi",
+          "organizationId": "org_JNcJ-H_h2qb_",
+          "status": "ACTIVE",
+          "totalReleases": 1373,
+          "totalAnimes": 114,
+          "createdAt": 1777368261421
+        }
+      ]
+    }
+  },
+  {
+    "name": "bgm",
+    "path": "/api/bgm/search",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "requestPath": "/api/bgm/search?q=543360",
+      "arraySampleLimit": 2
+    },
+    "body": {
+      "ok": true,
+      "data": [
+        {
+          "bgmId": 543360,
+          "name": "上伊那ぼたん、酔へる姿は百合の花",
+          "nameCn": "上伊那牡丹，酒醉身姿似百合花般",
+          "date": null,
+          "image": "https://r2.anibt.net/anime_covers/nh73r0ernee7s0afv9s82f763983gcz7/cbbbd63dd8c9cff7da4b665651347ee5eae20c98567ea5572abbeccf40f8d87a/v4/w240.webp",
+          "rating": 7.1,
+          "totalEpisodes": 25,
+          "url": "https://bgm.tv/subject/543360"
+        }
+      ]
+    }
+  },
+  {
+    "name": "season",
+    "path": "/api/seasons/anime",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "requestPath": "/api/seasons/anime?season=2026-SUMMER",
+      "arraySampleLimit": 2
+    },
+    "body": {
+      "ok": true,
+      "ts": 1790325031092,
+      "data": {
+        "currentSeason": "2026夏",
+        "requestedSeason": "2026夏",
+        "availableSeasons": [
+          "2025夏",
+          "2025秋"
+        ],
+        "byWeekday": [
+          {
+            "weekday": 1,
+            "weekdayLabel": "周一",
+            "animes": [
+              {
+                "bgmId": 590786,
+                "animeId": "nh728cxycpa1n1gga6d42zesbx892yj9",
+                "cover": "https://r2.anibt.net/anime_covers/nh728cxycpa1n1gga6d42zesbx892yj9/a2e75d8f745cdb44bebb5e4ffd16b5b54f706f10736aa33308e6b70ab070d5c7.jpg",
+                "title": {
+                  "primary": "『你们先走我断后』，于是10年后我成为了传说",
+                  "chinese": "『你们先走我断后』，于是10年后我成为了传说",
+                  "japanese": "ここは俺に任せて先に行けと言ってから10年がたったら伝説になっていた。"
+                },
+                "format": "TV",
+                "kind": "TV",
+                "rating": 5.6,
+                "episodes": 12,
+                "airingAt": 1783339200,
+                "weekday": 1,
+                "weekdayLabel": "周一",
+                "scheduleStatus": "scheduled",
+                "rssReleaseCount": 48,
+                "hasRelease": true
+              },
+              {
+                "bgmId": 579246,
+                "animeId": "nh74sv4awtdv3h5xa4dbhe4z8h87zz6d",
+                "cover": "https://r2.anibt.net/anime_covers/nh74sv4awtdv3h5xa4dbhe4z8h87zz6d/1125b713171e150bd38d6d6c7a93207c1b6fcbce684466fcfc864a7be2beda74.jpg",
+                "title": {
+                  "primary": "暴怒千金发誓复仇。～凭借魔导书之力打垮祖国～",
+                  "chinese": "暴怒千金发誓复仇。～凭借魔导书之力打垮祖国～",
+                  "japanese": "ブチ切れ令嬢は報復を誓いました。～魔導書の力で祖国を叩き潰します～"
+                },
+                "format": "TV",
+                "kind": "TV",
+                "rating": 4.6,
+                "episodes": 12,
+                "airingAt": 1783339200,
+                "weekday": 1,
+                "weekdayLabel": "周一",
+                "scheduleStatus": "scheduled",
+                "rssReleaseCount": 47,
+                "hasRelease": true
+              }
+            ]
+          },
+          {
+            "weekday": 2,
+            "weekdayLabel": "周二",
+            "animes": [
+              {
+                "bgmId": 325767,
+                "animeId": "nh7bcvpsfb780705p0g9gwe4g987zkkf",
+                "cover": "https://r2.anibt.net/anime_covers/nh7bcvpsfb780705p0g9gwe4g987zkkf/0acede653971d620a59064fa68f960ae994f065cb8f8eb6972629bac1213f3fb.jpg",
+                "title": {
+                  "primary": "感谢对战。 ～大小姐才不玩格斗游戏～",
+                  "chinese": "感谢对战。 ～大小姐才不玩格斗游戏～",
+                  "japanese": "対ありでした。 ～お嬢さまは格闘ゲームなんてしない～"
+                },
+                "format": "TV",
+                "kind": "TV",
+                "rating": 7.1,
+                "episodes": 12,
+                "airingAt": 1783425600,
+                "weekday": 2,
+                "weekdayLabel": "周二",
+                "scheduleStatus": "scheduled",
+                "rssReleaseCount": 59,
+                "hasRelease": true
+              },
+              {
+                "bgmId": 496276,
+                "animeId": "nh7ds1r0jzqbqsz0jjmsgz7j3s8939hz",
+                "cover": "https://r2.anibt.net/anime_covers/nh7ds1r0jzqbqsz0jjmsgz7j3s8939hz/276cf753b7d027a11ef6fdd3106bd92b2d72c4a69217f072ba5430d126c63d24.jpg",
+                "title": {
+                  "primary": "攻壳机动队 THE GHOST IN THE SHELL",
+                  "chinese": "攻壳机动队 THE GHOST IN THE SHELL",
+                  "japanese": "攻殻機動隊 THE GHOST IN THE SHELL"
+                },
+                "format": "TV",
+                "kind": "TV",
+                "rating": 7.4,
+                "episodes": 10,
+                "airingAt": 1783425600,
+                "weekday": 2,
+                "weekdayLabel": "周二",
+                "scheduleStatus": "scheduled",
+                "rssReleaseCount": 61,
+                "hasRelease": true
+              }
+            ]
+          }
+        ],
+        "scheduleSummary": {
+          "scheduled": 84,
+          "weekdayOnly": 0,
+          "missingSource": 7
+        },
+        "total": 91
+      }
+    }
+  },
+  {
+    "name": "anime-groups",
+    "path": "/api/anime/groups",
+    "method": "get",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "requestPath": "/api/anime/groups?bgmId=543360",
+      "arraySampleLimit": 2
+    },
+    "body": {
+      "ok": true,
+      "ts": 1790325498619,
+      "data": {
+        "bgmId": 543360,
+        "animeId": "nh73r0ernee7s0afv9s82f763983gcz7",
+        "title": {
+          "primary": "上伊那牡丹，酒醉身姿似百合花般",
+          "chinese": "上伊那牡丹，酒醉身姿似百合花般",
+          "japanese": "上伊那ぼたん、酔へる姿は百合の花"
+        },
+        "groups": [
+          {
+            "groupId": "org_q0kdyFpr9SHP",
+            "slug": "zzz123",
+            "name": "Zzz睡不醒",
+            "status": "ACTIVE",
+            "lastUpdatedAt": 1786863045049,
+            "totalReleases": 2,
+            "publishedEpisodes": [
+              1,
+              2
+            ],
+            "items": [
+              {
+                "releaseId": "rel_u0jICKZiy5M8",
+                "title": "[LinRip] Kamiina Botan, Yoeru Sugata wa Yuri no Hana [Vol.2][BDRemux 1080p AVC FLAC]",
+                "size": 13671734121,
+                "magnet": "magnet:?xt=urn:btih:e491c256a899e01cfd158a78dbaec212b428a240&dn=%5BLinRip%5D%20Kamiina%20Botan%2C%20Yoeru%20Sugata%20wa%20Yuri%20no%20Hana%20%5BVol.2%5D%5BBDRemux%201080p%20AVC%20FLAC%5D&xl=13671734121&tr=http%3A%2F%2Fipv4announce.sktorrent.eu%3A6969%2Fannounce&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=https%3A%2F%2Ft.213891.xyz%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.7471.top%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.anibt.net%2Fannounce&tr=https%3A%2F%2Ftracker.foreverpirates.co%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.leechshield.link%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.nekomi.cn%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.pmman.tech%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.zhuqiy.com%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.renfei.net%3A8080%2Fannounce&tr=http%3A%2F%2Fwegkxfcivgx.ydns.eu%3A80%2Fannounce&tr=udp%3A%2F%2Farchive.torrentonline.cc%3A42069%2Fannounce&tr=udp%3A%2F%2Fbittorrent-tracker.e-n-c-r-y-p-t.net%3A1337%2Fannounce&tr=udp%3A%2F%2Fevan.im%3A6969%2Fannounce&tr=udp%3A%2F%2Fobey.torrentonline.cc%3A42069%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.ftorrent.com%3A443%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftorrentclub.online%3A1984%2Fannounce&tr=udp%3A%2F%2Ftracker.breizh.pm%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.corpscorp.online%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.gmi.gd%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.qu.ax%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.teambelgium.net%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fwhybother.torrentonline.cc%3A42069%2Fannounce",
+                "episodeKey": "3-4",
+                "resolution": "1080p",
+                "format": "MKV",
+                "language": [],
+                "subtitle": "NONE",
+                "customTags": [
+                  "AVC",
+                  "BDRemux"
+                ],
+                "version": "v1",
+                "torrentStorageId": "torrents/org_q0kdyFpr9SHP/Fg5TNIu4CD5yxqF92FZFS__LinRip__Kamiina_Botan__Yoeru_Sugata_wa_Yuri_no_Hana__Vol.2__BDRemux_1080p_AVC_FLAC_.torrent",
+                "publishedAt": 1786863045049
+              },
+              {
+                "releaseId": "rel_RmwVrFUqRUAz",
+                "title": "[LinRip] Kamiina Botan, Yoeru Sugata wa Yuri no Hana [Vol.1][BDRemux 1080p AVC FLAC]",
+                "size": 13671497994,
+                "magnet": "magnet:?xt=urn:btih:a8f8b34deae89282e1c866ec794f413f71f262da&dn=%5BLinRip%5D%20Kamiina%20Botan%2C%20Yoeru%20Sugata%20wa%20Yuri%20no%20Hana%20%5BVol.1%5D%5BBDRemux%201080p%20AVC%20FLAC%5D&xl=13671497994&tr=https%3A%2F%2Ftracker.anibt.net%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=http%3A%2F%2Fipv4announce.sktorrent.eu%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.qu.ax%3A6969%2Fannounce&tr=udp%3A%2F%2Fevan.im%3A6969%2Fannounce&tr=udp%3A%2F%2Fbittorrent-tracker.e-n-c-r-y-p-t.net%3A1337%2Fannounce&tr=https%3A%2F%2Ft.213891.xyz%3A443%2Fannounce&tr=udp%3A%2F%2Fns575949.ip-51-222-82.net%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.corpscorp.online%3A80%2Fannounce&tr=https%3A%2F%2Ftracker.nekomi.cn%3A443%2Fannounce&tr=https%3A%2F%2F004430.xyz%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.7471.top%3A443%2Fannounce&tr=udp%3A%2F%2Fanime-tracker.aruku.kro.kr%3A8081%2Fannounce&tr=https%3A%2F%2Ftracker.foreverpirates.co%3A443%2Fannounce&tr=udp%3A%2F%2Fmartin-gebhardt.eu%3A25%2Fannounce&tr=http%3A%2F%2Ftracker.waaa.moe%3A6969%2Fannounce&tr=https%3A%2F%2Ftracker.leechshield.link%3A443%2Fannounce&tr=udp%3A%2F%2Ftorrentclub.online%3A1984%2Fannounce&tr=udp%3A%2F%2Ftracker.nexusstream.eu%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.dhitechnical.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.gmi.gd%3A6969%2Fannounce&tr=http%3A%2F%2Fbt2.archive.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.aruku.ovh%3A8081%2Fannounce&tr=udp%3A%2F%2Ftracker.peerfect.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fopen.ftorrent.com%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.ilibr.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.com%3A6969%2Fannounce&tr=http%3A%2F%2Fwegkxfcivgx.ydns.eu%3A80%2Fannounce&tr=udp%3A%2F%2Farchive.torrentonline.cc%3A42069%2Fannounce&tr=udp%3A%2F%2Ftracker.teambelgium.net%3A6969%2Fannounce&tr=http%3A%2F%2Fbt1.archive.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fmail.segso.net%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fwhybother.torrentonline.cc%3A42069%2Fannounce&tr=udp%3A%2F%2Fobey.torrentonline.cc%3A42069%2Fannounce&tr=udp%3A%2F%2Ft.overflow.biz%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.nyaa.vc%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.renfei.net%3A8080%2Fannounce&tr=https%3A%2F%2Ftracker.zhuqiy.com%3A443%2Fannounce&tr=https%3A%2F%2Fht.therarbg.to%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.xn--djrq4gl4hvoi.top%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A6969%2Fannounce",
+                "episodeKey": "1-2",
+                "resolution": "1080p",
+                "format": "MKV",
+                "language": [],
+                "subtitle": "NONE",
+                "customTags": [
+                  "AVC",
+                  "BDRemux"
+                ],
+                "version": "v1",
+                "torrentStorageId": "torrents/org_q0kdyFpr9SHP/XQM1bj6Zr2V_SmINf0K8x__LinRip__Kamiina_Botan__Yoeru_Sugata_wa_Yuri_no_Hana__Vol.1__BDRemux_1080p_AVC_FLAC_.torrent",
+                "publishedAt": 1785944242765
+              }
+            ]
+          },
+          {
+            "groupId": "org_aagmgM9i0ZyR",
+            "slug": "kitauji-sub",
+            "name": "北宇治字幕组",
+            "status": "ACTIVE",
+            "lastUpdatedAt": 1784573904863,
+            "totalReleases": 33,
+            "publishedEpisodes": [
+              2,
+              3
+            ],
+            "items": [
+              {
+                "releaseId": "rel_NmlRbreQ9kiE",
+                "title": "[北宇治字幕组] 上伊那牡丹，酒醉身姿似百合 / Kamiina Botan, Yoeru Sugata wa Yuri no Hana [12][WebRip][HEVC_AAC][简繁日内封]",
+                "size": 567779714,
+                "magnet": "magnet:?xt=urn:btih:e22cbf3b23a7e07a797064a45588375e785a31b3&dn=%5BKitaujiSub%5D%20Kamiina%20Botan%2C%20Yoeru%20Sugata%20wa%20Yuri%20no%20Hana%20%5B12%5D%5BWebRip%5D%5BHEVC_AAC%5D%5BCHS_JP%26CHT_JP%5D.mkv&xl=567779714&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=http%3A%2F%2Fopen.acgtracker.com%3A1096%2Fannounce&tr=http%3A%2F%2Fsukebei.tracker.wf%3A8888%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=http%3A%2F%2Ft.acg.rip%3A6699%2Fannounce&tr=http%3A%2F%2Fshare.hkg-fansub.info%3A80%2Fannounce.php&tr=http%3A%2F%2Ftracker.sbsub.com%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.anibt.net%2Fannounce",
+                "episodeKey": "12",
+                "resolution": "1080p",
+                "format": "MKV",
+                "language": [
+                  "CHS",
+                  "CHT"
+                ],
+                "subtitle": "INTERNAL",
+                "customTags": [
+                  "HEVC",
+                  "WEBRip"
+                ],
+                "version": "v1",
+                "torrentStorageId": "torrents/org_aagmgM9i0ZyR/IVW6_cp5Z9AS7urtk0_n7_release.torrent",
+                "publishedAt": 1784573904863
+              },
+              {
+                "releaseId": "rel_grFiHtIN8UId",
+                "title": "[北宇治字幕组] 上伊那牡丹，酒醉身姿似百合 / Kamiina Botan, Yoeru Sugata wa Yuri no Hana [12][WebRip][HEVC_AAC][繁日內嵌]",
+                "size": 576702087,
+                "magnet": "magnet:?xt=urn:btih:fe11206712883903d191d5316b7992dacdbb862c&dn=%5BKitaujiSub%5D%20Kamiina%20Botan%2C%20Yoeru%20Sugata%20wa%20Yuri%20no%20Hana%20%5B12%5D%5BWebRip%5D%5BHEVC_AAC%5D%5BCHT_JP%5D.mp4&xl=576702087&tr=https%3A%2F%2Ftracker.anibt.net%2Fannounce&tr=http%3A%2F%2Fnyaa.tracker.wf%3A7777%2Fannounce&tr=http%3A%2F%2Fopen.acgtracker.com%3A1096%2Fannounce&tr=http%3A%2F%2Fsukebei.tracker.wf%3A8888%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=http%3A%2F%2Ft.acg.rip%3A6699%2Fannounce&tr=http%3A%2F%2Fshare.hkg-fansub.info%3A80%2Fannounce.php&tr=http%3A%2F%2Ftracker.sbsub.com%3A2710%2Fannounce",
+                "episodeKey": "12",
+                "resolution": "1080p",
+                "format": "MP4",
+                "language": [
+                  "CHT",
+                  "JP"
+                ],
+                "subtitle": "EMBEDDED",
+                "customTags": [
+                  "HEVC",
+                  "WEBRip"
+                ],
+                "version": "v1",
+                "torrentStorageId": "torrents/org_aagmgM9i0ZyR/iT_kzianPY7NZ882xxmWl_release.torrent",
+                "publishedAt": 1783969090308
+              }
+            ]
+          }
+        ],
+        "total": 8
+      }
+    }
+  },
+  {
+    "name": "match",
+    "path": "/api/animes/torrent-match",
+    "method": "post",
+    "status": 200,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "requestPath": "/api/animes/torrent-match",
+      "arraySampleLimit": 2
+    },
+    "body": {
+      "version": 3,
+      "content": {
+        "kind": "anime_episode",
+        "confidence": "high",
+        "reasonCodes": [
+          "content.anime_episode"
+        ]
+      },
+      "identityKey": "example || sousou no frieren|s-|c-|p-|q-|f-",
+      "structure": {
+        "season": null,
+        "cour": null,
+        "part": null,
+        "sequence": null,
+        "format": null
+      },
+      "decision": {
+        "kind": "auto",
+        "reason": "top_ranked_candidate",
+        "animeId": "nh7a01k9tn1gew971x43xw4hgh7ys5aq",
+        "bgmId": 400602,
+        "confidence": "high",
+        "vetoes": []
+      },
+      "groupHistory": null,
+      "candidates": [
+        {
+          "anime": {
+            "_id": "nh7a01k9tn1gew971x43xw4hgh7ys5aq",
+            "_creationTime": 1767746048514,
+            "bgmId": 400602,
+            "title": {
+              "chinese": "葬送的芙莉莲",
+              "native": "葬送のフリーレン"
+            },
+            "titleRomaji": "葬送的芙莉莲",
+            "coverImage": {
+              "extraLarge": "https://r2.anibt.net/anime_covers/nh7a01k9tn1gew971x43xw4hgh7ys5aq/7394961b8393ee7b02c54c53725d8fb6718c702d4c028f18db86dad8e8c080dd.jpg",
+              "large": "https://r2.anibt.net/anime_covers/nh7a01k9tn1gew971x43xw4hgh7ys5aq/7394961b8393ee7b02c54c53725d8fb6718c702d4c028f18db86dad8e8c080dd.jpg"
+            },
+            "coverImageWebp": {
+              "sourceKey": "anime_covers/nh7a01k9tn1gew971x43xw4hgh7ys5aq/7394961b8393ee7b02c54c53725d8fb6718c702d4c028f18db86dad8e8c080dd.jpg",
+              "version": 4,
+              "generatedAt": 1781195406072,
+              "variants": [
+                {
+                  "width": 240,
+                  "key": "anime_covers/nh7a01k9tn1gew971x43xw4hgh7ys5aq/7394961b8393ee7b02c54c53725d8fb6718c702d4c028f18db86dad8e8c080dd/v4/w240.webp",
+                  "url": "https://r2.anibt.net/anime_covers/nh7a01k9tn1gew971x43xw4hgh7ys5aq/7394961b8393ee7b02c54c53725d8fb6718c702d4c028f18db86dad8e8c080dd/v4/w240.webp"
+                },
+                {
+                  "width": 360,
+                  "key": "anime_covers/nh7a01k9tn1gew971x43xw4hgh7ys5aq/7394961b8393ee7b02c54c53725d8fb6718c702d4c028f18db86dad8e8c080dd/v4/w360.webp",
+                  "url": "https://r2.anibt.net/anime_covers/nh7a01k9tn1gew971x43xw4hgh7ys5aq/7394961b8393ee7b02c54c53725d8fb6718c702d4c028f18db86dad8e8c080dd/v4/w360.webp"
+                }
+              ]
+            },
+            "officialSite": "https://frieren-anime.jp/",
+            "format": "TV",
+            "status": "FINISHED",
+            "season": "SUMMER",
+            "seasonYear": 2023,
+            "episodes": 36,
+            "averageScore": 85,
+            "genres": [
+              "治愈",
+              "公路片"
+            ]
+          },
+          "animeId": "nh7a01k9tn1gew971x43xw4hgh7ys5aq",
+          "bgmId": 400602,
+          "matchScore": 100,
+          "textMatch": 0,
+          "matchedHypothesisIds": [
+            "release_title_hyp_2",
+            "release_title_hyp_3"
+          ],
+          "matchedInputs": [
+            "release_title"
+          ],
+          "retrieval": [
+            "exact",
+            "strict_recall"
+          ],
+          "evidenceSummary": {
+            "source": "anidb",
+            "kind": "primary",
+            "rawAlias": "Sousou no Frieren",
+            "strictKey": "sousou no frieren",
+            "matchClass": "exact",
+            "evidenceStrength": "exact_alias",
+            "retrievalProvenance": "exact_filter",
+            "sourceFamily": "anidb",
+            "matchedQueryVariant": "Sousou no Frieren"
+          }
+        },
+        {
+          "anime": {
+            "_id": "nh7azzmt97g74hxhj7s31nj91s7ysvza",
+            "_creationTime": 1767746084120,
+            "bgmId": 515759,
+            "title": {
+              "chinese": "葬送的芙莉莲 第二季",
+              "native": "葬送のフリーレン 第2期"
+            },
+            "titleRomaji": "葬送的芙莉莲 第二季",
+            "coverImage": {
+              "extraLarge": "https://r2.anibt.net/anime_covers/nh7azzmt97g74hxhj7s31nj91s7ysvza/22f07b8002179f98592696e55ac9782a361d2cc3b8a5b4005a05ab136e7d4530.jpg",
+              "large": "https://r2.anibt.net/anime_covers/nh7azzmt97g74hxhj7s31nj91s7ysvza/22f07b8002179f98592696e55ac9782a361d2cc3b8a5b4005a05ab136e7d4530.jpg",
+              "color": "#5dc9f1"
+            },
+            "coverImageWebp": {
+              "sourceKey": "anime_covers/nh7azzmt97g74hxhj7s31nj91s7ysvza/22f07b8002179f98592696e55ac9782a361d2cc3b8a5b4005a05ab136e7d4530.jpg",
+              "version": 4,
+              "generatedAt": 1781190254074,
+              "variants": [
+                {
+                  "width": 240,
+                  "key": "anime_covers/nh7azzmt97g74hxhj7s31nj91s7ysvza/22f07b8002179f98592696e55ac9782a361d2cc3b8a5b4005a05ab136e7d4530/v4/w240.webp",
+                  "url": "https://r2.anibt.net/anime_covers/nh7azzmt97g74hxhj7s31nj91s7ysvza/22f07b8002179f98592696e55ac9782a361d2cc3b8a5b4005a05ab136e7d4530/v4/w240.webp"
+                },
+                {
+                  "width": 360,
+                  "key": "anime_covers/nh7azzmt97g74hxhj7s31nj91s7ysvza/22f07b8002179f98592696e55ac9782a361d2cc3b8a5b4005a05ab136e7d4530/v4/w360.webp",
+                  "url": "https://r2.anibt.net/anime_covers/nh7azzmt97g74hxhj7s31nj91s7ysvza/22f07b8002179f98592696e55ac9782a361d2cc3b8a5b4005a05ab136e7d4530/v4/w360.webp"
+                }
+              ]
+            },
+            "officialSite": "https://frieren-anime.jp/",
+            "format": "TV",
+            "status": "FINISHED",
+            "season": "WINTER",
+            "seasonYear": 2026,
+            "episodes": 10,
+            "averageScore": 75,
+            "genres": [
+              "奇幻",
+              "MADHouse"
+            ]
+          },
+          "animeId": "nh7azzmt97g74hxhj7s31nj91s7ysvza",
+          "bgmId": 515759,
+          "matchScore": 80,
+          "textMatch": 0,
+          "matchedHypothesisIds": [
+            "release_title_hyp_2",
+            "release_title_hyp_3"
+          ],
+          "matchedInputs": [
+            "release_title"
+          ],
+          "retrieval": [
+            "exact",
+            "strict_recall"
+          ],
+          "evidenceSummary": {
+            "source": "bgm_tv",
+            "kind": "alternate",
+            "rawAlias": "Sousou no Frieren 2nd Season",
+            "strictKey": "sousou no frieren 2nd season",
+            "matchClass": "base",
+            "evidenceStrength": "exact_alias",
+            "retrievalProvenance": "exact_filter",
+            "sourceFamily": "bangumi_tv",
+            "seasonNumber": 2,
+            "matchedQueryVariant": "Sousou no Frieren"
+          }
+        }
+      ],
+      "search": {
+        "branchCount": 3,
+        "exactOverflow": false,
+        "recallOverflow": false,
+        "candidateOverflow": false,
+        "searchCutoff": false,
+        "exactVerificationFailed": false,
+        "versionMismatch": false,
+        "generationMismatch": false,
+        "projectionMismatch": false,
+        "candidateSetComplete": true,
+        "strictRecallUsed": true,
+        "fuzzyRecallUsed": true,
+        "generation": "t15_20260909"
+      },
+      "diagnostics": null,
+      "decisionToken": null,
+      "decisionTokenExpiresAt": null
+    }
+  },
+  {
+    "name": "whoami-anime-unauth",
+    "path": "/api/releases/publish",
+    "method": "get",
+    "status": 401,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/releases/publish"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "TOKEN_MISSING",
+        "message": "Missing API key",
+        "requestId": "8eef625a-3933-482f-ae4b-385ef0b2ef82"
+      }
+    }
+  },
+  {
+    "name": "bgm-invalid",
+    "path": "/api/bgm/search",
+    "method": "get",
+    "status": 422,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/bgm/search"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Missing or empty 'q' parameter",
+        "requestId": "c6159ae2-e742-46ce-8e1d-b7f4bc961726"
+      }
+    }
+  },
+  {
+    "name": "sync-unauth",
+    "path": "/api/releases/{releaseId}/sync-status",
+    "method": "get",
+    "status": 401,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/releases/rel_example/sync-status"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "TOKEN_MISSING",
+        "message": "Missing API key",
+        "requestId": "096cd39b-1be5-4625-9f32-f6812862f8ce"
+      }
+    }
+  },
+  {
+    "name": "torrent-missing",
+    "path": "/api/torrent/{releaseId}.torrent",
+    "method": "get",
+    "status": 404,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/torrent/rel_wiki_audit_missing.torrent"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "Not found",
+        "requestId": "83030624-1620-409d-a4eb-31b150f00465"
+      }
+    }
+  },
+  {
+    "name": "deletion-unauth",
+    "path": "/api/releases/{releaseId}/deletion",
+    "method": "get",
+    "status": 401,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/releases/rel_example/deletion"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "TOKEN_MISSING",
+        "message": "Missing API key",
+        "requestId": "ab180b74-08b0-4ef3-82b4-a9084308d440"
+      }
+    }
+  },
+  {
+    "name": "season-invalid",
+    "path": "/api/seasons/anime",
+    "method": "get",
+    "status": 400,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/seasons/anime?bgmId=543360&query=test"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "AMBIGUOUS_ANIME_LOOKUP",
+        "message": "Use either bgmId or query, not both",
+        "requestId": "fb93ed36-4a3e-4f0c-ba7b-e9ec4376b6eb"
+      }
+    }
+  },
+  {
+    "name": "me-unauth",
+    "path": "/api/subtitle-groups/me",
+    "method": "get",
+    "status": 401,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/subtitle-groups/me"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "UNAUTHORIZED",
+        "message": "Missing API key",
+        "requestId": "836f5359-ca5b-43f9-bb55-11a39a95d4f3"
+      }
+    }
+  },
+  {
+    "name": "anime-groups-invalid",
+    "path": "/api/anime/groups",
+    "method": "get",
+    "status": 400,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/anime/groups"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "INVALID_ARGUMENT",
+        "message": "Missing required query parameter: bgmId",
+        "requestId": "f9a04089-6c5d-4ae0-a3ea-07765e55ffbd"
+      }
+    }
+  },
+  {
+    "name": "other-torrent-missing",
+    "path": "/api/other-torrent/{releaseId}.torrent",
+    "method": "get",
+    "status": 404,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/other-torrent/orel_wiki_audit_missing.torrent"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "Not found",
+        "requestId": "c194ee62-4bd4-4f36-a7df-4f3a753179b1"
+      }
+    }
+  },
+  {
+    "name": "whoami-other-unauth",
+    "path": "/api/other-releases/publish",
+    "method": "get",
+    "status": 401,
+    "contentType": "application/json",
+    "source": {
+      "kind": "production-read",
+      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "arraySampleLimit": 2,
+      "requestPath": "/api/other-releases/publish"
+    },
+    "body": {
+      "ok": false,
+      "error": {
+        "code": "TOKEN_MISSING",
+        "message": "Missing API key",
+        "requestId": "394dc7f2-7e7a-4edc-9649-8182d28fc1a2"
+      }
+    }
+  }
+]

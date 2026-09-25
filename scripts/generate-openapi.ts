@@ -1,7 +1,8 @@
 import { generateFiles } from 'fumadocs-openapi';
 import { createOpenAPI } from 'fumadocs-openapi/server';
-import { copyFile, mkdir, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { parse } from 'yaml';
 
 const schemaPath = './openapi/anibt.yaml';
 
@@ -14,6 +15,16 @@ const localeTitles: Record<
   string,
   { en: { title: string; description: string }; 'zh-Hant': { title: string; description: string } }
 > = {
+  'torznab-api': {
+    en: {
+      title: 'Torznab protocol',
+      description: 'GET /torznab/api — capabilities, search results, and XML protocol errors.',
+    },
+    'zh-Hant': {
+      title: 'Torznab 協定',
+      description: 'GET /torznab/api —— 能力查詢、搜尋結果與 XML 協定錯誤。',
+    },
+  },
   'subtitle-groups': {
     en: {
       title: 'Subtitle groups',
@@ -221,9 +232,18 @@ const localeTitles: Record<
 function localeMdx(source: string, locale: 'en' | 'zh-Hant', id: string): string {
   const t = localeTitles[id]?.[locale];
   if (!t) return source;
-  return source.replace(
+  const localized = source.replace(
     /^title:[\s\S]*?(?=\nfull:)/m,
     `title: ${JSON.stringify(t.title)}\ndescription: ${JSON.stringify(t.description)}`,
+  );
+  // OpenAPI operation prose is currently authored in the source YAML locale.
+  // Fumadocs puts it into `_openapi.structuredData` even when page descriptions
+  // are disabled, so remove that source-language block from translated pages
+  // until each operation owns a real locale description. The interactive page
+  // still reads the shared machine-readable schema.
+  return localized.replace(
+    /\n  structuredData:\n[\s\S]*?(?=\n---\n)/m,
+    '\n  structuredData:\n    headings: []\n    contents: []',
   );
 }
 
@@ -231,6 +251,9 @@ await generateFiles({
   input: openapi,
   output: './content/docs/open-api',
   per: 'operation',
+  // Operation descriptions are authored once in the Chinese OpenAPI source.
+  // Keep them in the interactive contract; putting them in generated MDX would
+  // leak Chinese prose into the English and Traditional locale pages.
   includeDescription: false,
   addGeneratedComment: true,
   frontmatter(title, description) {
@@ -277,6 +300,8 @@ const bundled = schemas[schemaPath]?.bundled;
 if (!bundled) {
   throw new Error(`missing bundled schema for ${schemaPath}`);
 }
-await writeFile('./openapi/anibt.json', `${JSON.stringify(bundled)}\n`);
+// Fumadocs may upgrade its internal OpenAPI version. The published JSON and
+// YAML must remain the same contract, including the declared specification version.
+await writeFile('./openapi/anibt.json', `${JSON.stringify(parse(await readFile(schemaPath, 'utf8')))}\n`);
 
 console.log('generated OpenAPI docs');

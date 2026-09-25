@@ -1,66 +1,59 @@
 ---
-title: 限流與分頁上限
-description: 瞭解 AniBT 各端點的預設呼叫頻率、每頁上限、分頁游標規則與超限退避策略。
+title: "限流與參數上限"
+description: "各端點的預設限額、參數範圍與退避方式。"
 ---
 
-為了保障公共服務的高可用性，防止爬蟲異常死循環或惡意刷流對站點造成衝擊，AniBT 在不同端點實施了透明的速率限制（Rate Limiting）與單次拉取筆數上限。
+以下是應用程式預設值，實際限制可能受部署設定和邊緣規則影響。
 
-<Callout type="warn">
-  **速率超限**：當請求頻次超過限制時，介面會回傳 `429 Too Many Requests`。回應標頭中會包含 `Retry-After: <秒數>`，客戶端腳本應擷取該狀態碼並等待指定秒數後再行重試，切勿在報錯後立即發起重試風暴。
+<Callout type="info">
+  https://anibt.net · [OpenAPI 3.1](/openapi.yaml)
 </Callout>
 
-## 各端點限制速查表
+<TypeTable type={{
+  "公開 RSS": {
+    "type": "120 次 / 60 秒 / IP",
+    "description": "番劇、字幕組、磁力、其他類 RSS；limit 預設 100，上限 100，沒有分頁游標。"
+  },
+  "個人訂閱 RSS": {
+    "type": "30 次 / 60 秒 / IP",
+    "description": "limit 預設 50，上限 200；重複無效 key 另有限制。"
+  },
+  "Torznab": {
+    "type": "60 次 / 60 秒 / IP",
+    "description": "limit 預設 100，上限 100；最新列表 offset + limit 最多 300，關鍵字搜尋最多 100。"
+  },
+  "Bangumi 搜尋": {
+    "type": "60 次 / 60 秒 / IP",
+    "description": "limit 預設 5，1–25；q 去除首尾空白後最多 100 字元。"
+  },
+  "字幕組目錄": {
+    "type": "60 次 / 60 秒 / IP",
+    "description": "完整目錄，不支援 limit 或分頁。"
+  },
+  "季度番劇與單番劇字幕組": {
+    "type": "共用 30 次 / 60 秒 / IP",
+    "description": "季度標題 query 最多 120 字元；單番劇字幕組每組最多回傳 30 筆最近資源。"
+  },
+  "標題匹配": {
+    "type": "180 次 / 60 秒 / IP",
+    "description": "limit 預設 10，1–50；rawTitle 和 torrentName 最多 1000 字元；請求正文上限 32 KiB。"
+  },
+  "API 釋出": {
+    "type": "每類 120 次 / 60 秒 / IP",
+    "description": "JSON 預設上限 1 MiB，multipart 預設上限 8 MiB。目前應用程式限流回傳 500 UPLOAD_FAILED；GET whoami 不消耗此額度。"
+  },
+  "刪除與刪除狀態": {
+    "type": "30 / 120 次 / 60 秒 / Key",
+    "description": "DELETE 預設 30 次，GET /deletion 預設 120 次。"
+  },
+  "同步狀態": {
+    "type": "120 次 / 60 秒 / Key",
+    "description": "GET /sync-status。"
+  }
+}} />
 
-<TypeTable
-  type={{
-    '公開 RSS 訂閱來源': {
-      type: '120 次 / 60 秒 / IP',
-      description: '包括 /rss/anime.xml、/rss/group/ 等。單次 limit 預設 100，上限 100 筆。',
-    },
-    '/torznab/api': {
-      type: '60 次 / 60 秒 / IP',
-      description: 'Torznab 介面。單次 limit 預設 100，上限 100 筆。',
-    },
-    '/api/animes/torrent-match': {
-      type: '180 次 / 60 秒 / IP',
-      description: '種子標題解析匹配。單次 limit 預設 10，上限 50 筆。',
-    },
-    '/api/animes/search': {
-      type: '120 次 / 60 秒 / IP',
-      description: '全站番劇綜合搜尋。單次 limit 預設 24，上限 50 筆。',
-    },
-    '/api/bgm/search': {
-      type: '60 次 / 60 秒 / IP',
-      description: '透過標題檢索 Bangumi ID。單次 limit 預設 5，上限 25 筆。',
-    },
-    '/api/subtitle-groups': {
-      type: '60 次 / 60 秒 / IP',
-      description: '全站字幕組完整目錄，單次呼叫全量回傳，建議客戶端在本機長效快取。',
-    },
-    '/api/seasons/anime': {
-      type: '30 次 / 60 秒 / IP',
-      description: '季度番劇歸檔列表。建議客戶端長效快取。',
-    },
-    'DELETE /api/releases/{id}': {
-      type: '30 次 / 60 秒 / Key',
-      description: '字幕組資源非同步撤回刪除。建議循序逐條發起，切勿高併發呼叫。',
-    },
-    'GET .../deletion 狀態': {
-      type: '120 次 / 60 秒 / Key',
-      description: '輪詢單條資源的刪除終態。建議輪詢間隔 ≥ 2 秒。',
-    },
-  }}
-/>
+公開 RSS 的 limit 只接受無前導零的整數 1..100，重複、空值或格式錯誤回傳 400；預設 limit=100 會正規化為省略參數的 URL。個人 RSS 使用獨立規則。
 
-## 分頁與 limit 參數規範
+RSS 的 q/search 與 Torznab 的 q 正規化後最多 160 個 UTF-8 位元組。Bangumi 搜尋、季度標題查詢與標題匹配各有字元數限制，不能共用長度規則。公開 RSS 沒有 cursor/page 分頁；Torznab 使用有界 offset。
 
-1. **`limit` 預設即最大**：公開 RSS 來源預設即輸出 100 筆記錄（系統支援的最大單頁量）。呼叫時**無需顯式傳入 `limit=100`**，直接省略該參數即可拉滿。
-2. **合法參數範圍**：若需取得較少筆數（如最新 3 筆），可傳入 `1..100` 的整數。傳入非法格式或超出範圍的值將回傳 `400 Bad Request`。
-3. **分頁游標（Cursor）**：主站資源列表及部分介面採用不透明的前進/後退游標（`cursor`）進行分頁。傳統的數字頁碼參數（`page`）已廢棄，建議全面適配游標機制。
-4. **搜尋關鍵字長度**：搜尋介面的查詢詞（`q` / `search`）單次傳入最長不超過 160 個 UTF-8 位元組，且禁止包含控制字元。
-
-## 友善呼叫規範
-
-- **按需拉取**：對於固定字幕組或番劇，使用過濾條件精準訂閱，避免拉取全量全站數據。
-- **避免併發**：不要針對同一端點 URL 併發發起多個輪詢請求。
-- **輪詢間隔**：普通追番輪詢建議間隔 ≥ 5 分鐘，且務必配合 `If-None-Match` 條件請求。
+收到 429 時依 Retry-After 等待，單位為秒。沒有此欄位的錯誤不能假定 2 秒後成功。普通 RSS 建議至少間隔 5 分鐘並避免並行請求；304 仍可能消耗額度。

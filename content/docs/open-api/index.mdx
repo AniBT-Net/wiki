@@ -1,59 +1,37 @@
 ---
-title: 开放 API 总览
-description: 了解 AniBT 公开 REST API 与标准 RSS 体系，探索无需鉴权的读取接口与字幕组自动化工作流。
+title: "开放 API 总览"
+description: "AniBT 公开查询、RSS、种子下载与字幕组 API。"
 ---
 
-AniBT 秉持开放的社区理念，将全站番剧信息、发布资源、字幕组目录与最新磁力链接全面对外开放。
+AniBT 提供公开查询与订阅接口，以及通过字幕组 API Key 调用的发布、删除和同步状态接口。
 
 <Callout type="info">
-  **生产 Base URL**：`https://anibt.net`。除特别说明外，所有数据均通过标准 HTTPS 提供服务。所有公开读取接口均可匿名调用，无需申请 Token 或配置复杂凭证。
+  https://anibt.net · [OpenAPI 3.1](/openapi.yaml)
 </Callout>
 
-每个接口文档页面均内嵌了基于 OpenAPI 契约生成的 **Try-it 交互测试面板**，你可以在浏览器中直接填写参数并发起真实请求，快速验证响应结构。
+<TypeTable type={{
+  "公开查询": {
+    "type": "匿名",
+    "description": "字幕组目录、Bangumi 搜索、季度番剧、单番剧字幕组和标题匹配。"
+  },
+  "发布与管理": {
+    "type": "字幕组 API Key",
+    "description": "发布番剧和其他类资源，核验身份，删除本组番剧资源，查询六站同步状态。"
+  },
+  "订阅与下载": {
+    "type": "RSS / .torrent",
+    "description": "公开 RSS、个人 RSS、种子下载，以及 Sonarr / Radarr / Prowlarr 使用的 Torznab。"
+  }
+}} />
 
-## 体系架构与核心能力
+生产 Base URL 为 `https://anibt.net`。API Key、个人 RSS 令牌和登录会话适用于不同接口，不能互相替代。成功响应的包装、空值及错误格式按每个端点定义处理。
 
-<Tabs items={['公开读取 (免鉴权)', '字幕组自动化 (需 API Key)', '标准 RSS 体系']}>
-  <Tab value="公开读取 (免鉴权)">
-    面向普通开发者、第三方动漫客户端、机器人与数据分析脚本：
-
-    - **番剧检索与详情**：通过动画名称、日文原名或 Bangumi ID 获取结构化条目数据
-    - **字幕组目录**：查询全站活跃字幕组列表及其稳定英文 `slug`
-    - **种子匹配**：调用标题解析引擎，自动分析动画集数、分辨率与字幕语言
-    - **条件缓存**：全面支持 HTTP 弱 ETag 与 304 协商，轮询极大节省流量
-  </Tab>
-
-  <Tab value="字幕组自动化 (需 API Key)">
-    面向入驻字幕组的 CI/CD 自动压制发布流程与管理脚本：
-
-    - **资源发布**：通过 `POST /api/releases/publish` 自动提交 `.torrent` 种子
-    - **身份核验**：通过 `GET /api/releases/publish` 执行 whoami 自检
-    - **外站同步追踪**：实时查询六大 BT 站的同步发布结果与外站链接
-    - **异步删除**：通过 `DELETE /api/releases/{id}` 撤回发布并追踪清理终态
-  </Tab>
-
-  <Tab value="标准 RSS 体系">
-    面向 qBittorrent、Sonarr、FlexGet 等主流自动化下载器：
-
-    - **单番剧订阅**：按 Bangumi ID 聚合订阅，支持叠加字幕组、画质、字幕语言过滤
-    - **字幕组订阅**：按字幕组 `slug` 订阅该组全部最新作品
-    - **全站磁力**：全站最新入库资源的实时磁力推送源
-    - **标准协议**：完整支持 RFC 规范与 BitTorrent BEP 36 扩展标签
-  </Tab>
-</Tabs>
-
-## 接口稳定性与规范承诺
-
-1. **向下兼容保证**：已公开的端点路径与参数不会进行不兼容修改，新功能仅通过追加参数实现。
-2. **标识符规范**：第三方在调用与持久化时请务必使用 **`slug`**（如 `kirara-fantasia`）或 **`bgmId`**，避免依赖易变的内部主键。
-3. **机器可读契约**：标准 OpenAPI 3.1 规范文件可在 [/openapi.yaml](/openapi.yaml) 直接获取。
-
-## 开发者快速指引
+机器可读定义见 [/openapi.yaml](/openapi.yaml)。接口页展示请求字段和响应示例；标题匹配是公开查询，但传入 groupId 时要求登录会话及该组成员身份。
 
 <Cards>
-  <Card title="接口约定与鉴权" href="/docs/open-api/reference" description="Base URL、请求头规范、字幕组 API Key 权限与标准错误码" />
-  <Card title="HTTP 缓存与 304" href="/docs/open-api/caching" description="利用 ETag 与条件请求减少网络开销与防止限流的最佳实践" />
-  <Card title="限流与分页上限" href="/docs/open-api/limits" description="各端点速率限制窗口、分页限制与重试退避策略" />
-  <Card title="排障与常见问题" href="/docs/open-api/troubleshooting" description="常见 HTTP 报错原因、curl 调试技巧与问题速查表" />
-  <Card title="实战集成示例" href="/docs/open-api/examples" description="qBittorrent / Sonarr 接入与自动化 Bash 脚本示例" />
+  <Card title="接口约定与鉴权" href="/docs/open-api/reference" />
+  <Card title="限流与参数上限" href="/docs/open-api/limits" />
+  <Card title="HTTP 缓存与条件请求" href="/docs/open-api/caching" />
+  <Card title="排障与常见问题" href="/docs/open-api/troubleshooting" />
+  <Card title="Torznab" href="/docs/open-api/torznab" />
 </Cards>

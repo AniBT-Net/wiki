@@ -1,51 +1,37 @@
 ---
-title: HTTP Caching & 304 Validation
-description: Learn about the AniBT weak ETag caching mechanism, how to use If-None-Match to save bandwidth, and prevent rate limits.
+title: "HTTP caching and conditional requests"
+description: "ETag support and safe response reuse."
 ---
 
-AniBT public read endpoints and RSS feeds fully support standard HTTP conditional requests and negotiated caching.
+Store the complete response body with its ETag, then send If-None-Match on subsequent requests.
 
 <Callout type="info">
-  **Best Practice**: When polling AniBT with scripts or background tasks, store the `ETag` from the previous response and provide it in subsequent requests via `If-None-Match`. If no new releases have been indexed, the server immediately returns `304 Not Modified` with an empty body, saving round-trip time and bandwidth.
+  https://anibt.net · [OpenAPI 3.1](/openapi.yaml)
 </Callout>
 
-## Scope of Caching
+<TypeTable type={{
+  "Public JSON queries": {
+    "type": "GET / HEAD / 304",
+    "description": "Group directory, Bangumi search, seasonal anime, and anime groups support ETag."
+  },
+  "Public RSS": {
+    "type": "GET / HEAD / 304",
+    "description": "Anime, group, magnet, and other-category feeds support conditional requests. Follow Location on 308."
+  },
+  "Torrent downloads": {
+    "type": "GET / HEAD / 304",
+    "description": "Binary .torrent bodies can be reused when the ETag is unchanged. Download URLs reject query strings."
+  },
+  "Identity, publish, deletion, sync status, title match": {
+    "type": "no-store",
+    "description": "Do not share responses between users or assume every anonymous endpoint supports 304."
+  },
+  "Personal RSS and Torznab": {
+    "type": "no-store",
+    "description": "Personal RSS has no public ETag. Torznab HTTP responses prohibit caching; this does not mean each request produces fresh results."
+  }
+}} />
 
-<TypeTable
-  type={{
-    'Public RSS Feeds': {
-      type: 'Supports 304',
-      description: 'Includes anime feeds, group feeds, and site-wide magnets. Validates via exact body-hash weak ETags.',
-    },
-    'Public JSON Read Endpoints': {
-      type: 'Supports 304',
-      description: 'Anime details, fansub group directories, seasonal catalogs, and other public query endpoints.',
-    },
-    'Write & Admin Endpoints': {
-      type: 'No Cache',
-      description: 'Release publishing, deletion, sync status inspection, /me info, and private user RSS feeds always bypass caching (no-store).',
-    },
-  }}
-/>
+A 304 has no body: reuse the previously stored representation of the same URL. Do not send an old ETag if the local body is missing. Prefer If-None-Match. Conditional requests may still consume rate limits.
 
-## Polling Guidelines & Frequency
-
-1. **Reasonable Polling Intervals**: We strongly recommend polling intervals **no shorter than 5 minutes**. Anime torrents are published over hours or days; aggressive sub-minute polling provides zero benefit while risking IP rate limits.
-2. **Prioritize `If-None-Match`**: AniBT calculates ETags from the exact response body bytes. Rely on `If-None-Match` rather than `If-Modified-Since`.
-3. **Visibility After Publishing**: A `200` response from the publish endpoint confirms acceptance into the catalog, propagating to detail pages and feeds shortly thereafter. Verify new releases using the returned `releaseId` rather than hammering feed endpoints.
-
-## Example: Conditional Request with curl
-
-```bash title="Verifying 304 Caching with If-None-Match"
-# Step 1: Make initial request and extract ETag header
-RESPONSE_HEADERS=$(curl -sI "https://anibt.net/rss/anime.xml?bgmId=543360")
-ETAG=$(echo "$RESPONSE_HEADERS" | grep -i '^etag:' | cut -d' ' -f2- | tr -d '\r')
-
-echo "Captured ETag: $ETAG"
-
-# Step 2: Poll with If-None-Match header
-curl -sI -H "If-None-Match: $ETAG" \
-  "https://anibt.net/rss/anime.xml?bgmId=543360"
-```
-
-- **Expected Result**: If no new releases have occurred for that anime, the server returns `HTTP/2 304` with a 0-byte body.
+A 200 publish response does not prove that external syncing, search, or RSS visibility has completed. Use the sync-status endpoint for external progress. An observed delay is not a completion guarantee.
