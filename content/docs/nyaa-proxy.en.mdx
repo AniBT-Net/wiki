@@ -17,7 +17,7 @@ Understand the differences between direct Nyaa sync and platform proxy before co
   type={{
     'Account Source': {
       type: 'Comparison',
-      description: '[Sync] Uses the fansub group\'s own Nyaa credentials; [Proxy] Uses AniBT\'s official verified platform account.',
+      description: '[Sync] Uses the fansub group\'s own Nyaa credentials; [Proxy] Uses platform credentials and submits with the Anonymous flag.',
     },
     'Network Routing': {
       type: 'Comparison',
@@ -39,7 +39,7 @@ Teams meeting either of the following criteria may apply by contacting [support@
 
 ## Torrent Creation Requirements
 
-Platform proxy submits your original `.torrent` file directly to Nyaa without altering any bytes. Therefore, your torrent file must adhere to these technical rules:
+Platform proxy normalizes the tracker list to put the Nyaa tracker first. The torrent info dictionary and infohash remain unchanged. Prepare the torrent with these requirements:
 
 <Steps>
   <Step>

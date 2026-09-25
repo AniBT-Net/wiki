@@ -15,7 +15,8 @@ _openapi:
           需要 releases:delete，只支持本组 rel_* 资源。无 query、无请求体。
 
           最多等待约 2 秒：completed 返回 200，pending 返回 202；清理失败返回 500
-          RELEASE_DELETION_FAILED，回执在 error.details。重复 DELETE 使用同一删除流程。
+          RELEASE_DELETION_FAILED，回执在 error.details。删除受理后重复 DELETE 可能返回 404；请通过
+          GET /api/releases/{releaseId}/deletion 查询已有回执，404 不作为完成证明。
 
           202 只表示已受理；只有 completed 才表示本站删除完成。不会撤回已同步到外站的资源。
 

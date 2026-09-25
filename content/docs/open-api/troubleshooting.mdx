@@ -53,3 +53,5 @@ description: "按响应类型、状态码和字段定位问题。"
 }} />
 
 应用 JSON 错误的追踪值是 `error.requestId`，响应头通常也有 `X-Request-ID`。纯文本、XML、重定向或边缘响应不保证携带该字段。反馈时提供端点、时间、HTTP 状态和可用的请求 ID，不要附带 Key、Cookie 或私人 RSS URL。
+
+若 DELETE 返回 404，不要据此认定删除完成；先用同一 releaseId 查询 `/deletion`。

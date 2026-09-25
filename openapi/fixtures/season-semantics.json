@@ -1,0 +1,54 @@
+{
+  "sourceGitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+  "source": "src/lib/public-serving-catalog/season-anime.server.ts",
+  "input": {
+    "animeId": "anime_example",
+    "creationTime": 1,
+    "bgmId": 123,
+    "titleChinese": "Example",
+    "titleRomaji": "Example",
+    "publicTitleRomaji": "Example",
+    "coverImageKey": "anime/covers/example.jpg",
+    "format": "TV",
+    "status": "RELEASING",
+    "season": "SUMMER",
+    "seasonYear": 2026,
+    "episodes": 12,
+    "averageScore": 80,
+    "genres": [],
+    "externalIds": [],
+    "airingSchedule": [
+      {
+        "airingAt": 1780000000
+      }
+    ],
+    "popularity": 10,
+    "dateConfidence": "exact",
+    "witness": {
+      "sourceRevision": 1,
+      "projectionRevision": 1,
+      "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "projectedAt": 1779000000000
+    }
+  },
+  "result": {
+    "bgmId": 123,
+    "animeId": "anime_example",
+    "cover": "https://objects.example/anime/covers/example.jpg",
+    "title": {
+      "primary": "Example",
+      "chinese": "Example",
+      "romaji": "Example"
+    },
+    "format": "TV",
+    "kind": "TV",
+    "rating": 8,
+    "episodes": 12,
+    "airingAt": 1780000000,
+    "weekday": 5,
+    "weekdayLabel": "周五",
+    "scheduleStatus": "scheduled",
+    "rssReleaseCount": 2,
+    "hasRelease": true
+  }
+}

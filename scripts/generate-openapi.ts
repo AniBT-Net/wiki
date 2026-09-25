@@ -1,6 +1,6 @@
-import { generateFiles } from 'fumadocs-openapi';
+import { generateFilesOnly } from 'fumadocs-openapi';
 import { createOpenAPI } from 'fumadocs-openapi/server';
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parse } from 'yaml';
 
@@ -247,9 +247,8 @@ function localeMdx(source: string, locale: 'en' | 'zh-Hant', id: string): string
   );
 }
 
-await generateFiles({
+const files = await generateFilesOnly({
   input: openapi,
-  output: './content/docs/open-api',
   per: 'operation',
   // Operation descriptions are authored once in the Chinese OpenAPI source.
   // Keep them in the interactive contract; putting them in generated MDX would
@@ -292,16 +291,22 @@ await generateFiles({
   },
 });
 
-await mkdir('./public', { recursive: true });
-await copyFile(schemaPath, './public/openapi.yaml');
-
-const schemas = await openapi.getSchemas();
-const bundled = schemas[schemaPath]?.bundled;
-if (!bundled) {
-  throw new Error(`missing bundled schema for ${schemaPath}`);
-}
 // Fumadocs may upgrade its internal OpenAPI version. The published JSON and
 // YAML must remain the same contract, including the declared specification version.
-await writeFile('./openapi/anibt.json', `${JSON.stringify(parse(await readFile(schemaPath, 'utf8')))}\n`);
-
-console.log('generated OpenAPI docs');
+const yaml = await readFile(schemaPath, 'utf8');
+const outputs = [
+  ...files.map(file => ({ path: path.join('content/docs/open-api', file.path), content: file.content })),
+  { path: 'public/openapi.yaml', content: yaml },
+  { path: 'openapi/anibt.json', content: `${JSON.stringify(parse(yaml))}\n` },
+];
+const checkOnly = process.argv.includes('--check');
+for (const file of outputs) {
+  if (checkOnly) {
+    const current = await readFile(file.path, 'utf8').catch(() => undefined);
+    if (current !== file.content) throw new Error(`Stale generated file: ${file.path}; run gen:openapi`);
+  } else {
+    await mkdir(path.dirname(file.path), { recursive: true });
+    await writeFile(file.path, file.content);
+  }
+}
+console.log(`${checkOnly ? 'Verified' : 'Generated'} ${outputs.length} OpenAPI artifacts`);

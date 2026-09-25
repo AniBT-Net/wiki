@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import { contractValidator, loadContract } from './check.mjs';
 
 const { document, fixtures } = await loadContract();
@@ -60,4 +61,14 @@ test('a response changed to the wrong content type is not accepted', () => {
   const fixture = sample('rss-private-missing');
   fixture.contentType = 'application/json';
   assert.throws(() => validator.response(fixture));
+});
+
+test('season rating scale and timestamp unit match the executed catalog adapter', async () => {
+  const witness = JSON.parse(await readFile('openapi/fixtures/season-semantics.json', 'utf8'));
+  const schema = document.components.schemas.SeasonAnimeItem;
+  assert.equal(schema.properties.airingAt['x-unit'], 'unix-seconds');
+  assert.equal(witness.result.airingAt, witness.input.airingSchedule[0].airingAt);
+  assert.equal(new Date(witness.result.airingAt * 1000).getUTCFullYear(), 2026);
+  assert.equal(schema.properties.rating['x-scale-maximum'], 10);
+  assert.equal(witness.result.rating, witness.input.averageScore / 10);
 });

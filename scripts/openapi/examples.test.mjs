@@ -101,6 +101,7 @@ test('deletion example follows 202 with status reads and handles a temporary 429
 
 for (const [name, status, body] of [
   ['scope denial', 403, { ok: false, error: { code: 'INSUFFICIENT_SCOPE' } }],
+  ['repeat delete not found', 404, { ok: false, error: { code: 'NOT_FOUND' } }],
   ['cleanup failure', 500, { ok: false, error: { code: 'RELEASE_DELETION_FAILED', details: { state: 'failed' } } }],
   ['failed receipt', 200, { ok: true, result: { state: 'failed', failure: { code: 'RELEASE_DELETION_FAILED' } } }],
   ['malformed success', 200, '<html>Not a receipt</html>'],

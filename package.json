@@ -5,14 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/check-openapi.mjs && next build --webpack",
+    "build": "pnpm check:openapi && next build --webpack",
     "preview": "wrangler dev",
     "deploy": "wrangler deploy",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "gen:openapi": "tsx scripts/generate-openapi.ts",
-    "check:openapi": "node scripts/check-openapi.mjs",
-    "test:openapi": "node --test scripts/openapi/check.test.mjs scripts/openapi/examples.test.mjs",
+    "check:openapi": "tsx scripts/generate-openapi.ts --check && node scripts/check-openapi.mjs",
+    "test:openapi": "node --import tsx --test scripts/openapi/check.test.mjs scripts/openapi/examples.test.mjs scripts/openapi/llm.test.mjs scripts/openapi/rendering.test.mjs",
     "check:openapi:live": "node scripts/openapi/live.mjs"
   },
   "dependencies": {

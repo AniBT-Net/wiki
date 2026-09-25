@@ -35,14 +35,19 @@ export function getOperationDocument(operationId: string, options: { machineOnly
       };
       if (!options.machineOnly) return document;
       const humanKeys = new Set(['description', 'summary', 'title']);
-      const stripHumanText = (value: unknown): unknown => {
-        if (Array.isArray(value)) return value.map(stripHumanText);
+      const nameMaps = new Set(['paths', 'properties', 'patternProperties', '$defs', 'definitions', 'schemas', 'responses', 'parameters', 'headers', 'content', 'securitySchemes', 'requestBodies', 'links', 'callbacks']);
+      const payloadKeys = new Set(['example', 'examples', 'default', 'const', 'enum']);
+      const stripHumanText = (value: unknown, isNameMap = false): unknown => {
+        if (Array.isArray(value)) return value.map(item => stripHumanText(item));
         if (!value || typeof value !== 'object') return value;
         return Object.fromEntries(Object.entries(value)
-          .filter(([key]) => !humanKeys.has(key))
-          .map(([key, child]) => [key, stripHumanText(child)]));
+          .filter(([key, child]) => isNameMap || !humanKeys.has(key) || typeof child !== 'string')
+          .map(([key, child]) => [key, !isNameMap && payloadKeys.has(key) ? child : stripHumanText(child, !isNameMap && nameMaps.has(key))]));
       };
-      return stripHumanText(document) as JsonObject;
+      return {
+        ...stripHumanText(document) as JsonObject,
+        info: { ...stripHumanText(document.info) as JsonObject, title: spec.info.title },
+      };
     }
   }
 }

@@ -220,7 +220,7 @@ paths:
       summary: 季度番剧
       description: |
         当季已上架番剧。`bgmId` 优先于 `season`，且不能与 `query` 同时使用。
-        `weekday`：0=周日 … 6=周六，按 Asia/Shanghai；`null` 为未排播。`rating` 为 0–100。
+        `weekday`：0=周日 … 6=周六，按 Asia/Shanghai；`null` 为未排播。`rating` 为 0–10。
         速率限制默认 30 次 / 60 秒 / IP。
         支持 GET、HEAD、OPTIONS；条件请求仍可能消耗限流额度。
       parameters:
@@ -1622,7 +1622,7 @@ paths:
 
         未显式提供的集数、画质、语言、字幕、格式和版本先从标题、再从种子内部名推断；无法推断集数时需传 episode 或 episodeKey。
 
-        notes 最多 50000 字符。JSON 请求上限默认 1 MiB，multipart 默认 8 MiB。
+        notes 最多 50000 字符。JSON 请求上限默认 1 MiB，multipart 默认 8 MiB，单个 .torrent 文件最多 5 MiB。
 
         Nyaa 需要字幕组白名单和有效分类，种子必须包含 http://nyaa.tracker.wf:7777/announce。Nyaa 代发应使用 multipart，确保从上传种子提取 tracker。
 
@@ -1767,7 +1767,7 @@ paths:
         成功发布返回 { ok: true, result: { releaseId, revision, torrentObjectId? } }。发布回执不包含
         groupId、groupName、groupSlug、animeId 或 fileSize；发布前用 GET 同一路径核验身份。
 
-        notes 最多 50000 字符。JSON 请求上限默认 1 MiB，multipart 默认 8 MiB。
+        notes 最多 50000 字符。JSON 请求上限默认 1 MiB，multipart 默认 8 MiB，单个 .torrent 文件最多 5 MiB。
 
         Nyaa 需要字幕组白名单和有效分类，种子必须包含 http://nyaa.tracker.wf:7777/announce。Nyaa 代发应使用 multipart，确保从上传种子提取 tracker。
 
@@ -1860,8 +1860,8 @@ paths:
       description: >
         需要 releases:delete，只支持本组 rel_* 资源。无 query、无请求体。
 
-        最多等待约 2 秒：completed 返回 200，pending 返回 202；清理失败返回 500 RELEASE_DELETION_FAILED，回执在 error.details。重复
-        DELETE 使用同一删除流程。
+        最多等待约 2 秒：completed 返回 200，pending 返回 202；清理失败返回 500 RELEASE_DELETION_FAILED，回执在 error.details。删除受理后重复
+        DELETE 可能返回 404；请通过 GET /api/releases/{releaseId}/deletion 查询已有回执，404 不作为完成证明。
 
         202 只表示已受理；只有 completed 才表示本站删除完成。不会撤回已同步到外站的资源。
 
@@ -3929,7 +3929,8 @@ components:
           type:
             - number
             - "null"
-          description: 评分，0–100；无评分时为 null。
+          description: 评分，0–10；无评分时为 null。
+          x-scale-maximum: 10
         episodes:
           type:
             - number
@@ -3938,7 +3939,8 @@ components:
           type:
             - number
             - "null"
-          description: 播出时间，Unix 毫秒。
+          description: 播出时间，Unix 秒；与发布及回执的毫秒时间戳不同。
+          x-unit: unix-seconds
         weekday:
           type:
             - number

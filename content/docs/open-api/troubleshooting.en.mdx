@@ -53,3 +53,5 @@ Check the URL, HTTP method, Content-Type, and response body first.
 }} />
 
 Application JSON errors identify the request in error.requestId, usually also in X-Request-ID. Plain text, XML, redirects, and edge responses do not guarantee this field. Report the endpoint, time, HTTP status, and available request ID; never include keys, cookies, or private RSS URLs.
+
+If DELETE returns 404, do not treat it as proof of completion. Read `/deletion` for the same releaseId.

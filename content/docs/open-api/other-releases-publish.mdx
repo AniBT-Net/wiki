@@ -21,7 +21,8 @@ _openapi:
           }。发布回执不包含 groupId、groupName、groupSlug、animeId 或 fileSize；发布前用 GET
           同一路径核验身份。
 
-          notes 最多 50000 字符。JSON 请求上限默认 1 MiB，multipart 默认 8 MiB。
+          notes 最多 50000 字符。JSON 请求上限默认 1 MiB，multipart 默认 8 MiB，单个 .torrent
+          文件最多 5 MiB。
 
           Nyaa 需要字幕组白名单和有效分类，种子必须包含 http://nyaa.tracker.wf:7777/announce。Nyaa
           代发应使用 multipart，确保从上传种子提取 tracker。
