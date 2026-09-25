@@ -60,8 +60,8 @@ AniBT 的公开 RSS 与开放 API 专为自动化集成而设计。无论是将�
 
   <Tab value="Sonarr">
     1. 进入 Sonarr 设置页，点击 **Settings** → **Indexers** → **Add**。
-    2. 选择 **Torznab** 或通用 **RSS Sync** 类型。
-    3. 在 URL 栏中填入 AniBT 对应番剧的 RSS 地址，配置自动抓取过滤规则即可。
+    2. 选择 **Torznab**，**URL** 填 `https://anibt.net/torznab`，**API Path** 保持 `/api`，**Anime Categories** 选择 `5070`。完整步骤见 [Torznab 接口](/docs/open-api/torznab)。
+    3. 只想订阅固定的番剧或字幕组时，也可以选择 **Torrent RSS Feed**，URL 填上面的 RSS 地址。
   </Tab>
 
   <Tab value="FlexGet">

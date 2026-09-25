@@ -17,6 +17,10 @@ To safeguard public service availability and prevent runaway crawlers or traffic
       type: '120 req / 60s / IP',
       description: 'Includes /rss/anime.xml, /rss/group/, etc. Default and max limit is 100 entries.',
     },
+    '/torznab/api': {
+      type: '60 req / 60s / IP',
+      description: 'Torznab API. Default and max limit is 100 entries.',
+    },
     '/api/animes/torrent-match': {
       type: '180 req / 60s / IP',
       description: 'Torrent title parsing. Default limit is 10; max is 50 entries.',

@@ -17,6 +17,10 @@ description: 瞭解 AniBT 各端點的預設呼叫頻率、每頁上限、分頁
       type: '120 次 / 60 秒 / IP',
       description: '包括 /rss/anime.xml、/rss/group/ 等。單次 limit 預設 100，上限 100 筆。',
     },
+    '/torznab/api': {
+      type: '60 次 / 60 秒 / IP',
+      description: 'Torznab 介面。單次 limit 預設 100，上限 100 筆。',
+    },
     '/api/animes/torrent-match': {
       type: '180 次 / 60 秒 / IP',
       description: '種子標題解析匹配。單次 limit 預設 10，上限 50 筆。',

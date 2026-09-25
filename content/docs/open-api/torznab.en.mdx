@@ -1,0 +1,151 @@
+---
+title: Torznab API
+description: Add AniBT as a Torznab indexer in Sonarr, Radarr, or Prowlarr to search and grab anime releases automatically.
+---
+
+AniBT provides a Torznab API. Sonarr, Radarr, and Prowlarr can add AniBT directly as an indexer.
+
+<Callout type="info">
+  No account or API key is needed. Leave the client's **API Key** field empty; the API does not read it.
+</Callout>
+
+<Callout title="GET /torznab/api">
+  In your client, set **URL** to `https://anibt.net/torznab` and keep the default **API Path** `/api`.
+</Callout>
+
+## Add the indexer
+
+<Tabs items={['Sonarr', 'Radarr', 'Prowlarr']}>
+  <Tab value="Sonarr">
+    <Steps>
+      <Step>
+        ### Create an indexer
+        Go to **Settings** → **Indexers**, click **+**, and choose **Torznab**.
+      </Step>
+      <Step>
+        ### Enter the address
+        Set **URL** to `https://anibt.net/torznab`, keep **API Path** as `/api`, and leave **API Key** empty.
+      </Step>
+      <Step>
+        ### Pick categories
+        Select `5070` (Anime) under **Anime Categories**. You can clear **Categories**.
+      </Step>
+      <Step>
+        ### Test and save
+        Click **Test**, then save. Set the anime series' **Series Type** to **Anime**.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="Radarr">
+    <Steps>
+      <Step>
+        ### Create an indexer
+        Go to **Settings** → **Indexers**, click **+**, and choose **Torznab**.
+      </Step>
+      <Step>
+        ### Enter the address
+        Set **URL** to `https://anibt.net/torznab`, keep **API Path** as `/api`, and leave **API Key** empty.
+      </Step>
+      <Step>
+        ### Pick categories
+        Select `2000` (Movies) and `2020` (Movies/Other) under **Categories**. Radarr receives anime movies only.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="Prowlarr">
+    <Steps>
+      <Step>
+        ### Create an indexer
+        Go to **Indexers** → **Add Indexer**, then search for and select **Generic Torznab**.
+      </Step>
+      <Step>
+        ### Enter the address
+        Set **URL** to `https://anibt.net/torznab`, keep **API Path** as `/api`, and leave **API Key** empty.
+      </Step>
+      <Step>
+        ### Sync to Sonarr / Radarr
+        Prowlarr syncs by category: `5070` goes to Sonarr and `2000` goes to Radarr.
+      </Step>
+    </Steps>
+    The built-in "AniBT" definition in Prowlarr and Jackett reads the RSS feed and always shows 1 seeder. Use Generic Torznab instead.
+  </Tab>
+</Tabs>
+
+## What results contain
+
+<TypeTable
+  type={{
+    'Scope': {
+      type: 'Anime releases',
+      description: 'Only anime releases that have a torrent file. Manga, music, raw, and other non-anime releases are not included.',
+    },
+    'Title': {
+      type: 'Original title',
+      description: 'The title the fansub group published, unchanged.',
+    },
+    'Download': {
+      type: '.torrent file',
+      description: 'The download link points to a .torrent file. No magnet links are provided.',
+    },
+    'Categories': {
+      type: '5070 / 2000',
+      description: 'Every anime release is in 5070 (Anime) and 5000 (TV). Anime movies are also in 2000 (Movies) and 2020 (Movies/Other).',
+    },
+    'Seeders': {
+      type: 'May be absent',
+      description: 'Shown only when the AniBT Tracker statistics are recent. When there is no data, the value is omitted rather than shown as 0.',
+    },
+  }}
+/>
+
+## Search rules
+
+- A trailing 2- to 4-digit number is matched as the episode, for example `Frieren 05`. A single digit is not treated as an episode.
+- A trailing year from 1900 to 2099 is ignored, for example `Suzume 2022`.
+- Episodes match the number the fansub group used. For shows that restart numbering each season, the absolute episode numbers Sonarr sends may not match later seasons.
+- Some releases have only Chinese titles and can't be found with English or romaji keywords.
+- Searching by TVDB, TMDB, or IMDb ID is not supported yet; such requests return an empty result.
+- Keyword searches for movies filter only the top 100 matching releases. If many series share the title, a movie may not appear.
+
+## Limits
+
+<TypeTable
+  type={{
+    'Rate': {
+      type: '60 requests / 60 s / IP',
+      description: 'Above the limit you get 429 with Retry-After, and the client pauses for that long.',
+    },
+    'limit': {
+      type: 'Default 100, max 100',
+      description: 'Values above the max are treated as 100.',
+    },
+    'offset': {
+      type: 'Up to item 300',
+      description: 'Without a keyword, offset + limit can reach 300; with a keyword, 100. Beyond that, the list is empty.',
+    },
+    'Freshness': {
+      type: 'About 2.5 minutes',
+      description: 'Results for the same request can lag by up to about 2.5 minutes.',
+    },
+    'Temporarily unavailable': {
+      type: '503',
+      description: 'Sent with Retry-After; the client retries later.',
+    },
+  }}
+/>
+
+## Troubleshooting
+
+<Accordions>
+  <Accordion title="Sonarr test fails: no results in configured categories">
+    `5070` is not selected under **Anime Categories**. Select it and test again.
+  </Accordion>
+  <Accordion title="Response is error code 203">
+    Music and book searches are not supported.
+  </Accordion>
+  <Accordion title="Response is error code 201">
+    A parameter is malformed, for example `cat` is not a comma-separated list of numbers, or the keyword exceeds 160 UTF-8 bytes.
+  </Accordion>
+</Accordions>

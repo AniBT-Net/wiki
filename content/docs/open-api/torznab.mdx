@@ -1,0 +1,151 @@
+---
+title: Torznab 接口
+description: 在 Sonarr、Radarr、Prowlarr 中把 AniBT 添加为 Torznab 索引器，自动搜索和抓取番剧资源。
+---
+
+AniBT 提供 Torznab 接口。Sonarr、Radarr 和 Prowlarr 可以直接把 AniBT 添加为索引器。
+
+<Callout type="info">
+  不需要注册，也不需要 API Key。客户端里的 **API Key** 留空即可，接口不会读取它。
+</Callout>
+
+<Callout title="GET /torznab/api">
+  客户端里的 **URL** 填 `https://anibt.net/torznab`，**API Path** 保持默认的 `/api`。
+</Callout>
+
+## 添加索引器
+
+<Tabs items={['Sonarr', 'Radarr', 'Prowlarr']}>
+  <Tab value="Sonarr">
+    <Steps>
+      <Step>
+        ### 新建索引器
+        进入 **Settings** → **Indexers**，点击 **+**，选择 **Torznab**。
+      </Step>
+      <Step>
+        ### 填写地址
+        **URL** 填 `https://anibt.net/torznab`，**API Path** 保持 `/api`，**API Key** 留空。
+      </Step>
+      <Step>
+        ### 选择分类
+        **Anime Categories** 选择 `5070`（Anime）。**Categories** 可以清空。
+      </Step>
+      <Step>
+        ### 测试并保存
+        点击 **Test**，通过后保存。番剧的 **Series Type** 设为 **Anime**。
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="Radarr">
+    <Steps>
+      <Step>
+        ### 新建索引器
+        进入 **Settings** → **Indexers**，点击 **+**，选择 **Torznab**。
+      </Step>
+      <Step>
+        ### 填写地址
+        **URL** 填 `https://anibt.net/torznab`，**API Path** 保持 `/api`，**API Key** 留空。
+      </Step>
+      <Step>
+        ### 选择分类
+        **Categories** 选择 `2000`（Movies）和 `2020`（Movies/Other）。Radarr 只会拿到剧场版资源。
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab value="Prowlarr">
+    <Steps>
+      <Step>
+        ### 新建索引器
+        进入 **Indexers** → **Add Indexer**，搜索并选择 **Generic Torznab**。
+      </Step>
+      <Step>
+        ### 填写地址
+        **URL** 填 `https://anibt.net/torznab`，**API Path** 保持 `/api`，**API Key** 留空。
+      </Step>
+      <Step>
+        ### 同步到 Sonarr / Radarr
+        Prowlarr 按分类同步：`5070` 同步给 Sonarr，`2000` 同步给 Radarr。
+      </Step>
+    </Steps>
+    Prowlarr 和 Jackett 内置的「AniBT」定义读取的是 RSS，做种数固定显示为 1。建议改用 Generic Torznab。
+  </Tab>
+</Tabs>
+
+## 返回内容
+
+<TypeTable
+  type={{
+    '资源范围': {
+      type: '番剧资源',
+      description: '只包含带种子文件的番剧资源。漫画、音乐、生肉等其他类资源不在结果中。',
+    },
+    '标题': {
+      type: '原标题',
+      description: '字幕组发布时的标题，不做改写。',
+    },
+    '下载': {
+      type: '.torrent 文件',
+      description: '下载链接指向 .torrent 文件，不提供磁力链接。',
+    },
+    '分类': {
+      type: '5070 / 2000',
+      description: '所有番剧资源属于 5070（Anime）和 5000（TV）。剧场版同时属于 2000（Movies）和 2020（Movies/Other）。',
+    },
+    '做种数': {
+      type: '可能不显示',
+      description: '只在 AniBT Tracker 的统计足够新时显示。没有数据时不显示，不会显示为 0。',
+    },
+  }}
+/>
+
+## 搜索规则
+
+- 关键词结尾的 2 到 4 位数字按集数匹配，例如 `Frieren 05`。只有 1 位数字时不当作集数。
+- 关键词结尾的 1900 至 2099 按年份忽略，例如 `Suzume 2022`。
+- 集数按字幕组标注的集数匹配。分季重新计数的番剧，Sonarr 发送的绝对集数可能匹配不到后续季。
+- 部分资源只有中文标题，用英文或罗马音搜不到。
+- 暂不支持按 TVDB、TMDB 或 IMDb ID 搜索，这类请求返回空结果。
+- 带关键词搜索剧场版时，只在匹配的前 100 条资源中筛选。同名剧集较多时，剧场版可能不出现在结果里。
+
+## 限制
+
+<TypeTable
+  type={{
+    '速率': {
+      type: '60 次 / 60 秒 / IP',
+      description: '超出后返回 429 和 Retry-After，客户端会按该时间暂停。',
+    },
+    'limit': {
+      type: '默认 100，上限 100',
+      description: '超过上限按 100 处理。',
+    },
+    'offset': {
+      type: '最多到第 300 条',
+      description: '不带关键词时 offset + limit 最多 300；带关键词时最多 100。超出返回空列表。',
+    },
+    '结果更新': {
+      type: '约 2.5 分钟',
+      description: '相同请求的结果最多延迟约 2.5 分钟。',
+    },
+    '服务暂不可用': {
+      type: '503',
+      description: '带 Retry-After，客户端会稍后重试。',
+    },
+  }}
+/>
+
+## 常见问题
+
+<Accordions>
+  <Accordion title="Sonarr 测试失败：no results in configured categories">
+    **Anime Categories** 没有选择 `5070`。选择后重新测试。
+  </Accordion>
+  <Accordion title="返回 error code 203">
+    不支持音乐和图书搜索。
+  </Accordion>
+  <Accordion title="返回 error code 201">
+    参数格式错误。例如 `cat` 不是用逗号分隔的数字，或关键词超过 160 个 UTF-8 字节。
+  </Accordion>
+</Accordions>

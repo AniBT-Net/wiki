@@ -17,6 +17,10 @@ description: 了解 AniBT 各端点的默认调用频率、每页上限、分页
       type: '120 次 / 60 秒 / IP',
       description: '包括 /rss/anime.xml、/rss/group/ 等。单次 limit 默认 100，上限 100 条。',
     },
+    '/torznab/api': {
+      type: '60 次 / 60 秒 / IP',
+      description: 'Torznab 接口。单次 limit 默认 100，上限 100 条。',
+    },
     '/api/animes/torrent-match': {
       type: '180 次 / 60 秒 / IP',
       description: '种子标题解析匹配。单次 limit 默认 10，上限 50 条。',
