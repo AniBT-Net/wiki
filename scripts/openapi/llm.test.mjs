@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getOperationDocument } from '../../lib/openapi-document.ts';
+import { openapi } from '../../lib/openapi.ts';
 import { contractValidator, loadContract, operations } from './check.mjs';
 
 const { document, fixtures } = await loadContract();
@@ -52,4 +53,12 @@ test('required title fields and optional description inputs remain in machine-re
   assert.equal(input.properties.description.type, 'string');
   assert.ok(input.required.includes('title'));
   assert.equal(fragment.paths['/api/other-releases/publish'].post.description, undefined);
+});
+
+test('loading the interactive renderer cannot mutate the canonical LLM contract', async () => {
+  const before = structuredClone(getOperationDocument('me', { machineOnly: true }));
+  await openapi.getSchemas();
+  const after = getOperationDocument('me', { machineOnly: true });
+  assert.equal(after.openapi, '3.1.0');
+  assert.deepEqual(after, before);
 });
