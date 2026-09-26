@@ -35,3 +35,9 @@ The machine-readable contract is [/openapi.yaml](/openapi.yaml). Endpoint pages 
   <Card title="Troubleshooting" href="/en/docs/open-api/troubleshooting" />
   <Card title="Torznab" href="/en/docs/open-api/torznab" />
 </Cards>
+
+## Anime queries and ratings
+
+`scope.kind` on `/api/seasons/anime` distinguishes season browsing, title search, and exact ID lookup. A global title search returns `requestedSeason: null`; each anime carries its own season. Premiere dates remain separate from season classification. `premiere.precision` is `day`, `month`, `season`, or `year`; a coarse date uses the start of that period.
+
+Season browsing returns at most 200 items; title search returns at most 50. `total` counts the returned items and `truncated=true` means more results exist. Use `/api/animes/search` for pagination. `rating` uses a 0–10 scale and defaults to `5.0` when no valid rating is available; `averageScore` uses 0–100 and defaults to `50`. Existing ani-rss can sort these scores. Older versions ignore truncation indicators and still display at most 50 search results.

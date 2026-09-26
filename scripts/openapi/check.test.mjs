@@ -24,8 +24,10 @@ test('sync regressions cannot turn sites into platform keys or overall into an o
 test('valid nullable catalog fields remain valid and wrong scalar types are rejected', () => {
   const fixture = sample('bgm');
   const item = fixture.body.data[0];
-  for (const key of ['nameCn', 'date', 'image', 'rating', 'totalEpisodes']) item[key] = null;
+  for (const key of ['nameCn', 'date', 'image', 'totalEpisodes']) item[key] = null;
   validator.response(fixture);
+  item.rating = null;
+  assert.throws(() => validator.response(fixture));
   item.rating = 'unknown';
   assert.throws(() => validator.response(fixture));
 });

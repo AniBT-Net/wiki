@@ -123,12 +123,13 @@ export async function checkContract() {
     }
   }
   for (const fixture of fixtures) {
+    const expectedSha = audit.catalogFactsRevision?.fixtures.includes(fixture.name) ? audit.catalogFactsRevision.gitSha : audit.sourceGitSha;
     if (fixture.source.kind === 'production-read') {
-      assert.equal(fixture.source.gitSha, audit.sourceGitSha, `${fixture.name}: witness SHA drift`);
+      assert.equal(fixture.source.gitSha, expectedSha, `${fixture.name}: witness SHA drift`);
       assert.ok(fixture.source.requestPath, `${fixture.name}: production witness lacks request path`);
     } else {
       assert.equal(fixture.source.kind, 'isolated-http-handler', `${fixture.name}: unknown witness kind`);
-      assert.equal(fixture.source.gitSha, audit.sourceGitSha, `${fixture.name}: isolated witness SHA drift`);
+      assert.equal(fixture.source.gitSha, expectedSha, `${fixture.name}: isolated witness SHA drift`);
     }
     response(fixture);
   }

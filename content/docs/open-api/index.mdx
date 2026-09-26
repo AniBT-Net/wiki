@@ -35,3 +35,9 @@ AniBT 提供公开查询与订阅接口，以及通过字幕组 API Key 调用�
   <Card title="排障与常见问题" href="/docs/open-api/troubleshooting" />
   <Card title="Torznab" href="/docs/open-api/torznab" />
 </Cards>
+
+## 番剧查询与评分
+
+`/api/seasons/anime` 的 `scope.kind` 区分季度浏览、关键词搜索和精确 ID 查询。全库关键词搜索的 `requestedSeason` 为 `null`，每部作品使用自己的季度；首播日期与季度分类分开。`premiere.precision` 为 `day`、`month`、`season` 或 `year`，粗精度日期使用周期首日。
+
+季度浏览最多返回 200 条，关键词搜索最多 50 条。`total` 是本次返回数，`truncated=true` 表示还有结果；完整翻页使用 `/api/animes/search`。`rating` 使用 0–10 分，缺有效来源评分时返回 `5.0`；`averageScore` 使用 0–100 分，对应默认 `50`。现有 ani-rss 可直接排序，但旧版本不读取截断提示，仍最多显示 50 条搜索结果。
