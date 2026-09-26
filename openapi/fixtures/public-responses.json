@@ -43,9 +43,9 @@
     "contentType": "application/json",
     "source": {
       "kind": "production-read",
-      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "gitSha": "69dabc01a3df0c304610c3c080e129549d72b020",
       "requestPath": "/api/bgm/search?q=543360",
-      "arraySampleLimit": 2
+      "observedAt": "2026-09-26T01:42:08.670Z"
     },
     "body": {
       "ok": true,
@@ -54,7 +54,13 @@
           "bgmId": 543360,
           "name": "上伊那ぼたん、酔へる姿は百合の花",
           "nameCn": "上伊那牡丹，酒醉身姿似百合花般",
-          "date": null,
+          "date": "2026-04-10",
+          "premiere": {
+            "date": "2026-04-10",
+            "precision": "day"
+          },
+          "seasonYear": 2026,
+          "season": "SPRING",
           "image": "https://r2.anibt.net/anime_covers/nh73r0ernee7s0afv9s82f763983gcz7/cbbbd63dd8c9cff7da4b665651347ee5eae20c98567ea5572abbeccf40f8d87a/v4/w240.webp",
           "rating": 7.1,
           "totalEpisodes": 25,
@@ -71,19 +77,26 @@
     "contentType": "application/json",
     "source": {
       "kind": "production-read",
-      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
+      "gitSha": "69dabc01a3df0c304610c3c080e129549d72b020",
       "requestPath": "/api/seasons/anime?season=2026-SUMMER",
+      "observedAt": "2026-09-26T01:42:08.691Z",
       "arraySampleLimit": 2
     },
     "body": {
       "ok": true,
-      "ts": 1790325031092,
+      "ts": 1790386871844,
       "data": {
         "currentSeason": "2026夏",
         "requestedSeason": "2026夏",
         "availableSeasons": [
           "2025夏",
-          "2025秋"
+          "2025秋",
+          "2026冬",
+          "2026春",
+          "2026夏",
+          "2026秋",
+          "2027冬",
+          "2027春"
         ],
         "byWeekday": [
           {
@@ -91,43 +104,28 @@
             "weekdayLabel": "周一",
             "animes": [
               {
-                "bgmId": 590786,
-                "animeId": "nh728cxycpa1n1gga6d42zesbx892yj9",
-                "cover": "https://r2.anibt.net/anime_covers/nh728cxycpa1n1gga6d42zesbx892yj9/a2e75d8f745cdb44bebb5e4ffd16b5b54f706f10736aa33308e6b70ab070d5c7.jpg",
+                "bgmId": 662006,
+                "animeId": "nh74bvp6khwv9h1v8f0vmyhh1s88y4d5",
+                "cover": "https://r2.anibt.net/anime_covers/nh74bvp6khwv9h1v8f0vmyhh1s88y4d5/1f85d8770e135680b51d4401f17710661ab37e02676c3975c30e873d06852703.jpg",
                 "title": {
-                  "primary": "『你们先走我断后』，于是10年后我成为了传说",
-                  "chinese": "『你们先走我断后』，于是10年后我成为了传说",
-                  "japanese": "ここは俺に任せて先に行けと言ってから10年がたったら伝説になっていた。"
+                  "primary": "暗芝居 第十七季",
+                  "chinese": "暗芝居 第十七季",
+                  "japanese": "闇芝居 十七期"
                 },
+                "seasonYear": 2026,
+                "season": "SUMMER",
+                "seasonLabel": "2026夏",
+                "premiereDate": "2026-07-12",
+                "premierePrecision": "day",
                 "format": "TV",
                 "kind": "TV",
-                "rating": 5.6,
-                "episodes": 12,
-                "airingAt": 1783339200,
+                "rating": 3.4,
+                "episodes": 13,
+                "airingAt": 1790533200,
                 "weekday": 1,
                 "weekdayLabel": "周一",
                 "scheduleStatus": "scheduled",
-                "rssReleaseCount": 48,
-                "hasRelease": true
-              },
-              {
-                "bgmId": 579246,
-                "animeId": "nh74sv4awtdv3h5xa4dbhe4z8h87zz6d",
-                "cover": "https://r2.anibt.net/anime_covers/nh74sv4awtdv3h5xa4dbhe4z8h87zz6d/1125b713171e150bd38d6d6c7a93207c1b6fcbce684466fcfc864a7be2beda74.jpg",
-                "title": {
-                  "primary": "暴怒千金发誓复仇。～凭借魔导书之力打垮祖国～",
-                  "chinese": "暴怒千金发誓复仇。～凭借魔导书之力打垮祖国～",
-                  "japanese": "ブチ切れ令嬢は報復を誓いました。～魔導書の力で祖国を叩き潰します～"
-                },
-                "format": "TV",
-                "kind": "TV",
-                "rating": 4.6,
-                "episodes": 12,
-                "airingAt": 1783339200,
-                "weekday": 1,
-                "weekdayLabel": "周一",
-                "scheduleStatus": "scheduled",
-                "rssReleaseCount": 47,
+                "rssReleaseCount": 10,
                 "hasRelease": true
               }
             ]
@@ -137,54 +135,47 @@
             "weekdayLabel": "周二",
             "animes": [
               {
-                "bgmId": 325767,
-                "animeId": "nh7bcvpsfb780705p0g9gwe4g987zkkf",
-                "cover": "https://r2.anibt.net/anime_covers/nh7bcvpsfb780705p0g9gwe4g987zkkf/0acede653971d620a59064fa68f960ae994f065cb8f8eb6972629bac1213f3fb.jpg",
+                "bgmId": 541285,
+                "animeId": "nh7d8z84p0aj8q0dtg9c4tdhj187zgq0",
+                "cover": "https://r2.anibt.net/anime_covers/nh7d8z84p0aj8q0dtg9c4tdhj187zgq0/601db562a46d3f5ed4478931ade94ade96be17943bf427d446378bcd3d690fdf.jpg",
                 "title": {
-                  "primary": "感谢对战。 ～大小姐才不玩格斗游戏～",
-                  "chinese": "感谢对战。 ～大小姐才不玩格斗游戏～",
-                  "japanese": "対ありでした。 ～お嬢さまは格闘ゲームなんてしない～"
+                  "primary": "与你相恋到生命尽头",
+                  "chinese": "与你相恋到生命尽头",
+                  "chineseTraditional": "與妳相戀到生命盡頭",
+                  "english": "I Want to Love You Till Your Dying Day",
+                  "japanese": "きみが死ぬまで恋をしたい"
                 },
+                "seasonYear": 2026,
+                "season": "SUMMER",
+                "seasonLabel": "2026夏",
+                "premiereDate": "2026-07-07",
+                "premierePrecision": "day",
                 "format": "TV",
                 "kind": "TV",
-                "rating": 7.1,
-                "episodes": 12,
-                "airingAt": 1783425600,
+                "rating": 6.9,
+                "episodes": 13,
+                "airingAt": 1790685000,
                 "weekday": 2,
                 "weekdayLabel": "周二",
                 "scheduleStatus": "scheduled",
-                "rssReleaseCount": 59,
-                "hasRelease": true
-              },
-              {
-                "bgmId": 496276,
-                "animeId": "nh7ds1r0jzqbqsz0jjmsgz7j3s8939hz",
-                "cover": "https://r2.anibt.net/anime_covers/nh7ds1r0jzqbqsz0jjmsgz7j3s8939hz/276cf753b7d027a11ef6fdd3106bd92b2d72c4a69217f072ba5430d126c63d24.jpg",
-                "title": {
-                  "primary": "攻壳机动队 THE GHOST IN THE SHELL",
-                  "chinese": "攻壳机动队 THE GHOST IN THE SHELL",
-                  "japanese": "攻殻機動隊 THE GHOST IN THE SHELL"
-                },
-                "format": "TV",
-                "kind": "TV",
-                "rating": 7.4,
-                "episodes": 10,
-                "airingAt": 1783425600,
-                "weekday": 2,
-                "weekdayLabel": "周二",
-                "scheduleStatus": "scheduled",
-                "rssReleaseCount": 61,
+                "rssReleaseCount": 191,
                 "hasRelease": true
               }
             ]
           }
         ],
         "scheduleSummary": {
-          "scheduled": 84,
+          "scheduled": 24,
           "weekdayOnly": 0,
-          "missingSource": 7
+          "missingSource": 67
         },
-        "total": 91
+        "total": 91,
+        "scope": {
+          "kind": "season",
+          "season": "2026夏"
+        },
+        "limit": 200,
+        "truncated": false
       }
     }
   },
@@ -554,16 +545,16 @@
     "contentType": "application/json",
     "source": {
       "kind": "production-read",
-      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
-      "arraySampleLimit": 2,
-      "requestPath": "/api/bgm/search"
+      "gitSha": "69dabc01a3df0c304610c3c080e129549d72b020",
+      "requestPath": "/api/bgm/search",
+      "observedAt": "2026-09-26T01:42:08.848Z"
     },
     "body": {
       "ok": false,
       "error": {
         "code": "VALIDATION_ERROR",
         "message": "Missing or empty 'q' parameter",
-        "requestId": "c6159ae2-e742-46ce-8e1d-b7f4bc961726"
+        "requestId": "9b09261c-32de-43e9-9af2-c716e46a01ee"
       }
     }
   },
@@ -638,16 +629,16 @@
     "contentType": "application/json",
     "source": {
       "kind": "production-read",
-      "gitSha": "0bf93349aa0826c7d6067ff2a3854a6012877038",
-      "arraySampleLimit": 2,
-      "requestPath": "/api/seasons/anime?bgmId=543360&query=test"
+      "gitSha": "69dabc01a3df0c304610c3c080e129549d72b020",
+      "requestPath": "/api/seasons/anime?bgmId=543360&query=test",
+      "observedAt": "2026-09-26T01:42:09.008Z"
     },
     "body": {
       "ok": false,
       "error": {
         "code": "AMBIGUOUS_ANIME_LOOKUP",
         "message": "Use either bgmId or query, not both",
-        "requestId": "fb93ed36-4a3e-4f0c-ba7b-e9ec4376b6eb"
+        "requestId": "6537f901-6473-4289-b27f-313e3dfa2931"
       }
     }
   },

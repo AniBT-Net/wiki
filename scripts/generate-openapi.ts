@@ -58,11 +58,11 @@ const localeTitles: Record<
   'seasons-anime': {
     en: {
       title: 'Season anime',
-      description: 'GET /api/seasons/anime — listed titles for a season.',
+      description: 'GET /api/seasons/anime — season browsing, global title search, and exact ID lookup with per-item premiere precision.',
     },
     'zh-Hant': {
       title: '季度番劇',
-      description: 'GET /api/seasons/anime —— 當季已上架番劇。',
+      description: 'GET /api/seasons/anime —— 季度瀏覽、全庫關鍵字搜尋與精確 ID 查詢，含每部作品的首播精度。',
     },
   },
   'anime-groups': {

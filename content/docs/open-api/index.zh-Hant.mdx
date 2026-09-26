@@ -35,3 +35,9 @@ AniBT 提供公開查詢與訂閱介面，以及透過字幕組 API Key 呼叫�
   <Card title="疑難排解" href="/zh-Hant/docs/open-api/troubleshooting" />
   <Card title="Torznab" href="/zh-Hant/docs/open-api/torznab" />
 </Cards>
+
+## 番劇查詢與評分
+
+`/api/seasons/anime` 的 `scope.kind` 區分季度瀏覽、關鍵字搜尋與精確 ID 查詢。全庫關鍵字搜尋的 `requestedSeason` 為 `null`，每部作品使用自己的季度；首播日期與季度分類分開。`premiere.precision` 為 `day`、`month`、`season` 或 `year`，粗精度日期使用週期首日。
+
+季度瀏覽最多回傳 200 筆，關鍵字搜尋最多 50 筆。`total` 是本次回傳數量，`truncated=true` 表示還有結果；完整分頁使用 `/api/animes/search`。`rating` 使用 0–10 分，缺有效來源評分時回傳 `5.0`；`averageScore` 使用 0–100 分，對應預設 `50`。現有 ani-rss 可直接排序，但舊版本不讀取截斷提示，仍最多顯示 50 筆搜尋結果。

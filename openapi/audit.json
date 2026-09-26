@@ -367,5 +367,17 @@
     "No authenticated production writes or private production success requests were performed.",
     "Private response witnesses test HTTP handlers with substituted external boundaries.",
     "Default limits are source defaults, not live configuration measurements."
-  ]
+  ],
+  "catalogFactsRevision": {
+    "gitSha": "69dabc01a3df0c304610c3c080e129549d72b020",
+    "productionVersionVerified": true,
+    "fixtures": [
+      "bgm",
+      "season",
+      "bgm-invalid",
+      "season-invalid"
+    ],
+    "observedAt": "2026-09-26T01:42:09.011Z",
+    "note": "Changed endpoint evidence; all other witnesses retain their original audited baseline."
+  }
 }
