@@ -41,3 +41,13 @@ The machine-readable contract is [/openapi.yaml](/openapi.yaml). Endpoint pages 
 `scope.kind` on `/api/seasons/anime` distinguishes season browsing, title search, and exact ID lookup. A global title search returns `requestedSeason: null`; each anime carries its own season. Premiere dates remain separate from season classification. `premiere.precision` is `day`, `month`, `season`, or `year`; a coarse date uses the start of that period.
 
 Season browsing returns at most 200 items; title search returns at most 50. `total` counts the returned items and `truncated=true` means more results exist. Use `/api/animes/search` for pagination. `rating` uses a 0–10 scale and defaults to `5.0` when no valid rating is available; `averageScore` uses 0–100 and defaults to `50`. Existing ani-rss can sort these scores. Older versions ignore truncation indicators and still display at most 50 search results.
+
+Default ratings update automatically when a later sync obtains a valid source rating. Manually locked ratings remain unchanged. Metadata follows the existing sync frequency; page views and RSS subscriptions do not refresh upstream records individually.
+
+## Airing status
+
+Automatic completion requires exact premiere and end dates, plus another source verification confirming the end after that entire day has elapsed. Dates are compared in Japan time. A year, month, season, or anime format alone cannot establish completion.
+
+Automatic status is recalculated when synchronization receives a corrected airing plan. Manually locked statuses and explicit hiatus or cancellation take priority. Titles without sufficient evidence have an unknown status; unsupported historical statuses and planned end dates are not proof of completion.
+
+The homepage shows only the latest episode of each anime on a given day. Genuine releases on different days remain separate.
