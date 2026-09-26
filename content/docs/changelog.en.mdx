@@ -12,6 +12,10 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
 ## September 26, 2026
 
 <TypeTable type={{
+  "Accurate admin queue and sync status": {
+    "type": "Fix",
+    "description": "The admin now separates ready, running, scheduled, and retry-wait tasks, with a link to queue details. Episode batches with no update targets correctly show completion. Submitting a sync request no longer counts as a successful sync. Status refreshes every 30 seconds while the page is visible."
+  },
   "Automatic anime airing status updates": {
     "type": "Fix",
     "description": "Completion now requires exact dates and source verification after the end day. Postponed or withdrawn end dates trigger recalculation. Manual status corrections take priority, and the homepage keeps only the latest episode of each anime per day."
