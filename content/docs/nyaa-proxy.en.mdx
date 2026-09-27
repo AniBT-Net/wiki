@@ -60,7 +60,11 @@ Platform proxy normalizes the tracker list to put the Nyaa tracker first. The to
 
   <Step>
     ### Respect Release Notes Limits
-    Nyaa limits release descriptions to 20,000 characters. By default, AniBT sends your release notes; if your notes exceed this length, enter a concise version in the designated Nyaa description field.
+    AniBT preserves your full release notes. Account-based sync and platform publishing inherit those notes by default. Notes longer than 10,240 characters are shortened at complete paragraph or Markdown block boundaries and include a link to the full AniBT release page. If no block can be included safely, only the full-description link is sent. Your original notes remain unchanged.
+
+    For platform publishing, a custom Nyaa description takes priority and is never shortened automatically. AniBT accepts up to 20,000 characters in this custom field; this does not guarantee acceptance by Nyaa, which may reject a long description. You can preview inherited text before publishing; the placeholder link becomes the actual release URL after publication.
+
+    Sync details show an excerpt notice only when that successful upload actually used an excerpt. Older records and torrents already present on the external site do not receive this notice retroactively.
   </Step>
 </Steps>
 
