@@ -17,7 +17,10 @@ _openapi:
           magnet、size、episodeKey、resolution、format、subtitle、lastUpdatedAt 可为
           null。subtitle 通常为 EXTERNAL / INTERNAL / EMBEDDED / NONE。
 
-          未找到番剧返回 404；暂时无法提供完整结果时返回 503 SEARCH_UNAVAILABLE，并带 Retry-After。
+          已合并的旧 bgmId 返回合并后番剧的 animeId、标题和字幕组，data.bgmId 保持请求值。
+
+          未找到番剧，或番剧被管理员隐藏、被 bgm.tv 标记为 NSFW 时返回 404；暂时无法提供完整结果时返回 503
+          SEARCH_UNAVAILABLE，并带 Retry-After。
 
           支持 GET、HEAD 和 If-None-Match；默认与季度番剧接口共用 30 次 / 60 秒 / IP 的限额。
 

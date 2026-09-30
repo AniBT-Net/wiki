@@ -224,9 +224,12 @@ paths:
       description: |
         季度浏览、全库标题搜索或精确 ID 查询。`bgmId` 优先于 `season`，不能与 `query` 同时使用。
         `scope.kind` 区分 season、query、bgmId；全库 query 的 `requestedSeason` 为 null，不代表首条结果的季度。
-        季度浏览最多 200 条，query 最多 50 条；`total` 是本次返回数，`truncated` 表示仍有结果。完整翻页请用 /api/animes/search。
+        季度浏览最多 200 条，超过时按人气档位、再按评分取前 200；query 最多 50 条。`total` 是本次返回数，`truncated` 表示仍有结果。完整翻页请用 /api/animes/search。
+        已合并的旧 bgmId 返回合并后的番剧：`scope.bgmId` 保持请求值，条目的 `bgmId` 是合并后的 ID。管理员隐藏或 bgm.tv 标记为 NSFW 的番剧不出现在任何结果里。
         每部作品携带自己的年季与首播精度。季度分类不改变实际首播日期；未知值为 null。
-        `weekday`：0=周日 … 6=周六，按 Asia/Shanghai；null 为未排播。`rating` 为 0–10，无有效来源评分时为 5.0，真实 0 保留。
+        `weekday` 来自番剧的放送规则，依次取管理员设置、bangumi-data 放送区间、bgm.tv 分集播出日、精确到日的首播日；0=周日 … 6=周六，按北京时间。null 表示没有放送规则，归入「未排播」。
+        `rating` 为 0–10，无有效来源评分时为 5.0，真实 0 保留。
+        `availableSeasons` 是当前季前后各 4 季中有公开番剧的季度，总是包含当前季。
         速率限制默认 30 次 / 60 秒 / IP。支持 GET、HEAD、OPTIONS；条件请求仍可能消耗限流额度。
       parameters:
         - name: season
@@ -419,7 +422,9 @@ paths:
 
         magnet、size、episodeKey、resolution、format、subtitle、lastUpdatedAt 可为 null。subtitle 通常为 EXTERNAL / INTERNAL / EMBEDDED / NONE。
 
-        未找到番剧返回 404；暂时无法提供完整结果时返回 503 SEARCH_UNAVAILABLE，并带 Retry-After。
+        已合并的旧 bgmId 返回合并后番剧的 animeId、标题和字幕组，data.bgmId 保持请求值。
+
+        未找到番剧，或番剧被管理员隐藏、被 bgm.tv 标记为 NSFW 时返回 404；暂时无法提供完整结果时返回 503 SEARCH_UNAVAILABLE，并带 Retry-After。
 
         支持 GET、HEAD 和 If-None-Match；默认与季度番剧接口共用 30 次 / 60 秒 / IP 的限额。
 
@@ -785,6 +790,8 @@ paths:
         Tag 可重复或逗号分隔：`?resolution=1080p&resolution=720p` 与 `?resolution=1080p,720p` 等价。
 
         非法 `limit` 返回应用 `400`，生产边缘可能先 `403`。与默认值等价的写法会 `308` 到规范 URL。
+
+        bgm.tv 合并过的旧 `bgmId` 会 `308` 到把 `bgmId` 换成新 ID 的同一 URL，`groupSlug` 等其他参数不变。恰好只有 `bgmId` 与 `groupSlug` 的订阅链接同样跳转，跟随即可，不必重新订阅。目标番剧暂时无法解析时返回 `503`（`Cache-Control: no-store`），不返回 `404`。
 
         每个 `<item>`：`<title>`、`<link>`（`/release/<id>`）、`<guid>`、`<pubDate>`（RFC 822，`+0800`）、`<enclosure>` 种子下载链接、`<torrent>` infoHash、已绑定时 `<anibt:bgmId>`。
 
@@ -1659,6 +1666,10 @@ paths:
       description: >
         番剧发布必须指定 animeIdType 与 animeId，不按标题匹配番剧。
 
+        animeId 按来源规范化：接受全角数字、前导零和该来源站点的番剧链接（bgm.tv / bangumi.tv / chii.in、myanimelist.net、anidb.net、anilist.co）。已合并的旧 BGM ID 发布到合并后的番剧。发布只解析站内已收录的番剧，不会新收录。
+
+        bgm 的 animeId 不是 ID 时返回 422；mal、anidb、anilist 的 animeId 不是 ID、站内没有，或只有被管理员隐藏、被 bgm.tv 标记为 NSFW 的番剧持有该 ID 时返回 404；同一个外部 ID 对应多部公开番剧时返回 422（Anime identifier is ambiguous），请改用 bgm ID。
+
         multipart 必须上传 torrent，title 省略时使用种子内部名；JSON 必须提供 title 和属于当前字幕组的 torrentStorageId。JSON 还必须提供 magnetBase64。
 
         成功发布返回 { ok: true, result: { releaseId, revision, torrentObjectId? } }。发布回执不包含 groupId、groupName、groupSlug、animeId 或 fileSize；发布前用 GET 同一路径核验身份。
@@ -1728,7 +1739,7 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
         "404":
-          description: 关联番剧或种子不存在
+          description: 关联番剧或种子不存在，或该 ID 只对应不公开的番剧（管理员隐藏、NSFW）
           content:
             application/json:
               schema:
@@ -1746,7 +1757,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
         "422":
-          description: 字段、种子或发布规则校验失败
+          description: 字段、种子或发布规则校验失败；包括 bgm animeId 不是 ID、外部 ID 对应多部公开番剧
           content:
             application/json:
               schema:
@@ -2931,6 +2942,7 @@ components:
               description: 全库关键词搜索为 null；按季查询返回指定季度，精确 ID 返回作品季度或 null。
             availableSeasons:
               type: array
+              description: 当前季前后各 4 季中至少有一部公开番剧的季度，按时间升序，总是包含当前季。
               items:
                 type: string
             scheduleSummary:
@@ -3346,6 +3358,7 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+          description: animeIdType 对应的番剧 ID，或该站点的番剧链接；按来源规范化后解析。
         title:
           type: string
           minLength: 1
@@ -3448,6 +3461,7 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+          description: animeIdType 对应的番剧 ID，或该站点的番剧链接；按来源规范化后解析。
         title:
           type: string
           minLength: 1
@@ -4035,18 +4049,20 @@ components:
           type:
             - number
             - "null"
-          description: 播出时间，Unix 秒；与发布及回执的毫秒时间戳不同。
+          description: 放送时间线上请求时刻之后的下一次播出，没有则为最近一次；Unix 秒，与发布及回执的毫秒时间戳不同。只有带时刻、且与 weekday 同一北京星期和分钟的播出才有值。时间线覆盖上一季、当前季和下一季。
           x-unit: unix-seconds
         weekday:
           type:
             - number
             - "null"
+          description: 放送规则的星期，0=周日 … 6=周六，按北京时间。日本时间 00:00–00:59 的深夜档落在北京时间前一天；只有日期的规则保留该日期本身的星期。null 表示没有放送规则。
         weekdayLabel:
           type:
             - string
             - "null"
         scheduleStatus:
           type: string
+          description: scheduled 有 airingAt；weekday_only 有星期但给不出时刻（只有日期的规则，或时间线窗口内没有这次播出）；missing_source 没有放送规则。
           enum:
             - scheduled
             - weekday_only

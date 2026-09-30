@@ -9,6 +9,35 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
   Entries are listed in reverse chronological order. If you encounter any bugs during regular use, feel free to report them via our [Support Email](/en/docs/contact).
 </Callout>
 
+## September 30, 2026
+
+<TypeTable type={{
+  "Airing times follow each anime's broadcast rule": {
+    "type": "Improvement",
+    "description": "The home page's This Week, the seasonal page and /api/seasons/anime now take weekdays and airing times from each anime's broadcast rule: an administrator's setting first, then bangumi-data, then bgm.tv episode air dates, then the premiere date. Days are grouped in Beijing time, so a Japanese slot between 00:00 and 00:59 falls on the previous Beijing day. In the season API, anime without a broadcast rule stay in the 未排播 (unscheduled) group. A show with no announced episode count no longer keeps an empty slot a week after its last episode. The site no longer uses the bgm.wiki weekly schedule."
+  },
+  "NSFW anime are no longer public": {
+    "type": "Improvement",
+    "description": "Anime that bgm.tv marks as NSFW, together with their releases, their entries in personal subscription RSS and their claims, are no longer public, and API publishing to them is refused. An anime is hidden only by an administrator or by the NSFW flag; keyword auto-hiding has been removed. After review, 61 anime became public again. Visiting an anime page no longer adds a new anime to the catalogue."
+  },
+  "External IDs and old links": {
+    "type": "Improvement",
+    "description": "External IDs for API publishing and /api/anime/lookup accept full-width digits, leading zeros and links to the source site. An old ID of a subject that bgm.tv merged now points to the merged anime in publishing, lookup, anime pages and the season and group APIs, and old anime page links redirect with 308. When one external ID belongs to more than one anime, lookup answers 409 and publishing answers 422; publish with the bgm ID instead. Anime hidden by an administrator or marked NSFW take no part in resolving an external ID, so they no longer cause a lookup 409 or a publishing 422, and an ID held only by hidden anime answers like an unknown ID. The fixed RSS feed subscribed by bgmId and groupSlug now redirects an old merged bgmId with 308 to the same feed for the merged anime instead of answering 404; until the merged anime is ready it answers 503, which is not cached."
+  },
+  "External links on anime pages": {
+    "type": "Improvement",
+    "description": "Anime pages build their external links from the stored IDs and, besides Bangumi, list the MyAnimeList, AniDB and AniList entries the catalogue holds."
+  },
+  "Anime titles and metadata cleanup": {
+    "type": "Improvement",
+    "description": "Anime without a romaji or English title now take AniDB's main title and official English title; about 5,500 anime gained a romaji title, spelled the AniDB way (for example wo becomes o). 49 Chinese titles and 1,619 official-site links with no reliable source were removed, and covers were mirrored again from bgm.tv. When a Traditional Chinese title is missing, the Traditional variables of release-title templates (including titleCnTraditional) use the Simplified title."
+  },
+  "Automatic matching uses confirmed aliases only": {
+    "type": "Improvement",
+    "description": "Automatic matching during web uploads no longer uses the more than 50,000 manual aliases left over from the old system. Aliases that administrators confirm for matching keep working."
+  }
+}} />
+
 ## September 27, 2026
 
 <TypeTable type={{

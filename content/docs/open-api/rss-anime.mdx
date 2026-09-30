@@ -19,6 +19,10 @@ _openapi:
 
           非法 `limit` 返回应用 `400`，生产边缘可能先 `403`。与默认值等价的写法会 `308` 到规范 URL。
 
+          bgm.tv 合并过的旧 `bgmId` 会 `308` 到把 `bgmId` 换成新 ID 的同一 URL，`groupSlug`
+          等其他参数不变。恰好只有 `bgmId` 与 `groupSlug` 的订阅链接同样跳转，跟随即可，不必重新订阅。目标番剧暂时无法解析时返回
+          `503`（`Cache-Control: no-store`），不返回 `404`。
+
           每个
           `<item>`：`<title>`、`<link>`（`/release/<id>`）、`<guid>`、`<pubDate>`（RFC
           822，`+0800`）、`<enclosure>` 种子下载链接、`<torrent>` infoHash、已绑定时

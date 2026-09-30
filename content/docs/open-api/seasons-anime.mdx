@@ -17,13 +17,20 @@ _openapi:
           `scope.kind` 区分 season、query、bgmId；全库 query 的 `requestedSeason` 为
           null，不代表首条结果的季度。
 
-          季度浏览最多 200 条，query 最多 50 条；`total` 是本次返回数，`truncated` 表示仍有结果。完整翻页请用
-          /api/animes/search。
+          季度浏览最多 200 条，超过时按人气档位、再按评分取前 200；query 最多 50 条。`total`
+          是本次返回数，`truncated` 表示仍有结果。完整翻页请用 /api/animes/search。
+
+          已合并的旧 bgmId 返回合并后的番剧：`scope.bgmId` 保持请求值，条目的 `bgmId` 是合并后的 ID。管理员隐藏或
+          bgm.tv 标记为 NSFW 的番剧不出现在任何结果里。
 
           每部作品携带自己的年季与首播精度。季度分类不改变实际首播日期；未知值为 null。
 
-          `weekday`：0=周日 … 6=周六，按 Asia/Shanghai；null 为未排播。`rating` 为
-          0–10，无有效来源评分时为 5.0，真实 0 保留。
+          `weekday` 来自番剧的放送规则，依次取管理员设置、bangumi-data 放送区间、bgm.tv
+          分集播出日、精确到日的首播日；0=周日 … 6=周六，按北京时间。null 表示没有放送规则，归入「未排播」。
+
+          `rating` 为 0–10，无有效来源评分时为 5.0，真实 0 保留。
+
+          `availableSeasons` 是当前季前后各 4 季中有公开番剧的季度，总是包含当前季。
 
           速率限制默认 30 次 / 60 秒 / IP。支持 GET、HEAD、OPTIONS；条件请求仍可能消耗限流额度。
 ---

@@ -9,6 +9,35 @@ description: 記錄 AniBT 平台面向使用者與字幕組的功能變更、最
   更新日誌按時間倒序排列。如果你在日常使用中發現了異常問題，歡迎透過 [支援信箱](/zh-Hant/docs/contact) 向我們回饋。
 </Callout>
 
+## 2026 年 9 月 30 日
+
+<TypeTable type={{
+  "放送時間改依放送規則排列": {
+    "type": "Improvement",
+    "description": "首頁本週放送、季度新番與 /api/seasons/anime 的星期與播出時間改由每部番劇的放送規則決定，依序取管理員設定、bangumi-data、bgm.tv 分集播出日與首播日，依北京時間分組；日本時間凌晨 0 點檔歸入北京時間前一天。季度介面中沒有放送規則的作品仍歸入「未排播」組。未公布集數的作品在最後一集之後不再多出一週空檔。本站不再使用 bgm.wiki 週表。"
+  },
+  "NSFW 番劇不再公開": {
+    "type": "Improvement",
+    "description": "bgm.tv 標記為 NSFW 的番劇及其資源、個人訂閱 RSS 中的條目與開坑計畫不再公開，也無法透過 API 釋出。番劇不公開的原因只剩管理員隱藏與 NSFW，關鍵字自動隱藏已移除；複核後 61 部番劇恢復公開。瀏覽番劇頁不再把新番劇收錄進本站。"
+  },
+  "外部 ID 與舊連結": {
+    "type": "Improvement",
+    "description": "API 釋出與 /api/anime/lookup 的外部 ID 接受全形數字、前導零與站點連結。bgm.tv 合併過的舊條目 ID 在釋出、lookup、番劇頁以及季度、字幕組介面中指向合併後的番劇，舊番劇頁連結以 308 轉址到新網址。同一個外部 ID 對應多部番劇時，lookup 回傳 409、釋出回傳 422，請改用 bgm ID。管理員隱藏或 NSFW 的番劇不參與外部 ID 解析，不會再讓 lookup 回傳 409 或讓釋出回傳 422；只由這類番劇持有的 ID 與未知 ID 回應相同。依 bgmId 與 groupSlug 訂閱的固定 RSS 連結使用合併過的舊 bgmId 時，改以 308 轉址到合併後番劇的同一訂閱連結，不再回傳 404；合併後的番劇尚未就緒時暫時回傳 503，該回應不快取。"
+  },
+  "番劇頁外站連結": {
+    "type": "Improvement",
+    "description": "番劇頁的外站連結依 ID 統一產生，除 Bangumi 外會列出站內已記錄的 MyAnimeList、AniDB 與 AniList 條目。"
+  },
+  "番劇標題與資料清理": {
+    "type": "Improvement",
+    "description": "缺少羅馬音或英文標題的番劇改用 AniDB 的主標題與官方英文標題補全，約 5,500 部番劇新增了羅馬音標題，寫法沿用 AniDB（例如 wo 寫作 o）。沒有可靠來源的 49 個中文標題與 1,619 個官網連結已清除，封面已從 bgm.tv 重新鏡像。繁體中文標題缺少時，釋出標題範本中的繁體變數（包括 titleCnTraditional）改用簡體標題。"
+  },
+  "自動比對只用確認過的別名": {
+    "type": "Improvement",
+    "description": "網頁上傳的自動比對不再使用舊系統遺留的 5 萬餘條人工別名，管理員確認用於比對的別名繼續生效。"
+  }
+}} />
+
 ## 2026 年 9 月 27 日
 
 <TypeTable type={{
