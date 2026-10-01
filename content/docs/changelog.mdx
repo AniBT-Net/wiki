@@ -12,6 +12,10 @@ description: 记录 AniBT 平台面向用户与字幕组的功能变更、优化
 ## 2026 年 10 月 1 日
 
 <TypeTable type={{
+  "旧上传与个人 API Key 入口退役": {
+    "type": "Improvement",
+    "description": "旧 PUT /api/upload 和个人 API Key 接口已退役。网页上传与字幕组 API Key 的发布、同步、删除能力不受影响。"
+  },
   "API 发布限流响应": {
     "type": "Fix",
     "description": "番剧和其他类资源发布超限时返回 429 RATE_LIMIT_EXCEEDED；限流服务暂不可用时返回 503 SERVICE_UNAVAILABLE。两者均提供 Retry-After（秒），按该时间等待后重试。拒绝的请求不会创建发布。"

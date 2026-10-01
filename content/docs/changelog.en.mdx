@@ -12,6 +12,10 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
 ## October 1, 2026
 
 <TypeTable type={{
+  "Retired upload and personal API key endpoints": {
+    "type": "Improvement",
+    "description": "The legacy PUT /api/upload and personal API key endpoints are retired. Web uploads and subtitle-group API keys for publishing, synchronization, and deletion continue to work."
+  },
   "API publishing rate limits": {
     "type": "Fix",
     "description": "Anime and other-resource publishing return 429 RATE_LIMIT_EXCEEDED when throttled, or 503 SERVICE_UNAVAILABLE when the rate-limit service is unavailable. Both provide Retry-After in seconds. Wait before retrying; rejected requests do not create a release."
