@@ -40,7 +40,7 @@ description: "各端点的默认限额、参数范围与退避方式。"
   },
   "API 发布": {
     "type": "每类 120 次 / 60 秒 / IP",
-    "description": "JSON 默认上限 1 MiB，multipart 默认上限 8 MiB。当前应用限流返回 500 UPLOAD_FAILED；GET whoami 不消耗此额度。"
+    "description": "JSON 默认上限 1 MiB，multipart 默认上限 8 MiB。超限返回 429 RATE_LIMIT_EXCEEDED；限流服务不可用返回 503 SERVICE_UNAVAILABLE。两者均带 Retry-After（秒），等待后重试。GET whoami 不消耗此额度。"
   },
   "删除与删除状态": {
     "type": "30 / 120 次 / 60 秒 / Key",

@@ -40,7 +40,7 @@ description: "各端點的預設限額、參數範圍與退避方式。"
   },
   "API 釋出": {
     "type": "每類 120 次 / 60 秒 / IP",
-    "description": "JSON 預設上限 1 MiB，multipart 預設上限 8 MiB。目前應用程式限流回傳 500 UPLOAD_FAILED；GET whoami 不消耗此額度。"
+    "description": "JSON 預設上限 1 MiB，multipart 預設上限 8 MiB。超限回傳 429 RATE_LIMIT_EXCEEDED；限流服務無法使用時回傳 503 SERVICE_UNAVAILABLE。兩者均帶 Retry-After（秒），等待後重試。GET whoami 不消耗此額度。"
   },
   "刪除與刪除狀態": {
     "type": "30 / 120 次 / 60 秒 / Key",

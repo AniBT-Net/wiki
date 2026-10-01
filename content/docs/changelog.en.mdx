@@ -9,6 +9,23 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
   Entries are listed in reverse chronological order. If you encounter any bugs during regular use, feel free to report them via our [Support Email](/en/docs/contact).
 </Callout>
 
+## October 1, 2026
+
+<TypeTable type={{
+  "API publishing rate limits": {
+    "type": "Fix",
+    "description": "Anime and other-resource publishing return 429 RATE_LIMIT_EXCEEDED when throttled, or 503 SERVICE_UNAVAILABLE when the rate-limit service is unavailable. Both provide Retry-After in seconds. Wait before retrying; rejected requests do not create a release."
+  },
+  "Other-resource deletion": {
+    "type": "Fix",
+    "description": "Fixed deletion checking the wrong torrent URL and preventing other-resource deletions from completing."
+  },
+  "Administrator menu access": {
+    "type": "Fix",
+    "description": "Fixed administrator links in account navigation and user menus disagreeing with current permissions after a role change."
+  }
+}} />
+
 ## September 30, 2026
 
 <TypeTable type={{

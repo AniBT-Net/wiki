@@ -9,6 +9,23 @@ description: 记录 AniBT 平台面向用户与字幕组的功能变更、优化
   更新日志按时间倒序排列。如果你在日常使用中发现了异常问题，欢迎通过 [支持邮箱](/docs/contact) 向我们反馈。
 </Callout>
 
+## 2026 年 10 月 1 日
+
+<TypeTable type={{
+  "API 发布限流响应": {
+    "type": "Fix",
+    "description": "番剧和其他类资源发布超限时返回 429 RATE_LIMIT_EXCEEDED；限流服务暂不可用时返回 503 SERVICE_UNAVAILABLE。两者均提供 Retry-After（秒），按该时间等待后重试。拒绝的请求不会创建发布。"
+  },
+  "其他类资源删除": {
+    "type": "Fix",
+    "description": "修复其他类资源删除时检查错误种子地址、导致删除无法完成的问题。"
+  },
+  "管理员入口与角色一致": {
+    "type": "Fix",
+    "description": "修复管理员角色变更后，账户导航和用户菜单中的管理入口与实际权限不一致的问题。"
+  }
+}} />
+
 ## 2026 年 9 月 30 日
 
 <TypeTable type={{

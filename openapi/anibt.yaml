@@ -1686,7 +1686,7 @@ paths:
 
         200 表示本站发布已写入，不保证外站同步或下游读取已经完成。
 
-        当前发布请求达到限额时返回 500 UPLOAD_FAILED；应停止高频提交并退避，不能把未知错误当作成功。
+        发布请求达到限额时返回 429 RATE_LIMIT_EXCEEDED；限流服务暂不可用时返回 503 SERVICE_UNAVAILABLE。两者均带 Retry-After（秒），按该时间等待后重试，请求不会进入发布流程。
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1762,6 +1762,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+        "429":
+          $ref: "#/components/responses/RateLimited"
         "500":
           description: 发布失败
           content:
@@ -1769,7 +1771,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
         "503":
-          description: 服务暂不可用
+          description: 服务暂不可用；限流服务不可用时返回 SERVICE_UNAVAILABLE，并带 Retry-After（秒）
+          headers:
+            Retry-After:
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -1830,7 +1836,7 @@ paths:
 
         200 表示本站发布已写入，不保证外站同步或下游读取已经完成。
 
-        当前发布请求达到限额时返回 500 UPLOAD_FAILED；应停止高频提交并退避，不能把未知错误当作成功。
+        发布请求达到限额时返回 429 RATE_LIMIT_EXCEEDED；限流服务暂不可用时返回 503 SERVICE_UNAVAILABLE。两者均带 Retry-After（秒），按该时间等待后重试，请求不会进入发布流程。
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -1893,6 +1899,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+        "429":
+          $ref: "#/components/responses/RateLimited"
         "500":
           description: 发布失败
           content:
@@ -1900,7 +1908,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
         "503":
-          description: 服务暂不可用
+          description: 服务暂不可用；限流服务不可用时返回 SERVICE_UNAVAILABLE，并带 Retry-After（秒）
+          headers:
+            Retry-After:
+              schema:
+                type: string
           content:
             application/json:
               schema:

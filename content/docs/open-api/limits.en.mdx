@@ -40,7 +40,7 @@ These are application defaults; deployment settings and edge rules may impose di
   },
   "API publishing": {
     "type": "120 per kind / 60 seconds / IP",
-    "description": "Default body limits: JSON 1 MiB; multipart 8 MiB. Application throttling currently returns 500 UPLOAD_FAILED. GET whoami does not spend this limit."
+    "description": "Default body limits: JSON 1 MiB; multipart 8 MiB. Throttled requests return 429 RATE_LIMIT_EXCEEDED. If the rate-limit service is unavailable, requests return 503 SERVICE_UNAVAILABLE. Both include Retry-After in seconds; wait before retrying. GET whoami does not spend this limit."
   },
   "Deletion and deletion status": {
     "type": "30 / 120 per 60 seconds / key",
