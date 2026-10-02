@@ -12,6 +12,22 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
 ## October 2, 2026
 
 <TypeTable type={{
+  "Release editing and retries": {
+    "type": "Fix",
+    "description": "Saving an edit based on an older version now reports a conflict and keeps the entered content. Copy any changes you want to keep before refreshing and editing again. Retrying an unchanged failed submission can return its original saved result without applying it twice."
+  },
+  "Subtitle-group API key validity": {
+    "type": "Fix",
+    "description": "After the member who created a key leaves the group, the key can no longer read /api/subtitle-groups/me, even if it has not been revoked. The endpoint returns 401."
+  },
+  "Consistent subscription updates": {
+    "type": "Fix",
+    "description": "Creating, editing, or removing a subscription from an anime page or My Subscriptions now refreshes the same subscription state. Retrying the same operation after a network failure does not record it twice."
+  },
+  "Provenance previews and audit filters": {
+    "type": "Fix",
+    "description": "The preview for releasing manually controlled titles includes AniDB English and romaji fallbacks. Subtitle-group audit filters match both current and historical event names."
+  },
   "Magnet list pagination recovery": {
     "type": "Fix",
     "description": "Fixed failures during normal consecutive pagination. Invalid or outdated pagination links now return to the first page while keeping the current search and filters, instead of showing a server error."

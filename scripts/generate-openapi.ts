@@ -38,11 +38,11 @@ const localeTitles: Record<
   me: {
     en: {
       title: 'Current group',
-      description: 'GET /api/subtitle-groups/me — inspect the current group, scopes, and stats.',
+      description: 'GET /api/subtitle-groups/me — inspect the current group, scopes, and stats. The key creator must still be a group member; a key retained after leaving returns 401.',
     },
     'zh-Hant': {
       title: '字幕組自身資訊',
-      description: 'GET /api/subtitle-groups/me —— 目前 Key 所屬字幕組、scope 與統計。',
+      description: 'GET /api/subtitle-groups/me —— 目前 Key 所屬字幕組、scope 與統計。建立 Key 的使用者必須仍為組員；離組後保留的 Key 回傳 401。',
     },
   },
   'bgm-search': {
