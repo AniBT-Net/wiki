@@ -12,6 +12,26 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
 ## October 3, 2026
 
 <TypeTable type={{
+  "Public pages open to search engines": {
+    "type": "Improvement",
+    "description": "Release detail pages (/release/<id>, /other-release/<id>), /magnets (including category pages and later pages), and search result pages with results (/search?q=…) can now be indexed, each at its own canonical URL. Searches without a keyword or without results, and /magnets with a q keyword, are noindex, follow. Pages still contain no download addresses; magnet links are fetched on click. robots.txt no longer blocks /magnets or /search; the torrent downloads /api/torrent/ and /api/other-torrent/ may be crawled but are never indexed. The rules are on the LLM & Agent Integration page."
+  },
+  "Sitemaps list every URL set": {
+    "type": "Improvement",
+    "description": "/sitemap.xml now lists every URL set directly: fixed pages, fansub groups, season pages, anime pages by decade, and /sitemap-releases/<YYYY-MM>.xml and /sitemap-other-releases/<YYYY-MM>.xml by creation month in Beijing time. On release URLs, lastmod is when the release's content last changed and is omitted when unknown; fansub group URLs no longer carry lastmod. /sitemap-anime.xml keeps working for anyone who submitted it."
+  },
+  "Anime Releases tab has its own URL": {
+    "type": "Improvement",
+    "description": "The Releases tab on an anime page now has its own URL, /anime/<id>?tab=releases, canonical at itself; the default Release progress tab stays at /anime/<id>. The page HTML already includes fansub group links, and the Releases tab also includes a preview of recent releases."
+  },
+  "List pages link to each other": {
+    "type": "Improvement",
+    "description": "On /magnets and a fansub group's Releases tab (/group/<slug>?tab=releases), previous and next are now links with a cursor parameter; every page has its own URL and is canonical at itself. The group Releases tab keeps its season filter in the URL (season and year, or all), and the pager now reads “20 / page”."
+  },
+  "Page titles and descriptions": {
+    "type": "Improvement",
+    "description": "Anime page titles add the original title or romaji when it fits. On anime pages with releases, the description starts with the number of fansub groups, the number of releases, and the last update date, then the work's details and synopsis. Release detail descriptions list the work, episode, fansub group, resolution, container, languages, and subtitle type; other releases list category, group, size, and publish date. Unknown items are left out."
+  },
   "Download addresses fetched on click": {
     "type": "Improvement",
     "description": "Release detail pages, /magnets, anime pages, and the release panel that opens from an anime poster fetch download addresses only when you click a button. Copy magnet link and Open magnet link fetch the magnet link on click and show “Download URL is unavailable” if that fails; if the browser refuses the clipboard write, click Copy again. Download torrent downloads directly; on anime pages and in the release panel the torrent button no longer opens the release detail page. The file list on a release detail page now loads when you click View file list, and the file count appears after it loads."

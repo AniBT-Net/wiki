@@ -1,6 +1,6 @@
 ---
 title: LLM & Agent Integration
-description: Plain-text Wiki endpoints, llms.txt, and the OpenAPI contract for models and agents.
+description: Plain-text Wiki endpoints, llms.txt, the OpenAPI contract, and the main site's crawling, indexing, and sitemap rules.
 ---
 
 The Wiki exposes plain-text endpoints. Models and agents can fetch Markdown directly instead of parsing HTML.
@@ -51,3 +51,79 @@ curl 'https://anibt.net/anime/638151' \
 ```
 
 JSON APIs, RSS feeds, and static files keep their own formats.
+
+## Crawling and indexing the main site
+
+Search engines and other crawlers find AniBT's public pages through `robots.txt` and the sitemaps. Every indexable page declares its own canonical URL. Page content never includes magnet links, torrent download URLs, or infohashes; download addresses are fetched only when you click a button.
+
+### Indexable pages
+
+<TypeTable
+  type={{
+    '/release/<id>, /other-release/<id>': {
+      type: 'Indexed',
+      description: 'Release detail pages. The canonical is the page itself.',
+    },
+    '/magnets': {
+      type: 'Indexed',
+      description: 'The release list, including category, filter, sort, and later pages. The canonical keeps those parameters and the cursor. A list with a q keyword is noindex, follow.',
+    },
+    '/search?q=…': {
+      type: 'Indexed when it has results',
+      description: 'Anime search results. The canonical keeps q and the format, status, and seasonYear filters. A search without a keyword or without results is noindex, follow.',
+    },
+    '/anime/<id>': {
+      type: 'Indexed',
+      description: 'Anime page, opening on the Release progress tab. The Releases tab is /anime/<id>?tab=releases; each of the two URLs is canonical at itself. The page HTML already contains fansub group links, and the Releases tab also contains recent releases.',
+    },
+    '/group/<slug>': {
+      type: 'Indexed',
+      description: 'Fansub group home. The Releases tab is /group/<slug>?tab=releases; its canonical keeps season and year (or all) and the cursor. The other tabs are canonical at /group/<slug>.',
+    },
+    '/api/torrent/, /api/other-torrent/': {
+      type: 'Not indexed',
+      description: 'Torrent downloads may be crawled; responses always carry X-Robots-Tag: noindex.',
+    },
+  }}
+/>
+
+On `/magnets` and the group Releases tab, previous and next are plain links that carry the position in the URL's `cursor` parameter, so every page can be reached without running JavaScript. An expired page link returns to the first page for the same filters.
+
+### robots.txt
+
+`https://anibt.net/robots.txt` does not block `/magnets` or `/search`. Under `/api/`, only `/api/torrent/` and `/api/other-torrent/` may be crawled; other API paths, `/rss/`, and the sign-in and admin paths are blocked.
+
+### Sitemaps
+
+`https://anibt.net/sitemap.xml` is a sitemap index that lists the URL sets below directly, without nesting another index.
+
+<TypeTable
+  type={{
+    '/sitemap-static.xml': {
+      type: 'urlset',
+      description: 'Fixed pages, including /magnets and each of its category pages.',
+    },
+    '/sitemap-groups.xml': {
+      type: 'urlset',
+      description: 'Fansub group homes, without lastmod.',
+    },
+    '/sitemap-seasons.xml': {
+      type: 'urlset',
+      description: 'Season pages /seasonal?season=…&year=… before the current season that have TV anime.',
+    },
+    '/sitemap-anime/<start year>-<end year>.xml': {
+      type: 'urlset',
+      description: 'Anime pages, one set per decade, for example /sitemap-anime/2020-2029.xml.',
+    },
+    '/sitemap-releases/<YYYY-MM>.xml': {
+      type: 'urlset',
+      description: 'Anime release detail pages, one set per month the release was created in Beijing time (UTC+8), newest month first. A month that does not fit in one file continues in <YYYY-MM>-2.xml, <YYYY-MM>-3.xml, and so on.',
+    },
+    '/sitemap-other-releases/<YYYY-MM>.xml': {
+      type: 'urlset',
+      description: 'Other release detail pages, split the same way.',
+    },
+  }}
+/>
+
+On release URLs, `lastmod` is when the release's content last changed; it is omitted when that time is unknown. A month the index does not list returns `404`. The old `/sitemap-anime.xml` still works, so a webmaster tool that already has it needs no change, but the root index no longer refers to it.

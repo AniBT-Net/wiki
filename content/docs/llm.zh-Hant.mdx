@@ -1,6 +1,6 @@
 ---
 title: LLM 與 Agent 對接
-description: Wiki 的純文字入口、llms.txt 與 OpenAPI 契約，給模型和 Agent 直接讀。
+description: Wiki 的純文字入口、llms.txt 與 OpenAPI 契約，以及主站的抓取、收錄與網站地圖規則。
 ---
 
 Wiki 提供純文字入口。模型和 Agent 可以直接拉取 Markdown，不必解析 HTML。
@@ -51,3 +51,79 @@ curl 'https://anibt.net/anime/638151' \
 ```
 
 JSON 介面、RSS 和靜態檔案仍按各自格式回傳。
+
+## 主站抓取與收錄
+
+搜尋引擎和其他抓取程式從 `robots.txt` 與網站地圖找到 AniBT 主站的公開頁面。可收錄的頁面都宣告自己的 canonical 網址。頁面內容不含磁力連結、種子下載網址或 infohash，下載地址在點選按鈕時才取得。
+
+### 可收錄頁面
+
+<TypeTable
+  type={{
+    '/release/<id>、/other-release/<id>': {
+      type: '收錄',
+      description: '資源詳情頁。canonical 為頁面本身。',
+    },
+    '/magnets': {
+      type: '收錄',
+      description: '資源列表，包括分類、篩選、排序和翻頁後的頁面。canonical 保留這些參數與 cursor。帶 q 關鍵字的列表為 noindex, follow。',
+    },
+    '/search?q=…': {
+      type: '有結果時收錄',
+      description: '番劇搜尋結果頁。canonical 保留 q 以及 format、status、seasonYear 篩選。沒有關鍵字或沒有結果時為 noindex, follow。',
+    },
+    '/anime/<id>': {
+      type: '收錄',
+      description: '番劇頁，預設顯示「發布進度」頁籤。「資源」頁籤的網址是 /anime/<id>?tab=releases，兩個網址的 canonical 都指向本身。頁面 HTML 已包含字幕組連結，「資源」頁籤還包含最近資源。',
+    },
+    '/group/<slug>': {
+      type: '收錄',
+      description: '字幕組主頁。「發布」頁籤的網址是 /group/<slug>?tab=releases，canonical 保留 season 與 year（或 all）以及 cursor；其他頁籤的 canonical 為 /group/<slug>。',
+    },
+    '/api/torrent/、/api/other-torrent/': {
+      type: '不收錄',
+      description: '種子下載網址允許抓取，回應始終帶 X-Robots-Tag: noindex。',
+    },
+  }}
+/>
+
+`/magnets` 與字幕組「發布」頁籤的上一頁、下一頁是一般連結，翻頁位置寫在網址的 `cursor` 參數中，不執行 JavaScript 也能逐頁存取。分頁連結失效時回到目前條件的第一頁。
+
+### robots.txt
+
+`https://anibt.net/robots.txt` 不禁止抓取 `/magnets` 與 `/search`。`/api/` 下只允許抓取 `/api/torrent/` 和 `/api/other-torrent/`；其他介面、`/rss/`、登入和後台路徑禁止抓取。
+
+### 網站地圖
+
+`https://anibt.net/sitemap.xml` 是網站地圖索引，直接列出下面的 URL 集合，不巢狀其他索引。
+
+<TypeTable
+  type={{
+    '/sitemap-static.xml': {
+      type: 'urlset',
+      description: '固定頁面，包括 /magnets 及其各分類頁。',
+    },
+    '/sitemap-groups.xml': {
+      type: 'urlset',
+      description: '字幕組主頁，不帶 lastmod。',
+    },
+    '/sitemap-seasons.xml': {
+      type: 'urlset',
+      description: '目前季度之前、有 TV 動畫的季度頁 /seasonal?season=…&year=…。',
+    },
+    '/sitemap-anime/<起始年>-<結束年>.xml': {
+      type: 'urlset',
+      description: '番劇頁，依年代分片，例如 /sitemap-anime/2020-2029.xml。',
+    },
+    '/sitemap-releases/<YYYY-MM>.xml': {
+      type: 'urlset',
+      description: '番劇資源詳情頁，依資源建立時間所在的北京時間（UTC+8）月份分片，新月份在前。一個月份放不下時，依序拆成 <YYYY-MM>-2.xml、<YYYY-MM>-3.xml。',
+    },
+    '/sitemap-other-releases/<YYYY-MM>.xml': {
+      type: 'urlset',
+      description: '其他類資源詳情頁，分片規則同上。',
+    },
+  }}
+/>
+
+資源 URL 的 `lastmod` 是該資源內容最近一次變更的時間，時間未知時省略。索引沒有列出的月份分片回傳 `404`。舊的 `/sitemap-anime.xml` 仍可存取，已經提交它的網站管理工具不需要修改，但根索引不再引用它。

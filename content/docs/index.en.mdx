@@ -46,6 +46,8 @@ Whether you are a fansub team distributing releases, an anime fan looking for hi
         - **Copy magnet link** and **Open magnet link** fetch the magnet link on click. If it cannot be fetched, you see "Download URL is unavailable". If the browser refuses to write to the clipboard, click **Copy again** in the notice. If the browser cannot open the magnet link directly, click **Open again** in the notice.
         - **Download torrent** downloads the `.torrent` file directly. On anime pages and in the release panel, the torrent button also downloads directly instead of opening the release detail page.
         - File list: on a release detail page, click **View file list** to load it. The file count appears after it loads.
+
+        The **Releases** tab on an anime page has its own URL, `/anime/<id>?tab=releases`; the default **Release progress** tab is `/anime/<id>`. On `/magnets` and on a fansub group's **Releases** tab, previous and next are links that carry a `cursor` parameter, so you can open them in a new tab or share them. The group **Releases** tab also keeps its season filter in the URL (`season` and `year`, or `all`) and shows 20 releases per page. An expired page link returns to the first page for the same filters.
       </Step>
       <Step>
         ### Track via RSS
@@ -77,6 +79,10 @@ Whether you are a fansub team distributing releases, an anime fan looking for hi
       <Step>
         ### Automate Fansub Releases
         Developers with a Subtitle Group API Key can automate torrent uploads, metadata matching, external sync inspection, and release withdrawals via REST.
+      </Step>
+      <Step>
+        ### Crawling and Sitemaps
+        The main site's `robots.txt`, sitemap shards, and which pages are indexed are described in [LLM & Agent Integration](/en/docs/llm).
       </Step>
     </Steps>
   </Tab>

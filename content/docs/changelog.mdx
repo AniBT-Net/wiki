@@ -12,6 +12,26 @@ description: 记录 AniBT 平台面向用户与字幕组的功能变更、优化
 ## 2026 年 10 月 3 日
 
 <TypeTable type={{
+  "公开页面开放收录": {
+    "type": "Improvement",
+    "description": "资源详情页（/release/<id>、/other-release/<id>）、/magnets（含分类页和翻页后的页面）以及有结果的搜索结果页（/search?q=…）开放搜索引擎收录，各自使用自己的 canonical 地址。没有关键词或没有结果的搜索、带 q 关键词的 /magnets 为 noindex, follow。页面仍不含下载地址，磁力链接在点击时获取。robots.txt 不再禁止抓取 /magnets 与 /search；种子下载 /api/torrent/、/api/other-torrent/ 允许抓取，但始终不收录。规则见「LLM 与 Agent 对接」。"
+  },
+  "站点地图直接列出全部分片": {
+    "type": "Improvement",
+    "description": "/sitemap.xml 直接列出全部 URL 集合：固定页面、字幕组、季度页、按年代划分的番剧页，以及按北京时间创建月份划分的 /sitemap-releases/<YYYY-MM>.xml 与 /sitemap-other-releases/<YYYY-MM>.xml。资源 URL 的 lastmod 为资源内容最近一次变更的时间，未知时省略；字幕组 URL 不再带 lastmod。已提交的 /sitemap-anime.xml 仍可访问。"
+  },
+  "番剧页「资源」页签有独立地址": {
+    "type": "Improvement",
+    "description": "番剧页的「资源」页签改为独立地址 /anime/<id>?tab=releases，canonical 指向自身；默认的「发布进度」页签仍为 /anime/<id>。页面 HTML 直接包含字幕组链接，「资源」页签还包含最近资源预览。"
+  },
+  "列表翻页改为链接": {
+    "type": "Improvement",
+    "description": "/magnets 与字幕组「发布」页签（/group/<slug>?tab=releases）的上一页、下一页改为带 cursor 参数的链接，每一页都有自己的地址，canonical 指向该页。字幕组「发布」页签的季度筛选写入地址（season 与 year，或 all），分页提示改为「每页 20 条」。"
+  },
+  "页面标题与摘要": {
+    "type": "Improvement",
+    "description": "番剧页标题在长度允许时附上作品原名或罗马音。有资源的番剧页摘要先列字幕组数、资源数和最近更新日期，再接作品信息与简介。资源详情页摘要依次列出作品、集数、字幕组、分辨率、封装格式、字幕语言和字幕类型；其他类资源列出分类、字幕组、体积和发布日期。未知项省略。"
+  },
   "下载地址点击时获取": {
     "type": "Improvement",
     "description": "资源详情页、/magnets、番剧页面和番剧海报展开面板在点击按钮时才获取下载地址。「复制磁力链接」「打开磁力链接」点击后获取磁力链接，失败时提示「下载地址不可用」；浏览器拒绝写入剪贴板时，可点击「再次复制」。「下载种子」直接下载，番剧页面和展开面板中的种子按钮不再跳转到资源详情页。资源详情页的文件列表改为点击「查看文件列表」后加载，加载后显示文件数。"
