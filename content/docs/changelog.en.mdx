@@ -12,6 +12,22 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
 ## October 3, 2026
 
 <TypeTable type={{
+  "Three language URLs": {
+    "type": "Feature",
+    "description": "On the main site, Simplified Chinese is the URL without a prefix, Traditional Chinese is /zh-hant/…, and English is /en/…, one to one for every page, including the sign-in and sign-up pages, personal pages, and the fansub group console. The URL alone decides the page language: the language cookie no longer changes a page, and the language menu links to the same page in the other languages. If you chose Traditional Chinese or English before, a URL without a prefix shows a one-time hint offering the switch instead of redirecting you. Prefixes are lowercase only; /zh-Hant/… returns 404. Release titles, release notes, and fansub group names stay in their original language. API, RSS, and sitemap URLs are unchanged. See Getting Started."
+  },
+  "Language alternates and three-language sitemaps": {
+    "type": "Improvement",
+    "description": "Indexable pages list their three language URLs in the head (hreflang zh-Hans, zh-Hant, and en, with x-default pointing to the Simplified URL), and each language URL is canonical at itself; noindex pages, the sign-in pages, and pages that require signing in list none. Sitemaps list every page once per language with xhtml:link alternates, so one release sitemap file holds at most 16,666 releases. robots.txt also blocks the /zh-hant/ and /en/ forms of the admin, sign-in, and sign-up paths. The rules are on the LLM & Agent Integration page."
+  },
+  "Deletion covers all three languages": {
+    "type": "Improvement",
+    "description": "After a release is deleted, its detail page in all three languages and its torrent download return 404, and each is confirmed before the deletion receipt becomes completed. IndexNow is notified of the deletion of the three detail page URLs."
+  },
+  "IndexNow notifications": {
+    "type": "Feature",
+    "description": "Newly public or changed release detail pages (the Simplified URL without a prefix) are submitted to IndexNow in 5-minute batches; a deleted release is submitted with its three language URLs once they return 404. A 200 or 202 from IndexNow only means the submission was received, not that a page has been indexed; Google does not take part in IndexNow. The key file is served at /<key>.txt."
+  },
   "Public pages open to search engines": {
     "type": "Improvement",
     "description": "Release detail pages (/release/<id>, /other-release/<id>), /magnets (including category pages and later pages), and search result pages with results (/search?q=…) can now be indexed, each at its own canonical URL. Searches without a keyword or without results, and /magnets with a q keyword, are noindex, follow. Pages still contain no download addresses; magnet links are fetched on click. robots.txt no longer blocks /magnets or /search; the torrent downloads /api/torrent/ and /api/other-torrent/ may be crawled but are never indexed. The rules are on the LLM & Agent Integration page."

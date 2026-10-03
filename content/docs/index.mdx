@@ -82,11 +82,39 @@ AniBT 是面向动漫爱好者与字幕组的 BT 资源分发、索引与检索�
       </Step>
       <Step>
         ### 抓取与站点地图
-        主站 `robots.txt`、站点地图分片和各类页面的收录规则见 [LLM 与 Agent 对接](/docs/llm)。
+        主站 `robots.txt`、站点地图分片、各类页面的收录规则、三种语言地址的互指（hreflang）和 IndexNow 通知见 [LLM 与 Agent 对接](/docs/llm)。
       </Step>
     </Steps>
   </Tab>
 </Tabs>
+
+## 界面语言
+
+AniBT 主站有简体中文、繁体中文和英文三种界面语言。页面语言只由地址决定，三种地址一一对应。
+
+<TypeTable
+  type={{
+    '简体中文': {
+      type: '不带前缀',
+      description: '例：https://anibt.net/anime/617123',
+    },
+    '繁體中文': {
+      type: '/zh-hant/',
+      description: '例：https://anibt.net/zh-hant/anime/617123',
+    },
+    'English': {
+      type: '/en/',
+      description: '例：https://anibt.net/en/anime/617123',
+    },
+  }}
+/>
+
+- 每个页面都有三种地址，包括公开页面、登录与注册页面、个人页面和字幕组后台。在繁体中文或英文页面登录后，会回到同一语言的页面。
+- 语言菜单中的其他语言链接到当前页面的对应地址，并记住你的选择。这个选择不会改变页面：不带前缀的地址始终显示简体中文。
+- 以前选过繁体中文或英文的读者打开不带前缀的地址时，会看到一次提示（「此頁面有繁體中文版本」或「This page is available in English」）。点击「切換」或「Switch」打开同一页面的对应语言地址；不点击时不会跳转。
+- 主站的语言前缀只用小写，`/zh-Hant/…`、`/EN/…` 返回 404。本 Wiki 的繁体地址 `/zh-Hant/docs/…` 是另一套规则。
+- 界面文字随语言改变。发布标题、发布说明和字幕组名称在三种语言中都保持原文。
+- API（`/api/…`）、RSS、Torznab、站点地图、`robots.txt`、发布预览链接、登录回调与 OAuth 授权地址只有一个地址，不带语言前缀。
 
 ## 常用文档索引
 

@@ -1,6 +1,6 @@
 ---
 title: LLM 與 Agent 對接
-description: Wiki 的純文字入口、llms.txt 與 OpenAPI 契約，以及主站的抓取、收錄與網站地圖規則。
+description: Wiki 的純文字入口、llms.txt 與 OpenAPI 契約，以及主站的抓取、收錄、語言版本、網站地圖與 IndexNow 規則。
 ---
 
 Wiki 提供純文字入口。模型和 Agent 可以直接拉取 Markdown，不必解析 HTML。
@@ -54,9 +54,11 @@ JSON 介面、RSS 和靜態檔案仍按各自格式回傳。
 
 ## 主站抓取與收錄
 
-搜尋引擎和其他抓取程式從 `robots.txt` 與網站地圖找到 AniBT 主站的公開頁面。可收錄的頁面都宣告自己的 canonical 網址。頁面內容不含磁力連結、種子下載網址或 infohash，下載地址在點選按鈕時才取得。
+搜尋引擎和其他抓取程式從 `robots.txt` 與網站地圖找到 AniBT 主站的公開頁面。每個可收錄頁面有三種語言網址：簡體中文不帶前綴，繁體中文在 `/zh-hant/…`，英文在 `/en/…`。每種語言網址都宣告自己的 canonical，不指回簡體網址。頁面內容不含磁力連結、種子下載網址或 infohash，下載地址在點選按鈕時才取得。
 
 ### 可收錄頁面
+
+下表列出不帶前綴的簡體網址，`/zh-hant/…` 與 `/en/…` 形式的規則相同。
 
 <TypeTable
   type={{
@@ -89,9 +91,23 @@ JSON 介面、RSS 和靜態檔案仍按各自格式回傳。
 
 `/magnets` 與字幕組「發布」頁籤的上一頁、下一頁是一般連結，翻頁位置寫在網址的 `cursor` 參數中，不執行 JavaScript 也能逐頁存取。分頁連結失效時回到目前條件的第一頁。
 
+### 語言版本
+
+可收錄頁面在 HTML `<head>` 中列出自己的三種語言網址（hreflang `zh-Hans`、`zh-Hant`、`en`），其中包括頁面本身，另有 `x-default` 指向簡體網址。三種網址的路徑和查詢參數相同。
+
+```html title="/en/anime/617123 的 head（節錄）"
+<link rel="canonical" href="https://anibt.net/en/anime/617123"/>
+<link rel="alternate" hrefLang="zh-Hans" href="https://anibt.net/anime/617123"/>
+<link rel="alternate" hrefLang="zh-Hant" href="https://anibt.net/zh-hant/anime/617123"/>
+<link rel="alternate" hrefLang="en" href="https://anibt.net/en/anime/617123"/>
+<link rel="alternate" hrefLang="x-default" href="https://anibt.net/anime/617123"/>
+```
+
+noindex 頁面（沒有關鍵字或沒有結果的搜尋、帶 q 關鍵字的 `/magnets`）、錯誤頁、登入頁和登入後才能存取的頁面不輸出語言互指。
+
 ### robots.txt
 
-`https://anibt.net/robots.txt` 不禁止抓取 `/magnets` 與 `/search`。`/api/` 下只允許抓取 `/api/torrent/` 和 `/api/other-torrent/`；其他介面、`/rss/`、登入和後台路徑禁止抓取。
+`https://anibt.net/robots.txt` 不禁止抓取 `/magnets` 與 `/search`，也不禁止它們的 `/zh-hant/`、`/en/` 形式。`/api/` 下只允許抓取 `/api/torrent/` 和 `/api/other-torrent/`；其他介面、`/rss/`、登入和後台路徑禁止抓取。後台、登入和註冊路徑的 `/zh-hant/`、`/en/` 形式（例如 `/en/admin/`、`/zh-hant/auth/`、`/en/sign-in`）同樣禁止抓取；介面和 RSS 沒有語言前綴。
 
 ### 網站地圖
 
@@ -117,7 +133,7 @@ JSON 介面、RSS 和靜態檔案仍按各自格式回傳。
     },
     '/sitemap-releases/<YYYY-MM>.xml': {
       type: 'urlset',
-      description: '番劇資源詳情頁，依資源建立時間所在的北京時間（UTC+8）月份分片，新月份在前。一個月份放不下時，依序拆成 <YYYY-MM>-2.xml、<YYYY-MM>-3.xml。',
+      description: '番劇資源詳情頁，依資源建立時間所在的北京時間（UTC+8）月份分片，新月份在前。每個檔案最多 16,666 個資源（每個資源三種語言共 3 條 URL）。一個月份放不下時，依序拆成 <YYYY-MM>-2.xml、<YYYY-MM>-3.xml。',
     },
     '/sitemap-other-releases/<YYYY-MM>.xml': {
       type: 'urlset',
@@ -127,3 +143,48 @@ JSON 介面、RSS 和靜態檔案仍按各自格式回傳。
 />
 
 資源 URL 的 `lastmod` 是該資源內容最近一次變更的時間，時間未知時省略。索引沒有列出的月份分片回傳 `404`。舊的 `/sitemap-anime.xml` 仍可存取，已經提交它的網站管理工具不需要修改，但根索引不再引用它。
+
+每個 URL 集合把每個頁面列出三次：不帶前綴、`/zh-hant/`、`/en/` 各一條 `<url>`。每條都附帶與頁面 head 相同的 `xhtml:link` 語言互指，三條的 `lastmod` 相同。
+
+```xml title="/sitemap-releases/2026-10.xml 中的一條（節錄）"
+<url>
+  <loc>https://anibt.net/release/rel_-OH17wI8Sghm</loc>
+  <lastmod>2026-09-30T16:04:00.592Z</lastmod>
+  <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://anibt.net/release/rel_-OH17wI8Sghm"/>
+  <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://anibt.net/zh-hant/release/rel_-OH17wI8Sghm"/>
+  <xhtml:link rel="alternate" hreflang="en" href="https://anibt.net/en/release/rel_-OH17wI8Sghm"/>
+  <xhtml:link rel="alternate" hreflang="x-default" href="https://anibt.net/release/rel_-OH17wI8Sghm"/>
+</url>
+<!-- 隨後是 /zh-hant/release/rel_-OH17wI8Sghm 與 /en/release/rel_-OH17wI8Sghm 兩條，互指相同 -->
+```
+
+### 刪除的資源
+
+資源刪除後，詳情頁的三種語言網址和種子下載網址都回傳 `404`：
+
+- 番劇資源：`/release/<id>`、`/zh-hant/release/<id>`、`/en/release/<id>`、`/api/torrent/<id>.torrent`
+- 其他類資源：`/other-release/<id>`、`/zh-hant/other-release/<id>`、`/en/other-release/<id>`、`/api/other-torrent/<id>.torrent`
+
+刪除回執為 `completed` 時（見 [刪除狀態](/zh-Hant/docs/open-api/releases-deletion)），這四個網址都已確認回傳 `404`。網站地圖隨後不再列出該資源，IndexNow 也會收到這三個詳情頁網址的刪除通知。
+
+### IndexNow
+
+AniBT 透過 [IndexNow](https://www.indexnow.org/) 向參與該協定的搜尋引擎通知資源詳情頁的變化，提交網址為 `https://api.indexnow.org/indexnow`。
+
+<TypeTable
+  type={{
+    '新公開或內容變更': {
+      type: '提交 1 個網址',
+      description: '不帶前綴的簡體詳情頁網址：/release/<id> 或 /other-release/<id>。',
+    },
+    '刪除': {
+      type: '提交 3 個網址',
+      description: '三種語言的詳情頁網址，確認它們都回傳 404 後提交。',
+    },
+  }}
+/>
+
+- 變更以 5 分鐘為一個時間窗合併，每個時間窗提交一批，同一時間窗內重複的網址只提交一次。提交前會再次確認資源仍公開或已刪除。
+- 只提交資源詳情頁。番劇頁、字幕組頁和列表頁透過網站地圖與一般抓取發現；搜尋、帶查詢參數的網址、下載網址、API、釋出預覽和登入後才能存取的頁面不會提交。
+- 金鑰檔案位於 `https://anibt.net/<key>.txt`，以 `text/plain` 回傳。
+- IndexNow 回傳 `200` 或 `202` 只表示已接收提交，不代表頁面已被收錄。Google 不參與 IndexNow。

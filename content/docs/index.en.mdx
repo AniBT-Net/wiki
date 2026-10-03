@@ -82,11 +82,39 @@ Whether you are a fansub team distributing releases, an anime fan looking for hi
       </Step>
       <Step>
         ### Crawling and Sitemaps
-        The main site's `robots.txt`, sitemap shards, and which pages are indexed are described in [LLM & Agent Integration](/en/docs/llm).
+        The main site's `robots.txt`, sitemap shards, which pages are indexed, how the three language URLs point to each other (hreflang), and IndexNow notifications are described in [LLM & Agent Integration](/en/docs/llm).
       </Step>
     </Steps>
   </Tab>
 </Tabs>
+
+## Interface Languages
+
+The AniBT main site has three interface languages: Simplified Chinese, Traditional Chinese, and English. The URL alone decides the page language, and the three URLs correspond one to one.
+
+<TypeTable
+  type={{
+    '简体中文 (Simplified Chinese)': {
+      type: 'No prefix',
+      description: 'Example: https://anibt.net/anime/617123',
+    },
+    '繁體中文 (Traditional Chinese)': {
+      type: '/zh-hant/',
+      description: 'Example: https://anibt.net/zh-hant/anime/617123',
+    },
+    'English': {
+      type: '/en/',
+      description: 'Example: https://anibt.net/en/anime/617123',
+    },
+  }}
+/>
+
+- Every page has all three URLs, including public pages, the sign-in and sign-up pages, personal pages, and the fansub group console. Signing in from a Traditional Chinese or English page brings you back to a page in the same language.
+- In the language menu, each other language links to the same page at its URL in that language, and your choice is remembered. The remembered choice does not change any page: a URL without a prefix always shows Simplified Chinese.
+- If you chose Traditional Chinese or English before, opening a URL without a prefix shows a one-time hint ("This page is available in English" or 「此頁面有繁體中文版本」). Click "Switch" or 「切換」 to open the same page in that language; nothing redirects you otherwise.
+- Main-site language prefixes are lowercase only: `/zh-Hant/…` and `/EN/…` return 404. This wiki's own Traditional Chinese URLs, `/zh-Hant/docs/…`, follow a different rule.
+- Interface text follows the language. Release titles, release notes, and fansub group names stay in their original language in all three.
+- APIs (`/api/…`), RSS, Torznab, sitemaps, `robots.txt`, release preview links, and the sign-in callback and OAuth authorization URLs have a single URL with no language prefix.
 
 ## Document Index
 

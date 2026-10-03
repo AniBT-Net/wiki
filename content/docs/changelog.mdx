@@ -12,6 +12,22 @@ description: 记录 AniBT 平台面向用户与字幕组的功能变更、优化
 ## 2026 年 10 月 3 日
 
 <TypeTable type={{
+  "三种语言地址": {
+    "type": "Feature",
+    "description": "主站简体中文为不带前缀的地址，繁体中文为 /zh-hant/…，英文为 /en/…，与每个页面一一对应，包括登录与注册页面、个人页面和字幕组后台。页面语言只由地址决定，语言 Cookie 不再改变页面；语言菜单链接到当前页面的对应语言地址。以前选过繁体中文或英文的读者打开不带前缀的地址时，会看到一次切换提示，不会被自动跳转。前缀只用小写，/zh-Hant/… 返回 404。发布标题、发布说明和字幕组名称保持原文。API、RSS 和站点地图地址不变。说明见「开始使用」。"
+  },
+  "语言版本互指与三语言站点地图": {
+    "type": "Improvement",
+    "description": "可收录页面在 head 中列出三种语言地址（hreflang：zh-Hans、zh-Hant、en，x-default 指向简体地址），每种语言地址的 canonical 指向自身；noindex 页面、登录页和登录后才能访问的页面不输出。站点地图把每个页面按三种语言各列一次，并附带 xhtml:link 语言互指，资源分片每个文件最多 16,666 个资源。robots.txt 同时禁止抓取后台、登录和注册路径的 /zh-hant/ 与 /en/ 形式。规则见「LLM 与 Agent 对接」。"
+  },
+  "删除覆盖三种语言地址": {
+    "type": "Improvement",
+    "description": "资源删除后，详情页的三种语言地址和种子下载地址都返回 404，删除回执变为 completed 前会逐一确认。IndexNow 会收到这三个详情页地址的删除通知。"
+  },
+  "IndexNow 通知": {
+    "type": "Feature",
+    "description": "新公开或内容有变更的资源详情页（不带前缀的简体地址）按 5 分钟一批提交到 IndexNow；删除的资源在确认 404 后提交三种语言地址。IndexNow 返回 200 或 202 只表示已接收，不代表已收录；Google 不参与 IndexNow。密钥文件位于 /<key>.txt。"
+  },
   "公开页面开放收录": {
     "type": "Improvement",
     "description": "资源详情页（/release/<id>、/other-release/<id>）、/magnets（含分类页和翻页后的页面）以及有结果的搜索结果页（/search?q=…）开放搜索引擎收录，各自使用自己的 canonical 地址。没有关键词或没有结果的搜索、带 q 关键词的 /magnets 为 noindex, follow。页面仍不含下载地址，磁力链接在点击时获取。robots.txt 不再禁止抓取 /magnets 与 /search；种子下载 /api/torrent/、/api/other-torrent/ 允许抓取，但始终不收录。规则见「LLM 与 Agent 对接」。"

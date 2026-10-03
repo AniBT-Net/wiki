@@ -1,6 +1,6 @@
 ---
 title: LLM & Agent Integration
-description: Plain-text Wiki endpoints, llms.txt, the OpenAPI contract, and the main site's crawling, indexing, and sitemap rules.
+description: Plain-text Wiki endpoints, llms.txt, the OpenAPI contract, and the main site's crawling, indexing, language version, sitemap, and IndexNow rules.
 ---
 
 The Wiki exposes plain-text endpoints. Models and agents can fetch Markdown directly instead of parsing HTML.
@@ -54,9 +54,11 @@ JSON APIs, RSS feeds, and static files keep their own formats.
 
 ## Crawling and indexing the main site
 
-Search engines and other crawlers find AniBT's public pages through `robots.txt` and the sitemaps. Every indexable page declares its own canonical URL. Page content never includes magnet links, torrent download URLs, or infohashes; download addresses are fetched only when you click a button.
+Search engines and other crawlers find AniBT's public pages through `robots.txt` and the sitemaps. Every indexable page has three language URLs: Simplified Chinese without a prefix, Traditional Chinese under `/zh-hant/…`, and English under `/en/…`. Each language URL declares itself as canonical instead of pointing back to the Simplified URL. Page content never includes magnet links, torrent download URLs, or infohashes; download addresses are fetched only when you click a button.
 
 ### Indexable pages
+
+The table lists the Simplified URLs without a prefix; the `/zh-hant/…` and `/en/…` forms follow the same rules.
 
 <TypeTable
   type={{
@@ -89,9 +91,23 @@ Search engines and other crawlers find AniBT's public pages through `robots.txt`
 
 On `/magnets` and the group Releases tab, previous and next are plain links that carry the position in the URL's `cursor` parameter, so every page can be reached without running JavaScript. An expired page link returns to the first page for the same filters.
 
+### Language versions
+
+An indexable page lists its three language URLs in the HTML `<head>` (hreflang `zh-Hans`, `zh-Hant`, and `en`), itself included, plus `x-default` pointing to the Simplified URL. The three URLs share the same path and query parameters.
+
+```html title="Head of /en/anime/617123 (excerpt)"
+<link rel="canonical" href="https://anibt.net/en/anime/617123"/>
+<link rel="alternate" hrefLang="zh-Hans" href="https://anibt.net/anime/617123"/>
+<link rel="alternate" hrefLang="zh-Hant" href="https://anibt.net/zh-hant/anime/617123"/>
+<link rel="alternate" hrefLang="en" href="https://anibt.net/en/anime/617123"/>
+<link rel="alternate" hrefLang="x-default" href="https://anibt.net/anime/617123"/>
+```
+
+Noindex pages (searches without a keyword or without results, `/magnets` with a q keyword), error pages, the sign-in pages, and pages that require signing in list no language alternates.
+
 ### robots.txt
 
-`https://anibt.net/robots.txt` does not block `/magnets` or `/search`. Under `/api/`, only `/api/torrent/` and `/api/other-torrent/` may be crawled; other API paths, `/rss/`, and the sign-in and admin paths are blocked.
+`https://anibt.net/robots.txt` does not block `/magnets` or `/search`, nor their `/zh-hant/` and `/en/` forms. Under `/api/`, only `/api/torrent/` and `/api/other-torrent/` may be crawled; other API paths, `/rss/`, and the sign-in and admin paths are blocked. The `/zh-hant/` and `/en/` forms of the admin, sign-in, and sign-up paths (for example `/en/admin/`, `/zh-hant/auth/`, `/en/sign-in`) are blocked too; APIs and RSS have no language prefix.
 
 ### Sitemaps
 
@@ -117,7 +133,7 @@ On `/magnets` and the group Releases tab, previous and next are plain links that
     },
     '/sitemap-releases/<YYYY-MM>.xml': {
       type: 'urlset',
-      description: 'Anime release detail pages, one set per month the release was created in Beijing time (UTC+8), newest month first. A month that does not fit in one file continues in <YYYY-MM>-2.xml, <YYYY-MM>-3.xml, and so on.',
+      description: 'Anime release detail pages, one set per month the release was created in Beijing time (UTC+8), newest month first. One file holds at most 16,666 releases (three URLs each, one per language). A month that does not fit in one file continues in <YYYY-MM>-2.xml, <YYYY-MM>-3.xml, and so on.',
     },
     '/sitemap-other-releases/<YYYY-MM>.xml': {
       type: 'urlset',
@@ -127,3 +143,48 @@ On `/magnets` and the group Releases tab, previous and next are plain links that
 />
 
 On release URLs, `lastmod` is when the release's content last changed; it is omitted when that time is unknown. A month the index does not list returns `404`. The old `/sitemap-anime.xml` still works, so a webmaster tool that already has it needs no change, but the root index no longer refers to it.
+
+Every URL set lists each page three times: one `<url>` each for the URL without a prefix, the `/zh-hant/` form, and the `/en/` form. Each carries the same `xhtml:link` language alternates as the page head, and the three share one `lastmod`.
+
+```xml title="One entry in /sitemap-releases/2026-10.xml (excerpt)"
+<url>
+  <loc>https://anibt.net/release/rel_-OH17wI8Sghm</loc>
+  <lastmod>2026-09-30T16:04:00.592Z</lastmod>
+  <xhtml:link rel="alternate" hreflang="zh-Hans" href="https://anibt.net/release/rel_-OH17wI8Sghm"/>
+  <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://anibt.net/zh-hant/release/rel_-OH17wI8Sghm"/>
+  <xhtml:link rel="alternate" hreflang="en" href="https://anibt.net/en/release/rel_-OH17wI8Sghm"/>
+  <xhtml:link rel="alternate" hreflang="x-default" href="https://anibt.net/release/rel_-OH17wI8Sghm"/>
+</url>
+<!-- Followed by /zh-hant/release/rel_-OH17wI8Sghm and /en/release/rel_-OH17wI8Sghm with the same alternates -->
+```
+
+### Deleted releases
+
+After a release is deleted, its detail page in all three languages and its torrent download return `404`:
+
+- Anime releases: `/release/<id>`, `/zh-hant/release/<id>`, `/en/release/<id>`, `/api/torrent/<id>.torrent`
+- Other releases: `/other-release/<id>`, `/zh-hant/other-release/<id>`, `/en/other-release/<id>`, `/api/other-torrent/<id>.torrent`
+
+When the deletion receipt is `completed` (see [Deletion status](/en/docs/open-api/releases-deletion)), all four URLs have been confirmed to return `404`. The sitemaps then stop listing the release, and IndexNow is notified of the deletion of the three detail page URLs.
+
+### IndexNow
+
+AniBT tells search engines that take part in [IndexNow](https://www.indexnow.org/) about changes to release detail pages, submitting to `https://api.indexnow.org/indexnow`.
+
+<TypeTable
+  type={{
+    'Newly public or changed': {
+      type: 'One URL',
+      description: 'The Simplified detail URL without a prefix: /release/<id> or /other-release/<id>.',
+    },
+    'Deleted': {
+      type: 'Three URLs',
+      description: 'The detail page in all three languages, submitted once each has been confirmed to return 404.',
+    },
+  }}
+/>
+
+- Changes are collected in 5-minute windows and each window is submitted as one batch; a URL repeated within a window is submitted once. Before submitting, AniBT checks again that the release is still public or has been deleted.
+- Only release detail pages are submitted. Anime pages, group pages, and list pages are found through the sitemaps and ordinary crawling; searches, URLs with query parameters, download addresses, APIs, release previews, and pages that require signing in are never submitted.
+- The key file is served at `https://anibt.net/<key>.txt` as `text/plain`.
+- A `200` or `202` from IndexNow only means the submission was received, not that any page has been indexed. Google does not take part in IndexNow.
