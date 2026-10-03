@@ -1,6 +1,6 @@
 ---
 title: Tracker Rules & Announce
-description: Learn about the official AniBT Tracker announce address, torrent creation setup, whitelist mechanism, and torrent file downloads.
+description: Learn about the official AniBT Tracker announce address, torrent creation setup, whitelist mechanism, torrent file downloads, and the tracker stats endpoint.
 ---
 
 AniBT operates a high-speed BitTorrent tracker specifically dedicated to anime releases published on our platform.
@@ -61,3 +61,115 @@ AniBT provides direct binary `.torrent` download endpoints for third-party downl
     },
   }}
 />
+
+## Tracker Stats Endpoint
+
+Look up seeders, leechers, and completed downloads for a batch of releases by release ID. No login is required, and cross-origin requests are allowed. Neither the request nor the response contains an infohash.
+
+<Callout title="POST https://anibt.net/api/tracker-stats/batch">
+  Send a JSON body that lists the releases in `releases`.
+</Callout>
+
+```json title="Request example"
+{
+  "releases": [
+    { "kind": "release", "releaseId": "rel_dE7jiWrXPwPw" },
+    { "kind": "other-release", "releaseId": "orel_wiki_audit_missing" }
+  ]
+}
+```
+
+<TypeTable
+  type={{
+    'releases': {
+      type: 'array',
+      description: 'Releases to look up, at most 200 items. Duplicates count once. By default only the first 60 distinct releases are answered; the rest are absent from the response.',
+    },
+    'releases[].kind': {
+      type: '"release" | "other-release"',
+      description: 'release for anime releases (IDs starting with rel_), other-release for other releases (IDs starting with orel_).',
+    },
+    'releases[].releaseId': {
+      type: 'string',
+      description: 'Release ID, 1–180 characters.',
+    },
+  }}
+/>
+
+`statsByRelease` groups the results by `kind` and release ID. Both the `release` and `other-release` groups are always present. `now` is the server time in Unix milliseconds.
+
+```json title="Response example"
+{
+  "statsByRelease": {
+    "release": {
+      "rel_dE7jiWrXPwPw": {
+        "state": "fresh",
+        "seeders": 53,
+        "leechers": 44,
+        "completed": 64,
+        "updatedAt": 1791023419906,
+        "refreshQueued": false
+      }
+    },
+    "other-release": {
+      "orel_wiki_audit_missing": { "state": "unavailable" }
+    }
+  },
+  "now": 1791023794205
+}
+```
+
+<TypeTable
+  type={{
+    'state': {
+      type: '"fresh" | "stale" | "missing" | "unavailable"',
+      description: 'fresh: measured recently. stale: measured longer ago; the counts are still real, dated by updatedAt. missing: the release is public but has no measurement yet; no counts are included, and it does not mean zero. unavailable: the release does not exist, was deleted, is not public, or has no torrent data; only state is included.',
+    },
+    'seeders / leechers / completed': {
+      type: 'number',
+      required: false,
+      description: 'Seeders, leechers, and completed downloads. Only in fresh and stale.',
+    },
+    'updatedAt': {
+      type: 'number',
+      required: false,
+      description: 'When the tracker last answered, in Unix milliseconds. Only in fresh and stale.',
+    },
+    'refreshQueued': {
+      type: 'boolean',
+      required: false,
+      description: 'true means this request scheduled a refresh; query again shortly. Not present in unavailable.',
+    },
+  }}
+/>
+
+Errors are JSON; see [Conventions and authentication](/en/docs/open-api/reference) for the format.
+
+<TypeTable
+  type={{
+    'INVALID_JSON': {
+      type: 'HTTP 400',
+      description: 'The request body is not valid JSON.',
+    },
+    'VALIDATION_ERROR': {
+      type: 'HTTP 422',
+      description: 'A field is invalid, or the body contains both releases and infoHashHexes.',
+    },
+    'RATE_LIMIT_EXCEEDED': {
+      type: 'HTTP 429',
+      description: 'Default limit is 180 requests per 60 seconds per IP. Wait for Retry-After (seconds), then retry.',
+    },
+    'SERVICE_UNAVAILABLE': {
+      type: 'HTTP 503',
+      description: 'Release visibility cannot be confirmed right now, so the whole request fails. Wait for Retry-After (seconds), then retry.',
+    },
+    'UPSTREAM_ERROR': {
+      type: 'HTTP 502',
+      description: 'Stats cannot be read right now. Retry later.',
+    },
+  }}
+/>
+
+<Callout type="warn">
+  The old request body `{ "infoHashHexes": [...] }` is deprecated. During the transition it is still answered in the old format, with a `Deprecation: @1790985600` header (2026-10-03 00:00 UTC). A later release will remove it; switch to `releases`.
+</Callout>

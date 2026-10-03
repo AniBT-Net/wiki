@@ -12,6 +12,14 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
 ## October 3, 2026
 
 <TypeTable type={{
+  "Download addresses fetched on click": {
+    "type": "Improvement",
+    "description": "Release detail pages, /magnets, anime pages, and the release panel that opens from an anime poster fetch download addresses only when you click a button. Copy magnet link and Open magnet link fetch the magnet link on click and show “Download URL is unavailable” if that fails; if the browser refuses the clipboard write, click Copy again. Download torrent downloads directly; on anime pages and in the release panel the torrent button no longer opens the release detail page. The file list on a release detail page now loads when you click View file list, and the file count appears after it loads."
+  },
+  "Tracker stats looked up by release ID": {
+    "type": "Improvement",
+    "description": "POST /api/tracker-stats/batch now takes releases (kind and releaseId) and groups the response by release ID without any infohash. The old infoHashHexes body is deprecated: it still works during a transition, responses carry a Deprecation header, and a later release will remove it. Field details are on the Tracker Rules & Announce page."
+  },
   "Consistent administrator access": {
     "type": "Fix",
     "description": "Administrator access now follows the site role. Ineffective fine-grained permission settings have been removed. Site administrators can view a group workbench without joining it; management actions still check authorization."

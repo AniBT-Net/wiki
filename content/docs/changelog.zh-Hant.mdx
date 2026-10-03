@@ -12,6 +12,14 @@ description: 記錄 AniBT 平台面向使用者與字幕組的功能變更、最
 ## 2026 年 10 月 3 日
 
 <TypeTable type={{
+  "下載地址點選時取得": {
+    "type": "Improvement",
+    "description": "資源詳情頁、/magnets、番劇頁面和番劇海報展開面板在點選按鈕時才取得下載地址。「複製磁力連結」「開啟磁力連結」點選後取得磁力連結，失敗時提示「下載地址不可用」；瀏覽器拒絕寫入剪貼簿時，可點選「再次複製」。「下載種子」直接下載，番劇頁面和展開面板中的種子按鈕不再跳轉到資源詳情頁。資源詳情頁的檔案列表改為點選「查看檔案列表」後載入，載入後顯示檔案數。"
+  },
+  "做種統計介面依資源 ID 查詢": {
+    "type": "Improvement",
+    "description": "POST /api/tracker-stats/batch 改用 releases（kind 與 releaseId）查詢，回應依資源 ID 分組，不含 infohash。舊 infoHashHexes 請求本文已棄用：過渡期內仍可使用，回應帶 Deprecation 標頭，後續版本將移除。欄位說明見「Tracker 規範與位址」。"
+  },
   "管理員權限統一": {
     "type": "Fix",
     "description": "管理員權限統一由站點角色決定，移除未生效的細粒度權限設定。站點管理員可以檢視尚未加入字幕組的工作台；檢視不會將管理員加入該組，管理操作仍會檢查權限。"

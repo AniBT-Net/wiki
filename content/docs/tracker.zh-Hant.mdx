@@ -1,6 +1,6 @@
 ---
 title: Tracker 規範與位址
-description: 瞭解 AniBT 官方 Tracker announce 位址、製種設定、白名單機制與種子下載方式。
+description: 瞭解 AniBT 官方 Tracker announce 位址、製種設定、白名單機制、種子下載方式與做種統計介面。
 ---
 
 AniBT 運行著專為本站釋出的動漫資源提供高速對等連線服務的自建 BitTorrent Tracker。
@@ -61,3 +61,115 @@ AniBT 為全站公開資源提供直接的 `.torrent` 二進位檔案下載路�
     },
   }}
 />
+
+## 做種統計介面
+
+依資源 ID 批次查詢做種數、下載數和完成數。無需登入，允許跨網域呼叫。請求和回應都不包含 infohash。
+
+<Callout title="POST https://anibt.net/api/tracker-stats/batch">
+  請求本文為 JSON，在 `releases` 中列出要查詢的資源。
+</Callout>
+
+```json title="請求範例"
+{
+  "releases": [
+    { "kind": "release", "releaseId": "rel_dE7jiWrXPwPw" },
+    { "kind": "other-release", "releaseId": "orel_wiki_audit_missing" }
+  ]
+}
+```
+
+<TypeTable
+  type={{
+    'releases': {
+      type: 'array',
+      description: '要查詢的資源，最多 200 項。重複項只計一次；預設只回傳前 60 個不同資源，其餘資源不會出現在回應中。',
+    },
+    'releases[].kind': {
+      type: '"release" | "other-release"',
+      description: '番劇資源（ID 以 rel_ 開頭）填 release，其他類資源（ID 以 orel_ 開頭）填 other-release。',
+    },
+    'releases[].releaseId': {
+      type: 'string',
+      description: '資源 ID，1–180 個字元。',
+    },
+  }}
+/>
+
+回應的 `statsByRelease` 依 `kind` 和資源 ID 分組，`release` 與 `other-release` 兩組始終存在。`now` 為伺服器時間，單位為 Unix 毫秒。
+
+```json title="回應範例"
+{
+  "statsByRelease": {
+    "release": {
+      "rel_dE7jiWrXPwPw": {
+        "state": "fresh",
+        "seeders": 53,
+        "leechers": 44,
+        "completed": 64,
+        "updatedAt": 1791023419906,
+        "refreshQueued": false
+      }
+    },
+    "other-release": {
+      "orel_wiki_audit_missing": { "state": "unavailable" }
+    }
+  },
+  "now": 1791023794205
+}
+```
+
+<TypeTable
+  type={{
+    'state': {
+      type: '"fresh" | "stale" | "missing" | "unavailable"',
+      description: 'fresh：近期測得。stale：測得時間較早，數字仍有效，以 updatedAt 為準。missing：資源公開，但還沒有測量結果；不含計數，不表示 0。unavailable：資源不存在、已刪除、未公開或沒有種子資訊；只含 state。',
+    },
+    'seeders / leechers / completed': {
+      type: 'number',
+      required: false,
+      description: '做種數、下載數和完成數。僅 fresh 與 stale 包含。',
+    },
+    'updatedAt': {
+      type: 'number',
+      required: false,
+      description: 'Tracker 最後一次回應的時間，單位為 Unix 毫秒。僅 fresh 與 stale 包含。',
+    },
+    'refreshQueued': {
+      type: 'boolean',
+      required: false,
+      description: 'true 表示本次請求已安排重新整理，稍後可再次查詢。unavailable 不含此欄位。',
+    },
+  }}
+/>
+
+失敗時回傳 JSON 錯誤，格式見 [介面約定與鑑權](/zh-Hant/docs/open-api/reference)。
+
+<TypeTable
+  type={{
+    'INVALID_JSON': {
+      type: 'HTTP 400',
+      description: '請求本文不是有效的 JSON。',
+    },
+    'VALIDATION_ERROR': {
+      type: 'HTTP 422',
+      description: '欄位不符合要求，或同時提供了 releases 與 infoHashHexes。',
+    },
+    'RATE_LIMIT_EXCEEDED': {
+      type: 'HTTP 429',
+      description: '預設每個 IP 每 60 秒 180 次。依 Retry-After（秒）等待後重試。',
+    },
+    'SERVICE_UNAVAILABLE': {
+      type: 'HTTP 503',
+      description: '暫時無法確認資源是否公開，整個請求失敗。依 Retry-After（秒）等待後重試。',
+    },
+    'UPSTREAM_ERROR': {
+      type: 'HTTP 502',
+      description: '統計暫時無法讀取，稍後重試。',
+    },
+  }}
+/>
+
+<Callout type="warn">
+  舊請求本文 `{ "infoHashHexes": [...] }` 已棄用。過渡期內仍以舊格式回應，回應帶 `Deprecation: @1790985600` 標頭（2026-10-03 00:00 UTC）。後續版本將移除舊請求本文，請改用 `releases`。
+</Callout>

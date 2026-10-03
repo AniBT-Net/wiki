@@ -1,6 +1,6 @@
 ---
 title: Tracker 规范与地址
-description: 了解 AniBT 官方 Tracker announce 地址、制种配置、白名单机制与种子下载方式。
+description: 了解 AniBT 官方 Tracker announce 地址、制种配置、白名单机制、种子下载方式与做种统计接口。
 ---
 
 AniBT 运行着专为本站发布的动漫资源提供高速对等连接服务的自建 BitTorrent Tracker。
@@ -61,3 +61,115 @@ AniBT 为全站公开资源提供直接的 `.torrent` 二进制文件下载路�
     },
   }}
 />
+
+## 做种统计接口
+
+按资源 ID 批量查询做种数、下载数和完成数。无需登录，允许跨域调用。请求和响应都不包含 infohash。
+
+<Callout title="POST https://anibt.net/api/tracker-stats/batch">
+  请求体为 JSON，在 `releases` 中列出要查询的资源。
+</Callout>
+
+```json title="请求示例"
+{
+  "releases": [
+    { "kind": "release", "releaseId": "rel_dE7jiWrXPwPw" },
+    { "kind": "other-release", "releaseId": "orel_wiki_audit_missing" }
+  ]
+}
+```
+
+<TypeTable
+  type={{
+    'releases': {
+      type: 'array',
+      description: '要查询的资源，最多 200 项。重复项只计一次；默认只返回前 60 个不同资源，其余资源不出现在响应中。',
+    },
+    'releases[].kind': {
+      type: '"release" | "other-release"',
+      description: '番剧资源（ID 以 rel_ 开头）填 release，其他类资源（ID 以 orel_ 开头）填 other-release。',
+    },
+    'releases[].releaseId': {
+      type: 'string',
+      description: '资源 ID，1–180 个字符。',
+    },
+  }}
+/>
+
+响应的 `statsByRelease` 按 `kind` 和资源 ID 分组，`release` 与 `other-release` 两组始终存在。`now` 为服务器时间，单位为 Unix 毫秒。
+
+```json title="响应示例"
+{
+  "statsByRelease": {
+    "release": {
+      "rel_dE7jiWrXPwPw": {
+        "state": "fresh",
+        "seeders": 53,
+        "leechers": 44,
+        "completed": 64,
+        "updatedAt": 1791023419906,
+        "refreshQueued": false
+      }
+    },
+    "other-release": {
+      "orel_wiki_audit_missing": { "state": "unavailable" }
+    }
+  },
+  "now": 1791023794205
+}
+```
+
+<TypeTable
+  type={{
+    'state': {
+      type: '"fresh" | "stale" | "missing" | "unavailable"',
+      description: 'fresh：近期测得。stale：测得时间较早，数字仍有效，以 updatedAt 为准。missing：资源公开，但还没有测量结果；不含计数，不表示 0。unavailable：资源不存在、已删除、未公开或没有种子信息；只含 state。',
+    },
+    'seeders / leechers / completed': {
+      type: 'number',
+      required: false,
+      description: '做种数、下载数和完成数。仅 fresh 与 stale 包含。',
+    },
+    'updatedAt': {
+      type: 'number',
+      required: false,
+      description: 'Tracker 最后一次应答的时间，单位为 Unix 毫秒。仅 fresh 与 stale 包含。',
+    },
+    'refreshQueued': {
+      type: 'boolean',
+      required: false,
+      description: 'true 表示本次请求已安排刷新，稍后可再次查询。unavailable 不含该字段。',
+    },
+  }}
+/>
+
+失败时返回 JSON 错误，格式见 [接口约定与鉴权](/docs/open-api/reference)。
+
+<TypeTable
+  type={{
+    'INVALID_JSON': {
+      type: 'HTTP 400',
+      description: '请求体不是有效的 JSON。',
+    },
+    'VALIDATION_ERROR': {
+      type: 'HTTP 422',
+      description: '字段不符合要求，或同时提供了 releases 与 infoHashHexes。',
+    },
+    'RATE_LIMIT_EXCEEDED': {
+      type: 'HTTP 429',
+      description: '默认每个 IP 每 60 秒 180 次。按 Retry-After（秒）等待后重试。',
+    },
+    'SERVICE_UNAVAILABLE': {
+      type: 'HTTP 503',
+      description: '暂时无法确认资源是否公开，整个请求失败。按 Retry-After（秒）等待后重试。',
+    },
+    'UPSTREAM_ERROR': {
+      type: 'HTTP 502',
+      description: '统计暂时无法读取，稍后重试。',
+    },
+  }}
+/>
+
+<Callout type="warn">
+  旧请求体 `{ "infoHashHexes": [...] }` 已弃用。过渡期内仍按旧格式应答，响应带 `Deprecation: @1790985600` 头（2026-10-03 00:00 UTC）。后续版本将移除旧请求体，请改用 `releases`。
+</Callout>
