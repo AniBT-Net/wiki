@@ -44,11 +44,23 @@ description: "按响应类型、状态码和字段定位问题。"
   },
   "发布返回 500 UPLOAD_FAILED": {
     "type": "提交失败",
-    "description": "不能假定未写入，也不要立即批量重试。应用限流也可能使用这个响应；核查现有资源并保留请求 ID。"
+    "description": "不能假定未写入，也不要立即批量重试。核查现有资源并保留 error.requestId；重试同一次普通发布时复用原 Idempotency-Key。"
   },
   "站内删除后外站仍存在": {
     "type": "操作范围",
     "description": "本站删除不等于撤回已同步或被第三方转存的资源。"
+  },
+  "发布返回 503 SERVICE_UNAVAILABLE": {
+    "type": "暂不可用",
+    "description": "响应带 Retry-After 时按秒数等待，再用原 Idempotency-Key 重试相同请求。没有该头时先核查发布结果并保留 error.requestId；503 不证明未写入。"
+  },
+  "删除后重试仍返回旧 releaseId": {
+    "type": "原命令回放",
+    "description": "同一个 Idempotency-Key 的成功回执继续有效，即使资源已删除也不会恢复资源。确实需要重新发布时使用新 key。"
+  },
+  "删除完成但相同种子仍能下载": {
+    "type": "共享资源",
+    "description": "其他发布仍引用同一种子时，其他发布的下载继续可用。已删除发布自己的详情页和下载地址不再可用。"
   }
 }} />
 

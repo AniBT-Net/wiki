@@ -48,3 +48,11 @@ description: "依端點辨識鑑權、回應包裝和錯誤正文。"
 應用程式 JSON 錯誤包含 ok: false 和 error.code、error.message、error.requestId；reason、retryable、retryAfterMs、details 為選填欄位。缺少 retryable 不表示可以重試。公開 RSS 錯誤通常是純文字；Torznab 協定錯誤是 XML，HTTP 仍可能為 200；邊緣攔截可能回傳 HTML。先檢查 HTTP 狀態與 Content-Type，再解析正文。
 
 釋出前用 GET 同一路徑核驗 groupSlug 與 scopes。釋出回執只保證 releaseId、revision，可能包含 torrentObjectId，不包含字幕組身份或 fileSize。資源 ID 使用端點要求的 rel_* 或 orel_*；字幕組通常用 slug，但其他類 RSS 的 groupId 使用組織 ID。
+
+## 釋出重試與刪除後重新釋出
+
+一般釋出的同一次請求建議使用 `Idempotency-Key`。同一 API Key、同一釋出端點重試相同內容時，保留原值；該值去除首尾空白後須為 1–256 字元。未提供、空值或超過上限時會視為新命令，不能依賴命令回放。跨站瀏覽器預檢目前不允許此請求標頭；需要此保證的用戶端應從伺服器呼叫。
+
+成功命令的重試回傳原 `releaseId` 與 `revision`，不會重新釋出。即使原資源已刪除，同一個命令仍回傳舊回執，不會恢復資源；刪除後確實要使用同一種子重新釋出時，應使用新的 `Idempotency-Key`。同 key 改變請求可能回傳 `409`。
+
+收到 `429 RATE_LIMIT_EXCEEDED` 時，依 `Retry-After` 的秒數等待。釋出暫時忙碌、限流服務無法使用或上傳結果待確認時，可回傳 `503 SERVICE_UNAVAILABLE`。`503` 帶 `Retry-After` 時依它等待，再用原 key 重試同一請求；沒有此標頭時先核查現有釋出並保留 `error.requestId`。失敗或連線中斷不代表未寫入，不要立即批次重試，也不要為一次不確定的結果反覆更換新 key。

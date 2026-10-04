@@ -148,11 +148,11 @@ const localeTitles: Record<
   'releases-publish': {
     en: {
       title: 'Publish anime',
-      description: 'POST /api/releases/publish — publish a torrent with an API Key.',
+      description: 'POST /api/releases/publish — publish with an API Key. See Conventions and authentication for Idempotency-Key replay and 503 retry rules.',
     },
     'zh-Hant': {
       title: '釋出番劇資源',
-      description: 'POST /api/releases/publish —— 字幕組用 API Key 釋出種子。',
+      description: 'POST /api/releases/publish —— 字幕組用 API Key 釋出種子。Idempotency-Key 回放與 503 重試規則見「介面約定與鑑權」。',
     },
   },
   'other-releases-publish-whoami': {
@@ -168,11 +168,11 @@ const localeTitles: Record<
   'other-releases-publish': {
     en: {
       title: 'Publish other',
-      description: 'POST /api/other-releases/publish — non-anime categories; torrent required.',
+      description: 'POST /api/other-releases/publish — non-anime categories; torrent required. See Conventions and authentication for Idempotency-Key replay and 503 retry rules.',
     },
     'zh-Hant': {
       title: '釋出其他類資源',
-      description: 'POST /api/other-releases/publish —— 不綁定 bgmId。category 與 title 必填。',
+      description: 'POST /api/other-releases/publish —— category 與 title 必填。Idempotency-Key 回放與 503 重試規則見「介面約定與鑑權」。',
     },
   },
   'releases-delete': {

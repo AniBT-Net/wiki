@@ -29,6 +29,8 @@ Whether you are a fansub team distributing releases, an anime fan looking for hi
       <Step>
         ### Publish Releases
         Upload torrents directly via the web dashboard, or integrate your encoding pipelines using the [Release API](/en/docs/open-api/releases-publish). Supports pre-publish preview and dedicated image hosting.
+
+        Normal edits change metadata for anime and other releases; they cannot add, replace or remove the original torrent. If a torrent exists, its magnet link must keep the same v1 `infohash`. You may change tracker, display-name and other parameters for that same hash. A magnet-only release can still change its magnet link, but normal editing cannot attach a torrent.
       </Step>
     </Steps>
   </Tab>

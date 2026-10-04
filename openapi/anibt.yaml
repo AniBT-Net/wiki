@@ -1686,10 +1686,23 @@ paths:
 
         200 表示本站发布已写入，不保证外站同步或下游读取已经完成。
 
-        发布请求达到限额时返回 429 RATE_LIMIT_EXCEEDED；限流服务暂不可用时返回 503 SERVICE_UNAVAILABLE。两者均带 Retry-After（秒），按该时间等待后重试，请求不会进入发布流程。
+        发布请求达到限额时返回 429 RATE_LIMIT_EXCEEDED。发布暂时繁忙、限流服务不可用或上传结果仍待确认时，可返回 503 SERVICE_UNAVAILABLE；限流拒绝发生在发布前，其他失败不能据此推断未写入。响应带 Retry-After 时按其秒数等待；没有该头时先核查现有发布并保留 error.requestId，不要立即批量重试。
+
+        普通发布可发送 Idempotency-Key（去除首尾空白后为 1–256 字符）。同一 API Key、同一发布端点的同一请求重试复用原值；已成功的命令返回原回执，不重复发布。即使原资源已删除，旧命令仍返回旧回执，不恢复资源。删除后有意重新发布时使用新的 Idempotency-Key；同 key 改变请求可能返回 409。
+
+        Idempotency-Key 未提供、为空或超过 256 字符时，本次请求按新命令处理，不能依赖命令回放。跨站浏览器预检目前不允许此请求头；需要该重试保证的客户端应从服务端调用。
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: 同一 API Key 和端点的同一普通发布请求重试复用此值。已提交或已删除的旧命令返回原回执；删除后重新发布使用新值。不提供、空值或超过 256 字符时按新命令处理。跨站浏览器预检目前不允许此头。
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 256
       requestBody:
         required: true
         content:
@@ -1771,7 +1784,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
         "503":
-          description: 服务暂不可用；限流服务不可用时返回 SERVICE_UNAVAILABLE，并带 Retry-After（秒）
+          description: 发布暂不可用，返回 SERVICE_UNAVAILABLE。带 Retry-After 时按秒数等待；该头可能省略。不能仅凭 503 推断发布未写入，重试同一请求时复用原 Idempotency-Key。
           headers:
             Retry-After:
               schema:
@@ -1836,10 +1849,23 @@ paths:
 
         200 表示本站发布已写入，不保证外站同步或下游读取已经完成。
 
-        发布请求达到限额时返回 429 RATE_LIMIT_EXCEEDED；限流服务暂不可用时返回 503 SERVICE_UNAVAILABLE。两者均带 Retry-After（秒），按该时间等待后重试，请求不会进入发布流程。
+        发布请求达到限额时返回 429 RATE_LIMIT_EXCEEDED。发布暂时繁忙、限流服务不可用或上传结果仍待确认时，可返回 503 SERVICE_UNAVAILABLE；限流拒绝发生在发布前，其他失败不能据此推断未写入。响应带 Retry-After 时按其秒数等待；没有该头时先核查现有发布并保留 error.requestId，不要立即批量重试。
+
+        普通发布可发送 Idempotency-Key（去除首尾空白后为 1–256 字符）。同一 API Key、同一发布端点的同一请求重试复用原值；已成功的命令返回原回执，不重复发布。即使原资源已删除，旧命令仍返回旧回执，不恢复资源。删除后有意重新发布时使用新的 Idempotency-Key；同 key 改变请求可能返回 409。
+
+        Idempotency-Key 未提供、为空或超过 256 字符时，本次请求按新命令处理，不能依赖命令回放。跨站浏览器预检目前不允许此请求头；需要该重试保证的客户端应从服务端调用。
       security:
         - bearerAuth: []
         - apiKeyAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: 同一 API Key 和端点的同一普通发布请求重试复用此值。已提交或已删除的旧命令返回原回执；删除后重新发布使用新值。不提供、空值或超过 256 字符时按新命令处理。跨站浏览器预检目前不允许此头。
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 256
       requestBody:
         required: true
         content:
@@ -1908,7 +1934,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
         "503":
-          description: 服务暂不可用；限流服务不可用时返回 SERVICE_UNAVAILABLE，并带 Retry-After（秒）
+          description: 发布暂不可用，返回 SERVICE_UNAVAILABLE。带 Retry-After 时按秒数等待；该头可能省略。不能仅凭 503 推断发布未写入，重试同一请求时复用原 Idempotency-Key。
           headers:
             Retry-After:
               schema:
@@ -1929,7 +1955,7 @@ paths:
 
         最多等待约 2 秒：completed 返回 200，pending 返回 202；清理失败返回 500 RELEASE_DELETION_FAILED，回执在 error.details。删除受理后重复 DELETE 可能返回 404；请通过 GET /api/releases/{releaseId}/deletion 查询已有回执，404 不作为完成证明。
 
-        202 只表示已受理；只有 completed 才表示本站删除完成。不会撤回已同步到外站的资源。
+        202 只表示已受理；只有 completed 才表示本站删除完成。其他发布仍在使用的同一种子会保留，已删除发布自己的详情页和下载地址不再可用。不会撤回已同步到外站的资源。
 
         默认 30 次 / 60 秒 / API Key；pending 按 Retry-After 轮询状态。
 

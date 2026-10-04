@@ -44,11 +44,23 @@ Check the URL, HTTP method, Content-Type, and response body first.
   },
   "500 UPLOAD_FAILED on publish": {
     "type": "Failed submission",
-    "description": "Do not assume no write occurred or immediately retry a batch. Application throttling may use this response. Check existing releases and keep the request ID."
+    "description": "Do not assume no write occurred or immediately retry a batch. Check existing releases and keep error.requestId. Reuse the original Idempotency-Key when retrying the same normal publish request."
   },
   "External copy remains after deletion": {
     "type": "Scope",
     "description": "Deleting from AniBT does not withdraw copies already published or copied to external sites."
+  },
+  "Retry after deletion returns the old releaseId": {
+    "type": "Original command replay",
+    "description": "A successful receipt remains valid for the same Idempotency-Key even after deletion; replay does not restore the release. Use a new key when you intentionally want to publish again."
+  },
+  "503 SERVICE_UNAVAILABLE on publish": {
+    "type": "Temporarily unavailable",
+    "description": "If Retry-After is present, wait that many seconds and retry the same request with its original Idempotency-Key. Without that header, check existing releases and keep error.requestId first. A 503 does not prove that nothing was written."
+  },
+  "The same torrent remains available after deletion": {
+    "type": "Shared resources",
+    "description": "If another release still uses the same torrent, its download remains available. The deleted release’s own detail page and download URL are no longer available."
   }
 }} />
 

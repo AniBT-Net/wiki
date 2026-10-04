@@ -48,3 +48,11 @@ Parse success responses per endpoint: catalog queries, /me, and sync status use 
 Application JSON errors contain `ok: false` and `error.code`, `error.message`, and `error.requestId`. `reason`, `retryable`, `retryAfterMs`, and `details` are optional. A missing retryable flag does not authorize retries. Public RSS errors are usually plain text. Torznab protocol errors are XML and may have HTTP 200. Edge blocks may be HTML. Check status and Content-Type before parsing.
 
 Before publishing, GET the same endpoint and check groupSlug and scopes. A publish receipt guarantees releaseId and revision, with an optional torrentObjectId; it does not include group identity or fileSize. Use rel_* or orel_* as required. Group filters usually take a slug; other-category RSS groupId takes an organization ID.
+
+## Publishing retries and republishing after deletion
+
+Use an `Idempotency-Key` for each normal publish request. Keep the same value when retrying the same content with the same API Key and publish endpoint. The value must contain 1–256 characters after trimming. A missing, empty or longer value starts a new command and provides no command replay guarantee. Cross-origin browser preflight currently does not allow this header; use a server-side client when you need this guarantee.
+
+Retrying a successful command returns its original `releaseId` and `revision` without publishing again. This remains true after that release has been deleted: the old receipt does not restore the release. To intentionally publish the same torrent again after deletion, use a new `Idempotency-Key`. Changing the request under the same key may return `409`.
+
+For `429 RATE_LIMIT_EXCEEDED`, wait for the number of seconds in `Retry-After`. A busy publishing service, unavailable rate limiting or an unconfirmed upload result can return `503 SERVICE_UNAVAILABLE`. When a `503` includes `Retry-After`, wait and retry the same request with its original key. Without that header, check existing releases and keep `error.requestId` first. A failure or lost connection does not prove that nothing was written. Avoid immediate batch retries or repeatedly switching keys for an uncertain result.

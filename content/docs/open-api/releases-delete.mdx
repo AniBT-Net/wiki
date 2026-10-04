@@ -18,7 +18,8 @@ _openapi:
           RELEASE_DELETION_FAILED，回执在 error.details。删除受理后重复 DELETE 可能返回 404；请通过
           GET /api/releases/{releaseId}/deletion 查询已有回执，404 不作为完成证明。
 
-          202 只表示已受理；只有 completed 才表示本站删除完成。不会撤回已同步到外站的资源。
+          202 只表示已受理；只有 completed
+          才表示本站删除完成。其他发布仍在使用的同一种子会保留，已删除发布自己的详情页和下载地址不再可用。不会撤回已同步到外站的资源。
 
           默认 30 次 / 60 秒 / API Key；pending 按 Retry-After 轮询状态。
 

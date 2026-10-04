@@ -19,6 +19,18 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
   "Republish a deleted torrent": {
     "type": "Fix",
     "description": "Fixed publishing the same torrent again after deleting a release. This works through both the website and the API. Torrents used by other releases remain available, and older deletion tasks cannot remove a republished torrent."
+  },
+  "Temporary publishing failures and retries": {
+    "type": "Fix",
+    "description": "Improved retries after temporary publishing contention or interrupted uploads. For API 503 SERVICE_UNAVAILABLE, wait as directed when Retry-After is present. Reuse the original Idempotency-Key for the same request. An old command still returns its original receipt after deletion; intentional republication needs a new key. Cleanup after a failed request cannot delete a successfully published torrent."
+  },
+  "Edits preserve torrent identity": {
+    "type": "Fix",
+    "description": "Normal edits of anime and other releases cannot add, replace or remove the original torrent. An existing torrent must keep the same v1 magnet infohash; tracker and display-name parameters can still change. Magnet-only releases can still edit their magnet links."
+  },
+  "MediaInfo updates and retries": {
+    "type": "Fix",
+    "description": "Fixed switching a MediaInfo report back to an earlier version, and submitting the same report after deleting and republishing a release. Identical unfinished submissions are combined. When the result is unconfirmed, retry the original request as directed by Retry-After. An earlier report can be submitted again as the current version; stale retries are not guaranteed to be rejected."
   }
 }} />
 
