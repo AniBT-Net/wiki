@@ -24,13 +24,12 @@ export function BrandLogo({
   );
 }
 
+/** 顶栏左侧：鲸鱼少女贴纸 logo + 一张倾斜的「Wiki」小贴纸。 */
 export function NavTitle() {
   return (
-    <span className="inline-flex items-center gap-2">
-      <BrandLogo heightClassName="h-8 sm:h-9" />
-      <span className="text-fd-muted-foreground text-sm font-medium">
-        Wiki
-      </span>
+    <span className="a-brand-lockup inline-flex items-center gap-2">
+      <BrandLogo heightClassName="h-8 lg:h-10" />
+      <span className="a-sticker a-brand-sticker">Wiki</span>
     </span>
   );
 }

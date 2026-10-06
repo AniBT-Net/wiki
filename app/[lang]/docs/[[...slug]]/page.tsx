@@ -26,9 +26,16 @@ export default async function Page({
   const MDX = page.data.body;
 
   return (
-    <DocsPage toc={page.data.toc} full={page.data.full}>
-      <DocsTitle>{page.data.title}</DocsTitle>
-      <DocsDescription>{page.data.description}</DocsDescription>
+    <DocsPage
+      toc={page.data.toc}
+      full={page.data.full}
+      breadcrumb={{ className: 'a-crumbs' }}
+      footer={{ className: 'a-pager' }}
+    >
+      <DocsTitle className="a-title">{page.data.title}</DocsTitle>
+      <DocsDescription className="a-lead">
+        {page.data.description}
+      </DocsDescription>
       <DocsBody>
         <MDX
           components={getMDXComponents({

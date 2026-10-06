@@ -1,0 +1,1201 @@
+/*
+ * AniBT A「贴纸手账」在 fumadocs 上的皮肤。配方与主仓
+ * `src/styles/utilities.css` 同名同值（sheet / field / kbd / btn / tabs /
+ * sticker / tape / stitch …），这里按 fumadocs 的结构贴上去。
+ *
+ * 规则：
+ * - 这些规则不分层，所以能盖过 fumadocs 的 Tailwind 工具类；也正因为如此，
+ *   对 fumadocs 的节点只改「颜料」（颜色、底、阴影、圆角、字），不改
+ *   display / position，免得盖掉它的响应式显隐（`lg:hidden` 之类）。
+ * - 选择器优先用 id、data 属性和本仓自己挂的钩子类（`a-*`，见
+ *   `components/mdx.tsx`、`app/[lang]/docs/[[...slug]]/page.tsx`），不抄
+ *   fumadocs 的工具类串。
+ * - 胶带是唯一的「你在这里」：顶栏当前项、侧栏当前页、当前页签各一条。
+ * - `prefers-reduced-motion: reduce` 下全部动效停下（文件末尾）。
+ */
+
+/* ── 底 ─────────────────────────────────────────────────────────────────── */
+
+html {
+  scrollbar-color: var(--line2) transparent;
+}
+
+body {
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  /* 点点底纹（深色是星空）：两组 24px 的点错开半格。 */
+  background-image: var(--dots);
+  background-size: 24px 24px;
+  background-position:
+    0 0,
+    12px 12px;
+}
+
+@media (min-width: 640px) {
+  body {
+    font-size: 14px;
+  }
+}
+
+::selection {
+  background: var(--wash2);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 2px;
+}
+
+@keyframes a-tape-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes a-wiggle {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30% {
+    transform: rotate(-12deg);
+  }
+  65% {
+    transform: rotate(9deg);
+  }
+}
+
+@keyframes a-peek {
+  0%,
+  70%,
+  100% {
+    translate: 0 0;
+  }
+  80% {
+    translate: 0 -5px;
+  }
+  90% {
+    translate: 0 0;
+  }
+}
+
+@keyframes a-twinkle {
+  0%,
+  100% {
+    transform: scale(0.55) rotate(0deg);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+@keyframes a-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -3px;
+  }
+}
+
+/* ── 共用配方（本仓自己的元素） ─────────────────────────────────────────── */
+
+/* 模切贴纸：2px 白边 + 小阴影，`--tilt` 控制倾斜。 */
+.a-sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding-inline: 8px;
+  border-radius: 6px;
+  background-color: var(--paper);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 2px var(--sticker-edge),
+    var(--shadow-sticker);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 0.3s var(--ease-spring);
+}
+
+.a-sticker-candy {
+  background-color: var(--candy-edge);
+  background-image: var(--candy);
+  color: var(--candy-ink);
+  text-shadow: var(--candy-text-shadow);
+}
+
+.a-sticker-water {
+  background-color: var(--water-edge);
+  background-image: var(--water);
+  color: var(--candy-ink);
+  text-shadow: var(--water-text-shadow);
+}
+
+/* 32px 图标方块（安静档）：静止无底，指针下粉色 wash，图标摆一下。 */
+.a-icobtn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--ink2);
+  box-shadow: none;
+  transition:
+    background-color 0.14s,
+    color 0.14s;
+}
+
+.a-icobtn:hover,
+.a-icobtn[data-state='open'] {
+  background-color: var(--wash);
+  color: var(--accent);
+}
+
+.a-icobtn:hover > svg {
+  animation: a-wiggle 0.5s var(--ease-out);
+}
+
+.a-icobtn > svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── 顶栏（文档与首页同一条） ──────────────────────────────────────────── */
+
+/* 文档顶栏：86% 纸面毛玻璃铺满整行，底边一条缝线；内容仍在 1440 版心里。 */
+.a-bar {
+  isolation: isolate;
+  background: transparent;
+}
+
+.a-bar::before,
+.a-bar::after {
+  content: '';
+  position: absolute;
+  inset-inline: min(0px, calc(50% - 50vw));
+  pointer-events: none;
+}
+
+.a-bar::before {
+  top: 0;
+  bottom: 0;
+  z-index: -1;
+  background-color: var(--bar-glass);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.a-bar::after {
+  bottom: 0;
+  height: 1px;
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+}
+
+/* 贴纸 logo：指针下轻轻歪一下。 */
+.a-brand img,
+#nd-nav .a-brand-lockup img {
+  transition: transform 0.4s var(--ease-spring);
+}
+
+.a-brand:hover img,
+#nd-nav a:hover .a-brand-lockup img {
+  transform: rotate(-3deg) scale(1.04);
+}
+
+.a-brand-sticker {
+  --tilt: -5deg;
+  height: 18px;
+  padding-inline: 6px;
+  font-size: 11.5px;
+  color: var(--accent);
+}
+
+/* 导航：32 高、14/600、`ink2`；指针下粉色 wash；当前项是墨色字下贴一条胶带。 */
+.a-nav-item {
+  position: relative;
+  display: inline-flex;
+  height: 32px;
+  flex: none;
+  align-items: center;
+  border-radius: 10px;
+  padding-inline: 12px;
+  color: var(--ink2);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
+}
+
+.a-nav-item:hover {
+  background-color: var(--wash);
+  color: var(--ink);
+}
+
+.a-nav-item[aria-current='page'] {
+  color: var(--ink);
+}
+
+.a-nav-tape,
+.a-tape {
+  height: 6px;
+  pointer-events: none;
+  background: var(--tape-fill);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 2px) 50%, 100% 100%, 0 100%, 2px 50%);
+}
+
+.a-nav-tape {
+  position: absolute;
+  inset-inline: 12px;
+  bottom: -1px;
+  transform: rotate(-1.5deg);
+  animation: a-tape-in 0.3s var(--ease-out);
+}
+
+/* 搜索框：纸面 + `line2` 内边，32 高，圆角 10；指针下粉边。 */
+[data-search-full] {
+  height: 32px;
+  gap: 8px;
+  padding-block: 0;
+  padding-inline: 12px 6px;
+  border: 0;
+  border-radius: 10px;
+  background-color: var(--paper);
+  color: var(--ink3);
+  box-shadow: inset 0 0 0 1px var(--line2);
+  font-size: 13px;
+  transition:
+    box-shadow var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+}
+
+[data-search-full]:hover {
+  background-color: var(--paper);
+  color: var(--ink2);
+  box-shadow: inset 0 0 0 1px var(--wash-line);
+}
+
+[data-search-full] > svg {
+  color: var(--ink3);
+}
+
+/* 键帽：⌘K、Ctrl K、正文里的 <kbd>。 */
+[data-search-full] kbd,
+#nd-page kbd,
+[role='dialog'] kbd {
+  display: inline-grid;
+  place-items: center;
+  height: 20px;
+  min-width: 20px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 6px;
+  background-color: var(--deep);
+  color: var(--ink3);
+  box-shadow:
+    inset 0 -1px 0 var(--line2),
+    inset 0 0 0 1px var(--line);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: 0.1em;
+}
+
+/* 主题切换：分段轨道，当前那一格是白色贴纸拇指、图标变粉。 */
+[data-theme-toggle] {
+  height: 32px;
+  gap: 2px;
+  padding: 3px;
+  border: 0;
+  border-radius: 10px;
+  background-color: var(--deep);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+[data-theme-toggle] > svg,
+[data-theme-toggle] > button {
+  width: 26px;
+  height: 26px;
+  padding: 6px;
+  border-radius: 7px;
+  background-color: transparent;
+  color: var(--ink3);
+  fill: currentColor;
+  transition:
+    background-color 0.2s var(--ease-out),
+    color 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out);
+}
+
+:root:not(.dark) [data-theme-toggle] > svg:first-of-type,
+.dark [data-theme-toggle] > svg:last-of-type {
+  background-color: var(--paper);
+  color: var(--mark);
+  box-shadow: var(--shadow-sticker);
+}
+
+/* ── 侧栏 ─────────────────────────────────────────────────────────────── */
+
+/* 侧栏落在点点底上，右缘一条竖缝线。 */
+#nd-sidebar {
+  background-image: var(--stitch-y);
+  background-size: 1px 8px;
+  background-repeat: repeat-y;
+  background-position: 100% 0;
+  color: var(--ink2);
+  font-size: 13px;
+}
+
+#nd-sidebar-mobile {
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-pop);
+  border: 0;
+}
+
+/* 行：32 高、圆角 10、13/400 `ink2`；指针下粉色 wash。 */
+:is(#nd-sidebar, #nd-sidebar-mobile) :is(a[data-active], button[aria-expanded]) {
+  min-height: 32px;
+  padding-block: 6px;
+  border-radius: 10px;
+  color: var(--ink2);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+:is(#nd-sidebar, #nd-sidebar-mobile) :is(a[data-active], button[aria-expanded]):hover {
+  background-color: var(--wash);
+  color: var(--ink);
+}
+
+:is(#nd-sidebar, #nd-sidebar-mobile) :is(a[data-active], button[aria-expanded]) svg {
+  color: var(--ink3);
+}
+
+/* 当前页：纸面 + `line` 边 + 小阴影，左缘贴一条竖胶带。
+   手机抽屉里顶部那几个站点链接（文档 / 公开 API）不贴，胶带只给当前页。 */
+:is(#nd-sidebar, #nd-sidebar-mobile) a[data-active='true']:not(.lg\:hidden) {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-sticker);
+}
+
+:is(#nd-sidebar, #nd-sidebar-mobile) a[data-active='true']:not(.lg\:hidden)::before {
+  content: '';
+  position: absolute;
+  inset-block: 6px auto;
+  inset-inline-start: -3px;
+  width: 6px;
+  height: 20px;
+  border-radius: 0;
+  background: var(--tape-fill);
+  clip-path: polygon(0 0, 50% 2px, 100% 0, 100% 100%, 50% calc(100% - 2px), 0 100%);
+  transform: rotate(4deg);
+}
+
+:is(#nd-sidebar, #nd-sidebar-mobile) a[data-active='true'].lg\:hidden {
+  background-color: transparent;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* 分组名：12/600 `ink3`，上面一条缝线（第一组除外）。 */
+:is(#nd-sidebar, #nd-sidebar-mobile) [data-radix-scroll-area-viewport] p {
+  position: relative;
+  margin-top: 20px;
+  padding-top: 14px;
+  color: var(--ink3);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 0;
+}
+
+:is(#nd-sidebar, #nd-sidebar-mobile) [data-radix-scroll-area-viewport] p:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  background-image: none;
+}
+
+/* 展开的目录：左侧那条细线换成竖缝线。 */
+:is(#nd-sidebar, #nd-sidebar-mobile) [data-state][id^='radix-']::before {
+  width: 1px;
+  background-color: transparent;
+  background-image: var(--stitch-y);
+  background-size: 1px 8px;
+  background-repeat: repeat-y;
+}
+
+/* ── 目录（本页） ─────────────────────────────────────────────────────── */
+
+#nd-toc {
+  color: var(--ink3);
+  font-size: 13px;
+}
+
+#nd-toc #toc-title,
+[data-toc-popover] #toc-title {
+  color: var(--ink2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* 底线换成缝线；粉色进度条与跟随的点不画——当前项只用粉色字。 */
+:is(#nd-toc, [data-toc-popover-content]) a[data-active] svg path {
+  stroke: var(--line2);
+  stroke-dasharray: 4 4;
+}
+
+:is(#nd-toc, [data-toc-popover-content]) svg[style*='clip-path'],
+:is(#nd-toc, [data-toc-popover-content]) div[style*='offset-path'] {
+  visibility: hidden;
+}
+
+:is(#nd-toc, [data-toc-popover-content]) a[data-active] {
+  color: var(--ink3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+:is(#nd-toc, [data-toc-popover-content]) a[data-active]:hover {
+  color: var(--ink);
+}
+
+:is(#nd-toc, [data-toc-popover-content]) a[data-active='true'] {
+  color: var(--accent);
+}
+
+[data-toc-popover] > header {
+  background-color: var(--bar-glass);
+  border: 0;
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+}
+
+[data-toc-popover-trigger] {
+  color: var(--ink2);
+  font-size: 13px;
+}
+
+/* ── 页头：面包屑、标题、导语 ─────────────────────────────────────────── */
+
+.a-crumbs {
+  color: var(--ink3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.a-crumbs > :last-child {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.a-title {
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.33;
+  letter-spacing: 0.02em;
+}
+
+.a-lead {
+  margin-bottom: 12px;
+  color: var(--ink2);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* ── 正文 ─────────────────────────────────────────────────────────────── */
+
+/* 与主站发布说明同一套：标题逐级变小、正文 `ink2`、链接粉色字、引用是粉色 wash
+   加左缘粉线、分隔线是缝线、行内代码落在下沉的 `deep` 上。 */
+#nd-page .prose {
+  --tw-prose-body: var(--ink2);
+  --tw-prose-headings: var(--ink);
+  --tw-prose-bold: var(--ink);
+  --tw-prose-links: var(--accent);
+  --tw-prose-counters: var(--ink3);
+  --tw-prose-bullets: var(--mark);
+  --tw-prose-quotes: var(--ink);
+  --tw-prose-code: var(--ink);
+  --tw-prose-th-borders: var(--line2);
+  --tw-prose-td-borders: var(--line);
+  color: var(--ink2);
+  font-size: 14px;
+  line-height: 1.85;
+}
+
+#nd-page .prose :where(p, li) {
+  line-height: 1.85;
+}
+
+#nd-page .prose :where(h2):not(:where(.not-prose *)) {
+  margin-top: 2.25em;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+
+#nd-page .prose :where(h3):not(:where(.not-prose *)) {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+#nd-page .prose :where(h4):not(:where(.not-prose *)) {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+#nd-page .prose :where(h1, h2, h3, h4) a {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+#nd-page .prose :where(a):not(:where([data-card], .not-prose *, h1 *, h2 *, h3 *, h4 *)) {
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
+  text-underline-offset: 4px;
+}
+
+#nd-page .prose :where(a):not(:where([data-card], .not-prose *, h1 *, h2 *, h3 *, h4 *)):hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+}
+
+#nd-page .prose :where(strong):not(:where(.not-prose *)) {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+#nd-page .prose :where(ul > li)::marker {
+  color: var(--mark);
+}
+
+#nd-page .prose :where(ol > li)::marker {
+  color: var(--ink3);
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* 行内代码：下沉的 `deep`，圆角 6，等宽。 */
+#nd-page .prose :where(code):not(:where(pre code, .not-prose code, figure code)) {
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background-color: var(--deep);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 0.86em;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+#nd-page .prose :where(blockquote):not(:where(.not-prose *)) {
+  margin-block: 20px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 0 10px 10px 0;
+  background-color: var(--wash);
+  box-shadow: inset 3px 0 0 var(--mark);
+  color: var(--ink);
+  font-style: normal;
+}
+
+#nd-page .prose :where(blockquote p):not(:where(.not-prose *))::before,
+#nd-page .prose :where(blockquote p):not(:where(.not-prose *))::after {
+  content: none;
+}
+
+#nd-page .prose :where(hr):not(:where(.not-prose *)) {
+  height: 1px;
+  margin-block: 28px;
+  border: 0;
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+}
+
+/* 表格：一块面板，表头 12/600 `ink3`，行与行之间是缝线。 */
+/* fumadocs 把表格包在一个横滚的 div 里，面板画在这个 div 上（表格自己的
+   阴影会被它的 overflow 裁掉）。 */
+#nd-page .prose div:has(> table) {
+  border-radius: 14px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-panel);
+}
+
+#nd-page .prose :where(table):not(:where(.not-prose *)) {
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 0;
+  font-size: 13px;
+}
+
+#nd-page .prose :where(thead th):not(:where(.not-prose *)) {
+  padding: 10px 14px;
+  border: 0;
+  background-color: var(--deep);
+  color: var(--ink3);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: start;
+  white-space: nowrap;
+}
+
+#nd-page .prose :where(td):not(:where(.not-prose *)) {
+  padding: 10px 14px;
+  border: 0;
+  color: var(--ink2);
+  vertical-align: top;
+}
+
+#nd-page .prose :where(thead tr, tbody tr:not(:last-child)):not(:where(.not-prose *)) {
+  border: 0;
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+}
+
+#nd-page .prose :where(tbody tr):not(:where(.not-prose *)):hover {
+  background-color: var(--deep);
+}
+
+/* 标题旁的锚点按钮：安静的小方块。 */
+#nd-page :where(h2, h3, h4) > button {
+  color: var(--ink3);
+  border-radius: 6px;
+}
+
+#nd-page :where(h2, h3, h4) > button:hover {
+  background-color: var(--wash);
+  color: var(--accent);
+}
+
+/* ── 代码块：一块面板，标题是一条缝线下的标签条 ────────────────────── */
+
+figure.shiki {
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-panel);
+  font-size: 13px;
+}
+
+figure.shiki > div:has(> figcaption) {
+  height: 38px;
+  border: 0;
+  background-color: var(--deep);
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  color: var(--ink2);
+}
+
+figure.shiki figcaption {
+  color: var(--ink2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+figure.shiki > div:has(> figcaption) > div:first-child svg {
+  color: var(--mark);
+}
+
+figure.shiki pre,
+figure.shiki code {
+  font-family: var(--font-mono);
+}
+
+figure.shiki button {
+  border-radius: 8px;
+  color: var(--ink3);
+}
+
+figure.shiki button:hover,
+figure.shiki button[data-checked] {
+  background-color: var(--wash);
+  color: var(--accent);
+}
+
+figure.shiki > div:not(:has(> figcaption)):not([role='region']) {
+  background: transparent;
+}
+
+/* 页签里的代码块：贴着面板，不再画第二层边。 */
+.a-tabs [role='tabpanel'] > figure.shiki:only-child {
+  border-radius: 0 0 14px 14px;
+  box-shadow: none;
+}
+
+/* ── 提示块：带颜色的淡底面板 + 一枚倾斜的贴纸图标 ───────────────────── */
+
+div[style*='--callout-color'] {
+  --a-callout-wash: var(--deep);
+  --a-callout-line: var(--line);
+  gap: 12px;
+  margin-block: 20px;
+  padding: 14px 16px 14px 14px;
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--a-callout-wash);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--a-callout-line);
+  font-size: 13.5px;
+  line-height: 1.75;
+}
+
+div[style*='--color-fd-info'] {
+  --a-callout-wash: var(--time-wash);
+  --a-callout-line: var(--time-line);
+}
+
+div[style*='--color-fd-warning'] {
+  --a-callout-wash: var(--warn-wash);
+  --a-callout-line: color-mix(in srgb, var(--warn-fill) 45%, var(--warn-wash));
+}
+
+div[style*='--color-fd-error'] {
+  --a-callout-wash: var(--danger-wash);
+  --a-callout-line: var(--danger-line);
+}
+
+div[style*='--color-fd-success'] {
+  --a-callout-wash: var(--ok-wash);
+  --a-callout-line: color-mix(in srgb, var(--ok-fill) 40%, var(--ok-wash));
+}
+
+div[style*='--color-fd-idea'] {
+  --a-callout-wash: var(--wash);
+  --a-callout-line: var(--wash-line);
+}
+
+/* 左缘那条细色条不要：颜色已经在底和边上了。 */
+div[style*='--callout-color'] > [role='none'] {
+  visibility: hidden;
+  width: 0;
+  margin-inline-end: -12px;
+}
+
+/* 贴纸图标：纸面小方块 + 白边 + 阴影，歪 -6°。 */
+div[style*='--callout-color'] > svg {
+  width: 26px;
+  height: 26px;
+  margin: -1px 0 0;
+  padding: 3px;
+  border-radius: 8px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 2px var(--sticker-edge),
+    var(--shadow-sticker);
+  color: var(--paper);
+  transform: rotate(-6deg);
+  transition: transform 0.4s var(--ease-spring);
+}
+
+div[style*='--callout-color']:hover > svg {
+  transform: rotate(6deg) scale(1.06);
+}
+
+div[style*='--callout-color'] > div > p:first-child {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+div[style*='--callout-color'] > div > div {
+  color: var(--ink2);
+}
+
+div[style*='--callout-color'] :where(code) {
+  background-color: var(--paper);
+}
+
+/* ── 步骤：一条竖缝线上的糖果数字贴纸 ──────────────────────────────── */
+
+.fd-steps {
+  border-inline-start-color: transparent;
+  background-image: var(--stitch-y);
+  background-size: 1px 8px;
+  background-repeat: repeat-y;
+  background-position: 0 0;
+}
+
+.fd-step::before {
+  width: 28px;
+  height: 28px;
+  inset-inline-start: -14px;
+  border-radius: 9px;
+  background-color: var(--candy-edge);
+  background-image: var(--candy);
+  color: var(--candy-ink);
+  text-shadow: var(--candy-text-shadow);
+  box-shadow:
+    0 0 0 2px var(--sticker-edge),
+    var(--shadow-sticker);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  transform: rotate(-5deg);
+}
+
+.fd-step:nth-child(even)::before {
+  transform: rotate(4deg);
+}
+
+/* ── 页签：缝线上的 32px 页签，当前页签下贴一条胶带 ─────────────────── */
+
+.a-tabs {
+  overflow: hidden;
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-panel);
+}
+
+.a-tabs > [role='tablist'] {
+  gap: 4px;
+  padding: 6px 8px 6px;
+  background-color: var(--paper);
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+}
+
+.a-tabs > [role='tablist'] > [role='tab'] {
+  position: relative;
+  height: 32px;
+  padding-block: 0;
+  padding-inline: 12px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--ink2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.a-tabs > [role='tablist'] > [role='tab']:hover {
+  background-color: var(--wash);
+  color: var(--ink);
+}
+
+.a-tabs > [role='tablist'] > [role='tab'][data-state='active'] {
+  color: var(--ink);
+}
+
+.a-tabs > [role='tablist'] > [role='tab'][data-state='active']::after {
+  content: '';
+  position: absolute;
+  inset-inline: 8px;
+  bottom: -5px;
+  height: 6px;
+  pointer-events: none;
+  background: var(--tape-fill);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 2px) 50%, 100% 100%, 0 100%, 2px 50%);
+  transform: rotate(-1.5deg);
+  animation: a-tape-in 0.3s var(--ease-out);
+}
+
+.a-tabs > [role='tabpanel'] {
+  border-radius: 0;
+  background-color: var(--paper);
+  font-size: 14px;
+}
+
+/* ── 字段表（TypeTable）：面板 + 表头 + 缝线分行 ──────────────────────── */
+
+.a-typetable {
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-panel);
+  font-size: 13px;
+}
+
+.a-typetable > div:first-child {
+  min-height: 36px;
+  padding-inline: 16px;
+  background-color: var(--deep);
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  color: var(--ink3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.a-typetable > div[data-state] {
+  border: 0;
+  border-radius: 0;
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  box-shadow: none;
+}
+
+.a-typetable > div[data-state]:last-child {
+  background-image: none;
+}
+
+.a-typetable > div[data-state] > button {
+  min-height: 40px;
+  padding-inline: 16px 36px;
+  color: var(--ink2);
+}
+
+.a-typetable > div[data-state] > button:hover {
+  background-color: var(--deep);
+}
+
+.a-typetable > div[data-state] > button > code {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.a-typetable > div[data-state='open'] {
+  margin: 0;
+  background-color: var(--paper);
+}
+
+.a-typetable > div[data-state='open'] > button {
+  background-color: var(--wash);
+}
+
+.a-typetable > div[data-state] > [data-state='open'] > div {
+  border-top: 0;
+  background-color: var(--deep);
+  color: var(--ink2);
+}
+
+/* ── 卡片：卡套里的收藏卡，指针下抬起 ─────────────────────────────────── */
+
+.a-card {
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-panel);
+  transition:
+    transform 0.25s var(--ease-spring),
+    box-shadow 0.2s var(--ease-out);
+}
+
+a.a-card:hover {
+  background-color: var(--paper);
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px var(--wash-line),
+    var(--shadow-lift);
+}
+
+/* 卡片图标：一枚倾斜的小贴纸。 */
+.a-card > div:first-child:has(> svg) {
+  border: 0;
+  border-radius: 8px;
+  background-color: var(--paper);
+  color: var(--mark);
+  box-shadow:
+    0 0 0 2px var(--sticker-edge),
+    var(--shadow-sticker);
+  transform: rotate(-5deg);
+}
+
+.a-card h3 {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+a.a-card:hover h3 {
+  color: var(--accent);
+}
+
+.a-card p {
+  color: var(--ink3);
+  font-size: 13px;
+}
+
+/* ── 折叠（Accordions） ─────────────────────────────────────────────── */
+
+.a-accordions {
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-panel);
+}
+
+.a-accordions > * + * {
+  border-top: 0;
+  background-image: var(--stitch);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  background-position: 0 0;
+}
+
+.a-accordions h3 {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.a-accordions h3 button:hover {
+  color: var(--accent);
+}
+
+.a-accordions h3 button svg {
+  color: var(--mark);
+}
+
+/* ── 文件树 ─────────────────────────────────────────────────────────── */
+
+.a-files {
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-panel);
+}
+
+/* ── 图片：一张带白边的照片，点开放大 ─────────────────────────────── */
+
+#nd-page .prose img:not(:where(.not-prose *)) {
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 4px var(--sticker-edge),
+    0 0 0 5px var(--line),
+    var(--shadow-panel);
+}
+
+[data-rmiz-modal-overlay='visible'] {
+  background-color: color-mix(in srgb, var(--canvas) 88%, transparent);
+}
+
+[data-rmiz-modal-img] {
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 6px var(--sticker-edge),
+    var(--shadow-pop);
+}
+
+/* ── 上一篇 / 下一篇 ─────────────────────────────────────────────────── */
+
+.a-pager > a {
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-panel);
+  transition:
+    transform 0.25s var(--ease-spring),
+    box-shadow 0.2s var(--ease-out);
+}
+
+.a-pager > a:hover {
+  background-color: var(--paper);
+  color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px var(--wash-line),
+    var(--shadow-lift);
+}
+
+.a-pager > a > div:first-child {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.a-pager > a:hover > div:first-child {
+  color: var(--accent);
+}
+
+.a-pager > a > div:first-child svg {
+  color: var(--mark);
+}
+
+.a-pager > a > p {
+  color: var(--ink3);
+  font-size: 12px;
+}
+
+/* ── 浮层：搜索框、语言菜单、弹出层 ─────────────────────────────────── */
+
+[role='dialog'][data-state] {
+  border: 0;
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-pop);
+}
+
+[data-radix-popper-content-wrapper] > [data-state] {
+  border: 0;
+  border-radius: 14px;
+  background-color: var(--paper);
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--shadow-pop);
+}
+
+/* ── 动效 ─────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

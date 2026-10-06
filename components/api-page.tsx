@@ -14,7 +14,7 @@ registerDefault(codeUsages);
 type ResponseTabs = NonNullable<NonNullable<CreateOpenAPIPageOptions['content']>['renderResponseTabs']>;
 
 const renderResponseTabs: ResponseTabs = ({ tabs }) => (
-  <Tabs items={tabs.map(tab => tab.code)}>
+  <Tabs className="a-tabs" items={tabs.map(tab => tab.code)}>
     {tabs.map(tab => {
       const examples = tab.examples ?? [];
       const blocks = examples.map((example, index) => {
@@ -24,7 +24,7 @@ const renderResponseTabs: ResponseTabs = ({ tabs }) => (
       return (
         <Tab key={tab.code} value={tab.code}>
           {examples.length > 1 ? (
-            <Accordions type="single" defaultValue="0">
+            <Accordions className="a-accordions" type="single" defaultValue="0">
               {examples.map((example, index) => (
                 <Accordion key={index} value={String(index)} title={example.label}>
                   {blocks[index]}

@@ -1,114 +1,249 @@
+/*
+ * AniBT Wiki 主题：A「贴纸手账」，与 anibt.net 同一套 token。
+ *
+ * 值抄自主仓 `src/styles/tokens.css`（事实源；改值先改那边再同步过来），
+ * 这里只把它们接到 fumadocs 的 `--color-fd-*` 上，组件外观在 `anibt-a.css`。
+ *
+ * 一种颜色一种职责：粉 = 操作 / 选中 / 「你在这里」；蓝 = 时间 / 信息；
+ * 薄荷 = 完成；琥珀 = 注意；红 = 危险；墨色 = 其余一切。中性色冷调带极淡紫。
+ *
+ * 字体：正文走系统中文黑体；Fredoka（自托管拉丁子集，SIL OFL，许可证在
+ * `fonts/OFL-Fredoka.txt`）只画数字、英文小标签、键帽与贴纸，汉字落回系统
+ * 字体；等宽是 M PLUS 1 Code 500。不加载任何 CJK 网络字体。
+ */
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
 @import 'fumadocs-openapi/css/preset.css';
+@import '@fontsource/m-plus-1-code/latin-500.css';
+@import './anibt-a.css';
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/fredoka-latin-500-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/fredoka-latin-600-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/fredoka-latin-700-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 @theme {
-  --color-fd-background: #fffbfc;
-  --color-fd-foreground: #3a1020;
-  --color-fd-muted: #f7eef2;
-  --color-fd-muted-foreground: #8a6072;
-  --color-fd-popover: #fffbfc;
-  --color-fd-popover-foreground: #3a1020;
-  --color-fd-card: #fffbfc;
-  --color-fd-card-foreground: #3a1020;
-  --color-fd-border: #e4d2da;
-  --color-fd-primary: #c4295f;
-  --color-fd-primary-foreground: #fff;
-  --color-fd-secondary: #f7eef2;
-  --color-fd-secondary-foreground: #3a1020;
-  --color-fd-accent: #fbe4ec;
-  --color-fd-accent-foreground: #c4295f;
-  --color-fd-ring: #c4295f;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC',
+    sans-serif;
+  --font-display: 'Fredoka', ui-rounded, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Noto Sans CJK SC', 'Noto Sans SC', sans-serif;
+  --font-mono: 'M PLUS 1 Code', ui-monospace, 'SFMono-Regular', Menlo, Monaco,
+    Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* 圆角 6 / 10 / 14（+ 胶囊）：tag 与键帽 `rounded-md`，控件 `rounded-lg`，
+     面板 `rounded-xl`。 */
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+
+  /* 四档阴影：贴纸、面板、抬起、浮层。fumadocs 的 shadow-* 都落到这几档。 */
+  --shadow-2xs: var(--shadow-sticker);
+  --shadow-xs: var(--shadow-sticker);
+  --shadow-sm: var(--shadow-panel);
+  --shadow-md: var(--shadow-pop);
+  --shadow-lg: var(--shadow-pop);
+  --shadow-xl: var(--shadow-pop);
+  --shadow-2xl: var(--shadow-pop);
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-/* AniBT 首页场景与面板色板（明） */
+/* ── 昼 ─────────────────────────────────────────────────────────────────── */
 :root {
-  --canvas: #fffbfc;
-  --deep: #f7eef2;
-  --deep2: #efe1e7;
-  --ink: #3a1020;
-  --ink2: #7a4a5c;
-  --ink3: #8a6072;
-  --line: #efe1e7;
-  --line2: #e4d2da;
-  --accent: #c4295f;
-  --accent-ink: #fff;
-  --mark: #f0789c;
-  --wash: #fbe4ec;
-  --code: #2b1420;
-  --code-ink: #f6eef1;
-  --code-dim: #ad91a4;
-  --code-key: #f48fb0;
-  --code-str: #9fd8a8;
-  --code-url: #7cc6f2;
-  --card-shadow: 0 14px 34px rgba(58, 16, 32, 0.2);
-  --sky-bg: #d3ecff;
-  --sky-band: #e6f5ff;
-  --cloud: #ffffff;
-  --cloud-sh: #bfe0fb;
-  --sea1: #8fcdf7;
-  --sea2: #5fb2ee;
-  --foam: #ffffff;
-  --spark: #ffc94d;
-  --heart: #f0789c;
-  --p-sky: #dff1ff;
-  --p-cream: #fff3d6;
-  --p-mint: #dff5ea;
+  --canvas: #f7f5fa;
+  --paper: #ffffff;
+  --deep: #f3f0f7;
+  --deep2: #ece7f2;
+  --ink: #1f1c28;
+  --ink2: #565163;
+  --ink3: #6e6a78;
+  --line: #ebe6f0;
+  --line2: #dad3e3;
+
+  --accent: #c22a62;
+  --accent-ink: #ffffff;
+  --mark: #ff6f9c;
+  --wash: #fff0f5;
+  --wash2: #ffdbe7;
+  --wash-line: #ffb3cb;
+
+  --time: #5aa9ff;
+  --time-ink: #1a64bf;
+  --time-wash: #edf5ff;
+  --time-wash2: #d6e9ff;
+  --time-line: #a9d0ff;
+
+  --ok: #0e7a53;
+  --ok-fill: #25b582;
+  --ok-wash: #e4f7ef;
+  --warn: #9a5b06;
+  --warn-fill: #f0a531;
+  --warn-wash: #fff4e0;
+  --danger: #b3341d;
+  --danger-fill: #e5533d;
+  --danger-wash: #fff0ec;
+  --danger-line: #f6b8ab;
+
+  --bar-glass: rgba(255, 255, 255, 0.86);
+  --scrim: rgba(31, 28, 40, 0.5);
+  --tip: #26222f;
+  --tip-ink: #ffffff;
+
+  --sticker-edge: #ffffff;
+  --candy: linear-gradient(180deg, #ff8fb4 0%, #ff6c9b 52%, #f2558a 100%);
+  --candy-edge: #d63e74;
+  --candy-glow: rgba(242, 85, 138, 0.42);
+  --candy-ink: #ffffff;
+  --candy-text-shadow: 0 1px 0 rgba(176, 28, 82, 0.38);
+  --water: linear-gradient(180deg, #7dbcff 0%, #5aa9ff 52%, #3f92f0 100%);
+  --water-edge: #2c78d6;
+  --water-text-shadow: 0 1px 0 rgba(20, 80, 160, 0.38);
+  --gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0));
+  --sparkle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.5c.9 5.6 4.9 9.6 10.5 10.5-5.6.9-9.6 4.9-10.5 10.5C11.1 16.9 7.1 12.9 1.5 12 7.1 11.1 11.1 7.1 12 1.5Z'/%3E%3C/svg%3E");
+
+  /* 和纸胶带（唯一的「你在这里」）与虚线缝线。 */
+  --tape: rgba(255, 111, 156, 0.66);
+  --tape-stripe: rgba(255, 255, 255, 0.38);
+  --tape-fill: repeating-linear-gradient(135deg, var(--tape-stripe) 0 2px, transparent 2px 5px), var(--tape);
+  --stitch: linear-gradient(90deg, var(--line2) 0 4px, transparent 4px 8px);
+  --stitch-y: linear-gradient(180deg, var(--line2) 0 4px, transparent 4px 8px);
+
+  /* 页面底的点点底纹（深色是星空）。 */
+  --dot-a: rgba(255, 111, 156, 0.2);
+  --dot-b: rgba(90, 169, 255, 0.18);
+  --dots: radial-gradient(circle, var(--dot-a) 0 1px, transparent 1.5px),
+    radial-gradient(circle, var(--dot-b) 0 1px, transparent 1.5px);
+
+  --shadow-sticker: 0 1px 1px rgba(31, 28, 40, 0.1), 0 2px 6px rgba(31, 28, 40, 0.12);
+  --shadow-panel: 0 1px 0 rgba(31, 28, 40, 0.02), 0 6px 18px -10px rgba(70, 40, 100, 0.16);
+  --shadow-lift: 0 2px 4px rgba(31, 28, 40, 0.06), 0 14px 28px -10px rgba(90, 40, 120, 0.28);
+  --shadow-pop: 0 4px 10px -2px rgba(31, 28, 40, 0.1), 0 16px 32px -12px rgba(70, 40, 100, 0.3);
+  --ring-pink: 0 0 0 4px rgba(255, 111, 156, 0.18);
+
+  --motion-fast: 140ms;
+
+  /* 版心与主站一致：1440。 */
+  --fd-layout-width: 1440px;
 }
 
+/* ── 夜 ─────────────────────────────────────────────────────────────────── */
 .dark {
-  --color-fd-background: #17101a;
-  --color-fd-foreground: #f6eef1;
-  --color-fd-muted: #231a25;
-  --color-fd-muted-foreground: #ad91a4;
-  --color-fd-popover: #231a25;
-  --color-fd-popover-foreground: #f6eef1;
-  --color-fd-card: #231a25;
-  --color-fd-card-foreground: #f6eef1;
-  --color-fd-border: #3d2e3f;
-  --color-fd-primary: #f48fb0;
-  --color-fd-primary-foreground: #1a0d14;
-  --color-fd-secondary: #231a25;
-  --color-fd-secondary-foreground: #f6eef1;
-  --color-fd-accent: #3a2030;
-  --color-fd-accent-foreground: #f48fb0;
-  --color-fd-ring: #f48fb0;
+  --canvas: #13111a;
+  --paper: #1c1926;
+  --deep: #16141f;
+  --deep2: #252130;
+  --ink: #f3f0f8;
+  --ink2: #bdb7cb;
+  --ink3: #9690a6;
+  --line: #2b2738;
+  --line2: #3b354a;
 
-  /* AniBT 首页场景与面板色板（暗） */
-  --canvas: #17101a;
-  --deep: #231a25;
-  --deep2: #302431;
-  --ink: #f6eef1;
-  --ink2: #c9a8b8;
-  --ink3: #ad91a4;
-  --line: #302431;
-  --line2: #3d2e3f;
-  --accent: #f48fb0;
-  --accent-ink: #1a0d14;
-  --mark: #f48fb0;
-  --wash: #3a2030;
-  --code: #0f0a11;
-  --code-ink: #f6eef1;
-  --code-dim: #ad91a4;
-  --code-key: #f48fb0;
-  --code-str: #9fd8a8;
-  --code-url: #7cc6f2;
-  --card-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
-  --sky-bg: #1c2346;
-  --sky-band: #232c57;
-  --cloud: #3b4577;
-  --cloud-sh: #2b3360;
-  --sea1: #2b4788;
-  --sea2: #1f356c;
-  --foam: #9db8ee;
-  --spark: #ffe08a;
-  --heart: #f48fb0;
-  --p-sky: #1b2a3a;
-  --p-cream: #33291a;
-  --p-mint: #19302a;
+  --accent: #ffa3c3;
+  --accent-ink: #1f1c28;
+  --mark: #ff7aa6;
+  --wash: #3a2435;
+  --wash2: #522e42;
+  --wash-line: #89425f;
+
+  --time: #6cb4ff;
+  --time-ink: #9fcdff;
+  --time-wash: #242c42;
+  --time-wash2: #2b3c5a;
+  --time-line: #3b6192;
+
+  --ok: #74e2b8;
+  --ok-fill: #3fd09c;
+  --ok-wash: #1d3034;
+  --warn: #f2c46d;
+  --warn-fill: #f0a531;
+  --warn-wash: #33291c;
+  --danger: #ff9d8a;
+  --danger-fill: #ff6d55;
+  --danger-wash: #3a2229;
+  --danger-line: #824441;
+
+  --bar-glass: rgba(28, 25, 38, 0.84);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --tip: #f3f0f8;
+  --tip-ink: #1f1c28;
+
+  --sticker-edge: #f1ebf6;
+
+  --tape: rgba(255, 122, 166, 0.72);
+  --tape-stripe: rgba(255, 255, 255, 0.26);
+
+  --dot-a: rgba(255, 122, 166, 0.22);
+  --dot-b: rgba(108, 180, 255, 0.24);
+
+  --shadow-sticker: 0 1px 1px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.02) inset, 0 8px 22px -12px rgba(0, 0, 0, 0.6);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.3), 0 16px 30px -10px rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 4px 10px -2px rgba(0, 0, 0, 0.35), 0 18px 34px -12px rgba(0, 0, 0, 0.65);
+  --ring-pink: 0 0 0 4px rgba(255, 122, 166, 0.22);
 }
 
-#nd-docs-layout {
-  --fd-layout-width: 1400px;
+/*
+ * fumadocs 的颜色名指向 A 的 token。fumadocs 自带的 `.dark { … }` 与
+ * `.dark #nd-sidebar { … }`（中性灰）都不在 layer 里，所以这里同样不分层、
+ * 写在它们后面，并把侧栏那条也盖掉。
+ */
+:root,
+.dark,
+.dark #nd-sidebar {
+  --color-fd-background: var(--canvas);
+  --color-fd-foreground: var(--ink);
+  --color-fd-muted: var(--deep);
+  --color-fd-muted-foreground: var(--ink3);
+  --color-fd-popover: var(--paper);
+  --color-fd-popover-foreground: var(--ink);
+  --color-fd-card: var(--paper);
+  --color-fd-card-foreground: var(--ink);
+  --color-fd-border: var(--line);
+  --color-fd-primary: var(--accent);
+  --color-fd-primary-foreground: var(--accent-ink);
+  --color-fd-secondary: var(--deep);
+  --color-fd-secondary-foreground: var(--ink2);
+  --color-fd-accent: var(--wash);
+  --color-fd-accent-foreground: var(--accent);
+  --color-fd-ring: var(--mark);
+  --color-fd-overlay: var(--scrim);
+
+  --color-fd-info: var(--time);
+  --color-fd-warning: var(--warn-fill);
+  --color-fd-error: var(--danger-fill);
+  --color-fd-success: var(--ok-fill);
+  --color-fd-idea: var(--mark);
 }
