@@ -174,8 +174,8 @@ body {
 }
 
 .a-icobtn > svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 /* 按钮（主仓 `btn` 配方）：`.a-btn` 是凸起的次按钮（纸面 + `line2` 边 + 1.5px
@@ -488,6 +488,13 @@ body {
   color: var(--ink2);
 }
 
+#nd-nav button[aria-haspopup='dialog'] > svg,
+#nd-nav [data-search] > svg,
+#nd-nav ul a[aria-label] > svg {
+  width: 16px;
+  height: 16px;
+}
+
 #nd-nav button[aria-haspopup='dialog']:hover,
 #nd-nav [data-search]:hover,
 #nd-nav button[data-radix-collection-item]:hover,
@@ -546,37 +553,45 @@ body {
   vertical-align: 0.1em;
 }
 
-/* 主题切换：分段轨道，当前那一格是白色贴纸拇指、图标变粉。 */
+/* 主题切换：与 anibt.net 顶栏一样是一枚安静的图标方块，只画当前主题的图标
+   （昼 = 太阳、夜 = 月亮），点一下换另一个。按 `html.dark` 选，水合前就对。 */
 [data-theme-toggle] {
+  width: 32px;
   height: 32px;
-  gap: 2px;
-  padding: 3px;
+  justify-content: center;
+  padding: 0;
   border: 0;
   border-radius: 10px;
-  background-color: var(--deep);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-[data-theme-toggle] > svg,
-[data-theme-toggle] > button {
-  width: 26px;
-  height: 26px;
-  padding: 6px;
-  border-radius: 7px;
   background-color: transparent;
-  color: var(--ink3);
-  fill: currentColor;
+  color: var(--ink2);
   transition:
-    background-color 0.2s var(--ease-out),
-    color 0.2s var(--ease-out),
-    box-shadow 0.2s var(--ease-out);
+    background-color 0.14s,
+    color 0.14s;
 }
 
-:root:not(.dark) [data-theme-toggle] > svg:first-of-type,
-.dark [data-theme-toggle] > svg:last-of-type {
-  background-color: var(--paper);
-  color: var(--mark);
-  box-shadow: var(--shadow-sticker);
+[data-theme-toggle]:hover {
+  background-color: var(--wash);
+  color: var(--accent);
+}
+
+[data-theme-toggle] > svg {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 0;
+  background-color: transparent;
+  color: inherit;
+  fill: none;
+  stroke-width: 2;
+}
+
+[data-theme-toggle]:hover > svg {
+  animation: a-wiggle 0.5s var(--ease-out);
+}
+
+:root:not(.dark) [data-theme-toggle] > svg:last-of-type,
+.dark [data-theme-toggle] > svg:first-of-type {
+  display: none;
 }
 
 /* ── 侧栏 ─────────────────────────────────────────────────────────────── */
