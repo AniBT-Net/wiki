@@ -68,7 +68,7 @@ export function CopyTextButton({
   value,
   label,
   copiedLabel,
-  className = 'btn pri',
+  className = 'a-btn a-btn-primary',
 }: TextCopyProps) {
   const { copied, copy } = useCopy();
 

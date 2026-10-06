@@ -112,10 +112,10 @@ export function RssBuilder({
       </div>
 
       <div className="row">
-        <Link className="btn sm pri" href={docsHref}>
+        <Link className="a-btn a-btn-sm" href={docsHref}>
           {t.docsCta}
         </Link>
-        <Link className="btn sm" href={clientHref}>
+        <Link className="a-btn a-btn-sm" href={clientHref}>
           {t.clientCta}
         </Link>
       </div>

@@ -1,66 +1,57 @@
 import { CopyTextButton } from '@/components/home/copy-button';
-import {
-  Deco,
-  type DecoItem,
-  Sea,
-  SceneSprite,
-  Spark,
-} from '@/components/home/scene-art';
 import { RssBuilder } from '@/components/home/rss-builder';
+import { Sparkle } from '@/components/home/sparkle';
 import { TryPanel } from '@/components/home/try-panel';
 import type { ChangelogEntry } from '@/lib/changelog';
 import { homeCopy, homeHref } from '@/lib/home';
 import { llmMarkdownPath } from '@/lib/i18n';
-import { ChevronRight, Search } from 'lucide-react';
+import { navLabels } from '@/lib/layout.shared';
+import {
+  ArrowUpRight,
+  Bot,
+  CalendarDays,
+  ChevronRight,
+  RadioTower,
+  RefreshCw,
+  Rss,
+  Search,
+  Wrench,
+} from 'lucide-react';
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 const TRACKER_ANNOUNCE = 'https://tracker.anibt.net/announce';
 
-const HERO_DECO: DecoItem[] = [
-  { kind: 'cl', w: 230, left: '3%', top: '10%', d: '70s' },
-  { kind: 'cl', w: 150, left: '38%', top: '5%', d: '55s' },
-  { kind: 'cl', w: 280, right: '-40px', top: '52%', d: '80s' },
-  { kind: 'cl', w: 170, left: '-30px', top: '58%', d: '64s' },
-  { kind: 'sp', w: 30, left: '56%', top: '16%' },
-  { kind: 'sp', w: 18, left: '61%', top: '30%', d: '2.4s' },
-  { kind: 'sp', w: 22, right: '5%', top: '12%', d: '4s' },
-  { kind: 'sp', w: 16, left: '30%', top: '50%', d: '2.8s' },
-  { kind: 'ht', w: 26, right: '31%', top: '40%' },
-  { kind: 'ht', w: 16, right: '28%', top: '33%', r: '14deg' },
-  { kind: 'bb', w: 26, left: '8%', bottom: '110px' },
-  { kind: 'bb', w: 14, left: '11%', bottom: '150px' },
-  { kind: 'bb', w: 20, right: '7%', bottom: '120px' },
-];
-
-const TRY_DECO: DecoItem[] = [
-  { kind: 'sp', w: 34, left: '5%', top: '14%' },
-  { kind: 'sp', w: 18, left: '10%', top: '32%', d: '2.5s' },
-  { kind: 'ht', w: 30, left: '7%', bottom: '16%' },
-  { kind: 'ht', w: 22, right: '8%', top: '16%', r: '16deg' },
-  { kind: 'sp', w: 28, right: '6%', bottom: '18%', d: '3.6s' },
-  { kind: 'sp', w: 16, right: '12%', bottom: '34%' },
-];
-
-const RSS_DECO: DecoItem[] = [
-  { kind: 'cl', w: 150, right: '12%', top: '7%', d: '50s' },
-  { kind: 'cl', w: 120, left: '4%', top: '44%', d: '66s' },
-  { kind: 'sp', w: 20, right: '8%', top: '12%' },
-];
-
-const TRACKER_DECO: DecoItem[] = [
-  { kind: 'sp', w: 40, right: '9%', top: '16%' },
-  { kind: 'sp', w: 20, right: '20%', top: '34%', d: '2.6s' },
-  { kind: 'ht', w: 34, right: '12%', bottom: '18%' },
-  { kind: 'sp', w: 24, right: '27%', bottom: '14%', d: '4s' },
-];
-
-const CLOSING_DECO: DecoItem[] = [
-  { kind: 'cl', w: 200, left: '42%', top: '12%', d: '60s' },
-  { kind: 'cl', w: 130, right: '3%', top: '48%', d: '72s' },
-  { kind: 'sp', w: 24, left: '36%', top: '22%' },
-  { kind: 'bb', w: 20, left: '4%', bottom: '84px' },
-];
+/** 面板头：一枚倾斜的贴纸图标 + 16/800 标题 + 一句说明。 */
+function PanelHead({
+  icon,
+  tone = 'pink',
+  tilt = '-4deg',
+  title,
+  lead,
+}: {
+  icon: ReactNode;
+  tone?: 'pink' | 'blue';
+  tilt?: string;
+  title: string;
+  lead?: string;
+}) {
+  return (
+    <div className="ph">
+      <div className="ph-row">
+        <span
+          className={`mark ${tone === 'blue' ? 'is-blue' : ''}`}
+          style={{ '--tilt': tilt } as CSSProperties}
+          aria-hidden="true"
+        >
+          {icon}
+        </span>
+        <h3>{title}</h3>
+      </div>
+      {lead ? <p>{lead}</p> : null}
+    </div>
+  );
+}
 
 export function HomePage({
   locale,
@@ -70,6 +61,7 @@ export function HomePage({
   changelog: ChangelogEntry[];
 }) {
   const t = homeCopy(locale);
+  const nav = navLabels[locale as keyof typeof navLabels] ?? navLabels['zh-CN'];
 
   const scale = {
     '--h1-min': t.h1Scale.min,
@@ -83,41 +75,49 @@ export function HomePage({
 
   return (
     <div className="wk" style={scale}>
-      <SceneSprite />
-
-      <div className="wframe">
-        <section className="scene whero">
-          <Deco items={HERO_DECO} />
-
-          <div>
-            <span className="pill">
-              <Spark />
+      <div className="wrap">
+        <section className="whero">
+          <div className="copy">
+            <span className="kick a-sticker a-sticker-candy">
+              <Sparkle className="kick-spark" />
               {t.heroPill}
             </span>
             <h1>{t.heroTitle}</h1>
             <p>{t.heroLead}</p>
             <div className="cta">
-              <Link className="btn pri" href={homeHref(locale, '/docs')}>
+              <Link
+                className="a-btn a-btn-primary a-btn-lg"
+                href={homeHref(locale, '/docs')}
+              >
                 {t.heroPrimary}
               </Link>
-              <Link className="btn" href={homeHref(locale, '/docs/open-api')}>
+              <Link
+                className="a-btn a-btn-lg"
+                href={homeHref(locale, '/docs/open-api')}
+              >
                 {t.heroSecondary}
               </Link>
             </div>
           </div>
 
-          <img
-            className="mascot"
-            src="/brand/anibt-logo@2x.webp"
-            alt="AniBT"
-            width={960}
-            height={488}
-            decoding="async"
-            fetchPriority="high"
-          />
+          <div className="art" aria-hidden="true">
+            <img
+              className="logo"
+              src="/brand/anibt-logo@2x.webp"
+              alt=""
+              width={960}
+              height={488}
+              decoding="async"
+              fetchPriority="high"
+            />
+            <Sparkle className="s1" />
+            <Sparkle tone="blue" className="s2" />
+            <Sparkle className="s3" />
+          </div>
 
+          {/* 文档页的缩影：与真正的文档页同一套顶栏、胶带、步骤贴纸与目录。 */}
           <div className="shot" aria-hidden="true">
-            <div className="sb">
+            <div className="sbar">
               <img
                 src="/brand/anibt-logo.webp"
                 alt=""
@@ -126,51 +126,54 @@ export function HomePage({
                 loading="lazy"
                 decoding="async"
               />
-              <span className="field">
-                <Search className="i" />
-                {t.shot.search}
-                <span className="kbd" style={{ marginLeft: 'auto' }}>
-                  Ctrl K
-                </span>
+              <span className="snav on">
+                {nav.docs}
+                <i className="a-tape" />
               </span>
-              <small>{t.shot.section}</small>
-              {t.shot.nav.map((item, index) => (
-                <span
-                  key={item}
-                  className={index === 0 ? 'item on' : 'item'}
-                >
-                  {item}
-                </span>
-              ))}
+              <span className="snav">{nav.api}</span>
+              <span className="sfield">
+                <Search className="i" />
+                <span className="ell">{t.shot.search}</span>
+                <span className="skbd">⌘K</span>
+              </span>
             </div>
-            <div className="ct">
-              <h2>{t.shot.title}</h2>
-              <p>{t.shot.description}</p>
-              <div className="acts">
-                {t.shot.acts.map((act) => (
-                  <span key={act} className="chip">
-                    {act}
+            <div className="sbody">
+              <div className="sb">
+                <small>{t.shot.section}</small>
+                {t.shot.nav.map((item, index) => (
+                  <span key={item} className={index === 0 ? 'item on' : 'item'}>
+                    {item}
                   </span>
                 ))}
               </div>
-              <h3>{t.shot.heading}</h3>
-            </div>
-            <div className="tc">
-              <b>{t.shot.tocTitle}</b>
-              {t.shot.toc.map((item, index) => (
-                <span key={item} className={index === 0 ? 'on' : undefined}>
-                  {item}
-                </span>
-              ))}
+              <div className="ct">
+                <h2>{t.shot.title}</h2>
+                <p>{t.shot.description}</p>
+                <div className="acts">
+                  {t.shot.acts.map((act) => (
+                    <span key={act} className="chip">
+                      {act}
+                    </span>
+                  ))}
+                </div>
+                <div className="step">
+                  <span className="n">1</span>
+                  <h3>{t.shot.heading}</h3>
+                </div>
+              </div>
+              <div className="tc">
+                <b>{t.shot.tocTitle}</b>
+                {t.shot.toc.map((item, index) => (
+                  <span key={item} className={index === 0 ? 'on' : undefined}>
+                    {item}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-
-          <Sea />
         </section>
-      </div>
 
-      <section className="state">
-        <div className="wrap">
+        <section className="state">
           <p>
             {t.statement.map((part, index) =>
               part.accent ? (
@@ -180,13 +183,10 @@ export function HomePage({
               ),
             )}
           </p>
-        </div>
-      </section>
+        </section>
 
-      <div className="wrap">
         <div className="bento">
-          <section className="pn pink big c12">
-            <Deco items={TRY_DECO} />
+          <section className="pn c12 tryp">
             <TryPanel
               t={t.tryPanel}
               copyLabel={t.copyLabel}
@@ -195,30 +195,32 @@ export function HomePage({
           </section>
 
           <section className="pn c5">
-            <h3>{t.syncPanel.title}</h3>
-            <p>{t.syncPanel.lead}</p>
+            <PanelHead
+              icon={<RefreshCw />}
+              title={t.syncPanel.title}
+              lead={t.syncPanel.lead}
+            />
             <div className="srows">
               {t.syncPanel.rows.map((row) => (
                 <Link
                   key={row.slug}
                   href={homeHref(locale, `/docs/site-sync/${row.slug}`)}
                 >
-                  {row.name}
-                  <span>{row.domain}</span>
+                  <b>{row.name}</b>
+                  <span className="dom">{row.domain}</span>
+                  <ChevronRight className="i" />
                 </Link>
               ))}
             </div>
           </section>
 
-          <section
-            className="pn scene c7"
-            style={{ '--sea-h': '56px' } as CSSProperties}
-          >
-            <Deco items={RSS_DECO} />
-            <Sea />
-            <h3>{t.rssPanel.title}</h3>
-            <p>{t.rssPanel.lead}</p>
-            <div className="grow" style={{ minHeight: 24 }} />
+          <section className="pn c7">
+            <PanelHead
+              icon={<Rss />}
+              tilt="5deg"
+              title={t.rssPanel.title}
+              lead={t.rssPanel.lead}
+            />
             <RssBuilder
               t={t.rssPanel}
               copyLabel={t.copyLabel}
@@ -228,26 +230,34 @@ export function HomePage({
             />
           </section>
 
-          <section className="pn cream c8 ann">
-            <Deco items={TRACKER_DECO} />
-            <h3>{t.trackerPanel.title}</h3>
+          <section className="pn c8 ann">
+            <PanelHead
+              icon={<RadioTower />}
+              tone="blue"
+              title={t.trackerPanel.title}
+            />
             <code>{TRACKER_ANNOUNCE}</code>
-            <p>{t.trackerPanel.lead}</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <p className="lead">{t.trackerPanel.lead}</p>
+            <div className="row">
               <CopyTextButton
                 value={TRACKER_ANNOUNCE}
                 label={t.trackerPanel.copyCta}
                 copiedLabel={t.copiedLabel}
+                className="a-btn a-btn-primary"
               />
-              <Link className="btn" href={homeHref(locale, '/docs/tracker')}>
+              <Link className="a-btn" href={homeHref(locale, '/docs/tracker')}>
                 {t.trackerPanel.docsCta}
               </Link>
             </div>
           </section>
 
           <section className="pn c4">
-            <h3>{t.llmPanel.title}</h3>
-            <p>{t.llmPanel.lead}</p>
+            <PanelHead
+              icon={<Bot />}
+              tilt="4deg"
+              title={t.llmPanel.title}
+              lead={t.llmPanel.lead}
+            />
             <div className="llm">
               {t.llmPanel.lines.map((line) => {
                 const path =
@@ -256,22 +266,27 @@ export function HomePage({
                 return (
                   <span key={path}>
                     <i># {line.comment}</i>
-                    <br />
                     <a href={path}>{path}</a>
                   </span>
                 );
               })}
             </div>
-            <div className="grow" style={{ minHeight: 14 }} />
-            <Link className="btn sm" href={homeHref(locale, '/docs/llm')}>
+            <div className="grow" />
+            <Link
+              className="a-btn a-btn-sm more"
+              href={homeHref(locale, '/docs/llm')}
+            >
               {t.llmPanel.cta}
               <ChevronRight className="i" />
             </Link>
           </section>
 
-          <section className="pn mint c6">
-            <h3>{t.kitPanel.title}</h3>
-            <p>{t.kitPanel.lead}</p>
+          <section className="pn c6">
+            <PanelHead
+              icon={<Wrench />}
+              title={t.kitPanel.title}
+              lead={t.kitPanel.lead}
+            />
             <div className="kit">
               {t.kitPanel.tiles.map((tile) =>
                 tile.external ? (
@@ -281,7 +296,10 @@ export function HomePage({
                     target="_blank"
                     rel="noreferrer noopener"
                   >
-                    <b>{tile.title}</b>
+                    <b>
+                      {tile.title}
+                      <ArrowUpRight className="ext" aria-hidden="true" />
+                    </b>
                     <span>{tile.note}</span>
                   </a>
                 ) : (
@@ -295,45 +313,71 @@ export function HomePage({
           </section>
 
           <section className="pn c6">
-            <h3>{t.changelogPanel.title}</h3>
-            <p>{t.changelogPanel.lead}</p>
-            {changelog.map((entry) => (
-              <div key={`${entry.date}-${entry.title}`} className="clog">
-                <time dateTime={entry.date}>{entry.date}</time>
-                <div>
-                  <b>{entry.title}</b>
-                  <p>{entry.body}</p>
+            <PanelHead
+              icon={<CalendarDays />}
+              tone="blue"
+              tilt="4deg"
+              title={t.changelogPanel.title}
+              lead={t.changelogPanel.lead}
+            />
+            <div className="clogs">
+              {changelog.map((entry) => (
+                <div key={`${entry.date}-${entry.title}`} className="clog">
+                  <time dateTime={entry.date}>{entry.date}</time>
+                  <div>
+                    <b>{entry.title}</b>
+                    <p>{entry.body}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
             <div className="grow" />
             <Link
-              className="btn sm"
+              className="a-btn a-btn-sm more"
               href={homeHref(locale, '/docs/changelog')}
-              style={{ marginTop: 14 }}
             >
               {t.changelogPanel.cta}
               <ChevronRight className="i" />
             </Link>
           </section>
         </div>
-      </div>
 
-      <div className="wframe">
-        <section className="scene endp">
-          <Deco items={CLOSING_DECO} />
-          <Sea />
-          <h2>{t.closing.title}</h2>
-          <div className="cta">
-            <Link className="btn pri" href={homeHref(locale, '/docs')}>
-              {t.closing.primary}
-            </Link>
-            <Link className="btn" href={homeHref(locale, '/docs/apply')}>
-              {t.closing.apply}
-            </Link>
-            <Link className="btn" href={homeHref(locale, '/docs/contact')}>
-              {t.closing.contact}
-            </Link>
+        <section className="endp">
+          <div className="peek">
+            <img
+              className="girl"
+              src="/brand/mascot.webp"
+              alt=""
+              width={490}
+              height={490}
+              loading="lazy"
+              decoding="async"
+            />
+            <Sparkle className="p1" />
+            <Sparkle tone="blue" className="p2" />
+            <div className="note">
+              <h2>{t.closing.title}</h2>
+              <div className="cta">
+                <Link
+                  className="a-btn a-btn-primary a-btn-lg"
+                  href={homeHref(locale, '/docs')}
+                >
+                  {t.closing.primary}
+                </Link>
+                <Link
+                  className="a-btn a-btn-lg"
+                  href={homeHref(locale, '/docs/apply')}
+                >
+                  {t.closing.apply}
+                </Link>
+                <Link
+                  className="a-btn a-btn-lg"
+                  href={homeHref(locale, '/docs/contact')}
+                >
+                  {t.closing.contact}
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
       </div>
