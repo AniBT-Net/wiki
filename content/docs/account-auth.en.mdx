@@ -34,7 +34,7 @@ AniBT provides modern email OTP and session authentication to support anime trac
 </Steps>
 
 <Callout type="warn">
-  If the entered email is already registered, the page will still report "Verification code sent" for security protection against account enumeration, but no new registration email will be dispatched. In this scenario, proceed to sign in or reset your password.
+  Verification code requests return a uniform response to prevent account enumeration. The response reports the request outcome; it does not confirm that an email was sent or delivered. An already registered email address will not receive another registration code. Sign in or reset your password instead.
 </Callout>
 
 ## Sign-In Methods
@@ -58,7 +58,7 @@ AniBT provides modern email OTP and session authentication to support anime trac
     If you forget your password, click "Forgot password" on the sign-in page.
 
     - Enter your registered email to receive a password reset link.
-    - Emails usually arrive within seconds. Brief queue delays do not mean delivery failure.
+    - An accepted request does not confirm email delivery. Check your spam folder. If the email still has not arrived, wait for the countdown to end before requesting another code.
   </Tab>
 </Tabs>
 
