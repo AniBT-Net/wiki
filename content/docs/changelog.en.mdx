@@ -9,6 +9,23 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
   Entries are listed in reverse chronological order. If you encounter any bugs during regular use, feel free to report them via our [Support Email](/en/docs/contact).
 </Callout>
 
+## October 7, 2026
+
+<TypeTable type={{
+  "Management and subscription page loading": {
+    "type": "Improvement",
+    "description": "Group workbenches and management lists show their initial content sooner. Reopening subscriptions avoids repeated waiting. Covers, avatars, and group logos use images sized for their display."
+  },
+  "Sync status updates": {
+    "type": "Improvement",
+    "description": "Sync logs check about every 5 seconds during active tasks and every 30 seconds while idle. If a list refresh fails after a successful save, a separate message identifies the refresh failure so a completed write is not mistaken for a failed save."
+  },
+  "Editing across deployments": {
+    "type": "Fix",
+    "description": "After a new version is detected, a later page navigation loads it. In-flight submissions settle first, and unsaved input prompts for confirmation before leaving. Failed writes are never replayed automatically."
+  }
+}} />
+
 ## October 6, 2026
 
 <TypeTable type={{
