@@ -64,7 +64,7 @@ Once approved, you will receive full access to your group management console `/g
     },
     'slug': {
       type: 'string',
-      description: 'Permanent English identifier (e.g., sakura-sub), used in URLs and API calls. Cannot be easily changed once set.',
+      description: 'Unique identifier used in URLs and API calls, such as sakura-sub. Use 1–80 ASCII letters, digits or hyphens (-), starting with a letter or digit. When an administrator creates or edits a group, surrounding whitespace is removed and letters are converted to lowercase: Sakura-Sub is saved as sakura-sub. The group name keeps its original casing. A slug that matches an existing one after normalization cannot be saved. Avoid changing it after activation.',
     },
     'Profile': {
       type: 'string',

@@ -62,7 +62,7 @@ AniBT 欢迎各类原创动漫翻译、压制与分享团队入驻，共同维�
     },
     'slug': {
       type: 'string',
-      description: '永久英文唯一标识（如 sakura-sub），用于 URL 路径及 API 调用，开通后不宜更改。',
+      description: '用于 URL 路径及 API 调用的唯一标识，如 sakura-sub。长度为 1–80 个字符，只能使用英文字母、数字和连字符（-），首位必须是字母或数字。管理员创建或编辑时会去除首尾空白并转换为小写，例如 Sakura-Sub 保存为 sakura-sub；字幕组名称保留原有大小写。规范化后与已有 slug 重复时无法保存。开通后不宜更改。',
     },
     '简介': {
       type: 'string',
