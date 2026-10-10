@@ -11,11 +11,18 @@ _openapi:
   structuredData:
     headings: []
     contents:
-      - content: |
+      - content: >
           把番剧名映射为 `bgmId`。站内未收录的作品搜不到。
+
           不保证第一条就是目标作品。结果按相关度排序。
+
+          文字查询中的独立完整年份（1000–2999）必须匹配；普通文字纠错和未输入完整的数字前缀仍可使用。纯数字 q 仍按 Bangumi ID
+          查询。
+
           `limit` 默认 5，上限 25。速率限制默认 60 次 / 60 秒 / IP。
+
           q、limit 均只允许出现一次；无效查询返回 422。
+
           支持 GET、HEAD、OPTIONS；条件请求仍可能消耗限流额度。
 ---
 

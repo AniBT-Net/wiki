@@ -12,6 +12,14 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
 ## October 10, 2026
 
 <TypeTable type={{
+  "Title and installment matching": {
+    "type": "Fix",
+    "description": "Uploads retain official bracketed subtitles, romaji and English aliases, and distinguish seasons from episodes. Titles that point to different works still require manual confirmation. Numeric title terms are no longer corrected or ignored."
+  },
+  "Year and spelling searches": {
+    "type": "Improvement",
+    "description": "Anime title search preserves complete standalone year terms to reduce confusion between versions and improve misspelled queries containing a year. Ordinary spelling correction and unfinished numeric prefixes remain supported. Digits-only Bangumi searches still look up a BGM ID."
+  },
   "Anime search failure feedback": {
     "type": "Fix",
     "description": "Anime search during publishing now clearly reports a temporary failure and allows retry, instead of showing no results. A known BGM ID can still be used to bind the anime directly."

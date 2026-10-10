@@ -48,11 +48,11 @@ const localeTitles: Record<
   'bgm-search': {
     en: {
       title: 'Bangumi search',
-      description: 'GET /api/bgm/search — map a title to bgmId.',
+      description: 'GET /api/bgm/search — map a title to bgmId. Text queries must match complete standalone years (1000–2999); ordinary spelling correction and unfinished numeric prefixes remain supported. A digits-only q still looks up a Bangumi ID.',
     },
     'zh-Hant': {
       title: 'Bangumi 搜尋',
-      description: 'GET /api/bgm/search —— 把番劇名對應為 bgmId。',
+      description: 'GET /api/bgm/search —— 把番劇名對應為 bgmId。文字查詢中的獨立完整年份（1000–2999）必須符合；一般文字校正與尚未輸入完整的數字前綴仍可使用。純數字 q 仍依 Bangumi ID 查詢。',
     },
   },
   'seasons-anime': {
@@ -78,11 +78,11 @@ const localeTitles: Record<
   'anime-torrent-match': {
     en: {
       title: 'Torrent match',
-      description: 'POST /api/animes/torrent-match — parse a title and return a decision.',
+      description: 'POST /api/animes/torrent-match — preserve official bracketed subtitles, romaji and English aliases, and distinguish seasons from episodes. Conflicting titles require manual confirmation. Numeric title terms are not corrected or ignored; relaxed matching may ignore at most one ordinary word and cannot authorize auto on its own.',
     },
     'zh-Hant': {
       title: '種子標題匹配番劇',
-      description: 'POST /api/animes/torrent-match —— 解析釋出標題與種子內部名。',
+      description: 'POST /api/animes/torrent-match —— 保留正式括號副標題、羅馬音與英文別名，分別識別季數與集數。標題衝突時須人工確認。數字標題詞不自動校正或忽略；寬鬆匹配最多忽略一個一般詞，不能單獨授權 auto。',
     },
   },
   'rss-anime': {
