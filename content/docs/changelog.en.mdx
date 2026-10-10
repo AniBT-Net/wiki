@@ -12,6 +12,14 @@ This page logs user-facing features, enhancements, and fixes for visitors, anime
 ## October 10, 2026
 
 <TypeTable type={{
+  "Anime search failure feedback": {
+    "type": "Fix",
+    "description": "Anime search during publishing now clearly reports a temporary failure and allows retry, instead of showing no results. A known BGM ID can still be used to bind the anime directly."
+  },
+  "Search recovery and release removal": {
+    "type": "Fix",
+    "description": "Search recovery no longer treats results that have not fully loaded as a normal empty result. Initial release removal no longer waits for search recovery; the deletion receipt is completed only after all checks finish."
+  },
   "Search subscription sorting": {
     "type": "Fix",
     "description": "Fixed errors when searching anime releases with file-size or episode sorting, and other releases with file-size sorting. The fix applies to resource lists and RSS search subscriptions."
